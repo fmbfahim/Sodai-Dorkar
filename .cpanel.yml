@@ -1,6 +1,6 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/sohozhi1/digisoftbd.xyz/
+    - export DEPLOYPATH=/home/sohozhi1/digisoftbd.xyz
     - /bin/cp -R * $DEPLOYPATH
-    - /bin/cp .htaccess $DEPLOYPATH 2>/dev/null || :
+
