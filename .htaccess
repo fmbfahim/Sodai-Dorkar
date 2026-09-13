@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Compatibility: Map /sodai-dorkar/public/ requests to /public/
+    RewriteRule ^sodai-dorkar/public/(.*)$ public/$1 [L,QSA]
+    RewriteRule ^sodai-dorkar/public$ public/ [L,R=301]
+</IfModule>

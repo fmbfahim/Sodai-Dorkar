@@ -15,10 +15,12 @@ class Router {
 
     public function resolve() {
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        // Remove project base path if running in subdirectory
+        // Remove project base path if running in subdirectory (local or live)
         $path = str_replace('/sodai-dorkar/public', '', $path);
+        $path = preg_replace('#^/public#', '', $path);
         $path = preg_replace('#^/index\.php#', '', $path);
-        if ($path === '') $path = '/';
+        $path = rtrim($path, '/');
+        if ($path === '' || $path === false) $path = '/';
         
         $method = $_SERVER['REQUEST_METHOD'];
         $callback = $this->routes[$method][$path] ?? false;
