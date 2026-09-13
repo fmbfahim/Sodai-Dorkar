@@ -1,0 +1,9 @@
+/node_modules/
+/scratch/
+test_arr.php
+test_render.php
+prompt.md
+*.log
+.env
+.DS_Store
+Thumbs.db

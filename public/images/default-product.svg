@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%" fill="none">
+  <!-- Background -->
+  <rect width="500" height="500" fill="#ffffff" />
+  
+  <g stroke="#b4c2d3" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Carrot Leaves -->
+    <path d="M175 165 C170 145 155 130 140 125" />
+    <path d="M185 160 C185 135 180 120 170 115" />
+    <path d="M195 165 C205 145 220 135 230 130" />
+    
+    <!-- Carrot Body -->
+    <path d="M165 175 C160 205 168 245 178 260 L218 260 C225 240 230 205 225 175 C215 165 175 165 165 175 Z" fill="#ffffff" />
+    <!-- Carrot Ridges -->
+    <path d="M175 195 C185 198 198 198 205 195" />
+    <path d="M180 220 C190 223 198 223 205 220" />
+    <path d="M185 242 C192 244 198 244 205 242" />
+
+    <!-- Center Bottle -->
+    <!-- Bottle Cap -->
+    <rect x="236" y="115" width="28" height="20" rx="4" fill="#ffffff" />
+    <!-- Bottle Neck & Body -->
+    <path d="M240 135 L240 180 C240 205 225 220 225 240 L225 260 L275 260 L275 240 C275 220 260 205 260 180 L260 135 Z" fill="#ffffff" />
+    <!-- Bottle Label -->
+    <rect x="238" y="222" width="24" height="38" rx="3" fill="#ffffff" />
+
+    <!-- Right Jar -->
+    <!-- Jar Lid -->
+    <rect x="270" y="175" width="56" height="16" rx="4" fill="#ffffff" />
+    <!-- Jar Body -->
+    <path d="M276 191 L268 206 C265 212 265 218 265 225 L265 260 L331 260 L331 225 C331 218 331 212 328 206 L320 191 Z" fill="#ffffff" />
+    <!-- Jar Label -->
+    <rect x="280" y="218" width="36" height="42" rx="4" fill="#ffffff" />
+
+    <!-- Basket Upper Rim -->
+    <rect x="135" y="260" width="230" height="24" rx="12" fill="#ffffff" />
+
+    <!-- Basket Main Body -->
+    <path d="M150 284 L170 375 C172 385 180 392 190 392 L310 392 C320 392 328 385 330 375 L350 284" fill="#ffffff" />
+
+    <!-- Basket Front Texture Lines -->
+    <line x1="205" y1="305" x2="203" y2="320" />
+    <line x1="208" y1="340" x2="213" y2="370" />
+
+    <line x1="237" y1="305" x2="237" y2="370" />
+
+    <line x1="268" y1="305" x2="270" y2="330" />
+    <line x1="268" y1="350" x2="266" y2="370" />
+
+    <line x1="298" y1="305" x2="290" y2="370" />
+  </g>
+</svg>

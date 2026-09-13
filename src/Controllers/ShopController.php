@@ -1,0 +1,891 @@
+<?php
+
+namespace Controllers;
+
+use Core\View;
+use Core\Database;
+use Core\Lang;
+
+class ShopController {
+    
+    private $db;
+
+    public function __construct() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $config = require __DIR__ . '/../../config/database.php';
+        $this->db = new Database($config);
+        
+        // Initialize language system
+        Lang::init();
+    }
+
+    public function getCategoryDescendantIds($categoryId) {
+        $ids = [(int)$categoryId];
+        $queue = [(int)$categoryId];
+
+        while (!empty($queue)) {
+            $curr = array_shift($queue);
+            $stmt = $this->db->query("SELECT id FROM categories WHERE parent_id = ?", [$curr]);
+            $children = $stmt->fetchAll();
+            foreach ($children as $ch) {
+                $chId = (int)$ch['id'];
+                if (!in_array($chId, $ids)) {
+                    $ids[] = $chId;
+                    $queue[] = $chId;
+                }
+            }
+        }
+        return $ids;
+    }
+
+    public function index() {
+        // Get filter parameters
+        $categoryId = $_GET['category'] ?? null;
+        $search = $_GET['search'] ?? '';
+        $isDeals = isset($_GET['deals']) && $_GET['deals'] == '1';
+
+        // Build product query with filters
+        $sql = "SELECT products.*, categories.name as category_name 
+                FROM products 
+                LEFT JOIN categories ON products.category_id = categories.id
+                WHERE products.availability_status = 'in_stock'";
+        $params = [];
+
+        if ($categoryId) {
+            $catIds = $this->getCategoryDescendantIds($categoryId);
+            if (!empty($catIds)) {
+                $inPlaceholders = [];
+                foreach ($catIds as $idx => $cId) {
+                    $pKey = "cat_id_" . $idx;
+                    $inPlaceholders[] = ":" . $pKey;
+                    $params[$pKey] = $cId;
+                }
+                $sql .= " AND products.category_id IN (" . implode(',', $inPlaceholders) . ")";
+            }
+        }
+
+        if ($search) {
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
+            $params['search'] = "%{$search}%";
+            $params['search2'] = "%{$search}%";
+        }
+
+        if ($isDeals) {
+            $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
+        }
+
+        $sql .= " ORDER BY products.created_at DESC";
+        $stmt = $this->db->query($sql, $params);
+        $products = $stmt->fetchAll();
+
+        // Fetch all categories
+        $allCategories = $this->db->query("SELECT categories.* FROM categories ORDER BY categories.name ASC")->fetchAll();
+
+        $catById = [];
+        $childrenMap = [];
+        foreach ($allCategories as $cat) {
+            $catById[$cat['id']] = $cat;
+            $pId = !empty($cat['parent_id']) ? (int)$cat['parent_id'] : 0;
+            if (!isset($childrenMap[$pId])) $childrenMap[$pId] = [];
+            $childrenMap[$pId][] = (int)$cat['id'];
+        }
+
+        // Direct product counts per category
+        $prodCountsByCat = [];
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        foreach ($rawCounts as $rc) {
+            $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
+        }
+
+        // Attach recursive product count and subcategory count to all categories
+        foreach ($allCategories as &$cat) {
+            $descIds = $this->getCategoryDescendantIds($cat['id']);
+            $totalProds = 0;
+            foreach ($descIds as $dId) {
+                $totalProds += $prodCountsByCat[$dId] ?? 0;
+            }
+            $cat['total_product_count'] = $totalProds;
+            $cat['sub_count'] = isset($childrenMap[$cat['id']]) ? count($childrenMap[$cat['id']]) : 0;
+            $catById[$cat['id']]['total_product_count'] = $totalProds;
+            $catById[$cat['id']]['sub_count'] = $cat['sub_count'];
+        }
+        unset($cat);
+
+        // Determine main categories
+        // If single root (parent_id is null/0 has only 1, e.g. 'খাবার সামগ্রী'), its children are the main categories!
+        $rootIds = $childrenMap[0] ?? [];
+        if (count($rootIds) === 1 && isset($childrenMap[$rootIds[0]])) {
+            $mainCatIds = $childrenMap[$rootIds[0]];
+        } else {
+            $mainCatIds = $rootIds;
+        }
+
+        $mainCategories = [];
+        foreach ($mainCatIds as $mId) {
+            if (isset($catById[$mId])) {
+                $mainCategories[] = $catById[$mId];
+            }
+        }
+
+        // Determine parent category and subcategories to display based on selected category
+        $parentCategory = null;
+        $subCategories = [];
+
+        if ($categoryId && isset($catById[$categoryId])) {
+            $selectedCat = $catById[$categoryId];
+            if (!empty($childrenMap[$categoryId])) {
+                // Category itself has subcategories (e.g. user clicked "রান্নাবান্না")
+                $parentCategory = $selectedCat;
+                foreach ($childrenMap[$categoryId] as $sId) {
+                    if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
+                }
+            } elseif (!empty($selectedCat['parent_id']) && isset($catById[$selectedCat['parent_id']]) && $selectedCat['parent_id'] != 1) {
+                // User clicked a subcategory (e.g. "চাল") -> parent is "রান্নাবান্না"
+                $parentCategory = $catById[$selectedCat['parent_id']];
+                if (!empty($childrenMap[$parentCategory['id']])) {
+                    foreach ($childrenMap[$parentCategory['id']] as $sId) {
+                        if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
+                    }
+                }
+            }
+        }
+
+        // Fetch categories with in-stock products for filter tabs
+        $stmtCat = $this->db->query("SELECT categories.*, COUNT(products.id) as product_count 
+                                      FROM categories 
+                                      LEFT JOIN products ON categories.id = products.category_id AND products.availability_status = 'in_stock'
+                                      GROUP BY categories.id 
+                                      HAVING product_count > 0
+                                      ORDER BY categories.name ASC");
+        $categories = $stmtCat->fetchAll();
+
+        // Fetch special deals for "Deal of the Day" showcase
+        $dealsStmt = $this->db->query("SELECT products.*, categories.name as category_name 
+                                       FROM products 
+                                       LEFT JOIN categories ON products.category_id = categories.id
+                                       WHERE products.availability_status = 'in_stock' 
+                                         AND products.regular_price IS NOT NULL 
+                                         AND products.regular_price > products.sell_price
+                                       ORDER BY (products.regular_price - products.sell_price) DESC 
+                                       LIMIT 10");
+        $dealProducts = $dealsStmt->fetchAll();
+        if (empty($dealProducts)) {
+            $dealProducts = array_slice($products, 0, 6);
+        }
+
+        $parentBackUrl = '/sodai-dorkar/public/#categories';
+        if ($parentCategory && !empty($parentCategory['parent_id']) && $parentCategory['parent_id'] != 1) {
+            $parentBackUrl = '/sodai-dorkar/public/?category=' . $parentCategory['parent_id'] . '#categories';
+        }
+
+        return View::render('shop/index', [
+            'products' => $products,
+            'categories' => $categories,
+            'allCategories' => $allCategories,
+            'mainCategories' => $mainCategories,
+            'childrenMap' => $childrenMap,
+            'parentCategory' => $parentCategory,
+            'subCategories' => $subCategories,
+            'parentBackUrl' => $parentBackUrl,
+            'dealProducts' => $dealProducts,
+            'currentCategory' => $categoryId,
+            'search' => $search,
+            'isDeals' => $isDeals
+        ]);
+    }
+
+    public function category() {
+        $catId = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['category']) ? (int)$_GET['category'] : 0);
+        $subId = isset($_GET['sub']) && $_GET['sub'] !== '' ? (int)$_GET['sub'] : null;
+        $search = trim($_GET['search'] ?? '');
+        $sort = $_GET['sort'] ?? 'newest';
+        $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? (float)$_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? (float)$_GET['max_price'] : null;
+        $selectedBrand = isset($_GET['brand']) && $_GET['brand'] !== '' ? (int)$_GET['brand'] : null;
+        $inStockOnly = isset($_GET['in_stock']) ? ($_GET['in_stock'] == '1') : true;
+        $isDeals = isset($_GET['deals']) && $_GET['deals'] == '1';
+
+        // Fetch all categories for relationships & header
+        $allCategories = $this->db->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll();
+        $catById = [];
+        $childrenMap = [];
+        foreach ($allCategories as $c) {
+            $catById[$c['id']] = $c;
+            $pId = !empty($c['parent_id']) ? (int)$c['parent_id'] : 0;
+            if (!isset($childrenMap[$pId])) $childrenMap[$pId] = [];
+            $childrenMap[$pId][] = (int)$c['id'];
+        }
+
+        // Direct product counts per category
+        $prodCountsByCat = [];
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        foreach ($rawCounts as $rc) {
+            $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
+        }
+
+        // Attach counts
+        foreach ($allCategories as &$c) {
+            $descIds = $this->getCategoryDescendantIds($c['id']);
+            $tot = 0;
+            foreach ($descIds as $d) {
+                $tot += $prodCountsByCat[$d] ?? 0;
+            }
+            $c['total_product_count'] = $tot;
+            $c['sub_count'] = isset($childrenMap[$c['id']]) ? count($childrenMap[$c['id']]) : 0;
+            $catById[$c['id']]['total_product_count'] = $tot;
+            $catById[$c['id']]['sub_count'] = $c['sub_count'];
+        }
+        unset($c);
+
+        // Determine main categories
+        $rootIds = $childrenMap[0] ?? [];
+        if (count($rootIds) === 1 && isset($childrenMap[$rootIds[0]])) {
+            $mainCatIds = $childrenMap[$rootIds[0]];
+        } else {
+            $mainCatIds = $rootIds;
+        }
+        $mainCategories = [];
+        foreach ($mainCatIds as $mId) {
+            if (isset($catById[$mId])) $mainCategories[] = $catById[$mId];
+        }
+
+        // If no catId given, take the first main category
+        if (!$catId || !isset($catById[$catId])) {
+            $firstCat = !empty($mainCategories) ? $mainCategories[0] : null;
+            if ($firstCat) {
+                $catId = (int)$firstCat['id'];
+            } else {
+                header('Location: /sodai-dorkar/public/');
+                exit;
+            }
+        }
+
+        $currentCategory = $catById[$catId];
+
+        // Determine Parent Category and Subcategories list
+        $parentCategory = null;
+        $subCategories = [];
+
+        if (!empty($childrenMap[$catId])) {
+            // Category has children (e.g. user selected 'রান্নাবান্না')
+            $parentCategory = $currentCategory;
+            foreach ($childrenMap[$catId] as $childId) {
+                if (isset($catById[$childId])) {
+                    $subCategories[] = $catById[$childId];
+                }
+            }
+        } elseif (!empty($currentCategory['parent_id']) && isset($catById[$currentCategory['parent_id']]) && $currentCategory['parent_id'] != 1) {
+            // Subcategory whose parent is not root 1 (e.g. user selected 'চাল')
+            $parentCategory = $catById[$currentCategory['parent_id']];
+            if ($subId === null) {
+                $subId = $catId; // Default subcategory to currentCategory
+            }
+            if (!empty($childrenMap[$parentCategory['id']])) {
+                foreach ($childrenMap[$parentCategory['id']] as $childId) {
+                    if (isset($catById[$childId])) {
+                        $subCategories[] = $catById[$childId];
+                    }
+                }
+            }
+        } else {
+            $parentCategory = $currentCategory;
+        }
+
+        $activeSubId = $subId;
+        $activeSubCategory = ($activeSubId && isset($catById[$activeSubId])) ? $catById[$activeSubId] : null;
+
+        // Determine category scope for products
+        $targetScopeCatId = $activeSubId ?: ($parentCategory ? $parentCategory['id'] : $currentCategory['id']);
+        $filterCatIds = $this->getCategoryDescendantIds($targetScopeCatId);
+        
+        $parentAllCatIds = $this->getCategoryDescendantIds($parentCategory ? $parentCategory['id'] : $currentCategory['id']);
+
+        // Fetch brands available in this category hierarchy
+        $brands = [];
+        if (!empty($parentAllCatIds)) {
+            $inPlaces = implode(',', array_fill(0, count($parentAllCatIds), '?'));
+            $bStmt = $this->db->query("SELECT b.id, b.name, COUNT(p.id) as prod_count 
+                FROM brands b 
+                JOIN products p ON p.brand_id = b.id 
+                WHERE p.category_id IN ($inPlaces) AND p.availability_status = 'in_stock'
+                GROUP BY b.id, b.name 
+                ORDER BY b.name ASC", $parentAllCatIds);
+            $brands = $bStmt->fetchAll();
+        }
+
+        // Fetch min & max price in this category
+        $minPriceBound = 0;
+        $maxPriceBound = 1000;
+        if (!empty($parentAllCatIds)) {
+            $inPlaces = implode(',', array_fill(0, count($parentAllCatIds), '?'));
+            $pStmt = $this->db->query("SELECT MIN(sell_price) as min_p, MAX(sell_price) as max_p FROM products WHERE category_id IN ($inPlaces)", $parentAllCatIds);
+            $priceRow = $pStmt->fetch();
+            if ($priceRow && $priceRow['max_p'] !== null) {
+                $minPriceBound = (float)$priceRow['min_p'];
+                $maxPriceBound = (float)$priceRow['max_p'];
+            }
+        }
+
+        // Build product query with filters
+        $sql = "SELECT products.*, categories.name as category_name, brands.name as brand_name 
+                FROM products 
+                LEFT JOIN categories ON products.category_id = categories.id
+                LEFT JOIN brands ON products.brand_id = brands.id 
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filterCatIds)) {
+            $inPlaceholders = [];
+            foreach ($filterCatIds as $idx => $fId) {
+                $pKey = "cat_" . $idx;
+                $inPlaceholders[] = ":" . $pKey;
+                $params[$pKey] = $fId;
+            }
+            $sql .= " AND products.category_id IN (" . implode(',', $inPlaceholders) . ")";
+        }
+
+        if ($inStockOnly) {
+            $sql .= " AND products.availability_status = 'in_stock'";
+        }
+
+        if ($selectedBrand) {
+            $sql .= " AND products.brand_id = :brand_id";
+            $params['brand_id'] = $selectedBrand;
+        }
+
+        if ($minPrice !== null) {
+            $sql .= " AND products.sell_price >= :min_price";
+            $params['min_price'] = $minPrice;
+        }
+
+        if ($maxPrice !== null) {
+            $sql .= " AND products.sell_price <= :max_price";
+            $params['max_price'] = $maxPrice;
+        }
+
+        if ($isDeals) {
+            $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
+        }
+
+        if ($search) {
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
+            $params['search'] = "%{$search}%";
+            $params['search2'] = "%{$search}%";
+        }
+
+        switch ($sort) {
+            case 'price_asc':
+                $sql .= " ORDER BY products.sell_price ASC";
+                break;
+            case 'price_desc':
+                $sql .= " ORDER BY products.sell_price DESC";
+                break;
+            case 'discount':
+                $sql .= " ORDER BY (products.regular_price - products.sell_price) DESC";
+                break;
+            case 'name_asc':
+                $sql .= " ORDER BY products.name ASC";
+                break;
+            case 'newest':
+            default:
+                $sql .= " ORDER BY products.created_at DESC";
+                break;
+        }
+
+        $stmt = $this->db->query($sql, $params);
+        $products = $stmt->fetchAll();
+
+        return View::render('shop/category', [
+            'products' => $products,
+            'currentCategory' => $currentCategory,
+            'parentCategory' => $parentCategory,
+            'subCategories' => $subCategories,
+            'activeSubId' => $activeSubId,
+            'activeSubCategory' => $activeSubCategory,
+            'allCategories' => $allCategories,
+            'mainCategories' => $mainCategories,
+            'childrenMap' => $childrenMap,
+            'brands' => $brands,
+            'selectedBrand' => $selectedBrand,
+            'minPriceBound' => $minPriceBound,
+            'maxPriceBound' => $maxPriceBound,
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
+            'sort' => $sort,
+            'inStockOnly' => $inStockOnly,
+            'isDeals' => $isDeals,
+            'search' => $search
+        ]);
+    }
+
+    public function cart() {
+        $cart = $_SESSION['cart'] ?? [];
+        $subtotal = 0;
+        foreach ($cart as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
+        }
+        $locale = Lang::locale();
+        $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, $locale);
+        $deliveryCalc = \Models\Setting::calculateDeliveryCharge($subtotal);
+
+        return View::render('shop/cart', [
+            'cart' => $cart,
+            'subtotal' => $subtotal,
+            'spendMoreOffers' => $spendMoreOffers,
+            'deliveryCalc' => $deliveryCalc
+        ]);
+    }
+
+    public function addToCart() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $productId = $_POST['product_id'] ?? null;
+            $quantity = (int)($_POST['quantity'] ?? 1);
+            $variantTitle = trim($_POST['variant_title'] ?? '');
+            $variantPrice = isset($_POST['variant_price']) && $_POST['variant_price'] !== '' ? floatval($_POST['variant_price']) : null;
+            $variantQty = isset($_POST['variant_qty']) && $_POST['variant_qty'] !== '' ? floatval($_POST['variant_qty']) : 1.000;
+
+            if ($productId) {
+                // Fetch product to verify and get current price
+                $stmt = $this->db->query("SELECT * FROM products WHERE id = ?", [$productId]);
+                $product = $stmt->fetch();
+
+                if ($product && $product['availability_status'] === 'in_stock') {
+                    if (!isset($_SESSION['cart'])) {
+                        $_SESSION['cart'] = [];
+                    }
+
+                    $cartKey = $variantTitle ? $productId . '_' . md5($variantTitle) : (string)$productId;
+                    $price = ($variantPrice !== null && $variantPrice > 0) ? $variantPrice : floatval($product['sell_price']);
+                    $displayName = $variantTitle ? $product['name'] . " ({$variantTitle})" : $product['name'];
+                    $regPrice = null;
+                    if (!empty($product['regular_price'])) {
+                        $regPrice = $variantTitle ? floatval($product['regular_price']) * ($variantQty > 0 ? $variantQty : 1) : floatval($product['regular_price']);
+                    }
+
+                    if (isset($_SESSION['cart'][$cartKey])) {
+                        $_SESSION['cart'][$cartKey]['quantity'] += $quantity;
+                    } else {
+                        $_SESSION['cart'][$cartKey] = [
+                            'cart_key' => $cartKey,
+                            'product_id' => $product['id'],
+                            'name' => $displayName,
+                            'price' => $price,
+                            'regular_price' => $regPrice,
+                            'image' => !empty($product['image_path']) ? $product['image_path'] : '/sodai-dorkar/public/images/default-product.svg',
+                            'quantity' => $quantity,
+                            'base_qty' => $variantQty > 0 ? $variantQty : 1.000,
+                            'variant_title' => $variantTitle,
+                            'stock' => $product['stock_qty']
+                        ];
+                    }
+                    
+                    // AJAX response
+                    if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                        header('Content-Type: application/json');
+                        $cartCount = 0;
+                        $cartTotal = 0;
+                        foreach ($_SESSION['cart'] as $item) {
+                            $cartCount += $item['quantity'];
+                            $cartTotal += $item['price'] * $item['quantity'];
+                        }
+                        $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, Lang::locale());
+                        echo json_encode([
+                            'status' => 'success',
+                            'cart_count' => $cartCount,
+                            'cart_total' => $cartTotal,
+                            'cart' => $_SESSION['cart'],
+                            'product_name' => $displayName,
+                            'spend_more_offers' => $spendMoreOffers,
+                            'message' => Lang::get('toast_added_to_cart')
+                        ]);
+                        exit;
+                    }
+
+                    header('Location: /sodai-dorkar/public/cart');
+                    exit;
+                }
+            }
+        }
+        header('Location: /sodai-dorkar/public/');
+        exit;
+    }
+
+    public function removeFromCart() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $key = $_POST['product_id'] ?? ($_POST['cart_key'] ?? null);
+            if ($key && isset($_SESSION['cart'][$key])) {
+                unset($_SESSION['cart'][$key]);
+            }
+
+            // AJAX response
+            if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                $cartCount = 0;
+                $subtotal = 0;
+                foreach (($_SESSION['cart'] ?? []) as $item) {
+                    $cartCount += $item['quantity'];
+                    $subtotal += $item['price'] * $item['quantity'];
+                }
+                $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
+                echo json_encode([
+                    'status' => 'success',
+                    'cart_count' => $cartCount,
+                    'cart_total' => $subtotal,
+                    'subtotal' => $subtotal,
+                    'cart' => $_SESSION['cart'] ?? [],
+                    'spend_more_offers' => $spendMoreOffers
+                ]);
+                exit;
+            }
+        }
+        header('Location: /sodai-dorkar/public/cart');
+        exit;
+    }
+    
+    public function updateCart() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $key = $_POST['product_id'] ?? ($_POST['cart_key'] ?? null);
+            $quantity = (int)($_POST['quantity'] ?? 1);
+            if ($key && isset($_SESSION['cart'][$key])) {
+                if ($quantity > 0) {
+                    $_SESSION['cart'][$key]['quantity'] = $quantity;
+                } else {
+                    unset($_SESSION['cart'][$key]);
+                }
+            }
+
+            // AJAX response
+            if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                $cartCount = 0;
+                $subtotal = 0;
+                foreach (($_SESSION['cart'] ?? []) as $item) {
+                    $cartCount += $item['quantity'];
+                    $subtotal += $item['price'] * $item['quantity'];
+                }
+                $itemTotal = 0;
+                if (isset($_SESSION['cart'][$key])) {
+                    $itemTotal = $_SESSION['cart'][$key]['price'] * $_SESSION['cart'][$key]['quantity'];
+                }
+                $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
+                echo json_encode([
+                    'status' => 'success',
+                    'cart_count' => $cartCount,
+                    'cart_total' => $subtotal,
+                    'subtotal' => $subtotal,
+                    'item_total' => $itemTotal,
+                    'quantity' => $quantity,
+                    'cart' => $_SESSION['cart'] ?? [],
+                    'spend_more_offers' => $spendMoreOffers
+                ]);
+                exit;
+            }
+        }
+        header('Location: /sodai-dorkar/public/cart');
+        exit;
+    }
+
+    public function checkout() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        
+        $cart = $_SESSION['cart'] ?? [];
+        if (empty($cart)) {
+            header('Location: /sodai-dorkar/public/');
+            exit;
+        }
+
+        // Must be logged in
+        if (empty($_SESSION['customer_id'])) {
+            header('Location: /sodai-dorkar/public/checkout/auth');
+            exit;
+        }
+
+        // Stock validation — remove items that are no longer available
+        foreach ($cart as $key => $item) {
+            $pid = $item['product_id'] ?? $key;
+            $stmt = $this->db->query("SELECT availability_status, sell_price FROM products WHERE id = ?", [$pid]);
+            $product = $stmt->fetch();
+            if (!$product || $product['availability_status'] !== 'in_stock') {
+                unset($_SESSION['cart'][$key]);
+            }
+        }
+
+        $cart = $_SESSION['cart'] ?? [];
+        if (empty($cart)) {
+            header('Location: /sodai-dorkar/public/');
+            exit;
+        }
+        
+        // Fetch customer details
+        $stmt = $this->db->query("
+            SELECT c.*, a.name as area_name, z.name as zone_name, p.name as point_name 
+            FROM customers c
+            LEFT JOIN areas a ON c.area_id = a.id
+            LEFT JOIN zones z ON c.zone_id = z.id
+            LEFT JOIN points p ON c.point_id = p.id
+            WHERE c.id = ?
+        ", [$_SESSION['customer_id']]);
+        $customer = $stmt->fetch();
+
+        // Calculate subtotal & estimated weight
+        $subtotal = 0;
+        $totalWeightKg = 0;
+        foreach ($cart as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
+            $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+        }
+
+        // Calculate delivery charge
+        $deliveryCalc = \Models\Setting::calculateDeliveryCharge(
+            $subtotal,
+            $customer['area_id'] ?? null,
+            $customer['point_id'] ?? null,
+            [
+                'is_cod' => true,
+                'weight_kg' => $totalWeightKg
+            ]
+        );
+
+        $ecommerceSettings = \Models\Setting::getMultiple([
+            'min_order_amount',
+            'max_order_amount',
+            'express_delivery_enabled',
+            'express_delivery_charge',
+            'express_delivery_cutoff',
+            'time_slots_enabled',
+            'time_slot_morning_fee',
+            'time_slot_afternoon_fee',
+            'time_slot_evening_fee',
+            'delivery_bad_weather_surcharge_enabled',
+            'delivery_bad_weather_fee',
+            'delivery_bad_weather_notice'
+        ]);
+
+        $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
+
+        return View::render('shop/checkout', [
+            'cart' => $cart,
+            'customer' => $customer,
+            'deliveryCalc' => $deliveryCalc,
+            'ecommerceSettings' => $ecommerceSettings,
+            'subtotal' => $subtotal,
+            'spendMoreOffers' => $spendMoreOffers
+        ]);
+    }
+
+    public function placeOrder() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if (empty($_SESSION['customer_id'])) {
+            header('Location: /sodai-dorkar/public/checkout/auth');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $cart = $_SESSION['cart'] ?? [];
+            if (empty($cart)) {
+                header('Location: /sodai-dorkar/public/');
+                exit;
+            }
+
+            try {
+                $pdo = $this->db->getConnection();
+                $pdo->beginTransaction();
+
+                // 1. Get customer details for the order
+                $customerId = $_SESSION['customer_id'];
+                $stmt = $this->db->query("SELECT area_id, zone_id, point_id, address_details, phone FROM customers WHERE id = ?", [$customerId]);
+                $customer = $stmt->fetch();
+                
+                if (!$customer) {
+                    throw new \Exception("Customer not found");
+                }
+
+                $areaId = $customer['area_id'] ?? null;
+                $zoneId = $customer['zone_id'] ?? null;
+                $pointId = $customer['point_id'] ?? null;
+                $address = $customer['address_details'];
+                $phone = $customer['phone'];
+
+                // 2. Validate Order Subtotal & Weight
+                $subtotal = 0;
+                $totalWeightKg = 0;
+                foreach ($cart as $item) {
+                    $subtotal += $item['price'] * $item['quantity'];
+                    $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+                }
+
+                $ecommerceSettings = \Models\Setting::getMultiple([
+                    'min_order_amount',
+                    'max_order_amount'
+                ]);
+
+                $minOrder = floatval($ecommerceSettings['min_order_amount'] ?? 0);
+                $maxOrder = floatval($ecommerceSettings['max_order_amount'] ?? 0);
+
+                if ($minOrder > 0 && $subtotal < $minOrder) {
+                    throw new \Exception("Minimum order amount is ৳" . number_format($minOrder, 2));
+                }
+                if ($maxOrder > 0 && $subtotal > $maxOrder) {
+                    throw new \Exception("Maximum order amount is ৳" . number_format($maxOrder, 2));
+                }
+
+                // Payment method & options
+                $rawPayment = $_POST['payment_method'] ?? 'cash';
+                $paymentMethod = ($rawPayment === 'cod') ? 'cash' : $rawPayment;
+                $isExpress = !empty($_POST['is_express']);
+                
+                // Delivery Calculation
+                $deliveryCalc = \Models\Setting::calculateDeliveryCharge(
+                    $subtotal,
+                    $areaId,
+                    $pointId,
+                    [
+                        'is_cod' => ($paymentMethod === 'cash'),
+                        'is_express' => $isExpress,
+                        'weight_kg' => $totalWeightKg
+                    ]
+                );
+
+                // Spend-More Promotional Offers Calculation
+                $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
+                $milestoneDiscount = floatval($spendMoreOffers['discount_amount'] ?? 0);
+                
+                $deliveryCharge = $deliveryCalc['final_charge'] ?? 0.00;
+                $deliveryDiscount = ($deliveryCalc['discount'] ?? 0.00) + $milestoneDiscount;
+                $originalAmount = $subtotal + floatval($deliveryCalc['base_charge'] ?? $deliveryCharge);
+                $totalAmount = max(0, round($subtotal - $milestoneDiscount + $deliveryCharge, 2));
+
+                // Time slot / delivery instructions
+                $selectedSlot = trim($_POST['delivery_slot'] ?? '');
+                $riderNote = !empty($selectedSlot) ? "Preferred Window: " . $selectedSlot : null;
+                if ($isExpress) {
+                    $riderNote = "⚡ EXPRESS 30-MIN PRIORITY. " . ($riderNote ?? '');
+                }
+
+                // Add Free Gift & Perk details to parcel instructions
+                $adminNote = null;
+                if (!empty($spendMoreOffers['unlocked_gifts'])) {
+                    $giftText = "🎁 FREE GIFT: " . implode(', ', $spendMoreOffers['unlocked_gifts']);
+                    $riderNote = $giftText . ". " . ($riderNote ?? '');
+                    $adminNote = $giftText;
+                }
+                if (!empty($spendMoreOffers['unlocked_perks'])) {
+                    $perkText = "🌟 SPECIAL PERK: " . implode(', ', $spendMoreOffers['unlocked_perks']);
+                    $adminNote = ($adminNote ? $adminNote . " | " : "") . $perkText;
+                }
+                $amountChangeReason = $milestoneDiscount > 0 ? "Promotional offer discount: ৳" . number_format($milestoneDiscount, 2) : null;
+
+                $this->db->query("INSERT INTO orders (customer_id, area_id, zone_id, point_id, status, total_amount, original_amount, delivery_charge, delivery_discount, amount_changed_by, amount_change_reason, payment_method, rider_note, admin_note, delivery_address, contact_number) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, 'system', ?, ?, ?, ?, ?, ?)",
+                    [$customerId, $areaId, $zoneId, $pointId, $totalAmount, $originalAmount, $deliveryCharge, $deliveryDiscount, $amountChangeReason, $paymentMethod, $riderNote, $adminNote, $address, $phone]);
+                $orderId = $pdo->lastInsertId();
+
+                // 3. Create Order Items & Deduct Base Stock
+                $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, unit_title, base_qty, quantity, price) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmtStock = $pdo->prepare("UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?");
+
+                foreach ($cart as $key => $item) {
+                    $pid = $item['product_id'] ?? $key;
+                    $unitTitle = $item['variant_title'] ?? null;
+                    $baseQty = floatval($item['base_qty'] ?? 1.000);
+                    $qtyOrdered = intval($item['quantity']);
+                    $deductTotal = $baseQty * $qtyOrdered;
+
+                    $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qtyOrdered, $item['price']]);
+                    $stmtStock->execute([$deductTotal, $pid]);
+                }
+
+                $pdo->commit();
+                
+                // Auto-assignment happens later in Dispatch now
+
+                // Add tracking log after commit
+                try {
+                    $trackOrderModel = new \Models\Order();
+                    $trackOrderModel->addTrackingLog($orderId, 'pending', 'Consignment created by Customer (Web).');
+                } catch (\Exception $ex) {}
+
+                // Recalculate Product Demand (On-Demand Feature)
+                try {
+                    \Models\Product::recalculateDemand();
+                } catch (\Exception $ex) {
+                    // Fail gracefully
+                }
+
+                // Clear cart
+                unset($_SESSION['cart']);
+
+                // Redirect to success
+                header('Location: /sodai-dorkar/public/order/success?order_id=' . $orderId);
+                exit;
+
+            } catch (\Exception $e) {
+                $pdo->rollBack();
+                die("Order placement failed: " . $e->getMessage());
+            }
+        }
+    }
+    
+    public function success() {
+        $orderId = $_GET['order_id'] ?? null;
+        return View::render('shop/success', [
+            'orderId' => $orderId
+        ]);
+    }
+
+    public function setLanguage() {
+        $lang = $_POST['lang'] ?? $_GET['lang'] ?? 'en';
+        Lang::setLocale($lang);
+        
+        // Redirect back to previous page
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/sodai-dorkar/public/';
+        // Remove any existing lang param from referer
+        $referer = preg_replace('/([?&])lang=[^&]+/', '', $referer);
+        header('Location: ' . $referer);
+        exit;
+    }
+
+    public function cartData() {
+        header('Content-Type: application/json');
+        $cart = $_SESSION['cart'] ?? [];
+        $cartCount = 0;
+        $cartTotal = 0;
+        foreach ($cart as $item) {
+            $cartCount += $item['quantity'];
+            $cartTotal += $item['price'] * $item['quantity'];
+        }
+        echo json_encode([
+            'status' => 'success',
+            'cart_count' => $cartCount,
+            'cart_total' => $cartTotal,
+            'cart' => $cart
+        ]);
+        exit;
+    }
+
+    public function getZones() {
+        header('Content-Type: application/json');
+        $areaId = $_GET['area_id'] ?? null;
+        if (!$areaId) {
+            echo json_encode([]);
+            exit;
+        }
+        $stmt = $this->db->query("SELECT id, name FROM zones WHERE area_id = ? ORDER BY name ASC", [$areaId]);
+        echo json_encode($stmt->fetchAll());
+        exit;
+    }
+
+    public function getPoints() {
+        header('Content-Type: application/json');
+        $zoneId = $_GET['zone_id'] ?? null;
+        if (!$zoneId) {
+            echo json_encode([]);
+            exit;
+        }
+        $stmt = $this->db->query("SELECT id, name FROM points WHERE zone_id = ? ORDER BY name ASC", [$zoneId]);
+        echo json_encode($stmt->fetchAll());
+        exit;
+    }
+}
