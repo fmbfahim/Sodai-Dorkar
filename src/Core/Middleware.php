@@ -6,9 +6,11 @@ class Middleware {
     public static function auth($allowedRoles = []) {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
         // 1. Check if logged in
         if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-            header('Location: /sodai-dorkar/public/login');
+            header("Location: {$base}/login");
             exit;
         }
 
@@ -21,12 +23,12 @@ class Middleware {
                 
                 // Redirect based on their actual role to avoid stuck pages
                 if ($_SESSION['role'] === 'delivery_man') {
-                    header('Location: /sodai-dorkar/public/delivery/dashboard');
+                    header("Location: {$base}/delivery/dashboard");
                 } elseif ($_SESSION['role'] === 'admin') {
-                    header('Location: /sodai-dorkar/public/admin/dashboard');
+                    header("Location: {$base}/admin/dashboard");
                 } else {
                     echo "403 Forbidden - You do not have access to this page.";
-                    echo "<br><a href='/sodai-dorkar/public/logout'>Logout</a>";
+                    echo "<br><a href='{$base}/logout'>Logout</a>";
                 }
                 exit;
             }

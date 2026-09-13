@@ -36,12 +36,13 @@ class AuthController {
             $_SESSION['name'] = $user['name'];
 
             // Redirect based on role
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
             if ($user['role'] === 'delivery_man') {
-                header('Location: /sodai-dorkar/public/delivery/dashboard');
+                header("Location: {$base}/delivery/dashboard");
             } elseif ($user['role'] === 'admin') {
-                header('Location: /sodai-dorkar/public/admin/dashboard');
+                header("Location: {$base}/admin/dashboard");
             } else {
-                header('Location: /sodai-dorkar/public/');
+                header("Location: {$base}/");
             }
             exit;
         } else {
@@ -52,7 +53,8 @@ class AuthController {
     public function logout() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         session_destroy();
-        header('Location: /sodai-dorkar/public/login');
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        header("Location: {$base}/login");
         exit;
     }
 }
