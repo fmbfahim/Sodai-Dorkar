@@ -1,4 +1,4 @@
 <?php
-// Redirect to the public folder which handles all routing
-header("Location: public/");
-exit;
+// Forward directly to public/index.php without exposing /public/ in the browser URL
+require_once __DIR__ . '/public/index.php';
+

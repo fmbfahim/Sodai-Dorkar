@@ -1,7 +1,15 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Compatibility: Map /sodai-dorkar/public/ requests to /public/
-    RewriteRule ^sodai-dorkar/public/(.*)$ public/$1 [L,QSA]
-    RewriteRule ^sodai-dorkar/public$ public/ [L,R=301]
+    # Strip /public/ from browser address bar if someone opens it
+    RewriteCond %{THE_REQUEST} \s/public/([^\s?]*) [NC]
+    RewriteRule ^ %1 [R=301,L]
+
+    # Strip legacy /sodai-dorkar/public/ if accessed
+    RewriteCond %{THE_REQUEST} \s/sodai-dorkar/public/([^\s?]*) [NC]
+    RewriteRule ^ %1 [R=301,L]
+
+    # Internally rewrite everything to the public folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>
