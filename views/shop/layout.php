@@ -22,6 +22,7 @@ foreach ($cart as $item) {
     $cartTotal += (float)($item['price'] ?? 0) * (int)($item['quantity'] ?? 0);
 }
 $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, $locale);
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 ?>
 <!DOCTYPE html>
 <html lang="<?= $locale ?>">
@@ -34,7 +35,8 @@ $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, $locale);
     <meta name="robots" content="noindex, nofollow">
     <?php endif; ?>
     <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
-    <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
+    <script>window.APP_BASE = '<?= $base ?>';</script>
+    <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -889,7 +891,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
 
-            fetch('/sodai-dorkar/public/cart/update', {
+            fetch((window.APP_BASE || '') + '/cart/update', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
@@ -946,7 +948,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
 
-            fetch('/sodai-dorkar/public/cart/add', {
+            fetch((window.APP_BASE || '') + '/cart/add', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
@@ -1089,7 +1091,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             btn.disabled = true;
             btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-emerald-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-            fetch('/sodai-dorkar/public/cart/add', {
+            fetch((window.APP_BASE || '') + '/cart/add', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
@@ -1121,7 +1123,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
 
-            fetch('/sodai-dorkar/public/cart/update', {
+            fetch((window.APP_BASE || '') + '/cart/update', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData

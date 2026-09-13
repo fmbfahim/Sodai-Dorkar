@@ -420,6 +420,99 @@ class ShopController {
         ]);
     }
 
+    public function product() {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $sku = trim($_GET['sku'] ?? '');
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+        if (!$id && !$sku) {
+            header("Location: {$base}/");
+            exit;
+        }
+
+        if ($id) {
+            $stmt = $this->db->query("
+                SELECT p.*, c.name as category_name, c.parent_id as category_parent_id, b.name as brand_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                LEFT JOIN brands b ON p.brand_id = b.id 
+                WHERE p.id = ?
+            ", [$id]);
+        } else {
+            $stmt = $this->db->query("
+                SELECT p.*, c.name as category_name, c.parent_id as category_parent_id, b.name as brand_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                LEFT JOIN brands b ON p.brand_id = b.id 
+                WHERE p.sku = ?
+            ", [$sku]);
+        }
+        $product = $stmt->fetch();
+
+        if (!$product) {
+            header("Location: {$base}/");
+            exit;
+        }
+
+        // Fetch parent category if exists
+        $parentCategory = null;
+        if (!empty($product['category_parent_id'])) {
+            $pCatStmt = $this->db->query("SELECT * FROM categories WHERE id = ?", [$product['category_parent_id']]);
+            $parentCategory = $pCatStmt->fetch();
+        }
+
+        // Fetch related products (same category or popular items)
+        $relatedProducts = [];
+        if (!empty($product['category_id'])) {
+            $relStmt = $this->db->query("
+                SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE p.category_id = ? AND p.id != ? AND p.availability_status = 'in_stock' 
+                ORDER BY p.id DESC LIMIT 8
+            ", [$product['category_id'], $product['id']]);
+            $relatedProducts = $relStmt->fetchAll();
+        }
+
+        if (count($relatedProducts) < 4) {
+            $moreStmt = $this->db->query("
+                SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE p.id != ? AND p.availability_status = 'in_stock' 
+                ORDER BY p.id DESC LIMIT 6
+            ", [$product['id']]);
+            $moreProds = $moreStmt->fetchAll();
+            $existingIds = array_column($relatedProducts, 'id');
+            foreach ($moreProds as $mp) {
+                if (!in_array($mp['id'], $existingIds) && count($relatedProducts) < 8) {
+                    $relatedProducts[] = $mp;
+                }
+            }
+        }
+
+        // Parse custom variants or heuristics
+        $variants = [];
+        if (!empty($product['unit_variants_json'])) {
+            $decoded = json_decode($product['unit_variants_json'], true);
+            if (is_array($decoded)) {
+                $variants = $decoded;
+            }
+        }
+
+        // Locale
+        $locale = Lang::locale();
+
+        return View::render('shop/product_detail', [
+            'product' => $product,
+            'relatedProducts' => $relatedProducts,
+            'parentCategory' => $parentCategory,
+            'variants' => $variants,
+            'locale' => $locale
+        ]);
+    }
+
     public function cart() {
         $cart = $_SESSION['cart'] ?? [];
         $subtotal = 0;

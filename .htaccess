@@ -1,13 +1,18 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Strip /public/ from browser address bar if someone opens it
+    # Only strip /public/ via 301 for GET/HEAD requests (NEVER for POST/PUT/DELETE)
+    RewriteCond %{REQUEST_METHOD} !^(POST|PUT|DELETE)$ [NC]
     RewriteCond %{THE_REQUEST} \s/public/([^\s?]*) [NC]
     RewriteRule ^ %1 [R=301,L]
 
-    # Strip legacy /sodai-dorkar/public/ if accessed
+    # Only strip legacy /sodai-dorkar/public/ via 301 for GET/HEAD requests
+    RewriteCond %{REQUEST_METHOD} !^(POST|PUT|DELETE)$ [NC]
     RewriteCond %{THE_REQUEST} \s/sodai-dorkar/public/([^\s?]*) [NC]
     RewriteRule ^ %1 [R=301,L]
+
+    # Internally route legacy paths directly to public folder
+    RewriteRule ^sodai-dorkar/public/(.*)$ public/$1 [L,QSA]
 
     # Internally rewrite everything to the public folder
     RewriteCond %{REQUEST_URI} !^/public/

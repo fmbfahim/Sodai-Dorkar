@@ -4,6 +4,7 @@ use Core\Lang;
 Lang::init();
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $locale = Lang::locale();
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
 // Unit helper if not already defined
 if (!function_exists('getProductUnits')) {
@@ -631,17 +632,17 @@ if (!empty($search)) $activeFilterCount++;
                                     <?php endif; ?>
                                 </div>
 
-                                <!-- Centered Product Image -->
-                                <div class="relative bg-white pt-8 pb-3 px-3 flex items-center justify-center min-h-[155px] sm:min-h-[175px]">
+                                <!-- Centered Product Image (Link to Details) -->
+                                <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white pt-8 pb-3 px-3 flex items-center justify-center min-h-[155px] sm:min-h-[175px] block cursor-pointer">
                                     <?php 
-                                    $productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
+                                    $productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : $base . '/images/default-product.svg';
                                     ?>
                                     <img src="<?= $productImg ?>" 
                                          alt="<?= htmlspecialchars($product['name']) ?>" 
                                          class="max-h-32 sm:max-h-36 w-auto max-w-[85%] object-contain transition-transform duration-300 group-hover:scale-105" 
                                          loading="lazy"
-                                         onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
-                                </div>
+                                         onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                                </a>
 
                                 <!-- Details Section -->
                                 <div class="p-3 sm:p-4 pt-1 flex flex-col flex-grow">
@@ -649,7 +650,9 @@ if (!empty($search)) $activeFilterCount++;
                                     <!-- Product Title -->
                                     <h3 class="font-bold text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 min-h-[2.4rem] mb-1.5 group-hover:text-emerald-700 transition-colors" 
                                         title="<?= htmlspecialchars($product['name']) ?>">
-                                        <?= htmlspecialchars($product['name']) ?>
+                                        <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="hover:text-emerald-700 transition-colors">
+                                            <?= htmlspecialchars($product['name']) ?>
+                                        </a>
                                     </h3>
 
                                     <!-- Unit Weight Display -->

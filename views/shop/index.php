@@ -4,6 +4,7 @@ use Core\Lang;
 Lang::init();
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $locale = Lang::locale();
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
 // Helper function to extract and format unit badges matching the reference design
 if (!function_exists('getProductUnits')) {
@@ -654,24 +655,26 @@ $isCatSelected = !empty($currentCategory) || !empty($parentCategory);
                         <?php endif; ?>
                     </div>
 
-                    <!-- Centered Image Container -->
-                    <div class="relative bg-white pt-8 pb-3 px-3 flex items-center justify-center min-h-[155px] sm:min-h-[180px]">
+                    <!-- Centered Image Container (Link to Details) -->
+                    <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white pt-8 pb-3 px-3 flex items-center justify-center min-h-[155px] sm:min-h-[180px] block cursor-pointer">
                         <?php 
-                        $productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
+                        $productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : $base . '/images/default-product.svg';
                         ?>
                         <img src="<?= $productImg ?>" 
                              alt="<?= htmlspecialchars($product['name']) ?>" 
                              class="max-h-32 sm:max-h-36 w-auto max-w-[85%] object-contain transition-transform duration-300 group-hover:scale-105" 
                              loading="lazy"
-                             onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
-                    </div>
+                             onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                    </a>
 
                     <!-- Details Section -->
                     <div class="p-3 sm:p-4 pt-1 flex flex-col flex-grow">
                         <!-- Product Title -->
                         <h3 class="font-bold text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 min-h-[2.4rem] mb-1.5 group-hover:text-emerald-700 transition-colors" 
                             title="<?= htmlspecialchars($product['name']) ?>">
-                            <?= htmlspecialchars($product['name']) ?>
+                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="hover:text-emerald-700 transition-colors">
+                                <?= htmlspecialchars($product['name']) ?>
+                            </a>
                         </h3>
 
                         <!-- Unit Weight Display -->
@@ -989,7 +992,7 @@ function cardAddToCart(productId, btn) {
     btn.disabled = true;
     btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-emerald-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-    fetch('/sodai-dorkar/public/cart/add', {
+    fetch((window.APP_BASE || '') + '/cart/add', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
@@ -1021,7 +1024,7 @@ function cardChangeQty(productId, delta, btn) {
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
 
-    fetch('/sodai-dorkar/public/cart/update', {
+    fetch((window.APP_BASE || '') + '/cart/update', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData

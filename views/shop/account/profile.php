@@ -1,4 +1,4 @@
-﻿<?php ob_start(); ?>
+<?php ob_start(); ?>
 
 <div class="space-y-5">
     <?php if (!empty($success)): ?>
@@ -102,7 +102,7 @@ function loadZones(areaId) {
     zoneSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
     pointSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>';
     if (!areaId) { zoneSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>'; return; }
-    fetch('/sodai-dorkar/public/api/zones?area_id=' + areaId)
+    fetch((window.APP_BASE || '') + '/api/zones?area_id=' + areaId)
         .then(r => r.json()).then(data => {
             zoneSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>';
             data.forEach(z => { zoneSelect.innerHTML += '<option value="'+z.id+'">'+z.name+'</option>'; });
@@ -112,7 +112,7 @@ function loadPoints(zoneId) {
     const pointSelect = document.getElementById('profilePoint');
     pointSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
     if (!zoneId) { pointSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>'; return; }
-    fetch('/sodai-dorkar/public/api/points?zone_id=' + zoneId)
+    fetch((window.APP_BASE || '') + '/api/points?zone_id=' + zoneId)
         .then(r => r.json()).then(data => {
             pointSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>';
             data.forEach(p => { pointSelect.innerHTML += '<option value="'+p.id+'">'+p.name+'</option>'; });

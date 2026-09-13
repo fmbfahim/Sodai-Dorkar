@@ -203,7 +203,7 @@ document.getElementById('area_id').addEventListener('change', function() {
     pointSelect.innerHTML = '<option value="" disabled selected>Select Zone First</option>';
     pointSelect.disabled = true;
 
-    fetch(`/sodai-dorkar/public/api/zones?area_id=${areaId}`)
+    fetch(`${window.APP_BASE || ''}/api/zones?area_id=${areaId}`)
         .then(res => res.json())
         .then(data => {
             zoneSelect.innerHTML = '<option value="" disabled selected>Select Zone</option>';
@@ -223,7 +223,7 @@ document.getElementById('zone_id').addEventListener('change', function() {
     pointSelect.innerHTML = '<option value="" disabled selected>Loading...</option>';
     pointSelect.disabled = true;
 
-    fetch(`/sodai-dorkar/public/api/points?zone_id=${zoneId}`)
+    fetch(`${window.APP_BASE || ''}/api/points?zone_id=${zoneId}`)
         .then(res => res.json())
         .then(data => {
             pointSelect.innerHTML = '<option value="" disabled selected>Select Point</option>';

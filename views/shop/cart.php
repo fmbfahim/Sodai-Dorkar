@@ -146,7 +146,7 @@ function updateCartQty(productId, newQty) {
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
     
-    fetch('/sodai-dorkar/public/cart/update', {
+    fetch((window.APP_BASE || '') + '/cart/update', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
