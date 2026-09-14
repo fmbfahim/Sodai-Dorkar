@@ -17,9 +17,11 @@ class AdminController extends Controller {
         $db = new Database($config);
         $pdo = $db->getConnection();
 
-        // 1. Sales & Order Overview
+        // 1. Timeframe Definitions
         $today = date('Y-m-d');
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
         $thisMonth = date('Y-m');
+        $sevenDaysAgo = date('Y-m-d', strtotime('-7 days'));
 
         // Today's stats
         $stmt = $pdo->query("SELECT 
@@ -28,6 +30,22 @@ class AdminController extends Controller {
             FROM orders 
             WHERE DATE(created_at) = '{$today}'");
         $todayData = $stmt->fetch();
+
+        // Yesterday's stats
+        $stmt = $pdo->query("SELECT 
+            COUNT(*) as orders_count, 
+            COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as sales_amount 
+            FROM orders 
+            WHERE DATE(created_at) = '{$yesterday}'");
+        $yesterdayData = $stmt->fetch();
+
+        // Last 7 Days (Week) stats
+        $stmt = $pdo->query("SELECT 
+            COUNT(*) as orders_count, 
+            COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as sales_amount 
+            FROM orders 
+            WHERE DATE(created_at) >= '{$sevenDaysAgo}'");
+        $weekData = $stmt->fetch();
 
         // This Month's stats
         $stmt = $pdo->query("SELECT 
@@ -43,6 +61,11 @@ class AdminController extends Controller {
             COALESCE(SUM(CASE WHEN status = 'delivered' THEN total_amount ELSE 0 END), 0) as sales_amount 
             FROM orders");
         $allTimeData = $stmt->fetch();
+
+        // Average Order Value (AOV)
+        $totalOrdersCount = (int)($allTimeData['orders_count'] ?? 0);
+        $totalSalesSum = (float)($allTimeData['sales_amount'] ?? 0);
+        $aov = $totalOrdersCount > 0 ? round($totalSalesSum / $totalOrdersCount, 2) : 0;
 
         // 2. Orders Status Breakdown (Funnel)
         $statusCounts = [
@@ -68,8 +91,13 @@ class AdminController extends Controller {
         $newCustomersToday = (int)$pdo->query("SELECT COUNT(*) FROM customers WHERE DATE(created_at) = '{$today}'")->fetchColumn();
         $totalProducts = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
         $lowStockCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock_qty <= 5")->fetchColumn();
+        $outOfStockCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock_qty = 0")->fetchColumn();
 
-        // 4. HR & Workforce Integration
+        // 4. Delivery & Riders
+        $ridersCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'delivery_man' AND status = 'active'")->fetchColumn();
+        $deliveredToday = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND DATE(updated_at) = '{$today}'")->fetchColumn();
+
+        // 5. HR & Workforce Integration
         $hrStats = [
             'active_employees' => 0,
             'present_today' => 0,
@@ -82,10 +110,10 @@ class AdminController extends Controller {
             $hrStats['pending_leaves'] = (int)$pdo->query("SELECT COUNT(*) FROM leave_requests WHERE status = 'pending'")->fetchColumn();
             $hrStats['payroll_due'] = (float)$pdo->query("SELECT COALESCE(SUM(net_salary), 0) FROM payrolls WHERE salary_month = '{$thisMonth}' AND status != 'paid'")->fetchColumn();
         } catch (\Exception $e) {
-            // If HR tables not available yet, fail gracefully
+            // Gracefully handle if tables are not initialized
         }
 
-        // 5. Last 7 Days Sales Trend for Chart.js
+        // 6. Last 7 Days Sales Trend for Chart.js
         $chartLabels = [];
         $chartSales = [];
         $chartOrders = [];
@@ -103,12 +131,13 @@ class AdminController extends Controller {
             $chartSales[] = (float)($dayRes['total'] ?? 0);
         }
 
-        // 6. Top Selling Products
+        // 7. Top Selling Products
         $topProducts = [];
         try {
             $topProducts = $pdo->query("
                 SELECT p.id, p.name, p.sell_price, p.stock_qty, p.image_path,
-                       COALESCE(SUM(oi.quantity), 0) as units_sold
+                       COALESCE(SUM(oi.quantity), 0) as units_sold,
+                       COALESCE(SUM(oi.quantity * oi.price), 0) as total_revenue
                 FROM products p
                 LEFT JOIN order_items oi ON p.id = oi.product_id
                 GROUP BY p.id
@@ -116,10 +145,10 @@ class AdminController extends Controller {
                 LIMIT 5
             ")->fetchAll();
         } catch (\Exception $e) {
-            $topProducts = $pdo->query("SELECT id, name, sell_price, stock_qty, image_path, 0 as units_sold FROM products ORDER BY id DESC LIMIT 5")->fetchAll();
+            $topProducts = $pdo->query("SELECT id, name, sell_price, stock_qty, image_path, 0 as units_sold, 0 as total_revenue FROM products ORDER BY id DESC LIMIT 5")->fetchAll();
         }
 
-        // 7. Critical Low Stock Alerts (Stock <= 5)
+        // 8. Critical Low Stock Alerts (Stock <= 5)
         $lowStockItems = $pdo->query("
             SELECT id, name, sku, stock_qty, sell_price
             FROM products 
@@ -128,7 +157,7 @@ class AdminController extends Controller {
             LIMIT 5
         ")->fetchAll();
 
-        // 8. Recent 10 Orders with Customer & Area
+        // 9. Recent 10 Orders with Customer & Area
         $recentOrders = $pdo->query("
             SELECT o.*, c.name as customer_name, c.phone as customer_phone, a.name as area_name,
                    (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
@@ -140,15 +169,21 @@ class AdminController extends Controller {
         ")->fetchAll();
 
         return $this->view('admin/dashboard', [
-            'title' => 'এডমিন কমান্ড সেন্টার ও ড্যাশবোর্ড (Executive Dashboard)',
+            'title' => 'Executive Dashboard - Operations & Business Analytics',
             'todayData' => $todayData,
+            'yesterdayData' => $yesterdayData,
+            'weekData' => $weekData,
             'monthData' => $monthData,
             'allTimeData' => $allTimeData,
+            'aov' => $aov,
             'statusCounts' => $statusCounts,
             'totalCustomers' => $totalCustomers,
             'newCustomersToday' => $newCustomersToday,
             'totalProducts' => $totalProducts,
             'lowStockCount' => $lowStockCount,
+            'outOfStockCount' => $outOfStockCount,
+            'ridersCount' => $ridersCount,
+            'deliveredToday' => $deliveredToday,
             'hrStats' => $hrStats,
             'chartLabels' => $chartLabels,
             'chartSales' => $chartSales,

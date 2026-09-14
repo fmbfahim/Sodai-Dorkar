@@ -4,6 +4,12 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 $salesToday = (float)($todayData['sales_amount'] ?? 0);
 $ordersToday = (int)($todayData['orders_count'] ?? 0);
 
+$salesYesterday = (float)($yesterdayData['sales_amount'] ?? 0);
+$ordersYesterday = (int)($yesterdayData['orders_count'] ?? 0);
+
+$salesWeek = (float)($weekData['sales_amount'] ?? 0);
+$ordersWeek = (int)($weekData['orders_count'] ?? 0);
+
 $salesMonth = (float)($monthData['sales_amount'] ?? 0);
 $ordersMonth = (int)($monthData['orders_count'] ?? 0);
 
@@ -12,121 +18,120 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
 
 <div class="space-y-6">
 
-    <!-- Executive Greeting & Quick Action Banner -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-primary-900 via-primary-800 to-secondary-900 rounded-3xl p-6 lg:p-8 text-white shadow-xl">
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <!-- Top Executive Welcome Banner -->
+    <div class="rounded-2xl p-6 lg:p-8 shadow-lg relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #064e3b 100%); color: #ffffff;">
         <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div class="space-y-2">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold tracking-wider text-emerald-300 border border-white/10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wider text-emerald-300" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    সদাই দরকার &bull; সেন্ট্রাল কমান্ড সেন্টার
+                    Sodai Dorkar &bull; Executive Command Center
                 </div>
-                <h1 class="text-2xl lg:text-3xl font-black tracking-tight">
-                    স্বাগতম, এডমিন!
+                <h1 class="text-2xl lg:text-3xl font-black tracking-tight text-white">
+                    Welcome back, Admin!
                 </h1>
-                <p class="text-secondary-300 text-sm max-w-xl">
-                    আজকের তারিখ: <strong class="text-white"><?= date('l, d F Y') ?></strong> &bull; এক নজরে আপনার স্টোরের সেলস, অর্ডার ডেলিভারি, ইনভেন্টরি ও এইচআর পেরোল মনিটর করুন।
+                <p class="text-slate-300 text-sm max-w-2xl leading-relaxed">
+                    Live overview for <strong class="text-white"><?= date('l, d F Y') ?></strong>. Monitor sales performance, order delivery funnel, stock inventory, and human resources in real-time.
                 </p>
             </div>
 
             <!-- Quick Action Buttons -->
-            <div class="flex flex-wrap items-center gap-2.5">
-                <a href="<?= $base ?>/admin/orders/create" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/30">
-                    <ion-icon name="add-circle" class="text-lg"></ion-icon>
-                    <span>নতুন অর্ডার</span>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="<?= $base ?>/admin/orders/create" class="font-bold py-2.5 px-4 rounded-xl text-sm flex items-center gap-2 transition-all shadow-md hover:opacity-95" style="background: #059669; color: #ffffff;">
+                    <ion-icon name="add-circle-outline" class="text-lg"></ion-icon>
+                    <span>Create Order</span>
                 </a>
-                <a href="<?= $base ?>/admin/purchases/create" class="bg-white/15 hover:bg-white/25 text-white font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 backdrop-blur-md transition-all border border-white/15">
+                <a href="<?= $base ?>/admin/purchases/create" class="font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 transition-all hover:bg-white/20" style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25);">
                     <ion-icon name="cart-outline" class="text-lg"></ion-icon>
-                    <span>স্টক ইন (Purchase)</span>
+                    <span>Stock In</span>
                 </a>
-                <a href="<?= $base ?>/admin/dispatch" class="bg-white/15 hover:bg-white/25 text-white font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 backdrop-blur-md transition-all border border-white/15">
+                <a href="<?= $base ?>/admin/dispatch" class="font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 transition-all hover:bg-white/20" style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25);">
                     <ion-icon name="bicycle-outline" class="text-lg"></ion-icon>
-                    <span>ডেসপ্যাচ বোর্ড</span>
+                    <span>Dispatch Board</span>
                 </a>
-                <a href="<?= $base ?>/admin/hr/attendance" class="bg-white/15 hover:bg-white/25 text-white font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 backdrop-blur-md transition-all border border-white/15">
+                <a href="<?= $base ?>/admin/hr/attendance" class="font-medium py-2.5 px-3.5 rounded-xl text-sm flex items-center gap-2 transition-all hover:bg-white/20" style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25);">
                     <ion-icon name="calendar-outline" class="text-lg"></ion-icon>
-                    <span>দৈনিক হাজিরা</span>
+                    <span>Attendance</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Primary Financial KPI Cards (4 Cards) -->
+    <!-- Primary KPI Metric Cards (4 Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <!-- Sales Today -->
-        <div class="bg-white rounded-2xl p-5 border border-secondary-200 shadow-sm hover:shadow-md transition-all">
+        <!-- Card 1: Today's Revenue -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">আজকের বিক্রয় (Today's Sales)</p>
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-                    <ion-icon name="cash"></ion-icon>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Revenue</span>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: #ecfdf5; color: #059669;">
+                    <ion-icon name="cash-outline"></ion-icon>
                 </div>
             </div>
             <div class="mt-3">
-                <h3 class="text-2xl lg:text-3xl font-black text-secondary-900">৳<?= number_format($salesToday, 2) ?></h3>
-                <div class="flex items-center gap-2 mt-1.5 text-xs">
-                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold">
-                        <?= $ordersToday ?> টি অর্ডার আজ
+                <h3 class="text-2xl lg:text-3xl font-black text-slate-900">৳<?= number_format($salesToday, 2) ?></h3>
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md font-bold" style="background: #dcfce7; color: #15803d;">
+                        <?= $ordersToday ?> Orders Today
                     </span>
-                    <span class="text-secondary-400">সর্বমোট ভলিউম</span>
+                    <span class="text-slate-500">Yesterday: ৳<?= number_format($salesYesterday, 0) ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- This Month Revenue -->
-        <div class="bg-white rounded-2xl p-5 border border-secondary-200 shadow-sm hover:shadow-md transition-all">
+        <!-- Card 2: Monthly Revenue -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">চলতি মাসের আয় (Monthly)</p>
-                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
-                    <ion-icon name="wallet"></ion-icon>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Month Revenue (<?= date('M Y') ?>)</span>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: #faf5ff; color: #7e22ce;">
+                    <ion-icon name="wallet-outline"></ion-icon>
                 </div>
             </div>
             <div class="mt-3">
                 <h3 class="text-2xl lg:text-3xl font-black text-purple-700">৳<?= number_format($salesMonth, 2) ?></h3>
-                <div class="flex items-center gap-2 mt-1.5 text-xs">
-                    <span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold">
-                        <?= $ordersMonth ?> টি অর্ডার
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md font-bold text-purple-700" style="background: #f3e8ff;">
+                        <?= $ordersMonth ?> Orders
                     </span>
-                    <span class="text-secondary-400"><?= date('F Y') ?></span>
+                    <span class="text-slate-500">AOV: ৳<?= number_format($aov, 0) ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Active Orders in Pipeline -->
-        <div class="bg-white rounded-2xl p-5 border border-secondary-200 shadow-sm hover:shadow-md transition-all">
+        <!-- Card 3: Active Order Pipeline -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">চলমান অর্ডার (Active Pipeline)</p>
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-                    <ion-icon name="cart"></ion-icon>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Orders Pipeline</span>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: #eff6ff; color: #2563eb;">
+                    <ion-icon name="cart-outline"></ion-icon>
                 </div>
             </div>
             <div class="mt-3">
-                <h3 class="text-2xl lg:text-3xl font-black text-blue-600"><?= $activeOrders ?> <span class="text-sm font-semibold text-secondary-500">টি অর্ডার</span></h3>
-                <div class="flex items-center gap-2 mt-1.5 text-xs">
-                    <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold">
-                        <?= $statusCounts['pending'] ?> অপেক্ষমাণ
+                <h3 class="text-2xl lg:text-3xl font-black text-blue-600"><?= $activeOrders ?> <span class="text-sm font-semibold text-slate-500">Orders</span></h3>
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md font-bold" style="background: #fef3c7; color: #b45309;">
+                        <?= $statusCounts['pending'] ?> Pending
                     </span>
-                    <span class="text-secondary-400"><?= $statusCounts['out_for_delivery'] ?> টি ডেলিভারিতে</span>
+                    <span class="text-slate-500"><?= $statusCounts['out_for_delivery'] ?> in delivery</span>
                 </div>
             </div>
         </div>
 
-        <!-- Total Customers & Catalog -->
-        <div class="bg-white rounded-2xl p-5 border border-secondary-200 shadow-sm hover:shadow-md transition-all">
+        <!-- Card 4: Customers & Products -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">গ্রাহক ও প্রোডাক্ট সংখ্যা</p>
-                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl">
-                    <ion-icon name="people"></ion-icon>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Customers & Inventory</span>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: #f0fdfa; color: #0d9488;">
+                    <ion-icon name="people-outline"></ion-icon>
                 </div>
             </div>
             <div class="mt-3">
-                <h3 class="text-2xl lg:text-3xl font-black text-secondary-900"><?= number_format($totalCustomers) ?> <span class="text-sm font-semibold text-secondary-500">জন গ্রাহক</span></h3>
-                <div class="flex items-center gap-2 mt-1.5 text-xs">
-                    <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 font-bold">
-                        <?= $totalProducts ?> টি সক্রিয় প্রোডাক্ট
+                <h3 class="text-2xl lg:text-3xl font-black text-slate-900"><?= number_format($totalCustomers) ?> <span class="text-sm font-semibold text-slate-500">Customers</span></h3>
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md font-bold" style="background: #ccfbf1; color: #0f766e;">
+                        <?= $totalProducts ?> Active Products
                     </span>
                     <?php if ($lowStockCount > 0): ?>
-                        <span class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 font-bold">
-                            <?= $lowStockCount ?> টি লো-স্টক
+                        <span class="px-2 py-0.5 rounded-md font-bold" style="background: #ffe4e6; color: #e11d48;">
+                            <?= $lowStockCount ?> Low Stock
                         </span>
                     <?php endif; ?>
                 </div>
@@ -134,121 +139,147 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
         </div>
     </div>
 
-    <!-- Operations Order Lifecycle Funnel (7-Stage Visual Pipeline) -->
-    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4 border-b border-secondary-100 pb-3">
+    <!-- Secondary Operational Highlights Strip -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-xs">
+        <div class="border-r border-slate-100 pr-2">
+            <span class="text-slate-400 font-medium">Last 7 Days Sales:</span>
+            <p class="font-bold text-slate-800 text-sm mt-0.5">৳<?= number_format($salesWeek, 2) ?></p>
+            <span class="text-[11px] text-slate-500"><?= $ordersWeek ?> Orders completed</span>
+        </div>
+        <div class="border-r border-slate-100 pr-2">
+            <span class="text-slate-400 font-medium">Active Delivery Riders:</span>
+            <p class="font-bold text-slate-800 text-sm mt-0.5"><?= $ridersCount ?> Riders on Duty</p>
+            <span class="text-[11px] text-emerald-600 font-medium"><?= $deliveredToday ?> Delivered Today</span>
+        </div>
+        <div class="border-r border-slate-100 pr-2">
+            <span class="text-slate-400 font-medium">Staff Attendance Today:</span>
+            <p class="font-bold text-slate-800 text-sm mt-0.5"><?= $hrStats['present_today'] ?> / <?= $hrStats['active_employees'] ?> Present</p>
+            <span class="text-[11px] text-slate-500">Rate: <?= $hrStats['active_employees'] > 0 ? round(($hrStats['present_today'] / $hrStats['active_employees']) * 100) : 0 ?>%</span>
+        </div>
+        <div>
+            <span class="text-slate-400 font-medium">Out of Stock Warnings:</span>
+            <p class="font-bold <?= $outOfStockCount > 0 ? 'text-red-600' : 'text-emerald-600' ?> text-sm mt-0.5">
+                <?= $outOfStockCount ?> Out of Stock
+            </p>
+            <span class="text-[11px] text-slate-500"><?= $lowStockCount ?> Low Stock Items</span>
+        </div>
+    </div>
+
+    <!-- Order Lifecycle Fulfillment Funnel (7-Stage Pipeline) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="git-network-outline" class="text-primary-600 text-xl"></ion-icon>
-                    অর্ডার লাইফসাইকেল ও অপারেশনাল পাইপলাইন (Order Lifecycle)
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="git-network-outline" class="text-emerald-600 text-xl"></ion-icon>
+                    Order Fulfillment Pipeline
                 </h3>
-                <p class="text-xs text-secondary-400 mt-0.5">অর্ডার আসার পর থেকে গ্রাহকের কাছে পৌঁছানো পর্যন্ত প্রতিটি ধাপের লাইভ অবস্থা</p>
+                <p class="text-xs text-slate-400 mt-0.5">Real-time status tracking from order placement to doorstep delivery</p>
             </div>
-            <a href="<?= $base ?>/admin/orders" class="text-xs text-primary-600 font-bold hover:underline flex items-center gap-1">
-                সকল অর্ডার দেখুন &rarr;
+            <a href="<?= $base ?>/admin/orders" class="text-xs text-emerald-600 font-bold hover:underline flex items-center gap-1">
+                View All Orders &rarr;
             </a>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            <!-- Stage 1: Pending -->
-            <a href="<?= $base ?>/admin/orders?status=pending" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 hover:border-amber-300 hover:shadow-sm transition-all group">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3.5">
+            <!-- 1. Pending -->
+            <a href="<?= $base ?>/admin/orders?status=pending" class="p-3.5 rounded-xl bg-slate-50 hover:bg-amber-50/60 transition-all border border-slate-200 hover:border-amber-300 group" style="border-left: 4px solid #f59e0b;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-amber-700">১. অপেক্ষমাণ</span>
+                    <span class="text-[11px] font-bold uppercase text-amber-700">1. Pending</span>
                     <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-amber-900 mt-1"><?= $statusCounts['pending'] ?></h4>
-                <p class="text-[10px] text-amber-600 font-medium mt-0.5">যাচাইকরণ প্রয়োজন</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['pending'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Needs Verification</p>
             </a>
 
-            <!-- Stage 2: Processing -->
-            <a href="<?= $base ?>/admin/orders?status=processing" class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <!-- 2. Processing -->
+            <a href="<?= $base ?>/admin/orders?status=processing" class="p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 transition-all border border-slate-200 hover:border-blue-300 group" style="border-left: 4px solid #3b82f6;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-blue-700">২. প্রসেসিং</span>
+                    <span class="text-[11px] font-bold uppercase text-blue-700">2. Processing</span>
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-blue-900 mt-1"><?= $statusCounts['processing'] ?></h4>
-                <p class="text-[10px] text-blue-600 font-medium mt-0.5">অর্ডার গৃহীত হয়েছে</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['processing'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Order Confirmed</p>
             </a>
 
-            <!-- Stage 3: Packed -->
-            <a href="<?= $base ?>/admin/orders/packaging" class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 hover:border-indigo-300 hover:shadow-sm transition-all group">
+            <!-- 3. Packed -->
+            <a href="<?= $base ?>/admin/orders/packaging" class="p-3.5 rounded-xl bg-slate-50 hover:bg-indigo-50/60 transition-all border border-slate-200 hover:border-indigo-300 group" style="border-left: 4px solid #6366f1;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-indigo-700">৩. প্যাকড</span>
+                    <span class="text-[11px] font-bold uppercase text-indigo-700">3. Packed</span>
                     <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-indigo-900 mt-1"><?= $statusCounts['packed'] ?></h4>
-                <p class="text-[10px] text-indigo-600 font-medium mt-0.5">প্যাকেজিং সমাপ্ত</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['packed'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Packaging Done</p>
             </a>
 
-            <!-- Stage 4: Shipped -->
-            <a href="<?= $base ?>/admin/dispatch" class="p-3.5 rounded-xl bg-cyan-50/70 border border-cyan-200 hover:border-cyan-300 hover:shadow-sm transition-all group">
+            <!-- 4. Shipped / Ready -->
+            <a href="<?= $base ?>/admin/dispatch" class="p-3.5 rounded-xl bg-slate-50 hover:bg-cyan-50/60 transition-all border border-slate-200 hover:border-cyan-300 group" style="border-left: 4px solid #06b6d4;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-cyan-700">৪. রেডি ডেসপ্যাচ</span>
+                    <span class="text-[11px] font-bold uppercase text-cyan-700">4. Dispatch</span>
                     <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-cyan-900 mt-1"><?= $statusCounts['shipped'] ?></h4>
-                <p class="text-[10px] text-cyan-600 font-medium mt-0.5">রাইডারে বরাদ্দের জন্য</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['shipped'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Ready for Rider</p>
             </a>
 
-            <!-- Stage 5: Out for Delivery -->
-            <a href="<?= $base ?>/admin/orders?status=out_for_delivery" class="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <!-- 5. Out for Delivery -->
+            <a href="<?= $base ?>/admin/orders?status=out_for_delivery" class="p-3.5 rounded-xl bg-slate-50 hover:bg-purple-50/60 transition-all border border-slate-200 hover:border-purple-300 group" style="border-left: 4px solid #a855f7;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-purple-700">৫. অন দ্য ওয়ে</span>
+                    <span class="text-[11px] font-bold uppercase text-purple-700">5. In Transit</span>
                     <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span>
                 </div>
-                <h4 class="text-2xl font-black text-purple-900 mt-1"><?= $statusCounts['out_for_delivery'] ?></h4>
-                <p class="text-[10px] text-purple-600 font-medium mt-0.5">রাইডারের হাতে রয়েছে</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['out_for_delivery'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">With Rider</p>
             </a>
 
-            <!-- Stage 6: Delivered -->
-            <a href="<?= $base ?>/admin/orders?status=delivered" class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-300 hover:shadow-sm transition-all group">
+            <!-- 6. Delivered -->
+            <a href="<?= $base ?>/admin/orders?status=delivered" class="p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50/60 transition-all border border-slate-200 hover:border-emerald-300 group" style="border-left: 4px solid #10b981;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-emerald-700">৬. সফল ডেলিভারি</span>
+                    <span class="text-[11px] font-bold uppercase text-emerald-700">6. Delivered</span>
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-emerald-900 mt-1"><?= $statusCounts['delivered'] ?></h4>
-                <p class="text-[10px] text-emerald-600 font-medium mt-0.5">টাকা সংগ্রহ সম্পন্ন</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['delivered'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Completed</p>
             </a>
 
-            <!-- Stage 7: Cancelled & Returns -->
-            <a href="<?= $base ?>/admin/orders/returns" class="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 hover:border-rose-300 hover:shadow-sm transition-all group">
+            <!-- 7. Cancelled / Returns -->
+            <a href="<?= $base ?>/admin/orders/returns" class="p-3.5 rounded-xl bg-slate-50 hover:bg-rose-50/60 transition-all border border-slate-200 hover:border-rose-300 group" style="border-left: 4px solid #ef4444;">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase text-rose-700">৭. বাতিল / রিটার্ন</span>
+                    <span class="text-[11px] font-bold uppercase text-rose-700">7. Returns</span>
                     <span class="w-2 h-2 rounded-full bg-rose-500"></span>
                 </div>
-                <h4 class="text-2xl font-black text-rose-900 mt-1"><?= $statusCounts['cancelled'] + $statusCounts['returned'] ?></h4>
-                <p class="text-[10px] text-rose-600 font-medium mt-0.5">রিটার্ন ও ড্যামেজ</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1.5"><?= $statusCounts['cancelled'] + $statusCounts['returned'] ?></h4>
+                <p class="text-[10px] text-slate-500 mt-0.5 font-medium">Cancelled/Damaged</p>
             </a>
         </div>
     </div>
 
-    <!-- Charts Section (2 Columns: Sales 7-Day Trend + Order Status Donut) -->
+    <!-- Charts Section (2 Columns: Revenue Trend + Order Status Donut) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Chart 1: 7-Day Revenue Trend (2 Cols) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-secondary-200 shadow-sm p-6 space-y-4">
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                        <ion-icon name="trending-up" class="text-emerald-600 text-xl"></ion-icon>
-                        গত ৭ দিনের বিক্রয় ও অর্ডার ট্রেন্ড (Sales Analytics)
+                    <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                        <ion-icon name="trending-up-outline" class="text-emerald-600 text-xl"></ion-icon>
+                        Sales & Orders Trend (Last 7 Days)
                     </h3>
-                    <p class="text-xs text-secondary-400 mt-0.5">দৈনিক রেভিনিউ এবং অর্ডারের পরিমাণের তুলনামূলক গ্রাফ</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Daily comparison of gross revenue and total order count</p>
                 </div>
-                <span class="px-3 py-1 bg-secondary-100 text-secondary-700 rounded-xl text-xs font-semibold">বিগত ৭ দিন</span>
+                <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold">Weekly View</span>
             </div>
             <div class="h-64 sm:h-72">
                 <canvas id="salesTrendChart"></canvas>
             </div>
         </div>
 
-        <!-- Chart 2: Order Status Distribution Donut (1 Col) -->
-        <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6 space-y-4">
+        <!-- Chart 2: Order Pipeline Status Donut (1 Col) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div>
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="pie-chart" class="text-purple-600 text-xl"></ion-icon>
-                    অর্ডার স্ট্যাটাস অনুপাত (Distribution)
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="pie-chart-outline" class="text-purple-600 text-xl"></ion-icon>
+                    Order Status Distribution
                 </h3>
-                <p class="text-xs text-secondary-400 mt-0.5">মোট অর্ডারের স্ট্যাটাসভিত্তিক বিভাজন</p>
+                <p class="text-xs text-slate-400 mt-0.5">Share of orders across all pipeline stages</p>
             </div>
             <div class="h-64 sm:h-72 flex items-center justify-center">
                 <canvas id="orderStatusChart"></canvas>
@@ -256,110 +287,110 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
         </div>
     </div>
 
-    <!-- Integrated HR & Workforce Snapshot -->
-    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-secondary-100 pb-3 mb-4">
+    <!-- Workforce & HR Quick Monitor -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
             <div>
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="id-card" class="text-primary-600 text-xl"></ion-icon>
-                    এইচআর ও ওয়ার্কফোর্স সারসংক্ষেপ (HR & Workforce Overview)
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="people-outline" class="text-emerald-600 text-xl"></ion-icon>
+                    HR & Workforce Monitor
                 </h3>
-                <p class="text-xs text-secondary-400 mt-0.5">অফিস স্টাফদের আজকের উপস্থিতি, ছুটির আবেদন ও চলতি মাসের পেরোল অবস্থা</p>
+                <p class="text-xs text-slate-400 mt-0.5">Daily employee attendance, leave requests, and payroll disbursements</p>
             </div>
             <div class="flex items-center gap-2">
-                <a href="<?= $base ?>/admin/hr/attendance" class="px-3 py-1.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 rounded-xl text-xs font-medium transition-colors">
-                    হাজিরা খাতা &rarr;
+                <a href="<?= $base ?>/admin/hr/attendance" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors">
+                    Daily Attendance &rarr;
                 </a>
-                <a href="<?= $base ?>/admin/payroll" class="px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-xl text-xs font-medium transition-colors">
-                    মাসিক পেরোল &rarr;
+                <a href="<?= $base ?>/admin/payroll" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-medium transition-colors">
+                    Monthly Payroll &rarr;
                 </a>
             </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Active Staff -->
-            <div class="p-4 rounded-xl bg-secondary-50 border border-secondary-200 flex items-center gap-3">
+            <!-- Active Employees -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
                 <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl">
                     <ion-icon name="people"></ion-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary-500 font-medium">সক্রিয় কর্মকর্তা/কর্মচারী</p>
-                    <h4 class="text-xl font-bold text-secondary-900"><?= $hrStats['active_employees'] ?> জন</h4>
+                    <p class="text-xs text-slate-500 font-medium">Active Employees</p>
+                    <h4 class="text-xl font-bold text-slate-900"><?= $hrStats['active_employees'] ?> Staff</h4>
                 </div>
             </div>
 
             <!-- Attendance Today -->
-            <div class="p-4 rounded-xl bg-secondary-50 border border-secondary-200 flex items-center gap-3">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
                 <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
                     <ion-icon name="checkmark-done"></ion-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary-500 font-medium">আজকের উপস্থিতি</p>
-                    <h4 class="text-xl font-bold text-emerald-700"><?= $hrStats['present_today'] ?> / <?= $hrStats['active_employees'] ?> জন</h4>
+                    <p class="text-xs text-slate-500 font-medium">Today's Attendance</p>
+                    <h4 class="text-xl font-bold text-emerald-700"><?= $hrStats['present_today'] ?> / <?= $hrStats['active_employees'] ?> Present</h4>
                 </div>
             </div>
 
             <!-- Pending Leaves -->
-            <div class="p-4 rounded-xl bg-secondary-50 border border-secondary-200 flex items-center gap-3">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
                 <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl">
                     <ion-icon name="airplane"></ion-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary-500 font-medium">অপেক্ষমাণ ছুটির আবেদন</p>
-                    <h4 class="text-xl font-bold text-amber-700"><?= $hrStats['pending_leaves'] ?> টি আবেদন</h4>
+                    <p class="text-xs text-slate-500 font-medium">Pending Leaves</p>
+                    <h4 class="text-xl font-bold text-amber-700"><?= $hrStats['pending_leaves'] ?> Requests</h4>
                 </div>
             </div>
 
             <!-- Pending Payroll -->
-            <div class="p-4 rounded-xl bg-secondary-50 border border-secondary-200 flex items-center gap-3">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
                 <div class="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl">
                     <ion-icon name="wallet"></ion-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary-500 font-medium">চলতি মাসের বকেয়া বেতন</p>
+                    <p class="text-xs text-slate-500 font-medium">Unpaid Salary Due</p>
                     <h4 class="text-xl font-bold text-purple-700">৳<?= number_format($hrStats['payroll_due'], 2) ?></h4>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Inventory Highlights: Fast-Moving Products & Critical Low Stock (2 Columns) -->
+    <!-- Inventory Highlights: Top Performing Products & Critical Low Stock (2 Columns) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Top Fast-Moving Products -->
-        <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-secondary-100 pb-3">
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="flame" class="text-amber-500 text-xl"></ion-icon>
-                    টপ সেলিং প্রোডাক্টস (Top Moving Items)
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="flame-outline" class="text-amber-500 text-xl"></ion-icon>
+                    Top Selling Products
                 </h3>
-                <a href="<?= $base ?>/admin/products" class="text-xs text-primary-600 font-bold hover:underline">ইনভেন্টরি &rarr;</a>
+                <a href="<?= $base ?>/admin/products" class="text-xs text-emerald-600 font-bold hover:underline">All Inventory &rarr;</a>
             </div>
 
-            <div class="divide-y divide-secondary-100">
+            <div class="divide-y divide-slate-100">
                 <?php if (empty($topProducts)): ?>
-                    <p class="py-6 text-center text-secondary-400 text-sm">কোনো প্রোডাক্ট ডেটা নেই।</p>
+                    <p class="py-6 text-center text-slate-400 text-sm">No sales records available yet.</p>
                 <?php else: ?>
                     <?php foreach ($topProducts as $idx => $prod): ?>
-                        <div class="py-3 flex items-center justify-between hover:bg-secondary-50 transition-colors rounded-xl px-2">
+                        <div class="py-3 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-xl px-2">
                             <div class="flex items-center gap-3">
-                                <span class="w-6 text-center font-bold text-xs text-secondary-400">#<?= $idx + 1 ?></span>
-                                <div class="w-10 h-10 rounded-xl bg-secondary-100 border border-secondary-200 overflow-hidden flex items-center justify-center shrink-0">
+                                <span class="w-6 text-center font-bold text-xs text-slate-400">#<?= $idx + 1 ?></span>
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                                     <?php if (!empty($prod['image_path'])): ?>
                                         <img src="<?= (strpos($prod['image_path'], 'http') === 0) ? $prod['image_path'] : ($base . '/' . ltrim($prod['image_path'], '/')) ?>" class="w-full h-full object-cover">
                                     <?php else: ?>
-                                        <ion-icon name="cube" class="text-secondary-400 text-xl"></ion-icon>
+                                        <ion-icon name="cube-outline" class="text-slate-400 text-xl"></ion-icon>
                                     <?php endif; ?>
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-secondary-800 text-sm truncate max-w-xs"><?= htmlspecialchars($prod['name']) ?></h4>
-                                    <p class="text-xs text-secondary-400">বিক্রয়মূল্য: ৳<?= number_format($prod['sell_price'], 2) ?></p>
+                                    <h4 class="font-bold text-slate-800 text-sm truncate max-w-xs"><?= htmlspecialchars($prod['name']) ?></h4>
+                                    <p class="text-xs text-slate-400">Unit Price: ৳<?= number_format($prod['sell_price'], 2) ?></p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold">
-                                    <?= number_format($prod['units_sold']) ?> ইউনিট সেল
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold" style="background: #ecfdf5; color: #059669;">
+                                    <?= number_format($prod['units_sold']) ?> Sold
                                 </span>
-                                <p class="text-[11px] text-secondary-400 mt-1">স্টক: <?= $prod['stock_qty'] ?></p>
+                                <p class="text-[11px] text-slate-400 mt-1">Stock Left: <?= $prod['stock_qty'] ?></p>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -368,33 +399,33 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
         </div>
 
         <!-- Critical Low Stock Alerts (Stock <= 5) -->
-        <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-secondary-100 pb-3">
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="alert-circle" class="text-rose-600 text-xl"></ion-icon>
-                    জরুরি লো-স্টক সতর্কতা (Low Stock Alerts)
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="alert-circle-outline" class="text-rose-600 text-xl"></ion-icon>
+                    Critical Low Stock Alerts
                 </h3>
-                <a href="<?= $base ?>/admin/reports/stock" class="text-xs text-rose-600 font-bold hover:underline">স্টক রিপোর্ট &rarr;</a>
+                <a href="<?= $base ?>/admin/reports/stock" class="text-xs text-rose-600 font-bold hover:underline">Stock Report &rarr;</a>
             </div>
 
-            <div class="divide-y divide-secondary-100">
+            <div class="divide-y divide-slate-100">
                 <?php if (empty($lowStockItems)): ?>
-                    <div class="py-8 text-center text-secondary-400">
+                    <div class="py-8 text-center text-slate-400">
                         <ion-icon name="checkmark-circle-outline" class="text-4xl text-emerald-500 mb-1"></ion-icon>
-                        <p class="text-sm font-medium text-emerald-700">সকল প্রোডাক্টের পর্যাপ্ত স্টক মজুদ রয়েছে!</p>
+                        <p class="text-sm font-medium text-emerald-700">Healthy inventory. All products have sufficient stock!</p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($lowStockItems as $lItem): ?>
-                        <div class="py-3 flex items-center justify-between hover:bg-secondary-50 transition-colors rounded-xl px-2">
+                        <div class="py-3 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-xl px-2">
                             <div>
-                                <h4 class="font-bold text-secondary-900 text-sm"><?= htmlspecialchars($lItem['name']) ?></h4>
-                                <p class="text-xs text-secondary-400 font-mono">SKU: <?= htmlspecialchars($lItem['sku'] ?: 'N/A') ?> &bull; ৳<?= number_format($lItem['sell_price'], 2) ?></p>
+                                <h4 class="font-bold text-slate-900 text-sm"><?= htmlspecialchars($lItem['name']) ?></h4>
+                                <p class="text-xs text-slate-400 font-mono">SKU: <?= htmlspecialchars($lItem['sku'] ?: 'N/A') ?> &bull; ৳<?= number_format($lItem['sell_price'], 2) ?></p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 text-xs font-bold border border-rose-200">
-                                    মাত্র <?= $lItem['stock_qty'] ?> টি বাকি
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold border" style="background: #ffe4e6; color: #e11d48; border-color: #fecdd3;">
+                                    Only <?= $lItem['stock_qty'] ?> Left
                                 </span>
-                                <a href="<?= $base ?>/admin/purchases/create" class="p-1.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 rounded-lg text-xs" title="রিস্টক করুন">
+                                <a href="<?= $base ?>/admin/purchases/create" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs transition-colors" title="Restock item">
                                     <ion-icon name="add" class="text-base"></ion-icon>
                                 </a>
                             </div>
@@ -406,83 +437,83 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
     </div>
 
     <!-- Recent 10 Orders Detailed Table -->
-    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-secondary-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-                <h3 class="font-bold text-secondary-900 text-base flex items-center gap-2">
-                    <ion-icon name="receipt" class="text-primary-600 text-xl"></ion-icon>
-                    সাম্প্রতিক অর্ডারসমূহ (Recent Orders)
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <ion-icon name="receipt-outline" class="text-emerald-600 text-xl"></ion-icon>
+                    Recent Orders
                 </h3>
-                <p class="text-xs text-secondary-400 mt-0.5">লাইভ ইনকামিং এবং প্রসেসিং অবস্থায় থাকা শেষ ১০টি অর্ডার</p>
+                <p class="text-xs text-slate-400 mt-0.5">Latest 10 incoming orders across all areas</p>
             </div>
-            <a href="<?= $base ?>/admin/orders" class="px-3.5 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-xl text-xs font-bold transition-colors">
-                সকল অর্ডার ম্যানেজ করুন &rarr;
+            <a href="<?= $base ?>/admin/orders" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors" style="background: #ecfdf5; color: #047857;">
+                View All Orders &rarr;
             </a>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
-                <thead class="bg-secondary-50 text-secondary-600 uppercase text-xs border-b border-secondary-200">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
                     <tr>
-                        <th class="py-3 px-4 font-semibold">অর্ডার আইডি</th>
-                        <th class="py-3 px-4 font-semibold">গ্রাহকের নাম ও ফোন</th>
-                        <th class="py-3 px-4 font-semibold">ডেলিভারি এলাকা</th>
-                        <th class="py-3 px-4 font-semibold text-center">আইটেম সংখ্যা</th>
-                        <th class="py-3 px-4 font-semibold text-right">মোট টাকা</th>
-                        <th class="py-3 px-4 font-semibold text-center">স্ট্যাটাস</th>
-                        <th class="py-3 px-4 font-semibold text-right">অ্যাকশন</th>
+                        <th class="py-3 px-4 font-semibold">Order ID</th>
+                        <th class="py-3 px-4 font-semibold">Customer</th>
+                        <th class="py-3 px-4 font-semibold">Delivery Area</th>
+                        <th class="py-3 px-4 font-semibold text-center">Items</th>
+                        <th class="py-3 px-4 font-semibold text-right">Total Amount</th>
+                        <th class="py-3 px-4 font-semibold text-center">Status</th>
+                        <th class="py-3 px-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-secondary-100">
+                <tbody class="divide-y divide-slate-100">
                     <?php if (empty($recentOrders)): ?>
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-secondary-400">কোনো সাম্প্রতিক অর্ডার পাওয়া যায়নি।</td>
+                            <td colspan="7" class="py-12 text-center text-slate-400">No recent orders recorded.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($recentOrders as $ord): 
                             $st = strtolower(trim($ord['status'] ?? 'pending'));
                             $statusBadge = match($st) {
-                                'pending' => ['bg' => 'bg-amber-100 text-amber-800 border-amber-200', 'label' => 'Pending'],
-                                'processing' => ['bg' => 'bg-blue-100 text-blue-800 border-blue-200', 'label' => 'Processing'],
-                                'packed' => ['bg' => 'bg-indigo-100 text-indigo-800 border-indigo-200', 'label' => 'Packed'],
-                                'shipped' => ['bg' => 'bg-cyan-100 text-cyan-800 border-cyan-200', 'label' => 'Shipped'],
-                                'out_for_delivery' => ['bg' => 'bg-purple-100 text-purple-800 border-purple-200', 'label' => 'Out for Delivery'],
-                                'delivered' => ['bg' => 'bg-emerald-100 text-emerald-800 border-emerald-200', 'label' => 'Delivered'],
-                                'cancelled' => ['bg' => 'bg-rose-100 text-rose-800 border-rose-200', 'label' => 'Cancelled'],
-                                'returned' => ['bg' => 'bg-red-100 text-red-800 border-red-200', 'label' => 'Returned'],
-                                default => ['bg' => 'bg-secondary-100 text-secondary-800 border-secondary-200', 'label' => ucfirst($st)]
+                                'pending' => ['bg' => 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;', 'label' => 'Pending'],
+                                'processing' => ['bg' => 'background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;', 'label' => 'Processing'],
+                                'packed' => ['bg' => 'background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;', 'label' => 'Packed'],
+                                'shipped' => ['bg' => 'background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc;', 'label' => 'Shipped'],
+                                'out_for_delivery' => ['bg' => 'background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff;', 'label' => 'Out for Delivery'],
+                                'delivered' => ['bg' => 'background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;', 'label' => 'Delivered'],
+                                'cancelled' => ['bg' => 'background: #fff1f2; color: #be123c; border: 1px solid #fecdd3;', 'label' => 'Cancelled'],
+                                'returned' => ['bg' => 'background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;', 'label' => 'Returned'],
+                                default => ['bg' => 'background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;', 'label' => ucfirst($st)]
                             };
                         ?>
-                            <tr class="hover:bg-secondary-50/60 transition-colors">
-                                <td class="py-3 px-4 font-mono font-bold text-primary-700">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3.5 px-4 font-mono font-bold text-emerald-700">
                                     <a href="<?= $base ?>/admin/orders/show?id=<?= $ord['id'] ?>" class="hover:underline">
                                         #<?= $ord['id'] ?>
                                     </a>
                                 </td>
-                                <td class="py-3 px-4">
-                                    <p class="font-bold text-secondary-900"><?= htmlspecialchars($ord['customer_name'] ?? 'Guest Customer') ?></p>
-                                    <p class="text-xs text-secondary-500 font-mono"><?= htmlspecialchars($ord['customer_phone'] ?? '') ?></p>
+                                <td class="py-3.5 px-4">
+                                    <p class="font-bold text-slate-900"><?= htmlspecialchars($ord['customer_name'] ?? 'Guest Customer') ?></p>
+                                    <p class="text-xs text-slate-500 font-mono"><?= htmlspecialchars($ord['customer_phone'] ?? '') ?></p>
                                 </td>
-                                <td class="py-3 px-4 text-xs text-secondary-600">
-                                    <?= htmlspecialchars($ord['area_name'] ?? 'ঢাকা সদর') ?>
+                                <td class="py-3.5 px-4 text-xs text-slate-600">
+                                    <?= htmlspecialchars($ord['area_name'] ?? 'Central Zone') ?>
                                 </td>
-                                <td class="py-3 px-4 text-center font-bold text-secondary-800 text-xs">
-                                    <?= $ord['items_count'] ?? 1 ?> টি
+                                <td class="py-3.5 px-4 text-center font-bold text-slate-800 text-xs">
+                                    <?= $ord['items_count'] ?? 1 ?> Items
                                 </td>
-                                <td class="py-3 px-4 text-right font-black text-secondary-900">
+                                <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
                                     ৳<?= number_format($ord['total_amount'], 2) ?>
                                 </td>
-                                <td class="py-3 px-4 text-center">
-                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border <?= $statusBadge['bg'] ?>">
+                                <td class="py-3.5 px-4 text-center">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold" style="<?= $statusBadge['bg'] ?>">
                                         <?= $statusBadge['label'] ?>
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right">
                                     <div class="inline-flex items-center gap-1.5">
-                                        <a href="<?= $base ?>/admin/orders/show?id=<?= $ord['id'] ?>" class="p-1.5 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="বিস্তারিত দেখুন">
+                                        <a href="<?= $base ?>/admin/orders/show?id=<?= $ord['id'] ?>" class="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="View Details">
                                             <ion-icon name="eye-outline" class="text-lg"></ion-icon>
                                         </a>
-                                        <a href="<?= $base ?>/admin/orders/invoice?id=<?= $ord['id'] ?>" target="_blank" class="p-1.5 text-secondary-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="ইনভয়েস ভাউচার">
+                                        <a href="<?= $base ?>/admin/orders/invoice?id=<?= $ord['id'] ?>" target="_blank" class="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Print Invoice">
                                             <ion-icon name="receipt-outline" class="text-lg"></ion-icon>
                                         </a>
                                     </div>
@@ -510,10 +541,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: <?= json_encode($chartLabels) ?>,
                 datasets: [
                     {
-                        label: 'বিক্রয় (৳)',
+                        label: 'Revenue (৳)',
                         data: <?= json_encode($chartSales) ?>,
                         borderColor: '#059669',
-                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        backgroundColor: 'rgba(5, 150, 105, 0.12)',
                         fill: true,
                         tension: 0.35,
                         yAxisID: 'y',
@@ -522,16 +553,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         pointBackgroundColor: '#059669'
                     },
                     {
-                        label: 'অর্ডার সংখ্যা',
+                        label: 'Orders Count',
                         data: <?= json_encode($chartOrders) ?>,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                        borderDash: [5, 5],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                        borderDash: [4, 4],
                         tension: 0.35,
                         yAxisID: 'y1',
                         borderWidth: 2,
                         pointRadius: 3,
-                        pointBackgroundColor: '#3b82f6'
+                        pointBackgroundColor: '#2563eb'
                     }
                 ]
             },
@@ -549,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     tooltip: {
                         padding: 10,
-                        backgroundColor: '#1e293b',
+                        backgroundColor: '#0f172a',
                         titleFont: { family: 'Outfit', size: 12, weight: 'bold' },
                         bodyFont: { family: 'Outfit', size: 12 }
                     }
@@ -565,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         position: 'left',
                         grid: { color: '#f1f5f9' },
                         ticks: {
-                            callback: function(val) { return '৳' + val; },
+                            callback: function(val) { return '৳' + Number(val).toLocaleString(); },
                             font: { family: 'Outfit', size: 10 }
                         }
                     },
@@ -590,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(statusCtx, {
             type: 'doughnut',
             data: {
-                labels: ['অপেক্ষমাণ', 'প্রসেসিং', 'প্যাকড', 'ডেলিভারিতে', 'সম্পন্ন', 'বাতিল/ফেরত'],
+                labels: ['Pending', 'Processing', 'Packed', 'In Transit', 'Delivered', 'Cancelled/Return'],
                 datasets: [{
                     data: [
                         <?= (int)($statusCounts['pending'] ?? 0) ?>,
