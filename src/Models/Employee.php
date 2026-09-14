@@ -199,17 +199,20 @@ class Employee {
     }
 
     public function getAttendanceHistory($id, $limit = 30) {
-        $stmt = $this->db->query("SELECT * FROM attendances WHERE employee_id = ? ORDER BY date DESC LIMIT ?", [$id, $limit]);
+        $limit = (int)$limit;
+        $stmt = $this->db->query("SELECT * FROM attendances WHERE employee_id = ? ORDER BY date DESC LIMIT {$limit}", [$id]);
         return $stmt->fetchAll();
     }
 
     public function getRecentPayrolls($id, $limit = 12) {
-        $stmt = $this->db->query("SELECT * FROM payrolls WHERE employee_id = ? ORDER BY salary_month DESC LIMIT ?", [$id, $limit]);
+        $limit = (int)$limit;
+        $stmt = $this->db->query("SELECT * FROM payrolls WHERE employee_id = ? ORDER BY salary_month DESC LIMIT {$limit}", [$id]);
         return $stmt->fetchAll();
     }
 
     public function getLeaveHistory($id, $limit = 10) {
-        $stmt = $this->db->query("SELECT * FROM leave_requests WHERE employee_id = ? ORDER BY start_date DESC LIMIT ?", [$id, $limit]);
+        $limit = (int)$limit;
+        $stmt = $this->db->query("SELECT * FROM leave_requests WHERE employee_id = ? ORDER BY start_date DESC LIMIT {$limit}", [$id]);
         return $stmt->fetchAll();
     }
 }
