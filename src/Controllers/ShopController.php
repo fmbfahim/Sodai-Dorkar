@@ -922,9 +922,75 @@ class ShopController {
     }
     
     public function success() {
-        $orderId = $_GET['order_id'] ?? null;
+        $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : null;
+        $order = null;
+        $orderItems = [];
+        $crossSellingProducts = [];
+
+        if ($orderId) {
+            $orderStmt = $this->db->query("SELECT * FROM orders WHERE id = :id LIMIT 1", ['id' => $orderId]);
+            $order = $orderStmt->fetch();
+            if ($order) {
+                $itemsStmt = $this->db->query("
+                    SELECT oi.*, p.category_id, p.image_path, p.name as product_name, p.selling_unit, p.base_unit
+                    FROM order_items oi
+                    LEFT JOIN products p ON oi.product_id = p.id
+                    WHERE oi.order_id = :order_id
+                ", ['order_id' => $orderId]);
+                $orderItems = $itemsStmt->fetchAll();
+            }
+        }
+
+        // Collect category IDs and product IDs to exclude from recommendations
+        $excludeIds = [0];
+        $categoryIds = [];
+        if (!empty($orderItems)) {
+            foreach ($orderItems as $item) {
+                if (!empty($item['product_id'])) $excludeIds[] = (int)$item['product_id'];
+                if (!empty($item['category_id'])) $categoryIds[] = (int)$item['category_id'];
+            }
+        }
+        $categoryIds = array_unique(array_filter($categoryIds));
+        $excludePlaceholders = implode(',', array_map('intval', array_unique($excludeIds)));
+
+        // 1. First fetch products from related categories of purchased items
+        if (!empty($categoryIds)) {
+            $catPlaceholders = implode(',', array_map('intval', $categoryIds));
+            $sql = "SELECT p.*, c.name as category_name 
+                    FROM products p 
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.availability_status = 'in_stock' 
+                      AND p.id NOT IN ($excludePlaceholders)
+                      AND p.category_id IN ($catPlaceholders)
+                    ORDER BY (p.regular_price - p.sell_price) DESC, p.id DESC
+                    LIMIT 8";
+            $crossSellingProducts = $this->db->query($sql)->fetchAll();
+        }
+
+        // 2. If fewer than 8 items found, top up with deals or top in-stock products
+        if (count($crossSellingProducts) < 8) {
+            $existingCrossIds = array_merge($excludeIds, array_column($crossSellingProducts, 'id'));
+            $existingPlaceholders = implode(',', array_map('intval', array_unique($existingCrossIds)));
+            $needed = 8 - count($crossSellingProducts);
+            $sql = "SELECT p.*, c.name as category_name 
+                    FROM products p 
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.availability_status = 'in_stock' 
+                      AND p.id NOT IN ($existingPlaceholders)
+                    ORDER BY 
+                      (CASE WHEN p.regular_price IS NOT NULL AND p.regular_price > p.sell_price THEN 0 ELSE 1 END),
+                      (p.regular_price - p.sell_price) DESC, 
+                      p.id DESC
+                    LIMIT $needed";
+            $topProducts = $this->db->query($sql)->fetchAll();
+            $crossSellingProducts = array_merge($crossSellingProducts, $topProducts);
+        }
+
         return View::render('shop/success', [
-            'orderId' => $orderId
+            'orderId' => $orderId,
+            'order' => $order,
+            'orderItems' => $orderItems,
+            'crossSellingProducts' => $crossSellingProducts
         ]);
     }
 

@@ -94,6 +94,23 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             color: white; 
             box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.39);
         }
+
+        /* Mobile header auto-collapse on scroll (shrinks to only search bar) */
+        @media (max-width: 767px) {
+            #site-main-header.is-scrolled-mobile #header-top-row {
+                display: none !important;
+            }
+            #site-main-header.is-scrolled-mobile #header-nav-row {
+                display: none !important;
+            }
+            #site-main-header.is-scrolled-mobile #header-mobile-search {
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                background-color: #ffffff;
+                border-top: none;
+                box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.08);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-secondary-800 antialiased min-h-screen flex flex-col font-sans">
@@ -230,8 +247,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
     </div>
 
     <!-- 2. MAIN HEADER (Logo + Wide Search Bar + Account & Cart) -->
-    <header class="bg-white sticky top-0 z-40 border-b border-gray-100 shadow-xs">
-        <div class="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6">
+    <header class="bg-white sticky top-0 z-40 border-b border-gray-100 shadow-xs transition-all duration-200" id="site-main-header">
+        <div class="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6 transition-all duration-200" id="header-top-row">
             
             <!-- Brand Logo -->
             <a href="/sodai-dorkar/public/" class="flex items-center gap-2.5 group flex-shrink-0">
@@ -338,7 +355,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </div>
 
         <!-- 3. SECONDARY NAVIGATION BAR (Shop by Category + Links + Flash Deals) -->
-        <nav class="border-t border-gray-100 bg-white">
+        <nav class="border-t border-gray-100 bg-white transition-all duration-200" id="header-nav-row">
             <div class="container mx-auto px-4 flex items-center justify-between">
                 
                 <!-- Category Dropdown Button -->
@@ -412,24 +429,24 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </nav>
 
         <!-- Mobile Search Input Bar -->
-        <div class="md:hidden px-4 py-2.5 bg-gray-50 border-t border-gray-100">
-            <form action="/sodai-dorkar/public/" method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden shadow-2xs">
-                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="<?= $__('header_search_placeholder') ?>" class="flex-1 px-3 py-2 text-xs text-gray-800 focus:outline-none">
-                <button type="submit" class="bg-emerald-600 text-white px-3.5 py-2">
+        <div class="md:hidden px-4 py-2.5 bg-gray-50 border-t border-gray-100 transition-all duration-200" id="header-mobile-search">
+            <form action="<?= $base ?>/" method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
+                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="<?= $__('header_search_placeholder') ?>" class="flex-1 px-3 py-2 text-xs text-gray-800 focus:outline-none bg-transparent">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </button>
             </form>
         </div>
     </header>
 
-    <!-- Main Content (with bottom padding on mobile so bottom sticky cart never covers content) -->
-    <main class="flex-grow pb-20 md:pb-0">
+    <!-- Main Content (with bottom padding on mobile so bottom nav and sticky cart never cover content) -->
+    <main class="flex-grow pb-28 md:pb-0">
         <?= $content ?? '' ?>
     </main>
 
-    <!-- STICKY FLOATING CART WIDGET (Bottom Bar on Mobile, Right-Side Pill on Desktop) -->
+    <!-- STICKY FLOATING CART WIDGET (Bottom Bar on Mobile floating above bottom nav, Right-Side Pill on Desktop) -->
     <aside id="sticky-cart-btn" onclick="openCartDrawer()" 
-           class="fixed z-40 cursor-pointer select-none group transition-all duration-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-400 bottom-3 inset-x-3 sm:inset-x-6 max-w-lg mx-auto flex flex-row items-center justify-between bg-gray-950/95 hover:bg-black text-white rounded-2xl shadow-2xl border border-emerald-500/50 p-2.5 px-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-0 md:left-auto md:inset-x-auto md:w-auto md:max-w-none md:flex-col md:rounded-l-2xl md:rounded-r-none md:border-l-2 md:border-y md:border-r-0 md:min-w-[84px] md:p-2.5 md:text-center md:hover:-translate-x-1.5"
+           class="fixed z-40 cursor-pointer select-none group transition-all duration-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-400 bottom-[70px] inset-x-3 sm:inset-x-6 max-w-lg mx-auto flex flex-row items-center justify-between bg-gray-950/95 hover:bg-black text-white rounded-2xl shadow-2xl border border-emerald-500/50 p-2.5 px-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-0 md:left-auto md:inset-x-auto md:w-auto md:max-w-none md:flex-col md:rounded-l-2xl md:rounded-r-none md:border-l-2 md:border-y md:border-r-0 md:min-w-[84px] md:p-2.5 md:text-center md:hover:-translate-x-1.5"
            title="<?= $__('drawer_title') ?>">
         
         <!-- Bag Icon & Item Count -->
@@ -459,6 +476,50 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             </div>
         </div>
     </aside>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on Mobile) -->
+    <?php
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
+    $isCategoryPage = (strpos($cleanPath, '/category') === 0);
+    $isAccountPage = (strpos($cleanPath, '/account') === 0 || strpos($cleanPath, '/checkout/auth') === 0);
+    $isShopPage = !$isCategoryPage && !$isAccountPage;
+    ?>
+    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] px-3 py-1.5 transition-all">
+        <div class="flex items-center justify-around max-w-md mx-auto">
+            
+            <!-- Category Tab -->
+            <a href="<?= $base ?>/category" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isCategoryPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
+                <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isCategoryPage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                </div>
+                <span class="text-[11px] leading-tight tracking-tight">Category</span>
+            </a>
+
+            <!-- Shop Tab -->
+            <a href="<?= $base ?>/" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isShopPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
+                <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isShopPage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <span class="text-[11px] leading-tight tracking-tight">Shop</span>
+            </a>
+
+            <!-- Profile Tab -->
+            <a href="<?= isset($_SESSION['customer_id']) ? $base . '/account' : $base . '/checkout/auth' ?>" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isAccountPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
+                <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isAccountPage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                <span class="text-[11px] leading-tight tracking-tight">Profile</span>
+            </a>
+
+        </div>
+    </nav>
 
     <!-- SLIDE-OVER SIDE CART DRAWER -->
     <!-- Backdrop -->
@@ -1144,6 +1205,34 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             renderSpendMoreOffersUI('cart-spend-more-container', window.SODAI_STATE.spendMoreOffers);
             syncProductCardsWithCart();
         });
+
+        // Mobile Header Auto-Collapse on Scroll (Only Search Bar Shows)
+        (function initMobileHeaderScroll() {
+            const header = document.getElementById('site-main-header');
+            if (!header) return;
+
+            let ticking = false;
+            function onScroll() {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        if (window.innerWidth < 768) {
+                            if (window.scrollY > 40) {
+                                header.classList.add('is-scrolled-mobile');
+                            } else {
+                                header.classList.remove('is-scrolled-mobile');
+                            }
+                        } else {
+                            header.classList.remove('is-scrolled-mobile');
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll, { passive: true });
+            onScroll();
+        })();
     </script>
 </body>
 </html>
