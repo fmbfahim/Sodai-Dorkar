@@ -1,10 +1,13 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Sodai Dorkar</title>
-    <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
+    <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Ionicons for icons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
@@ -184,6 +187,46 @@
                     <a href="/sodai-dorkar/public/admin/accounts" class="flex items-center px-4 py-3 rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group">
                         <ion-icon name="wallet-outline" class="text-xl mr-3 group-hover:text-primary-600"></ion-icon>
                         <span class="font-medium">Accounts</span>
+                    </a>
+                </li>
+
+                <li class="px-4 pt-4 pb-2 text-xs font-semibold text-secondary-400 uppercase tracking-wider">HR & Employees</li>
+                <li>
+                    <a href="<?= $base ?>/admin/hr/employees" class="flex items-center px-4 py-3 rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group">
+                        <ion-icon name="people-outline" class="text-xl mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">Employees</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $base ?>/admin/hr/attendance" class="flex items-center px-4 py-2 text-sm rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                        <ion-icon name="calendar-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">Daily Attendance</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $base ?>/admin/hr/leaves" class="flex items-center px-4 py-2 text-sm rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                        <ion-icon name="airplane-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">Leave Requests</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $base ?>/admin/hr/departments" class="flex items-center px-4 py-2 text-sm rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                        <ion-icon name="business-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">Departments</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $base ?>/admin/payroll" class="flex items-center px-4 py-3 rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group">
+                        <ion-icon name="wallet-outline" class="text-xl mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">Payroll & Salary</span>
+                    </a>
+                </li>
+
+                <li class="px-4 pt-4 pb-2 text-xs font-semibold text-secondary-400 uppercase tracking-wider">Access Control</li>
+                <li>
+                    <a href="<?= $base ?>/admin/users" class="flex items-center px-4 py-3 rounded-lg text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group">
+                        <ion-icon name="shield-checkmark-outline" class="text-xl mr-3 group-hover:text-primary-600"></ion-icon>
+                        <span class="font-medium">User Management</span>
                     </a>
                 </li>
 

@@ -1,0 +1,377 @@
+<?php 
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
+
+<div class="space-y-6">
+    <!-- Notifications -->
+    <?php if (!empty($success)): ?>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <ion-icon name="checkmark-circle" class="text-xl text-emerald-600"></ion-icon>
+            <span><?= htmlspecialchars($success) ?></span>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($error)): ?>
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <ion-icon name="alert-circle" class="text-xl text-red-600"></ion-icon>
+            <span><?= htmlspecialchars($error) ?></span>
+        </div>
+    <?php endif; ?>
+
+    <!-- Profile Hero Card -->
+    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-6 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-24 h-24 rounded-2xl bg-primary-50 border-2 border-primary-200 shadow-md flex items-center justify-center overflow-hidden shrink-0">
+                    <?php if (!empty($employee['photo_path'])): ?>
+                        <img src="<?= (strpos($employee['photo_path'], 'http') === 0) ? $employee['photo_path'] : ($base . '/' . ltrim($employee['photo_path'], '/')) ?>" alt="<?= htmlspecialchars($employee['name']) ?>" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <span class="text-3xl font-black text-primary-700 uppercase"><?= mb_substr($employee['name'], 0, 1) ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-2xl font-black text-secondary-900"><?= htmlspecialchars($employee['name']) ?></h2>
+                        <span class="px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded-md font-mono text-xs font-bold"><?= htmlspecialchars($employee['emp_code']) ?></span>
+                        
+                        <?php
+                        $statusBadges = [
+                            'active' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                            'on_leave' => 'bg-amber-100 text-amber-800 border-amber-200',
+                            'inactive' => 'bg-secondary-100 text-secondary-700 border-secondary-200',
+                            'terminated' => 'bg-red-100 text-red-800 border-red-200'
+                        ];
+                        $statusLabels = [
+                            'active' => 'সক্রিয়',
+                            'on_leave' => 'ছুটিতে',
+                            'inactive' => 'নিষ্ক্রিয়',
+                            'terminated' => 'বহিষ্কৃত'
+                        ];
+                        $st = $employee['status'] ?? 'active';
+                        ?>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border <?= $statusBadges[$st] ?? '' ?>">
+                            <?= $statusLabels[$st] ?? ucfirst($st) ?>
+                        </span>
+                    </div>
+
+                    <p class="text-sm font-medium text-secondary-700">
+                        <?= htmlspecialchars($employee['designation_title'] ?? 'পদবী নির্ধারিত নেই') ?> &bull; 
+                        <span class="text-secondary-500"><?= htmlspecialchars($employee['department_name'] ?? 'ডিপার্টমেন্ট নির্ধারিত নেই') ?></span>
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-4 text-xs text-secondary-500 pt-1">
+                        <span class="flex items-center gap-1">
+                            <ion-icon name="call-outline" class="text-secondary-400"></ion-icon>
+                            <?= htmlspecialchars($employee['phone']) ?>
+                        </span>
+                        <?php if (!empty($employee['email'])): ?>
+                            <span class="flex items-center gap-1">
+                                <ion-icon name="mail-outline" class="text-secondary-400"></ion-icon>
+                                <?= htmlspecialchars($employee['email']) ?>
+                            </span>
+                        <?php endif; ?>
+                        <span class="flex items-center gap-1">
+                            <ion-icon name="calendar-outline" class="text-secondary-400"></ion-icon>
+                            যোগদান: <?= date('d M, Y', strtotime($employee['joining_date'])) ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2 self-start md:self-center">
+                <a href="<?= $base ?>/admin/hr/employees/edit?id=<?= $employee['id'] ?>" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+                    <ion-icon name="create-outline" class="text-lg"></ion-icon>
+                    <span>সম্পাদনা</span>
+                </a>
+                <a href="<?= $base ?>/admin/hr/leaves" class="px-4 py-2 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors">
+                    <ion-icon name="airplane-outline" class="text-lg"></ion-icon>
+                    <span>ছুটির আবেদন</span>
+                </a>
+                <a href="<?= $base ?>/admin/hr/employees" class="px-3.5 py-2 border border-secondary-300 text-secondary-600 hover:bg-secondary-50 rounded-xl text-sm transition-colors">
+                    <ion-icon name="arrow-back-outline"></ion-icon>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Attendance Summary KPI Bar -->
+    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3 border-b border-secondary-100 pb-2">
+            <h3 class="text-sm font-bold text-secondary-800 flex items-center gap-2">
+                <ion-icon name="calendar" class="text-primary-600"></ion-icon>
+                চলতি মাসের হাজিরা সারসংক্ষেপ (<?= date('F Y') ?>)
+            </h3>
+            <a href="<?= $base ?>/admin/hr/attendance" class="text-xs text-primary-600 hover:underline font-medium">দৈনিক হাজিরা দিন &rarr;</a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            <div class="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-100 text-center">
+                <p class="text-xs font-semibold">উপস্থিত (Present)</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['present_count'] ?? 0) ?></p>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-50 text-amber-800 border border-amber-100 text-center">
+                <p class="text-xs font-semibold">দেরি (Late)</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['late_count'] ?? 0) ?></p>
+            </div>
+            <div class="p-3 rounded-xl bg-blue-50 text-blue-800 border border-blue-100 text-center">
+                <p class="text-xs font-semibold">অর্ধ দিবস (Half Day)</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['half_day_count'] ?? 0) ?></p>
+            </div>
+            <div class="p-3 rounded-xl bg-red-50 text-red-800 border border-red-100 text-center">
+                <p class="text-xs font-semibold">অনুপস্থিত (Absent)</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['absent_count'] ?? 0) ?></p>
+            </div>
+            <div class="p-3 rounded-xl bg-purple-50 text-purple-800 border border-purple-100 text-center">
+                <p class="text-xs font-semibold">ছুটি (Leave)</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['leave_count'] ?? 0) ?></p>
+            </div>
+            <div class="p-3 rounded-xl bg-secondary-100 text-secondary-800 border border-secondary-200 text-center">
+                <p class="text-xs font-semibold">মোট লগ দিন</p>
+                <p class="text-2xl font-black mt-1"><?= intval($attendanceStats['total_logged'] ?? 0) ?></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2 Column Details Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: Salary & Payment Details -->
+        <div class="space-y-6">
+            <!-- Salary Card -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <h3 class="text-base font-bold text-secondary-900 border-b border-secondary-100 pb-2 flex items-center gap-2">
+                    <ion-icon name="cash-outline" class="text-emerald-600 text-xl"></ion-icon>
+                    বেতন কাঠামো (Salary Structure)
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between py-1 border-b border-secondary-50">
+                        <span class="text-secondary-600">মূল বেতন (Basic)</span>
+                        <span class="font-semibold text-secondary-900">৳<?= number_format($employee['basic_salary'], 2) ?></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-secondary-50">
+                        <span class="text-secondary-600">বাড়ি ভাড়া</span>
+                        <span class="text-secondary-800">৳<?= number_format($employee['house_rent'] ?? 0, 2) ?></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-secondary-50">
+                        <span class="text-secondary-600">চিকিৎসা ভাতা</span>
+                        <span class="text-secondary-800">৳<?= number_format($employee['medical_allowance'] ?? 0, 2) ?></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-secondary-50">
+                        <span class="text-secondary-600">অন্যান্য ভাতা</span>
+                        <span class="text-secondary-800">৳<?= number_format($employee['other_allowance'] ?? 0, 2) ?></span>
+                    </div>
+                    <?php 
+                    $gross = floatval($employee['basic_salary']) + floatval($employee['house_rent']) + floatval($employee['medical_allowance']) + floatval($employee['other_allowance']);
+                    ?>
+                    <div class="flex justify-between py-2 border-t border-secondary-200 font-bold">
+                        <span class="text-secondary-900">মোট ধার্যকৃত বেতন</span>
+                        <span class="text-emerald-600 text-base">৳<?= number_format($gross, 2) ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banking Card -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <h3 class="text-base font-bold text-secondary-900 border-b border-secondary-100 pb-2 flex items-center gap-2">
+                    <ion-icon name="card-outline" class="text-blue-600 text-xl"></ion-icon>
+                    ব্যাংকিং ও লেনদেন তথ্য
+                </h3>
+                <div class="space-y-2 text-xs">
+                    <div class="p-2.5 rounded-xl bg-secondary-50 border border-secondary-200">
+                        <p class="font-bold text-secondary-800">ব্যাংক একাউন্ট</p>
+                        <p class="text-secondary-600 mt-0.5">ব্যাংক: <?= htmlspecialchars($employee['bank_name'] ?: 'নির্ধারিত নেই') ?></p>
+                        <p class="text-secondary-600 font-mono">হিসাব: <?= htmlspecialchars($employee['bank_account_no'] ?: 'নির্ধারিত নেই') ?></p>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-secondary-50 border border-secondary-200">
+                        <p class="font-bold text-secondary-800">মোবাইল ব্যাংকিং (MFS)</p>
+                        <p class="text-secondary-600 mt-0.5">মাধ্যম: <?= htmlspecialchars($employee['mobile_banking_type'] ?: 'নির্ধারিত নেই') ?></p>
+                        <p class="text-secondary-600 font-mono">নম্বর: <?= htmlspecialchars($employee['mobile_banking_number'] ?: 'নির্ধারিত নেই') ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Info Card -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <h3 class="text-base font-bold text-secondary-900 border-b border-secondary-100 pb-2 flex items-center gap-2">
+                    <ion-icon name="information-circle-outline" class="text-purple-600 text-xl"></ion-icon>
+                    অন্যান্য বিবরণ
+                </h3>
+                <div class="space-y-2 text-xs text-secondary-700">
+                    <p><strong class="text-secondary-900">এনআইডি নম্বর:</strong> <?= htmlspecialchars($employee['nid'] ?: 'N/A') ?></p>
+                    <p><strong class="text-secondary-900">জরুরি যোগাযোগ:</strong> <?= htmlspecialchars($employee['emergency_contact'] ?: 'N/A') ?></p>
+                    <p><strong class="text-secondary-900">ঠিকানা:</strong> <?= nl2br(htmlspecialchars($employee['address'] ?: 'N/A')) ?></p>
+                    <p><strong class="text-secondary-900">সিস্টেম লগইন:</strong> <?= !empty($employee['linked_username']) ? '@' . htmlspecialchars($employee['linked_username']) . ' (' . ($employee['linked_role'] ?? '') . ')' : 'কোনো একাউন্ট লিংক নেই' ?></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Recent Attendances, Payrolls, and Leaves -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Recent Attendances (Last 15 days) -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-secondary-100 pb-2">
+                    <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                        <ion-icon name="time-outline" class="text-primary-600 text-xl"></ion-icon>
+                        সাম্প্রতিক হাজিরা লগ (Recent Attendance)
+                    </h3>
+                    <a href="<?= $base ?>/admin/hr/attendance/report" class="text-xs text-primary-600 hover:underline">সম্পূর্ণ রিপোর্ট &rarr;</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-secondary-50 text-secondary-600 uppercase border-b border-secondary-200">
+                            <tr>
+                                <th class="py-2.5 px-3">তারিখ</th>
+                                <th class="py-2.5 px-3 text-center">স্ট্যাটাস</th>
+                                <th class="py-2.5 px-3">প্রবেশ (In)</th>
+                                <th class="py-2.5 px-3">প্রস্থান (Out)</th>
+                                <th class="py-2.5 px-3">মন্তব্য</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-secondary-100">
+                            <?php if (empty($recentAttendance)): ?>
+                                <tr>
+                                    <td colspan="5" class="py-6 text-center text-secondary-400">কোনো হাজিরা রেকর্ড পাওয়া যায়নি।</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($recentAttendance as $att): ?>
+                                    <tr class="hover:bg-secondary-50/50">
+                                        <td class="py-2.5 px-3 font-semibold text-secondary-800"><?= date('d M, Y (D)', strtotime($att['date'])) ?></td>
+                                        <td class="py-2.5 px-3 text-center">
+                                            <?php
+                                            $attBadges = [
+                                                'present' => 'bg-emerald-100 text-emerald-800',
+                                                'late' => 'bg-amber-100 text-amber-800',
+                                                'half_day' => 'bg-blue-100 text-blue-800',
+                                                'absent' => 'bg-red-100 text-red-800',
+                                                'leave' => 'bg-purple-100 text-purple-800',
+                                                'holiday' => 'bg-secondary-100 text-secondary-700'
+                                            ];
+                                            $st = $att['status'] ?? 'present';
+                                            ?>
+                                            <span class="inline-flex px-2 py-0.5 rounded-full font-medium capitalize <?= $attBadges[$st] ?? '' ?>">
+                                                <?= $st ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-2.5 px-3 font-mono text-secondary-700"><?= !empty($att['in_time']) ? date('h:i A', strtotime($att['in_time'])) : '-' ?></td>
+                                        <td class="py-2.5 px-3 font-mono text-secondary-700"><?= !empty($att['out_time']) ? date('h:i A', strtotime($att['out_time'])) : '-' ?></td>
+                                        <td class="py-2.5 px-3 text-secondary-500"><?= htmlspecialchars($att['note'] ?: '-') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Payroll Records -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-secondary-100 pb-2">
+                    <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                        <ion-icon name="receipt-outline" class="text-emerald-600 text-xl"></ion-icon>
+                        বেতন রশিদ হিস্ট্রি (Payroll History)
+                    </h3>
+                    <a href="<?= $base ?>/admin/payroll" class="text-xs text-primary-600 hover:underline">পেরোল শিট &rarr;</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-secondary-50 text-secondary-600 uppercase border-b border-secondary-200">
+                            <tr>
+                                <th class="py-2.5 px-3">মাস (Month)</th>
+                                <th class="py-2.5 px-3">উপস্থিত দিন</th>
+                                <th class="py-2.5 px-3 text-right">মূল বেতন</th>
+                                <th class="py-2.5 px-3 text-right">কর্তন</th>
+                                <th class="py-2.5 px-3 text-right font-bold">প্রদেয় নেট বেতন</th>
+                                <th class="py-2.5 px-3 text-center">স্ট্যাটাস</th>
+                                <th class="py-2.5 px-3 text-right">পেস্লিপ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-secondary-100">
+                            <?php if (empty($recentPayrolls)): ?>
+                                <tr>
+                                    <td colspan="7" class="py-6 text-center text-secondary-400">কোনো পেরোল রেকর্ড পাওয়া যায়নি।</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($recentPayrolls as $pay): ?>
+                                    <tr class="hover:bg-secondary-50/50">
+                                        <td class="py-2.5 px-3 font-semibold text-secondary-900"><?= date('F Y', strtotime($pay['salary_month'] . '-01')) ?></td>
+                                        <td class="py-2.5 px-3"><?= $pay['present_days'] ?> / <?= $pay['working_days'] ?> দিন</td>
+                                        <td class="py-2.5 px-3 text-right">৳<?= number_format($pay['basic_salary'], 2) ?></td>
+                                        <td class="py-2.5 px-3 text-right text-red-600">-৳<?= number_format($pay['deductions'] + $pay['advance_salary_deduction'], 2) ?></td>
+                                        <td class="py-2.5 px-3 text-right font-bold text-emerald-600">৳<?= number_format($pay['net_salary'], 2) ?></td>
+                                        <td class="py-2.5 px-3 text-center">
+                                            <?php if ($pay['status'] === 'paid'): ?>
+                                                <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">পরিশোধিত</span>
+                                            <?php else: ?>
+                                                <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">বকেয়া</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-2.5 px-3 text-right">
+                                            <a href="<?= $base ?>/admin/payroll/payslip?id=<?= $pay['id'] ?>" target="_blank" class="px-2 py-1 bg-secondary-100 hover:bg-primary-50 hover:text-primary-600 text-secondary-700 rounded-lg text-xs font-medium transition-colors">
+                                                ভাউচার &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Leave History -->
+            <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-secondary-100 pb-2">
+                    <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                        <ion-icon name="airplane-outline" class="text-amber-600 text-xl"></ion-icon>
+                        ছুটির রেকর্ড (Leave History)
+                    </h3>
+                    <a href="<?= $base ?>/admin/hr/leaves" class="text-xs text-primary-600 hover:underline">ছুটি ব্যবস্থাপনা &rarr;</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-secondary-50 text-secondary-600 uppercase border-b border-secondary-200">
+                            <tr>
+                                <th class="py-2.5 px-3">ছুটির ধরন</th>
+                                <th class="py-2.5 px-3">শুরু - শেষ তারিখ</th>
+                                <th class="py-2.5 px-3 text-center">মোট দিন</th>
+                                <th class="py-2.5 px-3">কারণ</th>
+                                <th class="py-2.5 px-3 text-center">স্ট্যাটাস</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-secondary-100">
+                            <?php if (empty($leaveHistory)): ?>
+                                <tr>
+                                    <td colspan="5" class="py-6 text-center text-secondary-400">কোনো ছুটির আবেদন পাওয়া যায়নি।</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($leaveHistory as $lv): ?>
+                                    <tr class="hover:bg-secondary-50/50">
+                                        <td class="py-2.5 px-3 font-semibold capitalize"><?= htmlspecialchars($lv['leave_type']) ?> Leave</td>
+                                        <td class="py-2.5 px-3 text-secondary-700"><?= date('d M, Y', strtotime($lv['start_date'])) ?> হতে <?= date('d M, Y', strtotime($lv['end_date'])) ?></td>
+                                        <td class="py-2.5 px-3 text-center font-bold"><?= $lv['total_days'] ?> দিন</td>
+                                        <td class="py-2.5 px-3 text-secondary-600"><?= htmlspecialchars($lv['reason'] ?: '-') ?></td>
+                                        <td class="py-2.5 px-3 text-center">
+                                            <?php
+                                            $lvBadges = [
+                                                'approved' => 'bg-emerald-100 text-emerald-800',
+                                                'pending' => 'bg-amber-100 text-amber-800',
+                                                'rejected' => 'bg-red-100 text-red-800'
+                                            ];
+                                            $st = $lv['status'] ?? 'pending';
+                                            ?>
+                                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold capitalize <?= $lvBadges[$st] ?? '' ?>">
+                                                <?= $st ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

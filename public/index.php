@@ -236,4 +236,40 @@ $router->post('/admin/delivery-men/delete', 'DeliveryManController@destroy');
 $router->get('/admin/dispatch', 'DispatchController@index');
 $router->post('/admin/dispatch/bulk', 'DispatchController@bulkAction');
 
+// User Management Routes
+$router->get('/admin/users', 'UserController@index');
+$router->post('/admin/users/store', 'UserController@store');
+$router->get('/admin/users/edit', 'UserController@edit');
+$router->post('/admin/users/update', 'UserController@update');
+$router->post('/admin/users/toggle-status', 'UserController@toggleStatus');
+$router->post('/admin/users/delete', 'UserController@destroy');
+
+// HR & Employee Management Routes
+$router->get('/admin/hr/employees', 'HrController@employees');
+$router->get('/admin/hr/employees/create', 'HrController@createEmployee');
+$router->post('/admin/hr/employees/store', 'HrController@storeEmployee');
+$router->get('/admin/hr/employees/show', 'HrController@showEmployee');
+$router->get('/admin/hr/employees/edit', 'HrController@editEmployee');
+$router->post('/admin/hr/employees/update', 'HrController@updateEmployee');
+$router->post('/admin/hr/employees/delete', 'HrController@destroyEmployee');
+$router->get('/admin/hr/departments', 'HrController@departments');
+$router->post('/admin/hr/departments/store', 'HrController@storeDepartment');
+$router->post('/admin/hr/departments/delete', 'HrController@destroyDepartment');
+$router->post('/admin/hr/designations/store', 'HrController@storeDesignation');
+$router->post('/admin/hr/designations/delete', 'HrController@destroyDesignation');
+$router->get('/admin/hr/attendance', 'HrController@attendance');
+$router->post('/admin/hr/attendance/store', 'HrController@storeAttendance');
+$router->get('/admin/hr/attendance/report', 'HrController@attendanceReport');
+$router->get('/admin/hr/leaves', 'HrController@leaves');
+$router->post('/admin/hr/leaves/store', 'HrController@storeLeave');
+$router->post('/admin/hr/leaves/update-status', 'HrController@updateLeaveStatus');
+$router->post('/admin/hr/leaves/delete', 'HrController@destroyLeave');
+
+// Payroll Management Routes
+$router->get('/admin/payroll', 'PayrollController@index');
+$router->post('/admin/payroll/generate', 'PayrollController@generate');
+$router->get('/admin/payroll/payslip', 'PayrollController@payslip');
+$router->post('/admin/payroll/mark-paid', 'PayrollController@markPaid');
+$router->post('/admin/payroll/delete', 'PayrollController@destroy');
+
 $router->resolve();
