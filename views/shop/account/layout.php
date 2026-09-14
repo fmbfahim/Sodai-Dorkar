@@ -159,7 +159,7 @@ $navLinks = [
         </a>
 
         <!-- Shop Tab -->
-        <a href="<?= $base ?>/" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group text-gray-500 hover:text-emerald-600">
+        <a href="<?= $base ?>/shop" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group text-gray-500 hover:text-emerald-600">
             <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 stroke-2 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />

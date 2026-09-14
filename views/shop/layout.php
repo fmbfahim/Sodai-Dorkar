@@ -482,8 +482,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
     $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
     $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
     $isCategoryPage = (strpos($cleanPath, '/category') === 0);
+    $isShopPage = (strpos($cleanPath, '/shop') === 0);
     $isAccountPage = (strpos($cleanPath, '/account') === 0 || strpos($cleanPath, '/checkout/auth') === 0);
-    $isShopPage = !$isCategoryPage && !$isAccountPage;
     ?>
     <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] px-3 py-1.5 transition-all">
         <div class="flex items-center justify-around max-w-md mx-auto">
@@ -499,7 +499,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             </a>
 
             <!-- Shop Tab -->
-            <a href="<?= $base ?>/" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isShopPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
+            <a href="<?= $base ?>/shop" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isShopPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
                 <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isShopPage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />

@@ -29,6 +29,7 @@ $router = new Router();
 
 // Define Routes
 $router->get('/', 'ShopController@index');
+$router->get('/shop', 'ShopController@shop');
 $router->get('/category', 'ShopController@category');
 $router->get('/product', 'ShopController@product');
 $router->get('/cart', 'ShopController@cart');

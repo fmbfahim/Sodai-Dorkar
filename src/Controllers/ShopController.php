@@ -251,15 +251,15 @@ class ShopController {
             if (isset($catById[$mId])) $mainCategories[] = $catById[$mId];
         }
 
-        // If no catId given, take the first main category
+        // If no catId given, render the complete All Categories directory page!
         if (!$catId || !isset($catById[$catId])) {
-            $firstCat = !empty($mainCategories) ? $mainCategories[0] : null;
-            if ($firstCat) {
-                $catId = (int)$firstCat['id'];
-            } else {
-                header('Location: /sodai-dorkar/public/');
-                exit;
-            }
+            return View::render('shop/all_categories', [
+                'allCategories' => $allCategories,
+                'mainCategories' => $mainCategories,
+                'catById' => $catById,
+                'childrenMap' => $childrenMap,
+                'search' => $search
+            ]);
         }
 
         $currentCategory = $catById[$catId];
@@ -417,6 +417,173 @@ class ShopController {
             'inStockOnly' => $inStockOnly,
             'isDeals' => $isDeals,
             'search' => $search
+        ]);
+    }
+
+    public function shop() {
+        $catId = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['category']) ? (int)$_GET['category'] : 0);
+        $subId = isset($_GET['sub']) && $_GET['sub'] !== '' ? (int)$_GET['sub'] : null;
+        $search = trim($_GET['search'] ?? '');
+        $sort = $_GET['sort'] ?? 'newest';
+        $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? (float)$_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? (float)$_GET['max_price'] : null;
+        $selectedBrand = isset($_GET['brand']) && $_GET['brand'] !== '' ? (int)$_GET['brand'] : null;
+        $inStockOnly = isset($_GET['in_stock']) ? ($_GET['in_stock'] == '1') : false;
+        $isDeals = isset($_GET['deals']) && $_GET['deals'] == '1';
+
+        // Fetch all categories for filter sidebar & header
+        $allCategories = $this->db->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll();
+        $catById = [];
+        $childrenMap = [];
+        foreach ($allCategories as $c) {
+            $catById[$c['id']] = $c;
+            $pId = !empty($c['parent_id']) ? (int)$c['parent_id'] : 0;
+            if (!isset($childrenMap[$pId])) $childrenMap[$pId] = [];
+            $childrenMap[$pId][] = (int)$c['id'];
+        }
+
+        // Direct product counts per category
+        $prodCountsByCat = [];
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        foreach ($rawCounts as $rc) {
+            $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
+        }
+
+        // Attach counts
+        foreach ($allCategories as &$c) {
+            $descIds = $this->getCategoryDescendantIds($c['id']);
+            $tot = 0;
+            foreach ($descIds as $d) {
+                $tot += $prodCountsByCat[$d] ?? 0;
+            }
+            $c['total_product_count'] = $tot;
+            $c['sub_count'] = isset($childrenMap[$c['id']]) ? count($childrenMap[$c['id']]) : 0;
+            $catById[$c['id']]['total_product_count'] = $tot;
+            $catById[$c['id']]['sub_count'] = $c['sub_count'];
+        }
+        unset($c);
+
+        // Determine main categories
+        $rootIds = $childrenMap[0] ?? [];
+        if (count($rootIds) === 1 && isset($childrenMap[$rootIds[0]])) {
+            $mainCatIds = $childrenMap[$rootIds[0]];
+        } else {
+            $mainCatIds = $rootIds;
+        }
+        $mainCategories = [];
+        foreach ($mainCatIds as $mId) {
+            if (isset($catById[$mId])) $mainCategories[] = $catById[$mId];
+        }
+
+        $currentCategory = ($catId && isset($catById[$catId])) ? $catById[$catId] : null;
+        $filterCatIds = [];
+        if ($currentCategory) {
+            $targetId = ($subId && isset($catById[$subId])) ? $subId : $currentCategory['id'];
+            $filterCatIds = $this->getCategoryDescendantIds($targetId);
+        }
+
+        // Fetch brands
+        $brands = $this->db->query("SELECT b.id, b.name, COUNT(p.id) as prod_count 
+            FROM brands b 
+            JOIN products p ON p.brand_id = b.id 
+            WHERE p.availability_status = 'in_stock'
+            GROUP BY b.id, b.name 
+            ORDER BY b.name ASC")->fetchAll();
+
+        // Price bounds
+        $priceRow = $this->db->query("SELECT MIN(sell_price) as min_p, MAX(sell_price) as max_p FROM products WHERE availability_status = 'in_stock'")->fetch();
+        $minPriceBound = ($priceRow && $priceRow['min_p'] !== null) ? (float)$priceRow['min_p'] : 0;
+        $maxPriceBound = ($priceRow && $priceRow['max_p'] !== null) ? (float)$priceRow['max_p'] : 1000;
+
+        // Query products
+        $sql = "SELECT products.*, categories.name as category_name, brands.name as brand_name 
+                FROM products 
+                LEFT JOIN categories ON products.category_id = categories.id
+                LEFT JOIN brands ON products.brand_id = brands.id 
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filterCatIds)) {
+            $inPlaceholders = [];
+            foreach ($filterCatIds as $idx => $fId) {
+                $pKey = "cat_" . $idx;
+                $inPlaceholders[] = ":" . $pKey;
+                $params[$pKey] = $fId;
+            }
+            $sql .= " AND products.category_id IN (" . implode(',', $inPlaceholders) . ")";
+        }
+
+        if ($inStockOnly) {
+            $sql .= " AND products.availability_status = 'in_stock'";
+        }
+
+        if ($selectedBrand) {
+            $sql .= " AND products.brand_id = :brand_id";
+            $params['brand_id'] = $selectedBrand;
+        }
+
+        if ($minPrice !== null) {
+            $sql .= " AND products.sell_price >= :min_price";
+            $params['min_price'] = $minPrice;
+        }
+
+        if ($maxPrice !== null) {
+            $sql .= " AND products.sell_price <= :max_price";
+            $params['max_price'] = $maxPrice;
+        }
+
+        if ($isDeals) {
+            $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
+        }
+
+        if ($search) {
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3)";
+            $params['search'] = "%{$search}%";
+            $params['search2'] = "%{$search}%";
+            $params['search3'] = "%{$search}%";
+        }
+
+        // Sorting
+        switch ($sort) {
+            case 'price_asc':
+                $sql .= " ORDER BY products.sell_price ASC";
+                break;
+            case 'price_desc':
+                $sql .= " ORDER BY products.sell_price DESC";
+                break;
+            case 'deals':
+                $sql .= " ORDER BY (products.regular_price - products.sell_price) DESC, products.id DESC";
+                break;
+            case 'name_asc':
+                $sql .= " ORDER BY products.name ASC";
+                break;
+            case 'newest':
+            default:
+                $sql .= " ORDER BY products.created_at DESC, products.id DESC";
+                break;
+        }
+
+        $stmt = $this->db->query($sql, $params);
+        $products = $stmt->fetchAll();
+
+        return View::render('shop/shop', [
+            'products' => $products,
+            'allCategories' => $allCategories,
+            'mainCategories' => $mainCategories,
+            'catById' => $catById,
+            'childrenMap' => $childrenMap,
+            'currentCategory' => $currentCategory,
+            'brands' => $brands,
+            'minPriceBound' => $minPriceBound,
+            'maxPriceBound' => $maxPriceBound,
+            'catId' => $catId,
+            'search' => $search,
+            'sort' => $sort,
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
+            'selectedBrand' => $selectedBrand,
+            'inStockOnly' => $inStockOnly,
+            'isDeals' => $isDeals,
         ]);
     }
 
