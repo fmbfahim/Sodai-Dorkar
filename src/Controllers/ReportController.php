@@ -10,7 +10,7 @@ use Models\Order;
 class ReportController extends Controller {
 
     public function __construct() {
-        Middleware::auth(['admin', 'manager']);
+        Middleware::permission('reports');
     }
 
     public function stock() {

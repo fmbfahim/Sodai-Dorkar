@@ -18,6 +18,13 @@
             <ion-icon name="scale-outline" class="text-lg"></ion-icon>
             একক ও প্যাকেজিং অপশন (Units & Packaging)
         </a>
+        <?php if (\Core\Auth::can('database_reset') || \Core\Auth::isAdmin()): ?>
+        <a href="/sodai-dorkar/public/admin/settings/cleanup" 
+           class="px-5 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2 text-red-500 border-transparent hover:text-red-700">
+            <ion-icon name="trash-bin-outline" class="text-lg"></ion-icon>
+            ডাটা ক্লিনআপ ও রিসেট (Data Reset)
+        </a>
+        <?php endif; ?>
     </div>
 
     <?php if (isset($_GET['success'])): ?>

@@ -14,7 +14,7 @@ class PayrollController extends Controller {
     protected $employeeModel;
 
     public function __construct() {
-        Middleware::auth(['admin', 'manager', 'accountant']);
+        Middleware::permission('payroll');
         $this->payrollModel = new Payroll();
         $this->settingModel = new Setting();
         $this->employeeModel = new Employee();

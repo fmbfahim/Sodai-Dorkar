@@ -8,10 +8,13 @@ use Models\DmAllocation;
 use Models\User;
 use Models\Area;
 
+use Core\Middleware;
+
 class DeliveryManController extends Controller {
     protected $db;
 
     public function __construct() {
+        Middleware::permission('delivery_men');
         $config = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
     }

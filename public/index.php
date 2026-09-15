@@ -227,6 +227,8 @@ $router->post('/admin/ecommerce-settings/update', 'SettingsController@updateEcom
 $router->get('/admin/settings/units', 'SettingsController@units');
 $router->post('/admin/settings/units/store', 'SettingsController@storeUnit');
 $router->post('/admin/settings/units/delete', 'SettingsController@deleteUnit');
+$router->get('/admin/settings/cleanup', 'SettingsController@cleanup');
+$router->post('/admin/settings/cleanup/execute', 'SettingsController@executeCleanup');
 
 // Delivery Man Management Routes
 $router->get('/admin/delivery-men', 'DeliveryManController@index');

@@ -5,7 +5,13 @@ namespace Controllers;
 use Core\Controller;
 use Models\Brand;
 
+use Core\Middleware;
+
 class BrandController extends Controller {
+    
+    public function __construct() {
+        Middleware::permission('categories_brands');
+    }
     
     public function index() {
         $brandModel = new Brand();

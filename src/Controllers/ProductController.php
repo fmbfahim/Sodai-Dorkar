@@ -6,7 +6,13 @@ use Core\Controller;
 use Models\Product;
 use Models\Vendor;
 
+use Core\Middleware;
+
 class ProductController extends Controller {
+    
+    public function __construct() {
+        Middleware::permission('products');
+    }
     
     public function index() {
         $productModel = new Product();

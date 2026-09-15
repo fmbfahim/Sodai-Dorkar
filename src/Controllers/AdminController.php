@@ -9,7 +9,7 @@ use Core\Database;
 class AdminController extends Controller {
     
     public function __construct() {
-        Middleware::auth(['admin', 'manager']);
+        Middleware::permission('dashboard');
     }
 
     public function dashboard() {

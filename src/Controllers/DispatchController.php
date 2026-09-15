@@ -10,7 +10,7 @@ use Models\User;
 class DispatchController extends Controller {
 
     public function __construct() {
-        Middleware::auth(['admin', 'manager']);
+        Middleware::permission('dispatch');
     }
 
     public function index() {

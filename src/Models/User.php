@@ -70,8 +70,9 @@ class User {
 
     public function create($data) {
         $passwordHash = password_hash($data['password'], PASSWORD_BCRYPT);
-        $sql = "INSERT INTO users (name, email, phone, username, password, role, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $permissions = isset($data['permissions']) ? (is_array($data['permissions']) ? json_encode(array_values($data['permissions'])) : $data['permissions']) : null;
+        $sql = "INSERT INTO users (name, email, phone, username, password, role, permissions, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $this->db->query($sql, [
             $data['name'],
             $data['email'] ?? null,
@@ -79,6 +80,7 @@ class User {
             $data['username'],
             $passwordHash,
             $data['role'] ?? 'staff',
+            $permissions,
             $data['status'] ?? 'active'
         ]);
         return $this->db->lastInsertId();
@@ -95,6 +97,11 @@ class User {
             'status' => $data['status'] ?? 'active',
             'id' => $id
         ];
+
+        if (array_key_exists('permissions', $data)) {
+            $sql .= ", permissions = :permissions";
+            $params['permissions'] = is_array($data['permissions']) ? json_encode(array_values($data['permissions'])) : $data['permissions'];
+        }
 
         if (!empty($data['password'])) {
             $sql .= ", password = :password";

@@ -5,7 +5,13 @@ namespace Controllers;
 use Core\Controller;
 use Models\Category;
 
+use Core\Middleware;
+
 class CategoryController extends Controller {
+    
+    public function __construct() {
+        Middleware::permission('categories_brands');
+    }
     
     public function index() {
         $categoryModel = new Category();

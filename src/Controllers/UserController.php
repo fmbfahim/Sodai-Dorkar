@@ -4,6 +4,7 @@ namespace Controllers;
 
 use Core\Controller;
 use Core\Middleware;
+use Core\Auth;
 use Models\User;
 use Models\Employee;
 
@@ -12,7 +13,7 @@ class UserController extends Controller {
     protected $employeeModel;
 
     public function __construct() {
-        Middleware::auth(['admin', 'manager']);
+        Middleware::permission('users');
         $this->userModel = new User();
         $this->employeeModel = new Employee();
     }
@@ -35,6 +36,7 @@ class UserController extends Controller {
 
         $users = $this->userModel->all($filters);
         $roles = User::getRoles();
+        $allPermissions = Auth::allPermissions();
 
         // Get unlinked employees (to link with new accounts)
         $employees = $this->employeeModel->all(['status' => 'active']);
@@ -43,6 +45,7 @@ class UserController extends Controller {
             'title' => 'ব্যবহারকারী ও রোল ব্যবস্থাপনা (User Management)',
             'users' => $users,
             'roles' => $roles,
+            'allPermissions' => $allPermissions,
             'employees' => $employees,
             'filters' => [
                 'role' => $role,
@@ -74,6 +77,18 @@ class UserController extends Controller {
             $this->redirect('/admin/users?error=এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হয়েছে');
         }
 
+        // Permissions assignment
+        if ($role === 'admin') {
+            $permissions = ['*'];
+        } else {
+            $submittedPerms = $_POST['permissions'] ?? [];
+            if (!empty($submittedPerms) && is_array($submittedPerms)) {
+                $permissions = array_values(array_unique($submittedPerms));
+            } else {
+                $permissions = Auth::defaultPermissionsForRole($role);
+            }
+        }
+
         $userId = $this->userModel->create([
             'name' => $name,
             'username' => $username,
@@ -81,6 +96,7 @@ class UserController extends Controller {
             'phone' => $phone,
             'password' => $password,
             'role' => $role,
+            'permissions' => $permissions,
             'status' => $status
         ]);
 
@@ -106,14 +122,28 @@ class UserController extends Controller {
             $this->redirect('/admin/users?error=ব্যবহারকারী পাওয়া যায়নি');
         }
 
+        // Decode user permissions
+        $userPerms = [];
+        if ($user['role'] === 'admin') {
+            $userPerms = ['*'];
+        } else {
+            $userPerms = json_decode($user['permissions'] ?? '[]', true) ?: [];
+            if (empty($userPerms)) {
+                $userPerms = Auth::defaultPermissionsForRole($user['role']);
+            }
+        }
+        $user['parsed_permissions'] = $userPerms;
+
         $roles = User::getRoles();
         $employees = $this->employeeModel->all(['status' => 'active']);
+        $allPermissions = Auth::allPermissions();
 
         return $this->view('admin/users/edit', [
             'title' => 'ব্যবহারকারী সম্পাদনা - ' . $user['name'],
             'user' => $user,
             'roles' => $roles,
             'employees' => $employees,
+            'allPermissions' => $allPermissions,
             'error' => $_GET['error'] ?? null
         ]);
     }
@@ -122,6 +152,11 @@ class UserController extends Controller {
         $id = $_POST['id'] ?? null;
         if (!$id) {
             $this->redirect('/admin/users');
+        }
+
+        $existingUser = $this->userModel->find($id);
+        if (!$existingUser) {
+            $this->redirect('/admin/users?error=ব্যবহারকারী পাওয়া যায়নি');
         }
 
         $name = trim($_POST['name'] ?? '');
@@ -137,10 +172,28 @@ class UserController extends Controller {
             $this->redirect('/admin/users/edit?id=' . $id . '&error=নাম ও ইউজারনেম আবশ্যক');
         }
 
+        // Super Admin Protection: Cannot demote id=1 or username=admin
+        if ($existingUser['id'] == 1 || ($existingUser['role'] === 'admin' && $existingUser['username'] === 'admin')) {
+            $role = 'admin';
+            $status = 'active'; // Super admin cannot be deactivated
+        }
+
         // Check if username taken by another user
-        $existing = $this->userModel->findByUsername($username);
-        if ($existing && $existing['id'] != $id) {
+        $checkUsername = $this->userModel->findByUsername($username);
+        if ($checkUsername && $checkUsername['id'] != $id) {
             $this->redirect('/admin/users/edit?id=' . $id . '&error=এই ইউজারনেম অন্য একজন ব্যবহার করছেন');
+        }
+
+        // Handle permissions
+        if ($role === 'admin') {
+            $permissions = ['*'];
+        } else {
+            $submittedPerms = $_POST['permissions'] ?? [];
+            if (is_array($submittedPerms)) {
+                $permissions = array_values(array_unique($submittedPerms));
+            } else {
+                $permissions = Auth::defaultPermissionsForRole($role);
+            }
         }
 
         $updateData = [
@@ -149,6 +202,7 @@ class UserController extends Controller {
             'email' => $email,
             'phone' => $phone,
             'role' => $role,
+            'permissions' => $permissions,
             'status' => $status
         ];
 
@@ -158,6 +212,13 @@ class UserController extends Controller {
 
         $this->userModel->update($id, $updateData);
 
+        // If editing own account, refresh permissions in session
+        if ($id == ($_SESSION['user_id'] ?? 0)) {
+            $_SESSION['name'] = $name;
+            $_SESSION['role'] = $role;
+            $_SESSION['permissions'] = $permissions;
+        }
+
         // Update employee link if changed
         if ($employeeId) {
             $emp = $this->employeeModel->find($employeeId);
@@ -166,14 +227,18 @@ class UserController extends Controller {
             }
         }
 
-        $this->redirect('/admin/users?success=তথ্য সফলভাবে আপডেট হয়েছে');
+        $this->redirect('/admin/users?success=তথ্য ও পারমিশন সফলভাবে আপডেট হয়েছে');
     }
 
     public function toggleStatus() {
         $id = $_POST['id'] ?? null;
         if ($id) {
-            if ($id == ($_SESSION['user_id'] ?? 0)) {
-                $this->redirect('/admin/users?error=নিজের একাউন্ট নিষ্ক্রিয় করা যাবে না');
+            if ($id == 1 || $id == ($_SESSION['user_id'] ?? 0)) {
+                $this->redirect('/admin/users?error=সুপার এডমিন বা নিজের একাউন্ট নিষ্ক্রিয় করা যাবে না');
+            }
+            $target = $this->userModel->find($id);
+            if ($target && $target['role'] === 'admin' && $target['username'] === 'admin') {
+                $this->redirect('/admin/users?error=সুপার এডমিন একাউন্ট নিষ্ক্রিয় করা যাবে না');
             }
             $this->userModel->toggleStatus($id);
         }
@@ -183,9 +248,15 @@ class UserController extends Controller {
     public function destroy() {
         $id = $_POST['id'] ?? null;
         if ($id) {
-            if ($id == ($_SESSION['user_id'] ?? 0)) {
-                $this->redirect('/admin/users?error=নিজের একাউন্ট মুছে ফেলা যাবে না');
+            if ($id == 1 || $id == ($_SESSION['user_id'] ?? 0)) {
+                $this->redirect('/admin/users?error=সুপার এডমিন বা নিজের একাউন্ট মুছে ফেলা যাবে না');
             }
+
+            $user = $this->userModel->find($id);
+            if ($user && ($user['role'] === 'admin' || $user['username'] === 'admin')) {
+                $this->redirect('/admin/users?error=সুপার এডমিন একাউন্ট মুছে ফেলা সম্পূর্ণ নিষিদ্ধ');
+            }
+
             $this->userModel->delete($id);
             $this->redirect('/admin/users?success=ব্যবহারকারী মুছে ফেলা হয়েছে');
         }

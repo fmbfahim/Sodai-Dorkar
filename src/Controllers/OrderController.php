@@ -13,9 +13,7 @@ use Models\User;
 class OrderController extends Controller {
 
     public function __construct() {
-        // Different methods might have different rules, but for now base auth
-        // We'll stricter checks inside methods or make split auth
-        Middleware::auth(['admin', 'agent']); 
+        Middleware::permission('orders');
     }
     
     public function index() {

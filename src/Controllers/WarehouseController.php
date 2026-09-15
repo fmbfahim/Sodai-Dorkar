@@ -5,7 +5,13 @@ namespace Controllers;
 use Core\Controller;
 use Models\Warehouse;
 
+use Core\Middleware;
+
 class WarehouseController extends Controller {
+    
+    public function __construct() {
+        Middleware::permission('locations');
+    }
     
     public function index() {
         $warehouseModel = new Warehouse();

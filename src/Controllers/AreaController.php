@@ -6,7 +6,13 @@ use Core\Controller;
 use Models\Area;
 use Models\Warehouse;
 
+use Core\Middleware;
+
 class AreaController extends Controller {
+    
+    public function __construct() {
+        Middleware::permission('locations');
+    }
     
     public function index() {
         $areaModel = new Area();

@@ -13,7 +13,7 @@ use Models\Order;
 class CustomerController extends Controller {
     
     public function __construct() {
-        Middleware::auth(['admin', 'agent']); // Agents might need access too
+        Middleware::permission('customers');
     }
 
     public function index() {

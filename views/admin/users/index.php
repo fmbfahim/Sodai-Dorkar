@@ -5,18 +5,18 @@ $currentStatus = $filters['status'] ?? '';
 $search = $filters['search'] ?? '';
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6 mb-16">
     <!-- Header with Actions -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-secondary-200 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-secondary-200 shadow-xs">
         <div>
             <h2 class="text-xl font-bold text-secondary-900 flex items-center gap-2">
                 <ion-icon name="people" class="text-primary-600 text-2xl"></ion-icon>
                 ব্যবহারকারী ও রোল ব্যবস্থাপনা (User & Roles)
             </h2>
-            <p class="text-secondary-500 text-sm mt-1">সিস্টেমের এডমিন, ম্যানেজার, একাউন্ট্যান্ট ও কর্মচারীদের লগইন একাউন্ট ও পারমিশন কন্ট্রোল</p>
+            <p class="text-secondary-500 text-sm mt-1">সিস্টেমের এডমিন, ম্যানেজার, একাউন্ট্যান্ট ও কর্মচারীদের লগইন একাউন্ট ও মডিউল এক্সেস পারমিশন কন্ট্রোল</p>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openCreateUserModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 transition-all shadow-sm">
+            <button onclick="openCreateUserModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-all shadow-xs">
                 <ion-icon name="person-add" class="text-lg"></ion-icon>
                 <span>নতুন ব্যবহারকারী যোগ করুন</span>
             </button>
@@ -25,20 +25,20 @@ $search = $filters['search'] ?? '';
 
     <!-- Notifications -->
     <?php if (!empty($success)): ?>
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
-            <ion-icon name="checkmark-circle" class="text-xl text-emerald-600"></ion-icon>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm shadow-xs">
+            <ion-icon name="checkmark-circle" class="text-xl text-emerald-600 shrink-0"></ion-icon>
             <span><?= htmlspecialchars($success) ?></span>
         </div>
     <?php endif; ?>
     <?php if (!empty($error)): ?>
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
-            <ion-icon name="alert-circle" class="text-xl text-red-600"></ion-icon>
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm shadow-xs">
+            <ion-icon name="alert-circle" class="text-xl text-red-600 shrink-0"></ion-icon>
             <span><?= htmlspecialchars($error) ?></span>
         </div>
     <?php endif; ?>
 
     <!-- Filter & Search Toolbar -->
-    <div class="bg-white p-4 rounded-2xl border border-secondary-200 shadow-sm">
+    <div class="bg-white p-4 rounded-2xl border border-secondary-200 shadow-xs">
         <form method="GET" action="<?= $base ?>/admin/users" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
                 <label class="block text-xs font-semibold text-secondary-500 uppercase tracking-wider mb-1">রোল ফিল্টার</label>
@@ -74,7 +74,7 @@ $search = $filters['search'] ?? '';
     </div>
 
     <!-- Users Table -->
-    <div class="bg-white rounded-2xl border border-secondary-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-2xl border border-secondary-200 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-secondary-50 text-secondary-600 border-b border-secondary-200 uppercase text-xs">
@@ -82,6 +82,7 @@ $search = $filters['search'] ?? '';
                         <th class="py-3.5 px-4 font-semibold">ব্যবহারকারী (User)</th>
                         <th class="py-3.5 px-4 font-semibold">যোগাযোগ (Contact)</th>
                         <th class="py-3.5 px-4 font-semibold">সিস্টেম রোল (Role)</th>
+                        <th class="py-3.5 px-4 font-semibold">অনুমোদিত এক্সেস (Permissions)</th>
                         <th class="py-3.5 px-4 font-semibold">লিংকড কর্মচারী</th>
                         <th class="py-3.5 px-4 font-semibold text-center">স্ট্যাটাস</th>
                         <th class="py-3.5 px-4 font-semibold text-right">অ্যাকশন</th>
@@ -90,21 +91,31 @@ $search = $filters['search'] ?? '';
                 <tbody class="divide-y divide-secondary-100">
                     <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-secondary-500">
+                            <td colspan="7" class="py-12 text-center text-secondary-500">
                                 <ion-icon name="person-outline" class="text-4xl text-secondary-300 mb-2"></ion-icon>
                                 <p>কোনো ব্যবহারকারী পাওয়া যায়নি।</p>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($users as $u): ?>
+                            <?php 
+                            $isRowSuperAdmin = ($u['id'] == 1 || ($u['role'] === 'admin' && $u['username'] === 'admin'));
+                            $perms = json_decode($u['permissions'] ?? '[]', true) ?: [];
+                            $isWildcard = ($u['role'] === 'admin' || in_array('*', $perms, true));
+                            ?>
                             <tr class="hover:bg-secondary-50/60 transition-colors">
                                 <td class="py-3.5 px-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm uppercase">
+                                        <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm uppercase shadow-xs">
                                             <?= mb_substr($u['name'] ?? $u['username'], 0, 1) ?>
                                         </div>
                                         <div>
-                                            <p class="font-semibold text-secondary-900"><?= htmlspecialchars($u['name']) ?></p>
+                                            <p class="font-semibold text-secondary-900 flex items-center gap-1.5">
+                                                <?= htmlspecialchars($u['name']) ?>
+                                                <?php if ($isRowSuperAdmin): ?>
+                                                    <span title="Super Admin" class="text-amber-500 text-xs">👑</span>
+                                                <?php endif; ?>
+                                            </p>
                                             <p class="text-xs text-secondary-500">@<?= htmlspecialchars($u['username']) ?></p>
                                         </div>
                                     </div>
@@ -131,9 +142,22 @@ $search = $filters['search'] ?? '';
                                     ];
                                     $rBadge = $roleColors[$u['role']] ?? 'bg-secondary-100 text-secondary-700 border-secondary-200';
                                     ?>
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border <?= $rBadge ?>">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border <?= $rBadge ?>">
                                         <?= $roles[$u['role']] ?? ucfirst($u['role']) ?>
                                     </span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <?php if ($isWildcard): ?>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                            <ion-icon name="shield-checkmark" class="text-sm text-purple-600"></ion-icon>
+                                            সকল এক্সেস (Full Access)
+                                        </span>
+                                    <?php else: ?>
+                                        <a href="<?= $base ?>/admin/users/edit?id=<?= $u['id'] ?>" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100 transition-colors" title="পারমিশন দেখতে ও এডিট করতে ক্লিক করুন">
+                                            <ion-icon name="key-outline"></ion-icon>
+                                            <?= count($perms) ?> মডিউল এক্সেস
+                                        </a>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="py-3.5 px-4 text-xs">
                                     <?php if (!empty($u['emp_code'])): ?>
@@ -146,26 +170,36 @@ $search = $filters['search'] ?? '';
                                     <?php endif; ?>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
-                                    <form method="POST" action="<?= $base ?>/admin/users/toggle-status" class="inline">
-                                        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-                                        <input type="hidden" name="id" value="<?= $u['id'] ?>">
-                                        <?php if (($u['status'] ?? 'active') === 'active'): ?>
-                                            <button type="submit" title="নিষ্ক্রিয় করতে ক্লিক করুন" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> সক্রিয়
-                                            </button>
-                                        <?php else: ?>
-                                            <button type="submit" title="সক্রিয় করতে ক্লিক করুন" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> নিষ্ক্রিয়
-                                            </button>
-                                        <?php endif; ?>
-                                    </form>
+                                    <?php if ($isRowSuperAdmin): ?>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> সক্রিয়
+                                        </span>
+                                    <?php else: ?>
+                                        <form method="POST" action="<?= $base ?>/admin/users/toggle-status" class="inline">
+                                            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                            <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                                            <?php if (($u['status'] ?? 'active') === 'active'): ?>
+                                                <button type="submit" title="নিষ্ক্রিয় করতে ক্লিক করুন" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> সক্রিয়
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="submit" title="সক্রিয় করতে ক্লিক করুন" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> নিষ্ক্রিয়
+                                                </button>
+                                            <?php endif; ?>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="py-3.5 px-4 text-right">
                                     <div class="inline-flex items-center gap-1.5">
-                                        <a href="<?= $base ?>/admin/users/edit?id=<?= $u['id'] ?>" class="p-1.5 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="সম্পাদনা">
+                                        <a href="<?= $base ?>/admin/users/edit?id=<?= $u['id'] ?>" class="p-1.5 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="সম্পাদনা ও পারমিশন">
                                             <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                         </a>
-                                        <?php if ($u['id'] != ($_SESSION['user_id'] ?? 0)): ?>
+                                        <?php if ($isRowSuperAdmin): ?>
+                                            <span class="p-1.5 text-emerald-600 font-semibold text-xs inline-flex items-center gap-1" title="সুপার এডমিন একাউন্ট সুরক্ষিত">
+                                                <ion-icon name="shield-checkmark" class="text-base"></ion-icon>
+                                            </span>
+                                        <?php elseif ($u['id'] != ($_SESSION['user_id'] ?? 0)): ?>
                                             <form method="POST" action="<?= $base ?>/admin/users/delete" onsubmit="return confirm('আপনি কি নিশ্চিত এই ব্যবহারকারী মুছে ফেলতে চান?')" class="inline">
                                                 <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
@@ -186,12 +220,12 @@ $search = $filters['search'] ?? '';
 </div>
 
 <!-- Modal: Add New User -->
-<div id="createUserModal" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-secondary-200">
+<div id="createUserModal" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-secondary-200 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-4 border-b border-secondary-100">
             <h3 class="text-lg font-bold text-secondary-900 flex items-center gap-2">
-                <ion-icon name="person-add" class="text-primary-600"></ion-icon>
-                নতুন ব্যবহারকারী তৈরি
+                <ion-icon name="person-add" class="text-primary-600 text-xl"></ion-icon>
+                নতুন ব্যবহারকারী ও পারমিশন তৈরি (Add User)
             </h3>
             <button onclick="closeCreateUserModal()" class="text-secondary-400 hover:text-secondary-700">
                 <ion-icon name="close-circle-outline" class="text-2xl"></ion-icon>
@@ -244,12 +278,37 @@ $search = $filters['search'] ?? '';
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-secondary-700 mb-1">সিস্টেম রোল (Role) <span class="text-red-500">*</span></label>
-                    <select name="role" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                    <select name="role" id="modalRoleSelect" onchange="modalRoleChange(this.value)" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
                         <?php foreach ($roles as $rKey => $rLabel): ?>
                             <option value="<?= $rKey ?>" <?= $rKey === 'staff' ? 'selected' : '' ?>><?= $rLabel ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
+            </div>
+
+            <!-- Permission Selection inside Modal -->
+            <div class="pt-2 border-t border-secondary-100">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold text-secondary-800 uppercase tracking-wider">মডিউল পারমিশন (Permissions)</label>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="modalSetAllPerms(true)" class="text-[11px] text-primary-600 hover:underline">সব নির্বাচন</button>
+                        <span class="text-secondary-300 text-xs">|</span>
+                        <button type="button" onclick="modalSetAllPerms(false)" class="text-[11px] text-secondary-500 hover:underline">সব বাতিল</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-secondary-200 rounded-xl bg-secondary-50/50">
+                    <?php foreach (($allPermissions ?? []) as $groupName => $modules): ?>
+                        <div class="sm:col-span-2 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary-400"><?= htmlspecialchars($groupName) ?></div>
+                        <?php foreach ($modules as $permKey => $perm): ?>
+                            <label class="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-secondary-200 text-xs cursor-pointer hover:bg-primary-50">
+                                <input type="checkbox" name="permissions[]" value="<?= $permKey ?>" class="rounded text-primary-600 focus:ring-primary-500 modal-perm-cb">
+                                <span class="font-medium text-secondary-800 text-xs"><?= htmlspecialchars($perm['label_bn']) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+                <p class="text-[11px] text-secondary-500 mt-1">রোল পরিবর্তন করলে স্বয়ংক্রিয়ভাবে ডিফল্ট পারমিশন নির্ধারিত হবে।</p>
             </div>
 
             <div>
@@ -268,19 +327,43 @@ $search = $filters['search'] ?? '';
 
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-secondary-100">
                 <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 border border-secondary-300 text-secondary-700 rounded-xl text-sm font-medium hover:bg-secondary-50">বাতিল</button>
-                <button type="submit" class="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">সংরক্ষণ করুন</button>
+                <button type="submit" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-bold transition-colors shadow-xs">সংরক্ষণ করুন</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+const modalRolePresets = {
+    admin: ['*'],
+    manager: ['dashboard', 'products', 'categories_brands', 'orders', 'dispatch', 'delivery_men', 'customers', 'vendors_purchases', 'locations', 'hr', 'payroll', 'reports'],
+    accountant: ['dashboard', 'vendors_purchases', 'payroll', 'reports'],
+    agent: ['dashboard', 'orders', 'customers'],
+    delivery_man: ['orders'],
+    staff: ['dashboard', 'products', 'orders']
+};
+
 function openCreateUserModal() {
     document.getElementById('createUserModal').classList.remove('hidden');
+    modalRoleChange(document.getElementById('modalRoleSelect').value);
 }
 
 function closeCreateUserModal() {
     document.getElementById('createUserModal').classList.add('hidden');
+}
+
+function modalRoleChange(role) {
+    const preset = modalRolePresets[role] || [];
+    const isWildcard = preset.includes('*');
+    document.querySelectorAll('.modal-perm-cb').forEach(cb => {
+        cb.checked = isWildcard || preset.includes(cb.value);
+    });
+}
+
+function modalSetAllPerms(check) {
+    document.querySelectorAll('.modal-perm-cb').forEach(cb => {
+        cb.checked = check;
+    });
 }
 
 function autoFillEmployee(select) {
@@ -290,7 +373,6 @@ function autoFillEmployee(select) {
         document.getElementById('modalPhone').value = opt.getAttribute('data-phone') || '';
         document.getElementById('modalEmail').value = opt.getAttribute('data-email') || '';
         
-        // Suggest username from name
         const nameParts = (opt.getAttribute('data-name') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         if (nameParts && !document.getElementById('modalUsername').value) {
             document.getElementById('modalUsername').value = nameParts.substring(0, 10);

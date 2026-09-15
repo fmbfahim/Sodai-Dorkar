@@ -10,7 +10,7 @@ use Models\Area;
 class ZoneController extends Controller {
     
     public function __construct() {
-        Middleware::auth(['admin']);
+        Middleware::permission('locations');
     }
 
     public function index() {

@@ -9,7 +9,7 @@ use Models\Vendor;
 class AccountController extends Controller {
 
     public function __construct() {
-        Middleware::auth(['admin']);
+        Middleware::permission('reports');
     }
 
     public function index() {

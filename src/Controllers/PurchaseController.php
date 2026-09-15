@@ -11,7 +11,7 @@ use Models\Product;
 class PurchaseController extends Controller {
 
     public function __construct() {
-        Middleware::auth(['admin']);
+        Middleware::permission('vendors_purchases');
     }
 
     public function index() {

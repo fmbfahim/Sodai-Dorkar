@@ -18,7 +18,7 @@ class HrController extends Controller {
     protected $userModel;
 
     public function __construct() {
-        Middleware::auth(['admin', 'manager']);
+        Middleware::permission('hr');
         $this->employeeModel = new Employee();
         $this->departmentModel = new Department();
         $this->attendanceModel = new Attendance();

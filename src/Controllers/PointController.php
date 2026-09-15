@@ -10,7 +10,7 @@ use Models\Zone;
 class PointController extends Controller {
     
     public function __construct() {
-        Middleware::auth(['admin']);
+        Middleware::permission('locations');
     }
 
     public function index() {
