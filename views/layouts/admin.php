@@ -102,9 +102,21 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
 
                     <?php if (\Core\Auth::can('products')): ?>
                         <li>
+                            <a href="<?= $base ?>/admin/products/dashboard" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                                <ion-icon name="grid-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
+                                <span class="font-medium">Product Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="<?= $base ?>/admin/products" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
                                 <ion-icon name="cube-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
-                                <span class="font-medium">Products</span>
+                                <span class="font-medium">All Products</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="<?= $base ?>/admin/products/bulk-import" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                                <ion-icon name="cloud-upload-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
+                                <span class="font-medium">Bulk Import (CSV)</span>
                             </a>
                         </li>
                         <li>

@@ -12,14 +12,119 @@ class Product {
         $this->db = new Database($config);
     }
 
-    public function all() {
-        $sql = "SELECT products.*, vendors.name as vendor_name, categories.name as category_name 
+    public function all($filters = []) {
+        $sql = "SELECT products.*, vendors.name as vendor_name, categories.name as category_name, brands.name as brand_name 
                 FROM products 
                 LEFT JOIN vendors ON products.vendor_id = vendors.id 
                 LEFT JOIN categories ON products.category_id = categories.id
-                ORDER BY products.id DESC";
-        $stmt = $this->db->query($sql);
-        return $stmt->fetchAll();
+                LEFT JOIN brands ON products.brand_id = brands.id
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['search'])) {
+            $term = '%' . trim($filters['search']) . '%';
+            $sql .= " AND (products.name LIKE ? OR products.sku LIKE ? OR products.description LIKE ? OR vendors.name LIKE ? OR categories.name LIKE ?)";
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+
+        if (!empty($filters['category_id'])) {
+            $sql .= " AND products.category_id = ?";
+            $params[] = intval($filters['category_id']);
+        }
+
+        if (!empty($filters['vendor_id'])) {
+            $sql .= " AND products.vendor_id = ?";
+            $params[] = intval($filters['vendor_id']);
+        }
+
+        if (!empty($filters['stock_status'])) {
+            switch ($filters['stock_status']) {
+                case 'in_stock':
+                    $sql .= " AND products.stock_qty >= 10";
+                    break;
+                case 'low_stock':
+                    $sql .= " AND products.stock_qty > 0 AND products.stock_qty < 10";
+                    break;
+                case 'out_of_stock':
+                    $sql .= " AND products.stock_qty <= 0";
+                    break;
+            }
+        }
+
+        $sql .= " ORDER BY products.id DESC";
+        return $this->db->query($sql, $params)->fetchAll();
+    }
+
+    public function findBySku($sku) {
+        $sku = trim($sku);
+        if (empty($sku)) return false;
+        $stmt = $this->db->query("SELECT * FROM products WHERE sku = ? LIMIT 1", [$sku]);
+        return $stmt->fetch();
+    }
+
+    public function findByName($name) {
+        $name = trim($name);
+        if (empty($name)) return false;
+        $stmt = $this->db->query("SELECT * FROM products WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$name]);
+        return $stmt->fetch();
+    }
+
+    public function findExisting($sku, $name) {
+        if (!empty($sku)) {
+            $found = $this->findBySku($sku);
+            if ($found) return $found;
+        }
+        if (!empty($name)) {
+            return $this->findByName($name);
+        }
+        return false;
+    }
+
+    public function updateStockAndPrices($id, $data) {
+        $sql = "UPDATE products SET 
+                buy_price = :buy_price, 
+                regular_price = :regular_price, 
+                discount_type = :discount_type, 
+                discount_value = :discount_value, 
+                sell_price = :sell_price, 
+                stock_qty = :stock_qty";
+        $params = [
+            'buy_price' => $data['buy_price'] ?? 0,
+            'regular_price' => !empty($data['regular_price']) ? floatval($data['regular_price']) : null,
+            'discount_type' => $data['discount_type'] ?? 'none',
+            'discount_value' => floatval($data['discount_value'] ?? 0),
+            'sell_price' => $data['sell_price'] ?? 0,
+            'stock_qty' => $data['stock_qty'] ?? 0,
+            'id' => $id
+        ];
+
+        if (!empty($data['vendor_id'])) {
+            $sql .= ", vendor_id = :vendor_id";
+            $params['vendor_id'] = $data['vendor_id'];
+        }
+        if (!empty($data['category_id'])) {
+            $sql .= ", category_id = :category_id";
+            $params['category_id'] = $data['category_id'];
+        }
+        if (!empty($data['brand_id'])) {
+            $sql .= ", brand_id = :brand_id";
+            $params['brand_id'] = $data['brand_id'];
+        }
+        if (!empty($data['unit_type'])) {
+            $sql .= ", unit_type = :unit_type";
+            $params['unit_type'] = $data['unit_type'];
+        }
+        if (!empty($data['base_unit'])) {
+            $sql .= ", base_unit = :base_unit";
+            $params['base_unit'] = $data['base_unit'];
+        }
+
+        $sql .= " WHERE id = :id";
+        return $this->db->query($sql, $params);
     }
 
     public function create($data) {

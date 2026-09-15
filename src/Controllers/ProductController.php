@@ -19,17 +19,86 @@ class ProductController extends Controller {
         $vendorModel = new Vendor();
         $categoryModel = new \Models\Category();
 
-        $products = $productModel->all();
+        $filters = [
+            'search' => trim($_GET['search'] ?? ''),
+            'category_id' => $_GET['category_id'] ?? '',
+            'vendor_id' => $_GET['vendor_id'] ?? '',
+            'stock_status' => $_GET['stock_status'] ?? ''
+        ];
+
+        $products = $productModel->all($filters);
         $vendors = $vendorModel->all();
         $categories = $categoryModel->all();
         $packagingUnits = (new \Models\PackagingUnit())->all();
 
         return $this->view('admin/products/index', [
-            'title' => 'Products', 
+            'title' => 'Products & Inventory', 
             'products' => $products,
             'vendors' => $vendors,
             'categories' => $categories,
-            'packagingUnits' => $packagingUnits
+            'packagingUnits' => $packagingUnits,
+            'filters' => $filters
+        ]);
+    }
+
+    public function dashboard() {
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+
+        // Inventory KPIs
+        $totalProducts = (int)$db->query("SELECT COUNT(*) as cnt FROM products")->fetch()['cnt'];
+        $inStock = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE stock_qty >= 10")->fetch()['cnt'];
+        $lowStock = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE stock_qty > 0 AND stock_qty < 10")->fetch()['cnt'];
+        $outOfStock = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE stock_qty <= 0")->fetch()['cnt'];
+
+        $valuation = $db->query("SELECT 
+            COALESCE(SUM(buy_price * stock_qty), 0) as cost_val, 
+            COALESCE(SUM(sell_price * stock_qty), 0) as retail_val 
+            FROM products WHERE stock_qty > 0")->fetch();
+        $costValuation = (float)($valuation['cost_val'] ?? 0);
+        $retailValuation = (float)($valuation['retail_val'] ?? 0);
+        $expectedProfit = $retailValuation - $costValuation;
+
+        $unverifiedCount = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE is_verified = 0")->fetch()['cnt'];
+        $pendingAvailability = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE availability_status = 'pending'")->fetch()['cnt'];
+
+        // Category breakdown
+        $catDistribution = $db->query("SELECT c.name, COUNT(p.id) as product_count, COALESCE(SUM(p.stock_qty), 0) as total_stock
+            FROM categories c
+            LEFT JOIN products p ON c.id = p.category_id
+            GROUP BY c.id, c.name
+            HAVING product_count > 0
+            ORDER BY product_count DESC
+            LIMIT 6")->fetchAll();
+
+        // Recent products
+        $recentProducts = $db->query("SELECT p.*, c.name as category_name, v.name as vendor_name 
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN vendors v ON p.vendor_id = v.id 
+            ORDER BY p.id DESC LIMIT 8")->fetchAll();
+
+        // Low stock items
+        $lowStockItems = $db->query("SELECT p.*, c.name as category_name, v.name as vendor_name, v.contact as vendor_contact 
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN vendors v ON p.vendor_id = v.id 
+            WHERE p.stock_qty < 10 
+            ORDER BY p.stock_qty ASC LIMIT 8")->fetchAll();
+
+        return $this->view('admin/products/dashboard', [
+            'title' => 'Product Analytics & Inventory Dashboard',
+            'totalProducts' => $totalProducts,
+            'inStock' => $inStock,
+            'lowStock' => $lowStock,
+            'outOfStock' => $outOfStock,
+            'costValuation' => $costValuation,
+            'retailValuation' => $retailValuation,
+            'expectedProfit' => $expectedProfit,
+            'unverifiedCount' => $unverifiedCount,
+            'pendingAvailability' => $pendingAvailability,
+            'catDistribution' => $catDistribution,
+            'recentProducts' => $recentProducts,
+            'lowStockItems' => $lowStockItems
         ]);
     }
 
@@ -489,6 +558,220 @@ class ProductController extends Controller {
         }
         
         header('Location: /sodai-dorkar/public/admin/products');
+        exit;
+    }
+
+    public function bulkChunkImport() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $rawInput = file_get_contents('php://input');
+        $input = json_decode($rawInput, true);
+        if (!$input) {
+            $input = $_POST;
+        }
+
+        $items = $input['items'] ?? [];
+        $duplicateAction = $input['duplicate_action'] ?? 'update'; // 'update' or 'skip'
+
+        if (empty($items) || !is_array($items)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'No items provided in this batch.',
+                'added' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+                'errors' => 0,
+                'error_messages' => []
+            ]);
+            exit;
+        }
+
+        $productModel = new Product();
+        $categoryModel = new \Models\Category();
+        $brandModel = new \Models\Brand();
+        $vendorModel = new Vendor();
+
+        $added = 0;
+        $updated = 0;
+        $skipped = 0;
+        $errors = 0;
+        $errorMessages = [];
+
+        $allCategories = $categoryModel->all();
+        $allBrands = $brandModel->all();
+        $allVendors = $vendorModel->all();
+
+        foreach ($items as $idx => $p) {
+            $name = trim($p['name'] ?? '');
+            $sku = trim($p['sku'] ?? '');
+
+            if (empty($name)) {
+                $errors++;
+                $errorMessages[] = "Row " . ($idx + 1) . ": Product name is missing.";
+                continue;
+            }
+
+            try {
+                // Check if product already exists (by SKU or Name)
+                $existing = $productModel->findExisting($sku, $name);
+
+                if ($existing) {
+                    if ($duplicateAction === 'skip') {
+                        $skipped++;
+                        continue;
+                    } else {
+                        // Update stock and prices of existing product
+                        $buyPrice = isset($p['buy_price']) && $p['buy_price'] !== '' ? floatval($p['buy_price']) : floatval($existing['buy_price']);
+                        $regularPrice = !empty($p['regular_price']) ? floatval($p['regular_price']) : (!empty($existing['regular_price']) ? floatval($existing['regular_price']) : null);
+                        $sellPrice = isset($p['sell_price']) && floatval($p['sell_price']) > 0 ? floatval($p['sell_price']) : floatval($existing['sell_price']);
+                        $stockQty = isset($p['stock_qty']) && $p['stock_qty'] !== '' ? floatval($p['stock_qty']) : floatval($existing['stock_qty']);
+
+                        $discountType = 'none';
+                        $discountValue = 0;
+                        if ($regularPrice && $regularPrice > $sellPrice) {
+                            $discountType = 'fixed';
+                            $discountValue = $regularPrice - $sellPrice;
+                        }
+
+                        $productModel->updateStockAndPrices($existing['id'], [
+                            'buy_price' => $buyPrice,
+                            'regular_price' => $regularPrice,
+                            'discount_type' => $discountType,
+                            'discount_value' => $discountValue,
+                            'sell_price' => $sellPrice,
+                            'stock_qty' => $stockQty,
+                            'unit_type' => !empty($p['unit_type']) ? $p['unit_type'] : $existing['unit_type'],
+                            'base_unit' => !empty($p['base_unit']) ? $p['base_unit'] : $existing['base_unit']
+                        ]);
+
+                        $updated++;
+                        continue;
+                    }
+                }
+
+                // New Product: Generate SKU if empty
+                if (empty($sku)) {
+                    $sku = $this->generateSku();
+                }
+
+                // 1. Brand Handling
+                $brandId = null;
+                $brandName = trim($p['brand_name'] ?? '');
+                if ($brandName) {
+                    foreach ($allBrands as $b) {
+                        if (strcasecmp($b['name'], $brandName) === 0) {
+                            $brandId = $b['id'];
+                            break;
+                        }
+                    }
+                    if (!$brandId) {
+                        $brandId = $brandModel->create(['name' => $brandName]);
+                        $allBrands = $brandModel->all();
+                    }
+                }
+
+                // 2. Category Hierarchy Handling (e.g. "Food > Rice > Miniket")
+                $categoryId = null;
+                $categoryPath = trim($p['category_path'] ?? '');
+                if ($categoryPath) {
+                    $pathParts = array_map('trim', explode('>', $categoryPath));
+                    $parentId = null;
+                    foreach ($pathParts as $catName) {
+                        if (empty($catName)) continue;
+                        $foundCat = null;
+                        foreach ($allCategories as $c) {
+                            if (strcasecmp($c['name'], $catName) === 0 && ($c['parent_id'] == $parentId || ($parentId === null && empty($c['parent_id'])))) {
+                                $foundCat = $c;
+                                break;
+                            }
+                        }
+                        if ($foundCat) {
+                            $parentId = $foundCat['id'];
+                        } else {
+                            $parentId = $categoryModel->create([
+                                'name' => $catName,
+                                'description' => '',
+                                'parent_id' => $parentId
+                            ]);
+                            $allCategories = $categoryModel->all();
+                        }
+                    }
+                    $categoryId = $parentId;
+                }
+
+                // 3. Vendor Handling
+                $vendorId = null;
+                $vendorName = trim($p['vendor_name'] ?? '');
+                if ($vendorName) {
+                    foreach ($allVendors as $v) {
+                        if (strcasecmp($v['name'], $vendorName) === 0) {
+                            $vendorId = $v['id'];
+                            break;
+                        }
+                    }
+                    if (!$vendorId) {
+                        $vendorId = $vendorModel->create([
+                            'name' => $vendorName, 
+                            'contact' => $p['vendor_phone'] ?? '', 
+                            'address' => ''
+                        ]);
+                        $allVendors = $vendorModel->all();
+                    }
+                }
+
+                $buyPrice = floatval($p['buy_price'] ?? 0);
+                $sellPrice = floatval($p['sell_price'] ?? 0);
+                $regularPrice = !empty($p['regular_price']) ? floatval($p['regular_price']) : null;
+                $stockQty = floatval($p['stock_qty'] ?? 0);
+
+                $discountType = 'none';
+                $discountValue = 0;
+                if ($regularPrice && $regularPrice > $sellPrice) {
+                    $discountType = 'fixed';
+                    $discountValue = $regularPrice - $sellPrice;
+                }
+
+                $baseUnit = !empty($p['base_unit']) ? trim($p['base_unit']) : 'pcs';
+
+                $productModel->create([
+                    'name' => $name,
+                    'sku' => $sku,
+                    'description' => trim($p['description'] ?? ''),
+                    'buy_price' => $buyPrice,
+                    'regular_price' => $regularPrice,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
+                    'sell_price' => $sellPrice,
+                    'stock_qty' => $stockQty,
+                    'vendor_id' => $vendorId,
+                    'category_id' => $categoryId,
+                    'brand_id' => $brandId,
+                    'image_path' => null,
+                    'unit_type' => $p['unit_type'] ?? 'piece',
+                    'base_unit' => $baseUnit,
+                    'purchase_unit' => !empty($p['purchase_unit']) ? trim($p['purchase_unit']) : null,
+                    'purchase_unit_qty' => floatval($p['purchase_unit_qty'] ?? 1.000),
+                    'selling_unit' => !empty($p['selling_unit']) ? trim($p['selling_unit']) : $baseUnit,
+                    'unit_variants_json' => null,
+                    'is_verified' => 1,
+                    'availability_status' => $stockQty > 0 ? 'in_stock' : 'out_of_stock'
+                ]);
+
+                $added++;
+            } catch (\Exception $e) {
+                $errors++;
+                $errorMessages[] = "Error on '{$name}': " . $e->getMessage();
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'added' => $added,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'errors' => $errors,
+            'error_messages' => $errorMessages
+        ]);
         exit;
     }
 

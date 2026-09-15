@@ -212,6 +212,11 @@ foreach ($categories as $c) {
                 <p class="text-secondary-500 text-xs mt-0.5">সকল পণ্যের মূল্য, ক্রয়-বিক্রয় একক ও বর্তমান মজুদ দেখুন।</p>
             </div>
             <div class="flex flex-wrap gap-2.5">
+                <a href="/sodai-dorkar/public/admin/products/dashboard" 
+                   class="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                    <ion-icon name="grid-outline" class="text-base text-indigo-600"></ion-icon>
+                    প্রোডাক্ট ড্যাশবোর্ড
+                </a>
                 <a href="/sodai-dorkar/public/admin/products/bulk-import" 
                    class="flex items-center gap-1.5 bg-white text-secondary-700 border border-secondary-300 hover:bg-secondary-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs">
                     <ion-icon name="cloud-upload-outline" class="text-base"></ion-icon>
@@ -222,6 +227,63 @@ foreach ($categories as $c) {
                     <ion-icon name="flash-outline" class="text-base"></ion-icon>
                     বাল্ক প্রোডাক্ট ক্রিয়েটর
                 </button>
+            </div>
+        </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-100 p-4 mb-5">
+            <form method="GET" action="/sodai-dorkar/public/admin/products" class="flex flex-col md:flex-row items-center gap-3">
+                <!-- Search Input -->
+                <div class="relative flex-1 w-full">
+                    <ion-icon name="search-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
+                    <input type="text" 
+                           name="search" 
+                           id="productSearchInput" 
+                           value="<?= htmlspecialchars($filters['search'] ?? '') ?>" 
+                           placeholder="পণ্য বা SKU দিয়ে সার্চ করুন (Search by name, SKU, vendor)..." 
+                           class="w-full pl-10 pr-4 py-2.5 border border-secondary-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 bg-secondary-50/50 focus:bg-white transition-colors">
+                </div>
+
+                <!-- Category Filter -->
+                <div class="w-full md:w-48">
+                    <select name="category_id" id="categoryFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                        <option value="">সব ক্যাটাগরি</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>" <?= (!empty($filters['category_id']) && $filters['category_id'] == $cat['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Stock Status Filter -->
+                <div class="w-full md:w-40">
+                    <select name="stock_status" id="stockStatusFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                        <option value="">সকল স্টক</option>
+                        <option value="in_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'in_stock') ? 'selected' : '' ?>>স্টক আছে (&ge;10)</option>
+                        <option value="low_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'low_stock') ? 'selected' : '' ?>>কম স্টক (&lt;10)</option>
+                        <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (=0)</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <button type="submit" class="w-full md:w-auto px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5">
+                        <ion-icon name="funnel-outline" class="text-sm"></ion-icon>
+                        ফিল্টার
+                    </button>
+                    <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['stock_status'])): ?>
+                        <a href="/sodai-dorkar/public/admin/products" class="w-full md:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                            <ion-icon name="close-circle-outline" class="text-sm"></ion-icon>
+                            রিসেট
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </form>
+
+            <div class="flex items-center justify-between text-[11px] text-secondary-400 mt-2.5 pt-2 border-t border-secondary-100">
+                <span id="productCounterText">মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold"><?= count($products) ?></strong> টি</span>
+                <span class="text-[10px] text-secondary-400">টাইপ করে তাৎক্ষণিক বা ফিল্টারে ক্লিক করুন</span>
             </div>
         </div>
 
@@ -237,7 +299,7 @@ foreach ($categories as $c) {
                             <th class="px-5 py-3.5 font-bold text-xs uppercase tracking-wider text-right">অ্যাকশন</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-secondary-100">
+                    <tbody id="mainProductsTbody" class="divide-y divide-secondary-100">
                         <?php if (empty($products)): ?>
                             <tr>
                                 <td colspan="5" class="px-6 py-12 text-center text-secondary-400">
@@ -246,7 +308,11 @@ foreach ($categories as $c) {
                             </tr>
                         <?php else: ?>
                             <?php foreach ($products as $p): ?>
-                                <tr class="hover:bg-secondary-50/60 transition-colors group">
+                                <tr class="hover:bg-secondary-50/60 transition-colors group main-product-row"
+                                    data-name="<?= strtolower(htmlspecialchars($p['name'])) ?>"
+                                    data-sku="<?= strtolower(htmlspecialchars($p['sku'] ?? '')) ?>"
+                                    data-vendor="<?= strtolower(htmlspecialchars($p['vendor_name'] ?? '')) ?>"
+                                    data-category="<?= strtolower(htmlspecialchars($p['category_name'] ?? '')) ?>">
                                     <td class="px-5 py-3.5">
                                         <div class="flex items-center gap-3">
                                             <div class="w-11 h-11 rounded-xl bg-secondary-100 border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
@@ -966,5 +1032,36 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+
+    // Real-time Instant Search & Table Filter
+    const searchInput = document.getElementById('productSearchInput');
+    const tbody = document.getElementById('mainProductsTbody');
+    const counterText = document.getElementById('productCounterText');
+
+    if (searchInput && tbody) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            const rows = tbody.querySelectorAll('.main-product-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.dataset.name || '';
+                const sku = row.dataset.sku || '';
+                const vendor = row.dataset.vendor || '';
+                const category = row.dataset.category || '';
+
+                if (!query || name.includes(query) || sku.includes(query) || vendor.includes(query) || category.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (counterText) {
+                counterText.innerHTML = `মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold">${visibleCount}</strong> টি`;
+            }
+        });
+    }
 });
 </script>

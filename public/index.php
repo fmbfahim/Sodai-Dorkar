@@ -90,6 +90,7 @@ $router->post('/admin/vendors/store', 'VendorController@store');
 $router->post('/admin/vendors/delete', 'VendorController@destroy');
 
 // Product Routes
+$router->get('/admin/products/dashboard', 'ProductController@dashboard');
 $router->get('/admin/products', 'ProductController@index');
 $router->post('/admin/products/store', 'ProductController@store');
 $router->post('/admin/products/delete', 'ProductController@destroy');
@@ -97,6 +98,7 @@ $router->get('/admin/products/edit', 'ProductController@edit');
 $router->post('/admin/products/update', 'ProductController@update');
 $router->get('/admin/products/bulk-import', 'ProductController@bulkImportIndex');
 $router->get('/admin/products/bulk-demo', 'ProductController@bulkImportDemo');
+$router->post('/admin/products/bulk-chunk-import', 'ProductController@bulkChunkImport');
 $router->post('/admin/products/bulk-preview', 'ProductController@bulkImportPreview');
 $router->post('/admin/products/bulk-store', 'ProductController@bulkImportStore');
 $router->post('/admin/products/bulk-store-manual', 'ProductController@bulkStoreManual');
