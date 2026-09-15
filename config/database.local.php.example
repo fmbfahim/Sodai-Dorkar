@@ -1,0 +1,18 @@
+<?php
+/**
+ * Local / Server-Specific Database Configuration
+ * 
+ * Instructions:
+ * 1. Copy this file and rename it to "database.local.php" in this same directory (config/).
+ * 2. Enter your live server (or local machine) database credentials below.
+ * 3. Git will NEVER overwrite or touch "database.local.php" when pulling/pushing code!
+ */
+
+return [
+    'host' => 'localhost',
+    'port' => 3306,
+    'dbname' => 'your_database_name',
+    'user' => 'your_database_user',
+    'password' => 'your_database_password',
+    'charset' => 'utf8mb4',
+];
