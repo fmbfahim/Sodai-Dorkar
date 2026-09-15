@@ -120,6 +120,16 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
                             </a>
                         </li>
                         <li>
+                            <a href="<?= $base ?>/admin/products/image-finder" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group pl-8">
+                                <div class="flex items-center">
+                                    <ion-icon name="sparkles-outline" class="text-base mr-3 text-amber-500 group-hover:text-emerald-600"></ion-icon>
+                                    <span class="font-medium">Auto Image Finder</span>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">1-Click</span>
+                            </a>
+                        </li>
+
+                        <li>
                             <a href="<?= $base ?>/admin/products/verification" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
                                 <ion-icon name="checkmark-done-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Verification</span>

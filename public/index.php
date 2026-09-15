@@ -108,6 +108,10 @@ $router->get('/admin/products/on-demand', 'ProductController@onDemandIndex');
 $router->get('/admin/products/availability', 'ProductController@availabilityIndex');
 $router->post('/admin/products/availability-update', 'ProductController@availabilityUpdate');
 $router->get('/admin/products/procurement', 'ProductController@procurementIndex');
+$router->get('/admin/products/image-finder', 'ProductController@imageFinderIndex');
+$router->get('/admin/products/search-web-images', 'ProductController@searchWebImages');
+$router->post('/admin/products/save-web-image', 'ProductController@saveWebImage');
+
 
 // Category Routes
 $router->get('/admin/categories', 'CategoryController@index');

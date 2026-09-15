@@ -1,4 +1,5 @@
 <?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 // Function to compute full ancestry path for all categories
 if (!function_exists('getCategoryBreadcrumbPath')) {
     function getCategoryBreadcrumbPath($catId, $allCats) {
@@ -211,13 +212,18 @@ foreach ($categories as $c) {
                 <h2 class="text-2xl font-bold text-secondary-900">পণ্য তালিকা ও ইনভেন্টরি</h2>
                 <p class="text-secondary-500 text-xs mt-0.5">সকল পণ্যের মূল্য, ক্রয়-বিক্রয় একক ও বর্তমান মজুদ দেখুন।</p>
             </div>
-            <div class="flex flex-wrap gap-2.5">
-                <a href="/sodai-dorkar/public/admin/products/dashboard" 
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="<?= $base ?>/admin/products/image-finder" 
+                   class="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                    <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
+                    ইমেজ ফাইন্ডার
+                </a>
+                <a href="<?= $base ?>/admin/products/dashboard" 
                    class="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs">
                     <ion-icon name="grid-outline" class="text-base text-indigo-600"></ion-icon>
                     প্রোডাক্ট ড্যাশবোর্ড
                 </a>
-                <a href="/sodai-dorkar/public/admin/products/bulk-import" 
+                <a href="<?= $base ?>/admin/products/bulk-import" 
                    class="flex items-center gap-1.5 bg-white text-secondary-700 border border-secondary-300 hover:bg-secondary-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs">
                     <ion-icon name="cloud-upload-outline" class="text-base"></ion-icon>
                     CSV ইমপোর্ট
@@ -232,7 +238,7 @@ foreach ($categories as $c) {
 
         <!-- Search & Filter Toolbar -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-100 p-4 mb-5">
-            <form method="GET" action="/sodai-dorkar/public/admin/products" class="flex flex-col md:flex-row items-center gap-3">
+            <form method="GET" action="<?= $base ?>/admin/products" class="flex flex-col md:flex-row items-center gap-3">
                 <!-- Search Input -->
                 <div class="relative flex-1 w-full">
                     <ion-icon name="search-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
@@ -273,7 +279,7 @@ foreach ($categories as $c) {
                         ফিল্টার
                     </button>
                     <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['stock_status'])): ?>
-                        <a href="/sodai-dorkar/public/admin/products" class="w-full md:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                        <a href="<?= $base ?>/admin/products" class="w-full md:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
                             <ion-icon name="close-circle-outline" class="text-sm"></ion-icon>
                             রিসেট
                         </a>
@@ -375,7 +381,11 @@ foreach ($categories as $c) {
                                     </td>
                                     <td class="px-5 py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1.5">
-                                            <a href="/sodai-dorkar/public/admin/products/edit?id=<?php echo $p['id']; ?>" 
+                                            <a href="<?= $base ?>/admin/products/image-finder?search=<?= urlencode($p['name']) ?>" 
+                                               class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="ওয়েব থেকে ছবি খুঁজুন (Auto Image Finder)">
+                                                <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
+                                            </a>
+                                            <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
                                                class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
                                                 <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                             </a>

@@ -1,3 +1,6 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="space-y-6">
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-secondary-100">
@@ -10,23 +13,29 @@
             <p class="text-secondary-500 text-xs mt-1">Real-time overview of inventory valuation, stock health, price verification, and procurement workflows.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <a href="/sodai-dorkar/public/admin/products/bulk-import" 
+            <a href="<?= $base ?>/admin/products/image-finder" 
+               class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md">
+                <ion-icon name="sparkles" class="text-base text-amber-300"></ion-icon>
+                <span>Auto Image Finder</span>
+            </a>
+            <a href="<?= $base ?>/admin/products/bulk-import" 
                class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md">
                 <ion-icon name="cloud-upload-outline" class="text-base"></ion-icon>
                 <span>Bulk CSV Import</span>
             </a>
-            <a href="/sodai-dorkar/public/admin/products" 
+            <a href="<?= $base ?>/admin/products" 
                class="flex items-center gap-2 bg-white text-secondary-700 border border-secondary-300 hover:bg-secondary-50 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-2xs">
                 <ion-icon name="list-outline" class="text-base"></ion-icon>
                 <span>Manage Products</span>
             </a>
-            <a href="/sodai-dorkar/public/admin/products/procurement" 
+            <a href="<?= $base ?>/admin/products/procurement" 
                class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
                 <ion-icon name="cart-outline" class="text-base"></ion-icon>
                 <span>Procurement List</span>
             </a>
         </div>
     </div>
+
 
     <!-- KPI Summary Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -164,51 +173,66 @@
     </div>
 
     <!-- Quick Operations Launchpad -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <a href="/sodai-dorkar/public/admin/products/bulk-import" 
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <a href="<?= $base ?>/admin/products/image-finder" 
+           class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all flex items-center gap-3 group">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm">
+                <ion-icon name="sparkles"></ion-icon>
+            </div>
+            <div>
+                <h5 class="text-xs font-bold text-emerald-950 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
+                    <span>Auto Image Finder</span>
+                    <span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 text-[8px] font-black rounded">NEW</span>
+                </h5>
+                <p class="text-[11px] text-emerald-800/80">1-ক্লিকে Shwapno থেকে ছবি সেভ</p>
+            </div>
+        </a>
+
+        <a href="<?= $base ?>/admin/products/bulk-import" 
            class="p-4 rounded-2xl bg-white border border-secondary-100 hover:border-primary-400 hover:shadow-md transition-all flex items-center gap-3 group">
             <div class="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                 <ion-icon name="cloud-upload-outline"></ion-icon>
             </div>
             <div>
                 <h5 class="text-xs font-bold text-secondary-900 group-hover:text-primary-600 transition-colors">Bulk CSV Import</h5>
-                <p class="text-[11px] text-secondary-500">Upload 300+ items with live progress bar</p>
+                <p class="text-[11px] text-secondary-500">Upload 300+ items with progress bar</p>
             </div>
         </a>
 
-        <a href="/sodai-dorkar/public/admin/products/verification" 
+        <a href="<?= $base ?>/admin/products/verification" 
            class="p-4 rounded-2xl bg-white border border-secondary-100 hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3 group">
             <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                 <ion-icon name="checkmark-done-outline"></ion-icon>
             </div>
             <div>
                 <h5 class="text-xs font-bold text-secondary-900 group-hover:text-blue-600 transition-colors">Price Verification</h5>
-                <p class="text-[11px] text-secondary-500"><?= $unverifiedCount ?> unconfirmed supplier prices</p>
+                <p class="text-[11px] text-secondary-500"><?= $unverifiedCount ?> unconfirmed prices</p>
             </div>
         </a>
 
-        <a href="/sodai-dorkar/public/admin/products/availability" 
+        <a href="<?= $base ?>/admin/products/availability" 
            class="p-4 rounded-2xl bg-white border border-secondary-100 hover:border-amber-400 hover:shadow-md transition-all flex items-center gap-3 group">
             <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                 <ion-icon name="flash-outline"></ion-icon>
             </div>
             <div>
                 <h5 class="text-xs font-bold text-secondary-900 group-hover:text-amber-600 transition-colors">Availability Control</h5>
-                <p class="text-[11px] text-secondary-500"><?= $pendingAvailability ?> items pending status check</p>
+                <p class="text-[11px] text-secondary-500"><?= $pendingAvailability ?> items pending</p>
             </div>
         </a>
 
-        <a href="/sodai-dorkar/public/admin/products/procurement" 
+        <a href="<?= $base ?>/admin/products/procurement" 
            class="p-4 rounded-2xl bg-white border border-secondary-100 hover:border-red-400 hover:shadow-md transition-all flex items-center gap-3 group">
             <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                 <ion-icon name="cart-outline"></ion-icon>
             </div>
             <div>
                 <h5 class="text-xs font-bold text-secondary-900 group-hover:text-red-600 transition-colors">Procurement List</h5>
-                <p class="text-[11px] text-secondary-500">Ordered items requiring supplier purchase</p>
+                <p class="text-[11px] text-secondary-500">Items requiring purchase</p>
             </div>
         </a>
     </div>
+
 
     <!-- Two Column Breakdown Tables: Low Stock Urgency & Recently Added Products -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

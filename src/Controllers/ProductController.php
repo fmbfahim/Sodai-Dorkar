@@ -1048,4 +1048,295 @@ class ProductController extends Controller {
             'groupedItems' => $groupedItems
         ]);
     }
+
+    public function imageFinderIndex() {
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+        $categoryModel = new \Models\Category();
+        $categories = $categoryModel->all();
+
+        $filter = $_GET['filter'] ?? 'missing'; // 'missing', 'has_image', 'all'
+        $categoryId = !empty($_GET['category_id']) ? intval($_GET['category_id']) : null;
+        $search = trim($_GET['search'] ?? '');
+
+        // KPI Counts
+        $totalProducts = (int)$db->query("SELECT COUNT(*) as cnt FROM products")->fetch()['cnt'];
+        $missingCount = (int)$db->query("SELECT COUNT(*) as cnt FROM products WHERE image_path IS NULL OR TRIM(image_path) = ''")->fetch()['cnt'];
+        $hasImageCount = $totalProducts - $missingCount;
+
+        $sql = "SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE 1=1";
+        $params = [];
+
+        if ($filter === 'missing') {
+            $sql .= " AND (p.image_path IS NULL OR TRIM(p.image_path) = '')";
+        } elseif ($filter === 'has_image') {
+            $sql .= " AND (p.image_path IS NOT NULL AND TRIM(p.image_path) != '')";
+        }
+
+        if ($categoryId) {
+            $sql .= " AND p.category_id = ?";
+            $params[] = $categoryId;
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (p.name LIKE ? OR p.sku LIKE ?)";
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+
+        $sql .= " ORDER BY p.id DESC";
+
+        $products = $db->query($sql, $params)->fetchAll();
+
+        return $this->view('admin/products/image_finder', [
+            'title' => 'Auto Image Finder (ওয়েব থেকে ছবি অনুসন্ধান ও সেভ)',
+            'products' => $products,
+            'categories' => $categories,
+            'totalProducts' => $totalProducts,
+            'missingCount' => $missingCount,
+            'hasImageCount' => $hasImageCount,
+            'filter' => $filter,
+            'categoryId' => $categoryId,
+            'search' => $search
+        ]);
+    }
+
+    public function searchWebImages() {
+        header('Content-Type: application/json; charset=utf-8');
+        $query = trim($_GET['query'] ?? '');
+
+        if (empty($query)) {
+            echo json_encode(['success' => false, 'message' => 'সার্চ কিওয়ার্ড দেওয়া হয়নি (Query is empty)', 'results' => []], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $results = [];
+
+        // 1. Primary: Search Shwapno API
+        $shwapnoResults = $this->fetchShwapnoImages($query);
+        foreach ($shwapnoResults as $item) {
+            $results[] = $item;
+        }
+
+        // If Shwapno returned less than 4 and query has package sizes, try broader query on Shwapno
+        if (count($results) < 4) {
+            // Remove common quantity or packaging words e.g. "500gm", "1kg", "বস্তা", "packet"
+            $cleanedQuery = trim(preg_replace('/\b(\d+\s*(?:kg|gm|g|ltr|ml|liter|কেজি|গ্রাম|লিটার|বস্তা|প্যাকেট))\b/i', '', $query));
+            if ($cleanedQuery && strtolower($cleanedQuery) !== strtolower($query)) {
+                $moreShwapno = $this->fetchShwapnoImages($cleanedQuery);
+                $existingImages = array_column($results, 'image');
+                foreach ($moreShwapno as $item) {
+                    if (!in_array($item['image'], $existingImages)) {
+                        $results[] = $item;
+                        $existingImages[] = $item['image'];
+                    }
+                }
+            }
+        }
+
+        // 2. OpenFoodFacts fallback for branded products if Shwapno has few results
+        if (count($results) < 3) {
+            $offResults = $this->fetchOpenFoodFactsImages($query);
+            $existingImages = array_column($results, 'image');
+            foreach ($offResults as $item) {
+                if (!in_array($item['image'], $existingImages)) {
+                    $results[] = $item;
+                }
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'query' => $query,
+            'count' => count($results),
+            'results' => array_slice($results, 0, 16)
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    private function fetchShwapnoImages($query) {
+        $ch = curl_init("https://www.shwapno.com/api/search?q=" . urlencode($query));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Accept: application/json",
+            "Referer: https://www.shwapno.com/"
+        ]);
+        $res = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $items = [];
+        if ($code === 200 && $res) {
+            $data = json_decode($res, true);
+            if (!empty($data['products']) && is_array($data['products'])) {
+                foreach ($data['products'] as $item) {
+                    $p = $item['product'] ?? $item;
+                    $largeImg = $p['picture']['largeDeviceUrl']['imageUrl'] 
+                        ?? $p['picture']['largeDeviceUrl']['fullSizeImageUrl'] 
+                        ?? '';
+                    $smallImg = $p['picture']['smallDeviceUrl']['imageUrl'] 
+                        ?? $largeImg;
+
+                    if ($largeImg) {
+                        $priceStr = '';
+                        if (!empty($p['price']['price'])) {
+                            $priceStr = $p['price']['price'];
+                        } elseif (!empty($p['price']['priceValue'])) {
+                            $priceStr = '৳' . $p['price']['priceValue'];
+                        }
+
+                        $items[] = [
+                            'title' => $p['name'] ?? $query,
+                            'image' => $largeImg,
+                            'thumbnail' => $smallImg ?: $largeImg,
+                            'source' => 'Shwapno Official',
+                            'sku' => $p['sku'] ?? '',
+                            'price' => $priceStr
+                        ];
+                    }
+                }
+            }
+        }
+        return $items;
+    }
+
+    private function fetchOpenFoodFactsImages($query) {
+        $ch = curl_init("https://world.openfoodfacts.org/cgi/search.pl?search_terms=" . urlencode($query) . "&search_simple=1&action=process&json=1&page_size=6");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_USERAGENT, "SodaiDorkar/1.0 (admin@sodaidorkar.com)");
+        $res = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $items = [];
+        if ($code === 200 && $res) {
+            $data = json_decode($res, true);
+            if (!empty($data['products']) && is_array($data['products'])) {
+                foreach ($data['products'] as $p) {
+                    $img = $p['image_front_url'] ?? $p['image_url'] ?? '';
+                    if ($img) {
+                        $items[] = [
+                            'title' => $p['product_name'] ?? $query,
+                            'image' => $img,
+                            'thumbnail' => $p['image_front_small_url'] ?? $img,
+                            'source' => 'Web / Grocery DB',
+                            'sku' => $p['code'] ?? '',
+                            'price' => ''
+                        ];
+                    }
+                }
+            }
+        }
+        return $items;
+    }
+
+    public function saveWebImage() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Check CSRF token from header or post
+        $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+        if (!\Core\CSRF::verify($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'CSRF security token mismatch! অনুগ্রহ করে পেজ রিফ্রেশ করুন।'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $productId = intval($_POST['product_id'] ?? 0);
+        $imageUrl = trim($_POST['image_url'] ?? '');
+
+        if (!$productId || empty($imageUrl)) {
+            echo json_encode(['success' => false, 'message' => 'পণ্য আইডি অথবা ইমেজ লিংক সঠিক নয়!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Validate URL format
+        if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            echo json_encode(['success' => false, 'message' => 'অবৈধ ইমেজ ইউআরএল (Invalid URL)'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Download the image using cURL
+        $ch = curl_init($imageUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_REFERER, "https://www.shwapno.com/");
+        $imageData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || empty($imageData)) {
+            echo json_encode(['success' => false, 'message' => 'ইমেজ ডাউনলোড করা যায়নি (HTTP ' . $httpCode . '): ' . $curlErr], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Validate image data with finfo
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $imageData);
+        finfo_close($finfo);
+
+        $allowedMimes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif'
+        ];
+
+        if (!isset($allowedMimes[$mime])) {
+            // Check if content-type header helps
+            if (stripos($contentType, 'webp') !== false) {
+                $ext = 'webp';
+            } elseif (stripos($contentType, 'png') !== false) {
+                $ext = 'png';
+            } elseif (stripos($contentType, 'jpeg') !== false || stripos($contentType, 'jpg') !== false) {
+                $ext = 'jpg';
+            } else {
+                echo json_encode(['success' => false, 'message' => 'অসমর্থিত ইমেজ ফরম্যাট (' . $mime . ')! শুধুমাত্র JPG, PNG, WEBP গ্রহণযোগ্য।'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+        } else {
+            $ext = $allowedMimes[$mime];
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/products/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = 'prod_' . $productId . '_' . time() . '_' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+        $targetFile = $uploadDir . $fileName;
+
+        if (file_put_contents($targetFile, $imageData) === false) {
+            echo json_encode(['success' => false, 'message' => 'সার্ভারে ইমেজ ফাইল সংরক্ষণ করা যায়নি (Folder permission issue)!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Relative path calculation for localhost and live server
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $imagePath = ($base ?: '') . '/uploads/products/' . $fileName;
+
+        // Update database
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+        $db->query("UPDATE products SET image_path = ? WHERE id = ?", [$imagePath, $productId]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'ইমেজ সফলভাবে ডাউনলোড ও সেভ করা হয়েছে!',
+            'image_path' => $imagePath,
+            'product_id' => $productId
+        ], JSON_UNESCAPED_UNICODE);
+            exit;
+    }
 }
+
