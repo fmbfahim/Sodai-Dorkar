@@ -139,12 +139,35 @@ class Middleware {
 
     public static function verifyCsrf() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+            $token = $_POST['csrf_token'] 
+                ?? $_SERVER['HTTP_X_CSRF_TOKEN'] 
+                ?? $_SERVER['HTTP_X_XSRF_TOKEN'] 
+                ?? '';
+
+            if (!$token) {
+                $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+                if (stripos($contentType, 'application/json') !== false) {
+                    $raw = file_get_contents('php://input');
+                    $data = json_decode($raw, true);
+                    if (is_array($data) && !empty($data['csrf_token'])) {
+                        $token = $data['csrf_token'];
+                    }
+                }
+            }
+
             if (!\Core\CSRF::verify($token)) {
                 http_response_code(419);
-                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'CSRF token mismatch.']);
+                $isJson = (isset($_SERVER['HTTP_ACCEPT']) && stripos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+                    || (isset($_SERVER['CONTENT_TYPE']) && stripos($_SERVER['CONTENT_TYPE'], 'application/json') !== false)
+                    || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+                if ($isJson) {
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'success' => false,
+                        'status' => 'error',
+                        'message' => 'CSRF Security Token Expired. অনুগ্রহ করে পেজটি রিলোড করে আবার চেষ্টা করুন।'
+                    ]);
                     exit;
                 }
                 die("419 Page Expired - CSRF token mismatch.");

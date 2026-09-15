@@ -1,3 +1,8 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$csrfToken = \Core\CSRF::token();
+?>
+
 <div class="max-w-4xl mx-auto my-8 space-y-6">
     <!-- Top Breadcrumb & Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-secondary-100">
@@ -10,12 +15,12 @@
             <p class="text-secondary-500 text-xs mt-1">৩০০+ পণ্য দ্রুত ও নিরাপদে ইম্পোর্ট করুন। ডুপ্লিকেট রোধ ও লাইভ প্রগ্রেস বার সহ।</p>
         </div>
         <div class="flex items-center gap-2.5">
-            <a href="/sodai-dorkar/public/admin/products/bulk-demo" 
+            <a href="<?= $base ?>/admin/products/bulk-demo" 
                class="px-4 py-2.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl font-bold transition-colors flex items-center gap-1.5 shadow-2xs">
                 <ion-icon name="download-outline" class="text-base"></ion-icon>
                 <span>ডেমো CSV ডাউনলোড</span>
             </a>
-            <a href="/sodai-dorkar/public/admin/products/dashboard" 
+            <a href="<?= $base ?>/admin/products/dashboard" 
                class="px-4 py-2.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 rounded-xl font-bold transition-colors flex items-center gap-1.5 shadow-2xs">
                 <ion-icon name="grid-outline" class="text-base"></ion-icon>
                 <span>ড্যাশবোর্ড</span>
@@ -222,11 +227,11 @@
 
             <!-- Action Navigation Buttons -->
             <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <a href="/sodai-dorkar/public/admin/products" class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
+                <a href="<?= $base ?>/admin/products" class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
                     <ion-icon name="list-outline" class="text-base"></ion-icon>
                     <span>পণ্য তালিকা দেখুন</span>
                 </a>
-                <a href="/sodai-dorkar/public/admin/products/dashboard" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
+                <a href="<?= $base ?>/admin/products/dashboard" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
                     <ion-icon name="grid-outline" class="text-base"></ion-icon>
                     <span>প্রোডাক্ট ড্যাশবোর্ড</span>
                 </a>
@@ -274,6 +279,8 @@
 <script>
 let parsedProducts = [];
 const CHUNK_SIZE = 35; // 35 items per request to effortlessly handle 300+ items without timeout
+const baseUrl = '<?= $base ?>';
+const csrfToken = '<?= $csrfToken ?>';
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('csvFileInput');
@@ -530,19 +537,28 @@ startBtn.addEventListener('click', async () => {
         progressStatusText.textContent = `ব্যাচ ${chunkIdx + 1}/${totalChunks} প্রসেস হচ্ছে (${start + 1} - ${end} নং পণ্য)...`;
 
         try {
-            const response = await fetch('/sodai-dorkar/public/admin/products/bulk-chunk-import', {
+            const response = await fetch(`${baseUrl}/admin/products/bulk-chunk-import`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify({
+                    csrf_token: csrfToken,
                     items: chunk,
                     duplicate_action: duplicateAction
                 })
             });
 
-            const result = await response.json();
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (jsonErr) {
+                throw new Error(response.status ? `সার্ভার রেসপন্স ত্রুটি (HTTP ${response.status}): ${text.substring(0, 60)}` : jsonErr.message);
+            }
 
             if (result.success) {
                 totalAdded += (result.added || 0);
