@@ -10,6 +10,48 @@ class Employee {
     public function __construct() {
         $config = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        $this->ensureSchema();
+    }
+
+    public function ensureSchema() {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS departments (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                description TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $this->db->query("CREATE TABLE IF NOT EXISTS designations (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                department_id INT UNSIGNED NOT NULL,
+                title VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $this->db->query("CREATE TABLE IF NOT EXISTS employees (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                emp_code VARCHAR(20) NOT NULL UNIQUE,
+                user_id INT UNSIGNED NULL,
+                department_id INT UNSIGNED NULL,
+                designation_id INT UNSIGNED NULL,
+                name VARCHAR(100) NOT NULL,
+                phone VARCHAR(20) NOT NULL,
+                email VARCHAR(100) NULL,
+                nid VARCHAR(30) NULL,
+                address TEXT NULL,
+                joining_date DATE NOT NULL,
+                basic_salary DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                status ENUM('active', 'inactive', 'terminated', 'on_leave') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } catch (\Throwable $e) {
+            error_log("Employee::ensureSchema error: " . $e->getMessage());
+        }
     }
 
     public function generateEmpCode() {
