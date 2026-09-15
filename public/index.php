@@ -248,11 +248,13 @@ $router->get('/admin/users/edit', 'UserController@edit');
 $router->post('/admin/users/update', 'UserController@update');
 $router->post('/admin/users/toggle-status', 'UserController@toggleStatus');
 $router->post('/admin/users/delete', 'UserController@destroy');
+$router->post('/admin/users/create-employee', 'UserController@createQuickEmployee');
 
 // HR & Employee Management Routes
 $router->get('/admin/hr/employees', 'HrController@employees');
 $router->get('/admin/hr/employees/create', 'HrController@createEmployee');
 $router->post('/admin/hr/employees/store', 'HrController@storeEmployee');
+$router->post('/admin/hr/employees/create-user', 'HrController@createQuickUser');
 $router->get('/admin/hr/employees/show', 'HrController@showEmployee');
 $router->get('/admin/hr/employees/edit', 'HrController@editEmployee');
 $router->post('/admin/hr/employees/update', 'HrController@updateEmployee');

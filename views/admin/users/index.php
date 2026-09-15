@@ -161,12 +161,15 @@ $search = $filters['search'] ?? '';
                                 </td>
                                 <td class="py-3.5 px-4 text-xs">
                                     <?php if (!empty($u['emp_code'])): ?>
-                                        <a href="<?= $base ?>/admin/hr/employees/show?id=<?= $u['employee_id'] ?>" class="text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1">
+                                        <a href="<?= $base ?>/admin/hr/employees/show?id=<?= $u['employee_id'] ?>" class="text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1 bg-primary-50 px-2 py-1 rounded-lg border border-primary-100" title="কর্মচারী প্রোফাইল দেখুন">
                                             <ion-icon name="id-card-outline"></ion-icon>
                                             <?= htmlspecialchars($u['emp_code']) ?>
                                         </a>
                                     <?php else: ?>
-                                        <span class="text-secondary-400 italic">লিংক করা নেই</span>
+                                        <button type="button" onclick="openQuickEmpModal(<?= $u['id'] ?>, '<?= addslashes(htmlspecialchars($u['name'])) ?>')" class="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 hover:text-primary-800 bg-primary-50 hover:bg-primary-100 px-2.5 py-1 rounded-lg border border-primary-200 transition-colors shadow-2xs" title="এই ব্যবহারকারীর জন্য কর্মচারী প্রোফাইল তৈরি করুন">
+                                            <ion-icon name="person-add-outline" class="text-xs"></ion-icon>
+                                            + কর্মচারী তৈরি
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
@@ -247,6 +250,62 @@ $search = $filters['search'] ?? '';
                     <?php endforeach; ?>
                 </select>
                 <p class="text-[11px] text-secondary-500 mt-1">কর্মচারী নির্বাচন করলে নাম, ফোন ও ইমেইল স্বয়ংক্রিয় পূরণ হবে</p>
+            </div>
+
+            <!-- Option: Create new employee simultaneously -->
+            <div id="createEmployeeSection" class="p-3.5 bg-primary-50/60 border border-primary-200 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2.5 cursor-pointer">
+                        <input type="checkbox" name="create_employee" value="1" id="modalCreateEmployeeCb" onchange="toggleModalEmpFields(this.checked)" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-secondary-300 cursor-pointer">
+                        <div>
+                            <span class="text-xs font-bold text-secondary-900">একই সাথে নতুন কর্মচারী (Employee Profile) তৈরি করুন</span>
+                            <p class="text-[11px] text-secondary-500">স্বয়ংক্রিয়ভাবে একটি নতুন Employee কোড জেনারেট হয়ে এই ইউজারের সাথে লিংক হবে</p>
+                        </div>
+                    </label>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-100 text-primary-700">অটো-লিংক</span>
+                </div>
+                
+                <div id="modalEmpFields" class="hidden space-y-3 pt-2.5 border-t border-primary-200/60">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-secondary-700 mb-1">ডিপার্টমেন্ট</label>
+                            <select name="emp_department_id" class="w-full bg-white border border-secondary-300 rounded-xl px-3 py-1.5 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                                <option value="">-- ডিপার্টমেন্ট নির্বাচন করুন --</option>
+                                <?php foreach ($departments as $dept): ?>
+                                    <option value="<?= $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-secondary-700 mb-1">পদবী (Designation)</label>
+                            <select name="emp_designation_id" class="w-full bg-white border border-secondary-300 rounded-xl px-3 py-1.5 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                                <option value="">-- পদবী নির্বাচন করুন --</option>
+                                <?php foreach ($designations as $des): ?>
+                                    <option value="<?= $des['id'] ?>"><?= htmlspecialchars($des['title'] . ' (' . $des['department_name'] . ')') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-secondary-700 mb-1">চাকরির ধরন</label>
+                            <select name="emp_employment_type" class="w-full bg-white border border-secondary-300 rounded-xl px-3 py-1.5 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                                <option value="full_time">পূর্ণকালীন (Full Time)</option>
+                                <option value="part_time">খণ্ডকালীন (Part Time)</option>
+                                <option value="contract">চুক্তিভিত্তিক (Contractual)</option>
+                                <option value="daily">দৈনিক হাজিরা (Daily)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-secondary-700 mb-1">মূল বেতন (Basic Salary)</label>
+                            <input type="number" step="0.01" name="emp_basic_salary" value="0.00" class="w-full bg-white border border-secondary-300 rounded-xl px-3 py-1.5 text-xs font-bold text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-secondary-700 mb-1">যোগদানের তারিখ</label>
+                            <input type="date" name="emp_joining_date" value="<?= date('Y-m-d') ?>" class="w-full bg-white border border-secondary-300 rounded-xl px-3 py-1.5 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -333,6 +392,81 @@ $search = $filters['search'] ?? '';
     </div>
 </div>
 
+<!-- Modal: Quick Create Employee Profile from User -->
+<div id="quickCreateEmpModal" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-secondary-200">
+        <div class="flex items-center justify-between pb-3 border-b border-secondary-100">
+            <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                <ion-icon name="id-card" class="text-primary-600 text-xl"></ion-icon>
+                <span>কর্মচারী প্রোফাইল তৈরি (Convert to Employee)</span>
+            </h3>
+            <button onclick="closeQuickEmpModal()" class="text-secondary-400 hover:text-secondary-700">
+                <ion-icon name="close-circle-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form method="POST" action="<?= $base ?>/admin/users/create-employee" class="mt-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="user_id" id="quickEmpUserId" value="">
+
+            <div class="p-3 bg-primary-50 border border-primary-200 rounded-xl">
+                <p class="text-xs text-primary-800">
+                    ব্যবহারকারী: <strong id="quickEmpUserName" class="text-primary-900 font-bold"></strong>-এর জন্য নতুন কর্মচারী প্রোফাইল তৈরি ও স্বয়ংক্রিয়ভাবে লিংক করা হবে।
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">ডিপার্টমেন্ট</label>
+                    <select name="department_id" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                        <option value="">-- ডিপার্টমেন্ট নির্বাচন করুন --</option>
+                        <?php foreach ($departments as $dept): ?>
+                            <option value="<?= $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">পদবী (Designation)</label>
+                    <select name="designation_id" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                        <option value="">-- পদবী নির্বাচন করুন --</option>
+                        <?php foreach ($designations as $des): ?>
+                            <option value="<?= $des['id'] ?>"><?= htmlspecialchars($des['title'] . ' (' . $des['department_name'] . ')') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">চাকরির ধরন</label>
+                    <select name="employment_type" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                        <option value="full_time">পূর্ণকালীন</option>
+                        <option value="part_time">খণ্ডকালীন</option>
+                        <option value="contract">চুক্তিভিত্তিক</option>
+                        <option value="daily">দৈনিক</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">মূল বেতন (Basic)</label>
+                    <input type="number" step="0.01" name="basic_salary" value="0.00" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs font-bold text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">যোগদানের তারিখ</label>
+                    <input type="date" name="joining_date" value="<?= date('Y-m-d') ?>" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-secondary-100">
+                <button type="button" onclick="closeQuickEmpModal()" class="px-4 py-2 border border-secondary-300 text-secondary-700 rounded-xl text-xs font-medium hover:bg-secondary-50">বাতিল</button>
+                <button type="submit" class="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5">
+                    <ion-icon name="checkmark-circle-outline" class="text-sm"></ion-icon>
+                    <span>প্রোফাইল তৈরি ও লিংক করুন</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 const modalRolePresets = {
     admin: ['*'],
@@ -350,6 +484,26 @@ function openCreateUserModal() {
 
 function closeCreateUserModal() {
     document.getElementById('createUserModal').classList.add('hidden');
+}
+
+function toggleModalEmpFields(checked) {
+    const fields = document.getElementById('modalEmpFields');
+    if (checked) {
+        fields.classList.remove('hidden');
+        document.getElementById('modalEmployeeSelect').value = '';
+    } else {
+        fields.classList.add('hidden');
+    }
+}
+
+function openQuickEmpModal(userId, userName) {
+    document.getElementById('quickEmpUserId').value = userId;
+    document.getElementById('quickEmpUserName').innerText = userName;
+    document.getElementById('quickCreateEmpModal').classList.remove('hidden');
+}
+
+function closeQuickEmpModal() {
+    document.getElementById('quickCreateEmpModal').classList.add('hidden');
 }
 
 function modalRoleChange(role) {
@@ -376,6 +530,13 @@ function autoFillEmployee(select) {
         const nameParts = (opt.getAttribute('data-name') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         if (nameParts && !document.getElementById('modalUsername').value) {
             document.getElementById('modalUsername').value = nameParts.substring(0, 10);
+        }
+
+        // Uncheck and hide create new employee fields
+        const createEmpCb = document.getElementById('modalCreateEmployeeCb');
+        if (createEmpCb) {
+            createEmpCb.checked = false;
+            toggleModalEmpFields(false);
         }
     }
 }

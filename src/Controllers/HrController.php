@@ -49,12 +49,16 @@ class HrController extends Controller {
         $employees = $this->employeeModel->all($filters);
         $departments = $this->departmentModel->all();
         $stats = $this->employeeModel->getStatistics();
+        $roles = \Models\User::getRoles();
+        $allPermissions = \Core\Auth::allPermissions();
 
         return $this->view('admin/hr/employees/index', [
             'title' => 'কর্মচারী তালিকা ও ব্যবস্থাপনা (Employee Directory)',
             'employees' => $employees,
             'departments' => $departments,
             'stats' => $stats,
+            'roles' => $roles,
+            'allPermissions' => $allPermissions,
             'filters' => [
                 'department_id' => $departmentId,
                 'status' => $status,
@@ -70,6 +74,12 @@ class HrController extends Controller {
         $designations = $this->departmentModel->getDesignations();
         $users = $this->userModel->all(['status' => 'active']);
         $nextEmpCode = $this->employeeModel->generateEmpCode();
+        $roles = \Models\User::getRoles();
+        $allPermissions = \Core\Auth::allPermissions();
+        $preselectedUserId = !empty($_GET['user_id']) ? intval($_GET['user_id']) : null;
+        $prefillName = $_GET['name'] ?? '';
+        $prefillPhone = $_GET['phone'] ?? '';
+        $prefillEmail = $_GET['email'] ?? '';
 
         return $this->view('admin/hr/employees/create', [
             'title' => 'নতুন কর্মচারী যোগ করুন (Add New Employee)',
@@ -77,6 +87,12 @@ class HrController extends Controller {
             'designations' => $designations,
             'users' => $users,
             'nextEmpCode' => $nextEmpCode,
+            'roles' => $roles,
+            'allPermissions' => $allPermissions,
+            'preselectedUserId' => $preselectedUserId,
+            'prefillName' => $prefillName,
+            'prefillPhone' => $prefillPhone,
+            'prefillEmail' => $prefillEmail,
             'error' => $_GET['error'] ?? null
         ]);
     }
@@ -86,7 +102,53 @@ class HrController extends Controller {
         $phone = trim($_POST['phone'] ?? '');
 
         if (empty($name) || empty($phone)) {
-            $this->redirect('/admin/hr/employees/create?error=নাম এবং মোবাইল নম্বর আবশ্যক');
+            $this->redirect('/admin/hr/employees/create?error=' . urlencode('নাম এবং মোবাইল নম্বর আবশ্যক'));
+        }
+
+        $createUser = !empty($_POST['create_user']) && $_POST['create_user'] == 1;
+        $userId = !empty($_POST['user_id']) ? intval($_POST['user_id']) : null;
+
+        // If opted to create a system login account simultaneously
+        if ($createUser) {
+            $username = trim($_POST['user_username'] ?? '');
+            $password = $_POST['user_password'] ?? '';
+            $role = $_POST['user_role'] ?? 'staff';
+
+            if (empty($username) || empty($password)) {
+                $this->redirect('/admin/hr/employees/create?error=' . urlencode('সিস্টেম লগইন তৈরি করতে ইউজারনেম ও পাসওয়ার্ড আবশ্যক'));
+            }
+
+            // Check if username already exists
+            if ($this->userModel->findByUsername($username)) {
+                $this->redirect('/admin/hr/employees/create?error=' . urlencode("ইউজারনেম '{$username}' ইতিমধ্যে ব্যবহৃত হয়েছে"));
+            }
+
+            // Permissions
+            if ($role === 'admin') {
+                $permissions = ['*'];
+            } else {
+                $submittedPerms = $_POST['user_permissions'] ?? [];
+                if (!empty($submittedPerms) && is_array($submittedPerms)) {
+                    $permissions = array_values(array_unique($submittedPerms));
+                } else {
+                    $permissions = \Core\Auth::defaultPermissionsForRole($role);
+                }
+            }
+
+            try {
+                $userId = $this->userModel->create([
+                    'name' => $name,
+                    'username' => $username,
+                    'email' => trim($_POST['email'] ?? '') ?: null,
+                    'phone' => $phone,
+                    'password' => $password,
+                    'role' => $role,
+                    'permissions' => $permissions,
+                    'status' => 'active'
+                ]);
+            } catch (\Throwable $e) {
+                $this->redirect('/admin/hr/employees/create?error=' . urlencode('ইউজার তৈরিতে ত্রুটি: ' . $e->getMessage()));
+            }
         }
 
         $photoPath = null;
@@ -114,7 +176,7 @@ class HrController extends Controller {
 
         $data = [
             'emp_code' => trim($_POST['emp_code'] ?? ''),
-            'user_id' => !empty($_POST['user_id']) ? intval($_POST['user_id']) : null,
+            'user_id' => $userId,
             'name' => $name,
             'phone' => $phone,
             'email' => trim($_POST['email'] ?? '') ?: null,
@@ -140,9 +202,70 @@ class HrController extends Controller {
 
         try {
             $id = $this->employeeModel->create($data);
-            $this->redirect('/admin/hr/employees/show?id=' . $id . '&success=কর্মচারীর তথ্য সফলভাবে সংরক্ষণ করা হয়েছে');
+            $msg = $createUser 
+                ? 'কর্মচারী এবং সিস্টেম লগইন ইউজার সফলভাবে তৈরি হয়েছে!' 
+                : 'কর্মচারীর তথ্য সফলভাবে সংরক্ষণ করা হয়েছে';
+            $this->redirect('/admin/hr/employees/show?id=' . $id . '&success=' . urlencode($msg));
         } catch (\Exception $e) {
             $this->redirect('/admin/hr/employees/create?error=' . urlencode($e->getMessage()));
+        }
+    }
+
+    public function createQuickUser() {
+        $employeeId = intval($_POST['employee_id'] ?? 0);
+        if (!$employeeId) {
+            $this->redirect('/admin/hr/employees?error=' . urlencode('কর্মচারী আইডি পাওয়া যায়নি'));
+        }
+
+        $employee = $this->employeeModel->find($employeeId);
+        if (!$employee) {
+            $this->redirect('/admin/hr/employees?error=' . urlencode('কর্মচারী পাওয়া যায়নি'));
+        }
+
+        if (!empty($employee['user_id'])) {
+            $this->redirect('/admin/hr/employees/show?id=' . $employeeId . '&error=' . urlencode('এই কর্মচারীর সাথে ইতিমধ্যে একটি লগইন একাউন্ট লিংক করা আছে'));
+        }
+
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'staff';
+
+        if (empty($username) || empty($password)) {
+            $this->redirect('/admin/hr/employees/show?id=' . $employeeId . '&error=' . urlencode('ইউজারনেম ও পাসওয়ার্ড আবশ্যক'));
+        }
+
+        if ($this->userModel->findByUsername($username)) {
+            $this->redirect('/admin/hr/employees/show?id=' . $employeeId . '&error=' . urlencode("ইউজারনেম '{$username}' ইতিমধ্যে ব্যবহৃত হয়েছে"));
+        }
+
+        if ($role === 'admin') {
+            $permissions = ['*'];
+        } else {
+            $submittedPerms = $_POST['permissions'] ?? [];
+            if (!empty($submittedPerms) && is_array($submittedPerms)) {
+                $permissions = array_values(array_unique($submittedPerms));
+            } else {
+                $permissions = \Core\Auth::defaultPermissionsForRole($role);
+            }
+        }
+
+        try {
+            $userId = $this->userModel->create([
+                'name' => $employee['name'],
+                'username' => $username,
+                'email' => $employee['email'] ?? null,
+                'phone' => $employee['phone'] ?? null,
+                'password' => $password,
+                'role' => $role,
+                'permissions' => $permissions,
+                'status' => 'active'
+            ]);
+
+            $this->employeeModel->update($employeeId, array_merge($employee, ['user_id' => $userId]));
+
+            $this->redirect('/admin/hr/employees/show?id=' . $employeeId . '&success=' . urlencode("এই কর্মচারীর জন্য সিস্টেম লগইন (@{$username}) সফলভাবে তৈরি হয়েছে!"));
+        } catch (\Throwable $e) {
+            $this->redirect('/admin/hr/employees/show?id=' . $employeeId . '&error=' . urlencode('ইউজার তৈরিতে ত্রুটি: ' . $e->getMessage()));
         }
     }
 
@@ -171,6 +294,8 @@ class HrController extends Controller {
             'recentPayrolls' => $recentPayrolls,
             'leaveHistory' => $leaveHistory,
             'currentMonth' => $currentMonth,
+            'roles' => \Models\User::getRoles(),
+            'allPermissions' => \Core\Auth::allPermissions(),
             'success' => $_GET['success'] ?? null,
             'error' => $_GET['error'] ?? null
         ]);

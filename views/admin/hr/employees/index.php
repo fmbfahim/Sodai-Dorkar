@@ -165,9 +165,22 @@ $search = $filters['search'] ?? '';
                                             <a href="<?= $base ?>/admin/hr/employees/show?id=<?= $emp['id'] ?>" class="font-bold text-secondary-900 hover:text-primary-600 transition-colors flex items-center gap-1.5">
                                                 <?= htmlspecialchars($emp['name']) ?>
                                             </a>
-                                            <span class="inline-block px-1.5 py-0.5 bg-secondary-100 text-secondary-700 rounded text-[11px] font-mono mt-0.5">
-                                                <?= htmlspecialchars($emp['emp_code']) ?>
-                                            </span>
+                                            <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                <span class="inline-block px-1.5 py-0.5 bg-secondary-100 text-secondary-700 rounded text-[11px] font-mono">
+                                                    <?= htmlspecialchars($emp['emp_code']) ?>
+                                                </span>
+                                                <?php if (!empty($emp['linked_username'])): ?>
+                                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-100 rounded text-[11px] font-medium" title="সিস্টেম লগইন লিংক করা">
+                                                        <ion-icon name="person-circle-outline" class="text-xs"></ion-icon>
+                                                        @<?= htmlspecialchars($emp['linked_username']) ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <button type="button" onclick="openHrQuickUserModal(<?= $emp['id'] ?>, '<?= addslashes(htmlspecialchars($emp['name'])) ?>')" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 border border-emerald-200 rounded text-[10px] font-bold transition-colors shadow-2xs" title="এই কর্মচারীর জন্য সিস্টেম লগইন তৈরি করুন">
+                                                        <ion-icon name="key-outline" class="text-[11px]"></ion-icon>
+                                                        + লগইন তৈরি
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -245,3 +258,119 @@ $search = $filters['search'] ?? '';
         </div>
     </div>
 </div>
+
+<!-- Modal: Quick Create User Account from Employee List -->
+<div id="hrQuickUserModal" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-secondary-200">
+        <div class="flex items-center justify-between pb-3 border-b border-secondary-100">
+            <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                <ion-icon name="key" class="text-emerald-600 text-xl"></ion-icon>
+                <span>সিস্টেম লগইন একাউন্ট তৈরি (Add User)</span>
+            </h3>
+            <button onclick="closeHrQuickUserModal()" class="text-secondary-400 hover:text-secondary-700">
+                <ion-icon name="close-circle-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form method="POST" action="<?= $base ?>/admin/hr/employees/create-user" class="mt-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="employee_id" id="hrQuickEmpId" value="">
+
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p class="text-xs text-emerald-800">
+                    কর্মচারী: <strong id="hrQuickEmpName" class="text-emerald-900 font-bold"></strong>-এর জন্য সরাসরি একটি সিস্টেম লগইন একাউন্ট তৈরি ও স্বয়ংক্রিয় লিংক হবে।
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">ইউজারনেম (Login ID) <span class="text-red-500">*</span></label>
+                    <input type="text" name="username" id="hrQuickUsername" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">লগইন পাসওয়ার্ড <span class="text-red-500">*</span></label>
+                    <input type="password" name="password" required minlength="6" placeholder="কমপক্ষে ৬ অক্ষর" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-secondary-700 mb-1">সিস্টেম রোল (Role) <span class="text-red-500">*</span></label>
+                <select name="role" id="hrQuickRoleSelect" onchange="hrQuickRoleChange(this.value)" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500">
+                    <?php foreach (($roles ?? []) as $rKey => $rLabel): ?>
+                        <option value="<?= $rKey ?>" <?= $rKey === 'staff' ? 'selected' : '' ?>><?= $rLabel ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-secondary-800 uppercase tracking-wider">মডিউল পারমিশন (Permissions)</label>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="hrQuickSetAllPerms(true)" class="text-[11px] text-emerald-600 hover:underline">সব নির্বাচন</button>
+                        <span class="text-secondary-300 text-xs">|</span>
+                        <button type="button" onclick="hrQuickSetAllPerms(false)" class="text-[11px] text-secondary-500 hover:underline">সব বাতিল</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50">
+                    <?php foreach (($allPermissions ?? []) as $groupName => $modules): ?>
+                        <div class="col-span-full pt-1 text-[10px] font-bold uppercase tracking-wider text-secondary-400"><?= htmlspecialchars($groupName) ?></div>
+                        <?php foreach ($modules as $permKey => $perm): ?>
+                            <label class="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-secondary-200 text-xs cursor-pointer hover:bg-emerald-50">
+                                <input type="checkbox" name="permissions[]" value="<?= $permKey ?>" class="rounded text-emerald-600 focus:ring-emerald-500 hr-quick-perm-cb">
+                                <span class="font-medium text-secondary-800 text-xs"><?= htmlspecialchars($perm['label_bn']) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-secondary-100">
+                <button type="button" onclick="closeHrQuickUserModal()" class="px-4 py-2 border border-secondary-300 text-secondary-700 rounded-xl text-xs font-medium hover:bg-secondary-50">বাতিল</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5">
+                    <ion-icon name="checkmark-circle-outline" class="text-sm"></ion-icon>
+                    <span>লগইন একাউন্ট সংরক্ষণ করুন</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const hrQuickRolePresets = {
+    admin: ['*'],
+    manager: ['dashboard', 'products', 'categories_brands', 'orders', 'dispatch', 'delivery_men', 'customers', 'vendors_purchases', 'locations', 'hr', 'payroll', 'reports'],
+    accountant: ['dashboard', 'vendors_purchases', 'payroll', 'reports'],
+    agent: ['dashboard', 'orders', 'customers'],
+    delivery_man: ['orders'],
+    staff: ['dashboard', 'products', 'orders']
+};
+
+function openHrQuickUserModal(empId, empName) {
+    document.getElementById('hrQuickEmpId').value = empId;
+    document.getElementById('hrQuickEmpName').innerText = empName;
+    
+    let clean = empName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    document.getElementById('hrQuickUsername').value = clean ? clean.substring(0, 10) : ('emp_' + empId);
+    
+    document.getElementById('hrQuickUserModal').classList.remove('hidden');
+    hrQuickRoleChange(document.getElementById('hrQuickRoleSelect').value);
+}
+
+function closeHrQuickUserModal() {
+    document.getElementById('hrQuickUserModal').classList.add('hidden');
+}
+
+function hrQuickRoleChange(role) {
+    const preset = hrQuickRolePresets[role] || [];
+    const isWildcard = preset.includes('*');
+    document.querySelectorAll('.hr-quick-perm-cb').forEach(cb => {
+        cb.checked = isWildcard || preset.includes(cb.value);
+    });
+}
+
+function hrQuickSetAllPerms(check) {
+    document.querySelectorAll('.hr-quick-perm-cb').forEach(cb => {
+        cb.checked = check;
+    });
+}
+</script>

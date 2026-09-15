@@ -41,18 +41,18 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">পূর্ণ নাম <span class="text-red-500">*</span></label>
-                            <input type="text" name="name" required placeholder="কর্মচারীর পুরো নাম" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                            <input type="text" name="name" id="employeeNameInput" value="<?= htmlspecialchars($prefillName ?? '') ?>" oninput="suggestUsername(this.value)" required placeholder="কর্মচারীর পুরো নাম" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">মোবাইল নম্বর <span class="text-red-500">*</span></label>
-                            <input type="text" name="phone" required placeholder="017xxxxxxxx" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                            <input type="text" name="phone" id="employeePhoneInput" value="<?= htmlspecialchars($prefillPhone ?? '') ?>" required placeholder="017xxxxxxxx" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">ইমেইল এড্রেস</label>
-                            <input type="email" name="email" placeholder="example@email.com" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                            <input type="email" name="email" id="employeeEmailInput" value="<?= htmlspecialchars($prefillEmail ?? '') ?>" placeholder="example@email.com" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">জাতীয় পরিচয়পত্র (NID)</label>
@@ -142,11 +142,13 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">সিস্টেম লগইন লিংক (ঐচ্ছিক)</label>
-                    <select name="user_id" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                    <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">বিদ্যমান ইউজার লিংক (ঐচ্ছিক)</label>
+                    <select name="user_id" id="existingUserSelect" onchange="handleExistingUserSelect(this)" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
                         <option value="">-- কোনো ইউজার লিংক নয় --</option>
                         <?php foreach ($users as $u): ?>
-                            <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name'] . ' (@' . $u['username'] . ')') ?></option>
+                            <option value="<?= $u['id'] ?>" <?= (!empty($preselectedUserId) && $preselectedUserId == $u['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($u['name'] . ' (@' . $u['username'] . ')') ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -167,6 +169,65 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         <input type="radio" name="status" value="inactive" class="text-primary-600 focus:ring-primary-500">
                         <span class="text-sm font-medium text-secondary-700">নিষ্ক্রিয় (Inactive)</span>
                     </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2.5: Create User Login for this Employee -->
+        <div class="bg-primary-50/60 border border-primary-200 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="create_user" value="1" id="createUserCheckbox" onchange="toggleCreateUserFields(this.checked)" class="w-5 h-5 rounded text-primary-600 focus:ring-primary-500 border-secondary-300 cursor-pointer">
+                    <div>
+                        <span class="text-sm font-bold text-secondary-900">এই কর্মচারীর জন্য একটি সিস্টেম লগইন একাউন্ট (User Account) তৈরি করুন</span>
+                        <p class="text-xs text-secondary-500">টিক দিলে কর্মচারী সরাসরি অ্যাডমিন প্যানেলে নির্ধারিত রোলের অধীনে লগইন করতে পারবেন</p>
+                    </div>
+                </label>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary-100 text-primary-700 border border-primary-200 shrink-0">২-ইন-১ ইন্টিগ্রেশন</span>
+            </div>
+
+            <div id="createUserFields" class="hidden space-y-4 pt-3 border-t border-primary-200/60">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">ইউজারনেম (Login ID) <span class="text-red-500">*</span></label>
+                        <input type="text" name="user_username" id="userUsernameInput" placeholder="e.g. employee_username" class="w-full bg-white border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">লগইন পাসওয়ার্ড <span class="text-red-500">*</span></label>
+                        <input type="password" name="user_password" id="userPasswordInput" minlength="6" placeholder="কমপক্ষে ৬ অক্ষর" class="w-full bg-white border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-secondary-700 uppercase tracking-wider mb-1">সিস্টেম রোল (Role) <span class="text-red-500">*</span></label>
+                        <select name="user_role" id="userRoleSelect" onchange="hrRoleChange(this.value)" class="w-full bg-white border border-secondary-300 rounded-xl px-3.5 py-2 text-sm text-secondary-800 focus:ring-2 focus:ring-primary-500">
+                            <?php foreach ($roles as $rKey => $rLabel): ?>
+                                <option value="<?= $rKey ?>" <?= $rKey === 'staff' ? 'selected' : '' ?>><?= $rLabel ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Role permission checklist inside Create Employee -->
+                <div class="pt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-secondary-800 uppercase tracking-wider">মডিউল পারমিশন (Permissions)</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="hrSetAllPerms(true)" class="text-[11px] text-primary-600 hover:underline">সব নির্বাচন</button>
+                            <span class="text-secondary-300 text-xs">|</span>
+                            <button type="button" onclick="hrSetAllPerms(false)" class="text-[11px] text-secondary-500 hover:underline">সব বাতিল</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2.5 border border-primary-200 rounded-xl bg-white">
+                        <?php foreach (($allPermissions ?? []) as $groupName => $modules): ?>
+                            <div class="col-span-full pt-1 text-[10px] font-bold uppercase tracking-wider text-secondary-400"><?= htmlspecialchars($groupName) ?></div>
+                            <?php foreach ($modules as $permKey => $perm): ?>
+                                <label class="flex items-center gap-2 p-1.5 rounded-lg bg-secondary-50 border border-secondary-200 text-xs cursor-pointer hover:bg-primary-50">
+                                    <input type="checkbox" name="user_permissions[]" value="<?= $permKey ?>" class="rounded text-primary-600 focus:ring-primary-500 hr-perm-cb">
+                                    <span class="font-medium text-secondary-800 text-xs"><?= htmlspecialchars($perm['label_bn']) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="text-[11px] text-secondary-500 mt-1">রোল সিলেক্ট করলে পারমিশন স্বয়ংক্রিয় সিলেক্ট হবে। ইচ্ছেমতো কাস্টমাইজও করতে পারবেন।</p>
                 </div>
             </div>
         </div>
@@ -252,6 +313,15 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 </div>
 
 <script>
+const hrRolePresets = {
+    admin: ['*'],
+    manager: ['dashboard', 'products', 'categories_brands', 'orders', 'dispatch', 'delivery_men', 'customers', 'vendors_purchases', 'locations', 'hr', 'payroll', 'reports'],
+    accountant: ['dashboard', 'vendors_purchases', 'payroll', 'reports'],
+    agent: ['dashboard', 'orders', 'customers'],
+    delivery_man: ['orders'],
+    staff: ['dashboard', 'products', 'orders']
+};
+
 function previewEmployeePhoto(event) {
     const file = event.target.files[0];
     if (file) {
@@ -276,13 +346,64 @@ function filterDesignations(deptId) {
     const select = document.getElementById('designationSelect');
     const options = select.querySelectorAll('option');
     options.forEach(opt => {
-        if (!opt.value) return; // skip default placeholder
+        if (!opt.value) return;
         const optDept = opt.getAttribute('data-dept');
         if (!deptId || optDept === deptId) {
             opt.style.display = 'block';
         } else {
             opt.style.display = 'none';
         }
+    });
+}
+
+function toggleCreateUserFields(checked) {
+    const container = document.getElementById('createUserFields');
+    const uInput = document.getElementById('userUsernameInput');
+    const pInput = document.getElementById('userPasswordInput');
+    if (checked) {
+        container.classList.remove('hidden');
+        uInput.required = true;
+        pInput.required = true;
+        document.getElementById('existingUserSelect').value = '';
+        suggestUsername(document.getElementById('employeeNameInput').value);
+        hrRoleChange(document.getElementById('userRoleSelect').value);
+    } else {
+        container.classList.add('hidden');
+        uInput.required = false;
+        pInput.required = false;
+    }
+}
+
+function handleExistingUserSelect(select) {
+    if (select.value) {
+        const cb = document.getElementById('createUserCheckbox');
+        if (cb.checked) {
+            cb.checked = false;
+            toggleCreateUserFields(false);
+        }
+    }
+}
+
+function suggestUsername(name) {
+    const uInput = document.getElementById('userUsernameInput');
+    if (!uInput || uInput.value.trim() !== '') return;
+    const cleaned = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (cleaned) {
+        uInput.value = cleaned.substring(0, 10);
+    }
+}
+
+function hrRoleChange(role) {
+    const preset = hrRolePresets[role] || [];
+    const isWildcard = preset.includes('*');
+    document.querySelectorAll('.hr-perm-cb').forEach(cb => {
+        cb.checked = isWildcard || preset.includes(cb.value);
+    });
+}
+
+function hrSetAllPerms(check) {
+    document.querySelectorAll('.hr-perm-cb').forEach(cb => {
+        cb.checked = check;
     });
 }
 </script>

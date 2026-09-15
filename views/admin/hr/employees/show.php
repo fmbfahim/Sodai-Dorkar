@@ -80,6 +80,12 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
             <!-- Action Buttons -->
             <div class="flex flex-wrap items-center gap-2 self-start md:self-center">
+                <?php if (empty($employee['user_id'])): ?>
+                    <button type="button" onclick="openCreateUserModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm" title="এই কর্মচারীর জন্য একটি অ্যাডমিন লগইন একাউন্ট তৈরি করুন">
+                        <ion-icon name="key-outline" class="text-lg"></ion-icon>
+                        <span>সিস্টেম লগইন তৈরি</span>
+                    </button>
+                <?php endif; ?>
                 <a href="<?= $base ?>/admin/hr/employees/edit?id=<?= $employee['id'] ?>" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm">
                     <ion-icon name="create-outline" class="text-lg"></ion-icon>
                     <span>সম্পাদনা</span>
@@ -199,7 +205,24 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <p><strong class="text-secondary-900">এনআইডি নম্বর:</strong> <?= htmlspecialchars($employee['nid'] ?: 'N/A') ?></p>
                     <p><strong class="text-secondary-900">জরুরি যোগাযোগ:</strong> <?= htmlspecialchars($employee['emergency_contact'] ?: 'N/A') ?></p>
                     <p><strong class="text-secondary-900">ঠিকানা:</strong> <?= nl2br(htmlspecialchars($employee['address'] ?: 'N/A')) ?></p>
-                    <p><strong class="text-secondary-900">সিস্টেম লগইন:</strong> <?= !empty($employee['linked_username']) ? '@' . htmlspecialchars($employee['linked_username']) . ' (' . ($employee['linked_role'] ?? '') . ')' : 'কোনো একাউন্ট লিংক নেই' ?></p>
+                    <div class="flex items-center justify-between pt-1 border-t border-secondary-100">
+                        <div>
+                            <strong class="text-secondary-900">সিস্টেম লগইন:</strong>
+                            <?php if (!empty($employee['linked_username'])): ?>
+                                <span class="inline-flex items-center gap-1 font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200">
+                                    <ion-icon name="person-circle"></ion-icon>
+                                    @<?= htmlspecialchars($employee['linked_username']) ?> (<?= htmlspecialchars($employee['linked_role'] ?? '') ?>)
+                                </span>
+                            <?php else: ?>
+                                <span class="text-secondary-400 italic">কোনো একাউন্ট লিংক নেই</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (empty($employee['user_id'])): ?>
+                            <button type="button" onclick="openCreateUserModal()" class="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors">
+                                + তৈরি করুন
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -375,3 +398,118 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         </div>
     </div>
 </div>
+
+<!-- Modal: Quick Create User Account for Employee -->
+<div id="createUserModal" class="fixed inset-0 bg-secondary-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-secondary-200">
+        <div class="flex items-center justify-between pb-3 border-b border-secondary-100">
+            <h3 class="text-base font-bold text-secondary-900 flex items-center gap-2">
+                <ion-icon name="key" class="text-emerald-600 text-xl"></ion-icon>
+                <span>সিস্টেম লগইন একাউন্ট তৈরি করুন</span>
+            </h3>
+            <button onclick="closeCreateUserModal()" class="text-secondary-400 hover:text-secondary-700">
+                <ion-icon name="close-circle-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form method="POST" action="<?= $base ?>/admin/hr/employees/create-user" class="mt-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="employee_id" value="<?= $employee['id'] ?>">
+
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p class="text-xs text-emerald-800">
+                    কর্মচারী: <strong class="text-emerald-900 font-bold"><?= htmlspecialchars($employee['name']) ?></strong> (<?= htmlspecialchars($employee['emp_code']) ?>)-এর জন্য সরাসরি অ্যাডমিন লগইন একাউন্ট তৈরি ও লিংক হবে।
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">ইউজারনেম (Login ID) <span class="text-red-500">*</span></label>
+                    <?php
+                    $defaultUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $employee['name']));
+                    if (empty($defaultUsername)) $defaultUsername = 'emp_' . $employee['id'];
+                    else $defaultUsername = substr($defaultUsername, 0, 10);
+                    ?>
+                    <input type="text" name="username" value="<?= htmlspecialchars($defaultUsername) ?>" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary-700 mb-1">লগইন পাসওয়ার্ড <span class="text-red-500">*</span></label>
+                    <input type="password" name="password" required minlength="6" placeholder="কমপক্ষে ৬ অক্ষর" class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-secondary-700 mb-1">সিস্টেম রোল (Role) <span class="text-red-500">*</span></label>
+                <select name="role" id="modalRoleSelect" onchange="modalRoleChange(this.value)" required class="w-full bg-secondary-50 border border-secondary-300 rounded-xl px-3 py-2 text-xs text-secondary-800 focus:ring-2 focus:ring-emerald-500">
+                    <?php foreach (($roles ?? []) as $rKey => $rLabel): ?>
+                        <option value="<?= $rKey ?>" <?= $rKey === 'staff' ? 'selected' : '' ?>><?= $rLabel ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-secondary-800 uppercase tracking-wider">মডিউল পারমিশন (Permissions)</label>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="modalSetAllPerms(true)" class="text-[11px] text-emerald-600 hover:underline">সব নির্বাচন</button>
+                        <span class="text-secondary-300 text-xs">|</span>
+                        <button type="button" onclick="modalSetAllPerms(false)" class="text-[11px] text-secondary-500 hover:underline">সব বাতিল</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto p-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50">
+                    <?php foreach (($allPermissions ?? []) as $groupName => $modules): ?>
+                        <div class="col-span-full pt-1 text-[10px] font-bold uppercase tracking-wider text-secondary-400"><?= htmlspecialchars($groupName) ?></div>
+                        <?php foreach ($modules as $permKey => $perm): ?>
+                            <label class="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-secondary-200 text-xs cursor-pointer hover:bg-emerald-50">
+                                <input type="checkbox" name="permissions[]" value="<?= $permKey ?>" class="rounded text-emerald-600 focus:ring-emerald-500 modal-perm-cb">
+                                <span class="font-medium text-secondary-800 text-xs"><?= htmlspecialchars($perm['label_bn']) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-secondary-100">
+                <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 border border-secondary-300 text-secondary-700 rounded-xl text-xs font-medium hover:bg-secondary-50">বাতিল</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5">
+                    <ion-icon name="checkmark-circle-outline" class="text-sm"></ion-icon>
+                    <span>লগইন একাউন্ট সংরক্ষণ করুন</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const modalRolePresets = {
+    admin: ['*'],
+    manager: ['dashboard', 'products', 'categories_brands', 'orders', 'dispatch', 'delivery_men', 'customers', 'vendors_purchases', 'locations', 'hr', 'payroll', 'reports'],
+    accountant: ['dashboard', 'vendors_purchases', 'payroll', 'reports'],
+    agent: ['dashboard', 'orders', 'customers'],
+    delivery_man: ['orders'],
+    staff: ['dashboard', 'products', 'orders']
+};
+
+function openCreateUserModal() {
+    document.getElementById('createUserModal').classList.remove('hidden');
+    modalRoleChange(document.getElementById('modalRoleSelect').value);
+}
+
+function closeCreateUserModal() {
+    document.getElementById('createUserModal').classList.add('hidden');
+}
+
+function modalRoleChange(role) {
+    const preset = modalRolePresets[role] || [];
+    const isWildcard = preset.includes('*');
+    document.querySelectorAll('.modal-perm-cb').forEach(cb => {
+        cb.checked = isWildcard || preset.includes(cb.value);
+    });
+}
+
+function modalSetAllPerms(check) {
+    document.querySelectorAll('.modal-perm-cb').forEach(cb => {
+        cb.checked = check;
+    });
+}
+</script>
