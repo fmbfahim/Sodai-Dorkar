@@ -4,25 +4,26 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
 <div class="space-y-6">
     <!-- Header Section -->
-    <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+    <div class="rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden"
+         style="background: linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 75%, #0f172a 100%) !important; color: #ffffff !important; border: 1px solid #134e4a;">
         <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute right-20 top-0 w-48 h-48 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-                <div class="flex items-center gap-2 text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-2">
-                    <a href="<?= $base ?>/admin/products" class="hover:text-white transition-colors">পণ্য ও ইনভেন্টরি</a>
-                    <span>›</span>
-                    <span class="text-white">অটো ইমেজ ফাইন্ডার</span>
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider mb-2" style="color: #6ee7b7 !important;">
+                    <a href="<?= $base ?>/admin/products" class="hover:text-white transition-colors" style="color: #a7f3d0 !important;">পণ্য ও ইনভেন্টরি</a>
+                    <span style="color: #6ee7b7 !important;">›</span>
+                    <span style="color: #ffffff !important;">অটো ইমেজ ফাইন্ডার</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
-                    <span class="p-2.5 bg-emerald-500/20 backdrop-blur-md rounded-2xl border border-emerald-400/30 text-emerald-300 flex items-center justify-center">
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3" style="color: #ffffff !important;">
+                    <span class="p-2.5 rounded-2xl border flex items-center justify-center" style="background: rgba(16, 185, 129, 0.2) !important; border-color: rgba(52, 211, 153, 0.4) !important; color: #6ee7b7 !important;">
                         <ion-icon name="sparkles-outline" class="text-2xl"></ion-icon>
                     </span>
                     Auto Image Finder (ওয়েব ইমেজ সন্ধান)
                 </h1>
-                <p class="text-secondary-300 text-sm mt-2 max-w-2xl leading-relaxed">
-                    স্বপ্ন (<span class="text-emerald-300 font-semibold">Shwapno.com</span>) ও গ্রোসারি ডাটাবেস থেকে এক ক্লিকে হাই-রেজ্যুলেশন পণ্যের ছবি ডাউনলোড করে সরাসরি আপনার লোকাল স্টোরে সেভ করুন।
+                <p class="text-sm mt-2 max-w-2xl leading-relaxed" style="color: #cbd5e1 !important;">
+                    স্বপ্ন (<span class="font-bold" style="color: #6ee7b7 !important;">Shwapno.com</span>) ও গ্রোসারি ডাটাবেস থেকে এক ক্লিকে হাই-রেজ্যুলেশন পণ্যের ছবি ডাউনলোড করে সরাসরি আপনার লোকাল স্টোরে সেভ করুন।
                 </p>
             </div>
 
@@ -264,7 +265,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <div class="bg-white rounded-3xl shadow-2xl border border-secondary-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all scale-95 opacity-0" id="imageFinderModalContent">
         
         <!-- Modal Top Bar -->
-        <div class="px-6 py-4 bg-gradient-to-r from-secondary-900 via-slate-800 to-secondary-900 text-white flex items-center justify-between border-b border-secondary-700">
+        <div class="px-6 py-4 text-white flex items-center justify-between border-b border-secondary-700"
+             style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 flex items-center justify-center text-xl">
                     <ion-icon name="sparkles"></ion-icon>
@@ -392,7 +394,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <div class="bg-white rounded-3xl shadow-2xl border border-secondary-200 w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all scale-95 opacity-0" id="bulkAutoMatcherModalContent">
         
         <!-- Header -->
-        <div class="px-6 py-5 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white flex items-center justify-between border-b border-white/10">
+        <div class="px-6 py-5 text-white flex items-center justify-between border-b border-white/10"
+             style="background: linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 75%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-md shadow-amber-500/20">
                     <ion-icon name="flash"></ion-icon>

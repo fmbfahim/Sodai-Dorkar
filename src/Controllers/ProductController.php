@@ -2120,6 +2120,209 @@ class ProductController extends Controller {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    public function fetchShwapnoCategoryImage($slug) {
+        $slug = trim($slug);
+        if (empty($slug)) return null;
+
+        $catSearchMap = [
+            'rice' => 'miniket rice',
+            'soybean oil' => 'rupchanda soybean oil',
+            'tea' => 'taaza tea',
+            'dairy' => 'diploma milk powder',
+            'fresh-fruits' => 'apple fuji',
+            'fresh-vegetables' => 'fresh tomato',
+            'spices' => 'radhuni cumin',
+            'fish' => 'rui fish',
+            'meat' => 'beef premium',
+            'beverages' => 'mango juice',
+            'snacks' => 'digestive biscuit',
+            'flours' => 'pusti atta',
+            'cleaning' => 'wheel detergent',
+            'baby-food-care' => 'cerelac baby food',
+            'personal-care' => 'lux soap'
+        ];
+
+        $lowerSlug = strtolower($slug);
+        $searchQuery = $catSearchMap[$lowerSlug] ?? $catSearchMap[$slug] ?? str_replace(['-', '_'], ' ', $slug);
+
+        // Search Shwapno API with representative query
+        $url = "https://www.shwapno.com/api/search?q=" . urlencode($searchQuery);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
+        $res = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code === 200 && $res) {
+            $data = json_decode($res, true);
+            if (!empty($data['products'][0]['product']['picture']['largeDeviceUrl']['imageUrl'])) {
+                return $data['products'][0]['product']['picture']['largeDeviceUrl']['imageUrl'];
+            }
+            if (!empty($data['products'][0]['product']['picture']['mediumDeviceUrl']['imageUrl'])) {
+                return $data['products'][0]['product']['picture']['mediumDeviceUrl']['imageUrl'];
+            }
+        }
+
+        return null;
+    }
+
+    public function shwapnoSetupCategory() {
+        header('Content-Type: application/json; charset=utf-8');
+        $slug = trim($_POST['slug'] ?? '');
+        $name = trim($_POST['name'] ?? '');
+
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'message' => 'ক্যাটাগরির নাম প্রদান করা হয়নি!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        if (empty($slug)) {
+            $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+        }
+
+        $db = null;
+        try {
+            $cfg = require __DIR__ . '/../../config/database.php';
+            $db = new \Core\Database($cfg);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'ডাটাবেস কানেকশন ব্যর্থ: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $categoryModel = new \Models\Category();
+
+        // 1. Check if category already exists (exact name or case-insensitive)
+        $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$name])->fetch();
+        if (!$existing && strpos($name, '(') !== false) {
+            $shortName = trim(explode('(', $name)[0]);
+            if ($shortName) {
+                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
+            }
+        }
+        if (!$existing && preg_match('/\((.*?)\)/', $name, $m)) {
+            $engPart = trim($m[1]);
+            if ($engPart) {
+                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
+            }
+        }
+
+        // If category exists and already has an image
+        if ($existing && !empty($existing['image_path'])) {
+            echo json_encode([
+                'success' => true,
+                'status' => 'already_exists',
+                'id' => (int)$existing['id'],
+                'name' => $existing['name'],
+                'image_path' => $existing['image_path'],
+                'message' => 'ক্যাটাগরি ছবি সহ ইতোমধ্যে ডাটাবেসে বিদ্যমান'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Fetch category image from Shwapno
+        $remoteImageUrl = $this->fetchShwapnoCategoryImage($slug);
+        $savedImagePath = null;
+        if ($remoteImageUrl) {
+            $savedImagePath = $this->downloadAndSaveCategoryImage($remoteImageUrl, $name);
+        }
+
+        if ($existing) {
+            // Update existing category with image
+            if ($savedImagePath) {
+                $db->query("UPDATE categories SET image_path = ? WHERE id = ?", [$savedImagePath, $existing['id']]);
+            }
+            echo json_encode([
+                'success' => true,
+                'status' => 'updated_image',
+                'id' => (int)$existing['id'],
+                'name' => $existing['name'],
+                'image_path' => $savedImagePath ?: $existing['image_path'],
+                'message' => 'বিদ্যমান ক্যাটাগরির ছবি আপডেট করা হয়েছে'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Auto-create new category with image
+        $newId = $categoryModel->create([
+            'name' => $name,
+            'parent_id' => null,
+            'description' => $name . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
+            'image_path' => $savedImagePath
+        ]);
+
+        echo json_encode([
+            'success' => true,
+            'status' => 'created',
+            'id' => (int)$newId,
+            'name' => $name,
+            'image_path' => $savedImagePath,
+            'message' => 'নতুন ক্যাটাগরি ছবি সহ সফলভাবে তৈরি হয়েছে'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function shwapnoSetupAllCategories() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $popularCategories = [
+            ['slug' => 'rice', 'name' => 'চাল ও শস্য (Rice & Grains)'],
+            ['slug' => 'Soybean Oil', 'name' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)'],
+            ['slug' => 'tea', 'name' => 'চা ও কফি (Tea & Coffee)'],
+            ['slug' => 'dairy', 'name' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)'],
+            ['slug' => 'fresh-fruits', 'name' => 'তাজা ফলমূল (Fresh Fruits)'],
+            ['slug' => 'fresh-vegetables', 'name' => 'তাজা শাকসবজি (Fresh Vegetables)'],
+            ['slug' => 'spices', 'name' => 'মসলা ও রান্নার উপাদান (Spices)'],
+            ['slug' => 'fish', 'name' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)'],
+            ['slug' => 'meat', 'name' => 'মাংস ও ডিম (Meat & Eggs)'],
+            ['slug' => 'beverages', 'name' => 'জুস ও পানীয় (Beverages)'],
+            ['slug' => 'snacks', 'name' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)'],
+            ['slug' => 'flours', 'name' => 'আটা, ময়দা ও সুজি (Flour & Suji)'],
+            ['slug' => 'cleaning', 'name' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)'],
+            ['slug' => 'baby-food-care', 'name' => 'শিশু খাদ্য ও যত্ন (Baby Care)'],
+            ['slug' => 'personal-care', 'name' => 'পার্সোনাল কেয়ার (Personal Care)']
+        ];
+
+        $results = [];
+        $createdCount = 0;
+        $existingCount = 0;
+
+        foreach ($popularCategories as $cat) {
+            $catRes = $this->ensureCategoryExistsWithImage($cat['name']);
+            if (!$catRes || empty($catRes['image_path'])) {
+                $imgUrl = $this->fetchShwapnoCategoryImage($cat['slug']);
+                if ($imgUrl) {
+                    $catRes = $this->ensureCategoryExistsWithImage($cat['name'], $imgUrl);
+                }
+            }
+            if ($catRes) {
+                if (!empty($catRes['created'])) {
+                    $createdCount++;
+                } else {
+                    $existingCount++;
+                }
+                $results[] = $catRes;
+            }
+        }
+
+        $categoryModel = new \Models\Category();
+        $allCategories = $categoryModel->all();
+
+        echo json_encode([
+            'success' => true,
+            'created_count' => $createdCount,
+            'existing_count' => $existingCount,
+            'total_processed' => count($popularCategories),
+            'results' => $results,
+            'all_categories' => $allCategories,
+            'message' => "মোট {$createdCount}টি নতুন ক্যাটাগরি তৈরি ও {$existingCount}টি ক্যাটাগরি সফলভাবে যাচাই করা হয়েছে।"
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 

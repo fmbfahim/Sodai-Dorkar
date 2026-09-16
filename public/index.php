@@ -115,6 +115,8 @@ $router->post('/admin/products/auto-match-single', 'ProductController@autoMatchS
 $router->get('/admin/products/shwapno-importer', 'ProductController@shwapnoImporterIndex');
 $router->get('/admin/products/shwapno-category-fetch', 'ProductController@shwapnoCategoryFetch');
 $router->post('/admin/products/shwapno-import-single', 'ProductController@shwapnoImportSingle');
+$router->post('/admin/products/shwapno-setup-category', 'ProductController@shwapnoSetupCategory');
+$router->post('/admin/products/shwapno-setup-all-categories', 'ProductController@shwapnoSetupAllCategories');
 
 
 

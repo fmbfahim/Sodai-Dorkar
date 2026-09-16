@@ -4,30 +4,37 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
 <div class="space-y-6">
     <!-- Header Hero Section -->
-    <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+    <div class="rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden text-white" 
+         style="background: linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 75%, #0f172a 100%) !important; color: #ffffff !important; border: 1px solid #134e4a;">
         <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute right-28 top-0 w-52 h-52 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-                <div class="flex items-center gap-2 text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-2">
-                    <a href="<?= $base ?>/admin/products" class="hover:text-white transition-colors">পণ্য ও ইনভেন্টরি</a>
-                    <span>›</span>
-                    <span class="text-white">Shwapno ক্যাটাগরি স্ক্র্যাপার ও অটো-ইমপোর্টার</span>
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider mb-2" style="color: #6ee7b7 !important;">
+                    <a href="<?= $base ?>/admin/products" class="hover:text-white transition-colors" style="color: #a7f3d0 !important;">পণ্য ও ইনভেন্টরি</a>
+                    <span style="color: #6ee7b7 !important;">›</span>
+                    <span style="color: #ffffff !important;">Shwapno ক্যাটাগরি স্ক্র্যাপার ও অটো-ইমপোর্টার</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
-                    <span class="p-2.5 bg-emerald-500/20 backdrop-blur-md rounded-2xl border border-emerald-400/30 text-emerald-300 flex items-center justify-center">
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3" style="color: #ffffff !important;">
+                    <span class="p-2.5 rounded-2xl border flex items-center justify-center" style="background: rgba(16, 185, 129, 0.2) !important; border-color: rgba(52, 211, 153, 0.4) !important; color: #6ee7b7 !important;">
                         <ion-icon name="cloud-download-outline" class="text-2xl"></ion-icon>
                     </span>
                     Shwapno Category Auto-Importer
                 </h1>
-                <p class="text-secondary-300 text-sm mt-2 max-w-2xl leading-relaxed">
-                    স্বপ্ন (<span class="text-emerald-300 font-semibold">Shwapno.com</span>)-এর যেকোনো ক্যাটাগরি থেকে এক ক্লিকে হাই-রেজ্যুলেশন ছবি, সঠিক বিক্রয়মূল্য, একক এবং ভ্যারিয়েন্ট সহ সরাসরি আপনার স্টোরের ডাটাবেসে পণ্য ইমপোর্ট করুন।
+                <p class="text-sm mt-2 max-w-2xl leading-relaxed" style="color: #cbd5e1 !important;">
+                    স্বপ্ন (<span class="font-bold" style="color: #6ee7b7 !important;">Shwapno.com</span>)-এর যেকোনো ক্যাটাগরি থেকে এক ক্লিকে হাই-রেজ্যুলেশন ছবি, সঠিক বিক্রয়মূল্য, একক এবং ভ্যারিয়েন্ট সহ সরাসরি আপনার স্টোরের ডাটাবেসে পণ্য ইমপোর্ট করুন।
                 </p>
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
-                <a href="<?= $base ?>/admin/products/image-finder" class="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-md shadow-amber-950/30">
+                <button type="button" 
+                        onclick="openCategorySetupModal()" 
+                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-amber-950/40 transform hover:scale-105 active:scale-95 border border-amber-200 cursor-pointer">
+                    <ion-icon name="folder-open" class="text-base text-amber-950"></ion-icon>
+                    <span>১-ক্লিকে সব ক্যাটাগরি যুক্ত করুন</span>
+                </button>
+                <a href="<?= $base ?>/admin/products/image-finder" class="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 backdrop-blur-md border border-emerald-400/40 text-emerald-200 hover:text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
                     <ion-icon name="sparkles" class="text-base"></ion-icon>
                     <span>অটো ইমেজ ফাইন্ডার</span>
                 </a>
@@ -46,12 +53,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <!-- Category Selector & Search Section -->
     <div class="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-secondary-200 space-y-6">
         <div>
-            <div class="flex items-center justify-between gap-4 mb-3">
-                <h3 class="text-sm font-black text-secondary-900 uppercase tracking-wider flex items-center gap-2">
-                    <ion-icon name="apps-outline" class="text-emerald-600 text-base"></ion-icon>
-                    <span>জনপ্রিয় ক্যাটাগরি সমূহ (১-ক্লিকে লোড করুন)</span>
-                </h3>
-                <span class="text-[11px] text-secondary-400 font-medium hidden sm:inline">যেকোনো একটি ক্যাটাগরিতে ক্লিক করলেই স্বয়ংক্রিয়ভাবে পণ্য চলে আসবে</span>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                <div>
+                    <h3 class="text-sm font-black text-secondary-900 uppercase tracking-wider flex items-center gap-2">
+                        <ion-icon name="apps-outline" class="text-emerald-600 text-base"></ion-icon>
+                        <span>জনপ্রিয় ক্যাটাগরি সমূহ (১-ক্লিকে লোড করুন)</span>
+                    </h3>
+                    <p class="text-[11px] text-secondary-500 font-medium mt-0.5">পণ্য ইমপোর্টের আগে চাইলে এক ক্লিকেই সব ক্যাটাগরি ছবি সহ আপনার ডাটাবেসে সেভ করতে পারেন</p>
+                </div>
+                <button type="button" 
+                        onclick="openCategorySetupModal()"
+                        class="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer hover:shadow-xs self-start sm:self-auto">
+                    <ion-icon name="folder-open-outline" class="text-sm text-emerald-700"></ion-icon>
+                    <span>সব ক্যাটাগরি আগে তৈরি করুন</span>
+                </button>
             </div>
             
             <!-- Category Chips Grid -->
@@ -268,7 +283,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <div class="bg-white rounded-3xl shadow-2xl border border-secondary-200 w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all scale-95 opacity-0" id="shwapnoBulkModalContent">
         
         <!-- Modal Top Bar -->
-        <div class="px-6 py-4 bg-gradient-to-r from-secondary-900 via-slate-800 to-secondary-900 text-white flex items-center justify-between border-b border-secondary-700">
+        <div class="px-6 py-4 text-white flex items-center justify-between border-b border-secondary-700"
+             style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 flex items-center justify-center text-xl">
                     <ion-icon name="cloud-download"></ion-icon>
@@ -368,6 +384,111 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </div>
 </div>
 
+<!-- ========================================================== -->
+<!-- 1-CLICK ALL CATEGORIES SETUP MODAL                         -->
+<!-- ========================================================== -->
+<div id="categorySetupModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 transition-all duration-200">
+    <div class="bg-white rounded-3xl shadow-2xl border border-secondary-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh] transform transition-all scale-95 opacity-0" id="categorySetupModalContent">
+        
+        <!-- Modal Top Bar -->
+        <div class="px-6 py-5 text-white flex items-center justify-between border-b border-secondary-700"
+             style="background: linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 80%, #0f172a 100%) !important; color: #ffffff !important;">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center text-2xl shadow-inner">
+                    <ion-icon name="folder-open"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-white flex items-center gap-2.5">
+                        <span>১-ক্লিকে সব ক্যাটাগরি ডাটাবেসে যুক্ত করুন</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-[10px] text-emerald-200 font-bold uppercase tracking-wider">Shwapno Auto-Sync</span>
+                    </h3>
+                    <p class="text-xs text-emerald-100/80 mt-0.5">
+                        স্বপ্ন (Shwapno)-এর ১৫টি জনপ্রিয় ক্যাটাগরি ও তাদের হাই-রেজ্যুলেশন ছবি স্বয়ংক্রিয়ভাবে ডাটাবেসে যুক্ত হবে।
+                    </p>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeCategorySetupModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors">
+                <ion-icon name="close-outline" class="text-xl"></ion-icon>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-5 overflow-y-auto flex-1">
+            <!-- Progress Bar Section -->
+            <div class="space-y-2 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-secondary-800" id="catSetupProgressStatusText">ক্যাটাগরি সিঙ্ক শুরু করতে প্রস্তুত...</span>
+                    <span class="font-mono font-black text-emerald-700 text-sm" id="catSetupProgressPct">0%</span>
+                </div>
+                <div class="w-full h-3.5 bg-secondary-200/80 rounded-full overflow-hidden p-0.5">
+                    <div id="catSetupProgressBar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- KPI Counters -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="p-3 bg-secondary-50 border border-secondary-200 rounded-2xl text-center">
+                    <div class="text-[11px] font-bold text-secondary-500 uppercase">মোট ক্যাটাগরি</div>
+                    <div class="text-xl font-black text-secondary-900 mt-0.5" id="catSetupTotal">15</div>
+                </div>
+                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
+                    <div class="text-[11px] font-bold text-emerald-600 uppercase">নতুন তৈরি (ছবি সহ)</div>
+                    <div class="text-xl font-black text-emerald-700 mt-0.5" id="catSetupCreated">0</div>
+                </div>
+                <div class="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
+                    <div class="text-[11px] font-bold text-blue-600 uppercase">ইতোমধ্যে বিদ্যমান</div>
+                    <div class="text-xl font-black text-blue-700 mt-0.5" id="catSetupExisting">0</div>
+                </div>
+            </div>
+
+            <!-- 15 Categories Grid Status -->
+            <div class="space-y-2">
+                <div class="text-xs font-black text-secondary-700 uppercase tracking-wider flex items-center justify-between">
+                    <span>১৫টি ক্যাটাগরির স্ট্যাটাস ও ছবি প্রিভিউ</span>
+                    <span class="text-[11px] font-normal text-secondary-500">Shwapno API থেকে অটো-ইমেজ ডাউনলোড হবে</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto p-1" id="catSetupListContainer">
+                    <!-- Populated dynamically via JS from presetCategoriesList -->
+                </div>
+            </div>
+
+            <!-- Terminal Log Console -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-secondary-600 flex items-center gap-1.5">
+                        <ion-icon name="terminal-outline" class="text-secondary-500"></ion-icon>
+                        <span>লাইভ লগ টার্মিনাল</span>
+                    </span>
+                    <button type="button" onclick="clearCatSetupLogs()" class="text-[11px] text-secondary-400 hover:text-secondary-600 font-medium">
+                        ক্লিয়ার লগ
+                    </button>
+                </div>
+                <div class="w-full h-36 bg-slate-950 text-slate-200 rounded-2xl p-3.5 font-mono text-[11px] overflow-y-auto border border-slate-800 space-y-1" id="catSetupLogConsole">
+                    <div class="text-slate-500 italic">"সব ক্যাটাগরি তৈরি শুরু করুন" বাটনে চাপুন...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer Controls -->
+        <div class="px-6 py-4 bg-white border-t border-secondary-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="text-xs text-secondary-600" id="catSetupFooterSummary">
+                ১৫টি ক্যাটাগরির ছবি Shwapno থেকে ডাউনলোড করে আপনার ডাটাবেসে যুক্ত হবে
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <button type="button" id="catSetupStartBtn" onclick="startBatchCategorySetup()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black transition-all shadow-md shadow-emerald-700/20 flex items-center gap-2 cursor-pointer">
+                    <ion-icon name="play" class="text-sm"></ion-icon>
+                    <span id="catSetupStartBtnText">সব ক্যাটাগরি তৈরি শুরু করুন</span>
+                </button>
+                <button type="button" onclick="closeCategorySetupModal()" class="px-4 py-2.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-colors">
+                    বন্ধ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // State
 let loadedProducts = [];
@@ -387,6 +508,239 @@ let bulkStats = {
 
 const csrfToken = '<?= \Core\CSRF::token() ?>';
 const baseUri = '<?= $base ?>';
+
+// ============================================================
+// 1-CLICK CATEGORY BATCH SETUP CONTROLLER
+// ============================================================
+const presetCategoriesList = <?= json_encode($popularCategories, JSON_UNESCAPED_UNICODE) ?>;
+let isCatSetupRunning = false;
+
+function openCategorySetupModal() {
+    const modal = document.getElementById('categorySetupModal');
+    const content = document.getElementById('categorySetupModalContent');
+    renderCatSetupList();
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeCategorySetupModal() {
+    if (isCatSetupRunning) {
+        if (!confirm('ক্যাটাগরি সিঙ্ক চলছে। আপনি কি সত্যি এটি বন্ধ করতে চান?')) return;
+        isCatSetupRunning = false;
+    }
+    const modal = document.getElementById('categorySetupModal');
+    const content = document.getElementById('categorySetupModalContent');
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+function renderCatSetupList() {
+    const container = document.getElementById('catSetupListContainer');
+    if (!container) return;
+    
+    container.innerHTML = presetCategoriesList.map((cat, idx) => {
+        const cleanName = cat.name.split('(')[0].trim();
+        return `
+            <div class="p-2.5 rounded-2xl border border-secondary-200 bg-secondary-50/70 flex items-center justify-between gap-2.5 transition-all" id="cat-row-${idx}">
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div class="w-9 h-9 rounded-xl bg-white border border-secondary-200 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-2xs" id="cat-thumb-${idx}">
+                        <ion-icon name="${cat.icon || 'folder-outline'}" class="text-secondary-400 text-lg"></ion-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-bold text-secondary-800 truncate">${escapeHtml(cleanName)}</div>
+                        <div class="text-[10px] text-secondary-400 font-mono truncate">${escapeHtml(cat.slug)}</div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-600 border border-secondary-300 whitespace-nowrap inline-block" id="cat-badge-${idx}">
+                        অপেক্ষারত
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function appendCatSetupLog(msg, type = 'info') {
+    const consoleEl = document.getElementById('catSetupLogConsole');
+    if (!consoleEl) return;
+    const time = new Date().toLocaleTimeString('bn-BD');
+    const colors = {
+        info: 'text-slate-300',
+        success: 'text-emerald-400 font-bold',
+        skip: 'text-blue-300',
+        error: 'text-rose-400 font-bold'
+    };
+    const colorClass = colors[type] || 'text-slate-300';
+    const entry = document.createElement('div');
+    entry.className = `leading-relaxed ${colorClass}`;
+    entry.innerHTML = `<span class="text-slate-600 font-mono">[${time}]</span> ${msg}`;
+    consoleEl.appendChild(entry);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function clearCatSetupLogs() {
+    const consoleEl = document.getElementById('catSetupLogConsole');
+    if (consoleEl) {
+        consoleEl.innerHTML = '<div class="text-slate-500 italic">লগ স্ক্রিন ক্লিয়ার করা হয়েছে...</div>';
+    }
+}
+
+async function startBatchCategorySetup() {
+    if (isCatSetupRunning) return;
+    isCatSetupRunning = true;
+
+    const startBtn = document.getElementById('catSetupStartBtn');
+    const startBtnText = document.getElementById('catSetupStartBtnText');
+    startBtn.disabled = true;
+    startBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    startBtnText.innerText = 'সিঙ্ক চলছে...';
+
+    const progressBar = document.getElementById('catSetupProgressBar');
+    const progressPct = document.getElementById('catSetupProgressPct');
+    const progressStatus = document.getElementById('catSetupProgressStatusText');
+    const statCreated = document.getElementById('catSetupCreated');
+    const statExisting = document.getElementById('catSetupExisting');
+    const statTotal = document.getElementById('catSetupTotal');
+
+    statTotal.innerText = presetCategoriesList.length;
+    let createdCount = 0;
+    let existingCount = 0;
+
+    clearCatSetupLogs();
+    appendCatSetupLog(`🚀 স্বপ্নের মোট ${presetCategoriesList.length}টি ক্যাটাগরি তৈরি ও ইমেজ ডাউনলোড শুরু হচ্ছে...`, 'info');
+
+    for (let i = 0; i < presetCategoriesList.length; i++) {
+        if (!isCatSetupRunning) {
+            appendCatSetupLog('🛑 প্রক্রিয়া ব্যবহারকারী কর্তৃক বন্ধ করা হয়েছে।', 'error');
+            break;
+        }
+
+        const cat = presetCategoriesList[i];
+        const cleanName = cat.name.split('(')[0].trim();
+        const row = document.getElementById(`cat-row-${i}`);
+        const badge = document.getElementById(`cat-badge-${i}`);
+        const thumb = document.getElementById(`cat-thumb-${i}`);
+
+        if (row) {
+            row.classList.add('border-emerald-300', 'bg-emerald-50/40');
+        }
+        if (badge) {
+            badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap animate-pulse';
+            badge.innerText = 'ডাউনলোড হচ্ছে...';
+        }
+
+        progressStatus.innerText = `[${i + 1}/${presetCategoriesList.length}] "${cleanName}" তৈরি ও ছবি সিঙ্ক হচ্ছে...`;
+        appendCatSetupLog(`[${i + 1}/${presetCategoriesList.length}] ${cleanName} (${cat.slug}) সিঙ্ক শুরু...`, 'info');
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('slug', cat.slug);
+            formData.append('name', cat.name);
+
+            const res = await fetch(`${baseUri}/admin/products/shwapno-setup-category`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: formData.toString()
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                if (data.status === 'created') {
+                    createdCount++;
+                    statCreated.innerText = createdCount;
+                    if (badge) {
+                        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap';
+                        badge.innerText = '✅ তৈরি হয়েছে';
+                    }
+                    appendCatSetupLog(`✅ "${cleanName}" ক্যাটাগরি সফলভাবে তৈরি হয়েছে (ছবি সহ)।`, 'success');
+                } else if (data.status === 'updated_image') {
+                    createdCount++;
+                    statCreated.innerText = createdCount;
+                    if (badge) {
+                        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap';
+                        badge.innerText = '🖼️ ছবি যুক্ত হয়েছে';
+                    }
+                    appendCatSetupLog(`🖼️ "${cleanName}" বিদ্যমান ছিল, নতুন ছবি ডাউনলোড করে সেট করা হয়েছে।`, 'success');
+                } else {
+                    existingCount++;
+                    statExisting.innerText = existingCount;
+                    if (badge) {
+                        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 whitespace-nowrap';
+                        badge.innerText = '✓ বিদ্যমান ছিল';
+                    }
+                    appendCatSetupLog(`✓ "${cleanName}" ইতোমধ্যে সিস্টেমে ছবি সহ বিদ্যমান ছিল।`, 'skip');
+                }
+
+                // Update thumbnail image if available
+                if (data.image_path && thumb) {
+                    thumb.innerHTML = `<img src="${data.image_path}" class="w-full h-full object-cover" alt="${cleanName}">`;
+                }
+
+                // Dynamically update target category select box on page
+                updateTargetCategoryDropdown(data.id, data.name);
+
+            } else {
+                if (badge) {
+                    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 whitespace-nowrap';
+                    badge.innerText = 'ত্রুটি';
+                }
+                appendCatSetupLog(`❌ "${cleanName}" প্রক্রিয়া ব্যর্থ: ${data.message || 'অজানা ত্রুটি'}`, 'error');
+            }
+        } catch (err) {
+            if (badge) {
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 whitespace-nowrap';
+                badge.innerText = 'নেটওয়ার্ক ত্রুটি';
+            }
+            appendCatSetupLog(`❌ "${cleanName}" সংযোগ ত্রুটি: ${err.message}`, 'error');
+        }
+
+        // Update progress bar
+        const pct = Math.round(((i + 1) / presetCategoriesList.length) * 100);
+        progressBar.style.width = `${pct}%`;
+        progressPct.innerText = `${pct}%`;
+    }
+
+    isCatSetupRunning = false;
+    startBtn.disabled = false;
+    startBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+    startBtn.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600');
+    startBtn.classList.add('bg-emerald-600');
+    startBtnText.innerText = 'পুনরায় সব ক্যাটাগরি যাচাই করুন';
+    progressStatus.innerText = '🎉 সব ক্যাটাগরি ছবি সহ সফলভাবে সম্পন্ন হয়েছে!';
+    appendCatSetupLog(`🏁 সকল ক্যাটাগরি প্রক্রিয়া সম্পন্ন! মোট নতুন তৈরি: ${createdCount}টি, বিদ্যমান: ${existingCount}টি।`, 'success');
+}
+
+// Dynamically add category to dropdown if not present
+function updateTargetCategoryDropdown(catId, catName) {
+    const select = document.getElementById('targetCategoryId');
+    if (!select) return;
+    
+    // Check if option with this value or name exists
+    let exists = false;
+    for (let opt of select.options) {
+        if (opt.value == catId || opt.text.trim().toLowerCase() === catName.trim().toLowerCase()) {
+            exists = true;
+            break;
+        }
+    }
+    if (!exists) {
+        const newOption = document.createElement('option');
+        newOption.value = catId;
+        newOption.text = catName;
+        select.appendChild(newOption);
+    }
+}
 
 // Quick select popular category chip
 function selectCategory(slug, displayName) {
