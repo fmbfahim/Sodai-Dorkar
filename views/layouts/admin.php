@@ -128,6 +128,15 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
                                 <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">1-Click</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="<?= $base ?>/admin/products/shwapno-importer" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-teal-50 hover:text-teal-700 transition-colors group pl-8">
+                                <div class="flex items-center">
+                                    <ion-icon name="cloud-download-outline" class="text-base mr-3 text-teal-600 group-hover:text-teal-700"></ion-icon>
+                                    <span class="font-medium">Shwapno Scraper</span>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800 text-[10px] font-bold">Auto</span>
+                            </a>
+                        </li>
 
                         <li>
                             <a href="<?= $base ?>/admin/products/verification" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">

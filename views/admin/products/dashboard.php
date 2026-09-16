@@ -13,6 +13,11 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <p class="text-secondary-500 text-xs mt-1">Real-time overview of inventory valuation, stock health, price verification, and procurement workflows.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
+            <a href="<?= $base ?>/admin/products/shwapno-importer" 
+               class="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md">
+                <ion-icon name="cloud-download" class="text-base"></ion-icon>
+                <span>Shwapno Scraper</span>
+            </a>
             <a href="<?= $base ?>/admin/products/image-finder" 
                class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md">
                 <ion-icon name="sparkles" class="text-base text-amber-300"></ion-icon>

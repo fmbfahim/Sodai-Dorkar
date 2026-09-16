@@ -33,6 +33,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <ion-icon name="flash" class="text-base text-slate-950"></ion-icon>
                     <span>১-ক্লিকে ১০০% অটো-ম্যাচ রান করুন</span>
                 </button>
+                <a href="<?= $base ?>/admin/products/shwapno-importer" class="px-4 py-2.5 rounded-xl bg-teal-500/30 hover:bg-teal-500/40 backdrop-blur-md border border-teal-400/40 text-teal-200 hover:text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
+                    <ion-icon name="cloud-download-outline" class="text-base"></ion-icon>
+                    Shwapno Scraper
+                </a>
                 <a href="<?= $base ?>/admin/products/bulk-import" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
                     <ion-icon name="cloud-upload-outline" class="text-base"></ion-icon>
                     বাল্ক সিএসভি ইমপোর্ট

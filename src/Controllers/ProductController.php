@@ -1574,6 +1574,340 @@ class ProductController extends Controller {
 
         return ['success' => true, 'image_path' => $imagePath];
     }
+
+    public function shwapnoImporterIndex() {
+        $categoryModel = new \Models\Category();
+        $vendorModel = new \Models\Vendor();
+        $categories = $categoryModel->all();
+        $vendors = $vendorModel->all();
+
+        // Preset popular Shwapno categories with Bengali names and icons
+        $popularCategories = [
+            ['slug' => 'rice', 'name' => 'চাল ও শস্য (Rice & Grains)', 'icon' => 'leaf-outline'],
+            ['slug' => 'Soybean Oil', 'name' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)', 'icon' => 'water-outline'],
+            ['slug' => 'tea', 'name' => 'চা ও কফি (Tea & Coffee)', 'icon' => 'cafe-outline'],
+            ['slug' => 'dairy', 'name' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)', 'icon' => 'nutrition-outline'],
+            ['slug' => 'fresh-fruits', 'name' => 'তাজা ফলমূল (Fresh Fruits)', 'icon' => 'nutrition-outline'],
+            ['slug' => 'fresh-vegetables', 'name' => 'তাজা শাকসবজি (Fresh Vegetables)', 'icon' => 'flower-outline'],
+            ['slug' => 'spices', 'name' => 'মসলা ও রান্নার উপাদান (Spices)', 'icon' => 'flame-outline'],
+            ['slug' => 'fish', 'name' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)', 'icon' => 'fish-outline'],
+            ['slug' => 'meat', 'name' => 'মাংস ও ডিম (Meat & Eggs)', 'icon' => 'restaurant-outline'],
+            ['slug' => 'beverages', 'name' => 'জুস ও পানীয় (Beverages)', 'icon' => 'wine-outline'],
+            ['slug' => 'snacks', 'name' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)', 'icon' => 'pizza-outline'],
+            ['slug' => 'flours', 'name' => 'আটা, ময়দা ও সুজি (Flour & Suji)', 'icon' => 'color-fill-outline'],
+            ['slug' => 'cleaning', 'name' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)', 'icon' => 'sparkles-outline'],
+            ['slug' => 'baby-food-care', 'name' => 'শিশু খাদ্য ও যত্ন (Baby Care)', 'icon' => 'happy-outline'],
+            ['slug' => 'personal-care', 'name' => 'পার্সোনাল কেয়ার (Personal Care)', 'icon' => 'body-outline']
+        ];
+
+        return $this->view('admin/products/shwapno_importer', [
+            'title' => 'Shwapno Category Auto-Importer (ক্যাটাগরি অনুযায়ী পণ্য ও ছবি ইমপোর্ট)',
+            'categories' => $categories,
+            'vendors' => $vendors,
+            'popularCategories' => $popularCategories
+        ]);
+    }
+
+    public function shwapnoCategoryFetch() {
+        header('Content-Type: application/json; charset=utf-8');
+        $catInput = trim($_GET['category'] ?? '');
+
+        if (empty($catInput)) {
+            echo json_encode(['success' => false, 'message' => 'ক্যাটাগরি নির্ধারণ করা হয়নি!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // If user passed a full URL e.g. https://www.shwapno.com/fresh-fruits
+        if (filter_var($catInput, FILTER_VALIDATE_URL)) {
+            $parsed = parse_url($catInput, PHP_URL_PATH);
+            $catInput = trim($parsed, '/');
+        }
+
+        // 1. Try fetching via category parameter
+        $products = [];
+        $url1 = "https://www.shwapno.com/api/search?category=" . urlencode($catInput);
+        $ch = curl_init($url1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
+        $res1 = curl_exec($ch);
+        $code1 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code1 === 200 && $res1) {
+            $data1 = json_decode($res1, true);
+            if (!empty($data1['products'])) {
+                $products = $data1['products'];
+            }
+        }
+
+        // 2. If 0 products, try search query
+        if (empty($products)) {
+            $cleaned = str_replace('-', ' ', $catInput);
+            $url2 = "https://www.shwapno.com/api/search?q=" . urlencode($cleaned);
+            $ch = curl_init($url2);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
+            $res2 = curl_exec($ch);
+            $code2 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($code2 === 200 && $res2) {
+                $data2 = json_decode($res2, true);
+                if (!empty($data2['products'])) {
+                    $products = $data2['products'];
+                }
+            }
+        }
+
+        if (empty($products)) {
+            echo json_encode([
+                'success' => false,
+                'message' => "Shwapno-তে '{$catInput}' ক্যাটাগরির কোনো পণ্য পাওয়া যায়নি। অনুগ্রহ করে অন্য নাম বা ইংরেজি নাম চেষ্টা করুন।",
+                'products' => []
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Check each product against local database to see if it already exists
+        $db = null;
+        try {
+            $cfg = require __DIR__ . '/../../config/database.php';
+            $dsn = "mysql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['dbname']};charset=utf8mb4";
+            $pdo = new \PDO($dsn, $cfg['user'], $cfg['password'], [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 1
+            ]);
+            $db = new \Core\Database($cfg);
+        } catch (\Throwable $e) {
+            // Database temporarily offline, proceed without duplicate marking
+            $db = null;
+        }
+        $parsedItems = [];
+
+        foreach ($products as $item) {
+            $p = $item['product'] ?? $item;
+            $name = trim($p['name'] ?? '');
+            if (!$name) continue;
+
+            $sku = trim($p['sku'] ?? '');
+            $sellPrice = floatval($p['price']['priceValue'] ?? 0);
+            $oldPrice = !empty($p['price']['oldPriceValue']) ? floatval($p['price']['oldPriceValue']) : null;
+            
+            $img = $p['picture']['largeDeviceUrl']['imageUrl'] 
+                ?? $p['picture']['largeDeviceUrl']['fullSizeImageUrl'] 
+                ?? $p['picture']['smallDeviceUrl']['imageUrl'] 
+                ?? '';
+            $thumb = $p['picture']['smallDeviceUrl']['imageUrl'] ?? $img;
+
+            $unit = trim($p['unit'] ?? 'Piece');
+            $unitType = 'piece';
+            $baseUnit = 'pcs';
+            if (stripos($unit, 'kg') !== false) {
+                $unitType = 'weight';
+                $baseUnit = 'kg';
+            } elseif (stripos($unit, 'ltr') !== false || stripos($unit, 'liter') !== false || stripos($unit, 'ml') !== false) {
+                $unitType = 'liquid';
+                $baseUnit = 'ltr';
+            }
+
+            // Check duplicate in local DB
+            $exists = false;
+            $existingId = null;
+            if ($db) {
+                try {
+                    if ($sku) {
+                        $chk = $db->query("SELECT id FROM products WHERE sku = ? LIMIT 1", [$sku])->fetch();
+                        if ($chk) {
+                            $exists = true;
+                            $existingId = $chk['id'];
+                        }
+                    }
+                    if (!$exists) {
+                        $chk2 = $db->query("SELECT id FROM products WHERE name = ? LIMIT 1", [$name])->fetch();
+                        if ($chk2) {
+                            $exists = true;
+                            $existingId = $chk2['id'];
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $exists = false;
+                }
+            }
+
+            // Extract variants if available
+            $variants = [];
+            if (!empty($p['uomOptions']) && is_array($p['uomOptions'])) {
+                foreach ($p['uomOptions'] as $uom) {
+                    $vTitle = trim($uom['name'] ?? '');
+                    $vPrice = floatval($uom['price']['priceValue'] ?? $sellPrice);
+                    if ($vTitle) {
+                        $variants[] = [
+                            'title' => $vTitle,
+                            'qty' => 1,
+                            'price' => $vPrice > 0 ? $vPrice : $sellPrice,
+                            'is_default' => !empty($uom['isPreSelected']) ? 1 : 0
+                        ];
+                    }
+                }
+            }
+
+            $parsedItems[] = [
+                'name' => $name,
+                'sku' => $sku,
+                'sell_price' => $sellPrice,
+                'old_price' => $oldPrice,
+                'unit' => $unit,
+                'unit_type' => $unitType,
+                'base_unit' => $baseUnit,
+                'image_url' => $img,
+                'thumbnail' => $thumb,
+                'variants' => $variants,
+                'exists_in_db' => $exists,
+                'existing_id' => $existingId
+            ];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'category' => $catInput,
+            'count' => count($parsedItems),
+            'products' => $parsedItems
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function shwapnoImportSingle() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+        if (!\Core\CSRF::verify($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'CSRF Token mismatch!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $name = trim($_POST['name'] ?? '');
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'message' => 'পণ্যের নাম দেওয়া হয়নি!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $sku = trim($_POST['sku'] ?? '');
+        if (empty($sku)) {
+            $sku = 'SKU-' . strtoupper(substr(md5($name . microtime()), 0, 8));
+        }
+
+        $sellPrice = floatval($_POST['sell_price'] ?? 0);
+        $oldPrice = !empty($_POST['old_price']) ? floatval($_POST['old_price']) : null;
+        $discountType = 'none';
+        $discountValue = 0;
+        if ($oldPrice && $oldPrice > $sellPrice) {
+            $discountType = 'fixed';
+            $discountValue = $oldPrice - $sellPrice;
+        }
+
+        $categoryId = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
+        $vendorId = !empty($_POST['vendor_id']) ? intval($_POST['vendor_id']) : null;
+        $stockQty = !empty($_POST['stock_qty']) ? floatval($_POST['stock_qty']) : 50;
+        $unitType = $_POST['unit_type'] ?? 'piece';
+        $baseUnit = $_POST['base_unit'] ?? 'pcs';
+        $imageUrl = trim($_POST['image_url'] ?? '');
+        $variantsJson = !empty($_POST['variants']) ? (is_string($_POST['variants']) ? $_POST['variants'] : json_encode($_POST['variants'], JSON_UNESCAPED_UNICODE)) : null;
+
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+        $productModel = new Product();
+
+        // Check if already exists
+        $existing = $db->query("SELECT id, sku FROM products WHERE sku = ? OR name = ? LIMIT 1", [$sku, $name])->fetch();
+
+        // Download & save image if provided
+        $localImagePath = null;
+        if (!empty($imageUrl) && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $tempId = $existing['id'] ?? time();
+            $saveRes = $this->downloadAndSaveImageFile($tempId, $imageUrl);
+            if ($saveRes['success']) {
+                $localImagePath = $saveRes['image_path'];
+            }
+        }
+
+        if ($existing) {
+            // Update existing product price & image if missing
+            $sql = "UPDATE products SET sell_price = ?, regular_price = ?, discount_type = ?, discount_value = ?";
+            $params = [$sellPrice, $oldPrice, $discountType, $discountValue];
+            if ($localImagePath) {
+                $sql .= ", image_path = ?";
+                $params[] = $localImagePath;
+            }
+            if ($categoryId) {
+                $sql .= ", category_id = ?";
+                $params[] = $categoryId;
+            }
+            $sql .= " WHERE id = ?";
+            $params[] = $existing['id'];
+            $db->query($sql, $params);
+
+            echo json_encode([
+                'success' => true,
+                'status' => 'updated',
+                'id' => $existing['id'],
+                'name' => $name,
+                'image_path' => $localImagePath,
+                'message' => 'বিদ্যমান পণ্য আপডেট করা হয়েছে!'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Make sure SKU is unique
+        $skuCheck = $db->query("SELECT id FROM products WHERE sku = ?", [$sku])->fetch();
+        if ($skuCheck) {
+            $sku = $sku . '-' . rand(10, 99);
+        }
+
+        // Insert new product
+        $productModel->create([
+            'name' => $name,
+            'sku' => $sku,
+            'description' => 'Shwapno থেকে সংগৃহীত - ' . $name,
+            'buy_price' => round($sellPrice * 0.85, 2), // 15% estimated margin
+            'regular_price' => $oldPrice,
+            'discount_type' => $discountType,
+            'discount_value' => $discountValue,
+            'sell_price' => $sellPrice,
+            'stock_qty' => $stockQty,
+            'vendor_id' => $vendorId,
+            'category_id' => $categoryId,
+            'brand_id' => null,
+            'image_path' => $localImagePath,
+            'unit_type' => $unitType,
+            'base_unit' => $baseUnit,
+            'purchase_unit' => null,
+            'purchase_unit_qty' => 1.000,
+            'selling_unit' => $baseUnit,
+            'unit_variants_json' => $variantsJson,
+            'availability_status' => 'available',
+            'is_verified' => 1,
+            'demand_percentage' => 50
+        ]);
+
+        $newId = $db->lastInsertId();
+
+        echo json_encode([
+            'success' => true,
+            'status' => 'created',
+            'id' => $newId,
+            'name' => $name,
+            'image_path' => $localImagePath,
+            'message' => 'নতুন পণ্য হিসেবে সফলভাবে ইনপুট হয়েছে!'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
+
 
 
