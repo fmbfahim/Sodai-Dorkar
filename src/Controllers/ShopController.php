@@ -198,6 +198,11 @@ class ShopController {
         $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
         $bannerSubtitle = !empty($subNames) ? implode(', ', array_slice($subNames, 0, 7)) : 'চাল, ডাল, মশলা, রেডি মিক্স, লবণ এবং চিনি, সেমাই ও সুজি';
 
+        $parentBackUrl = '/sodai-dorkar/public/#categories';
+        if ($parentCategory && !empty($parentCategory['parent_id']) && $parentCategory['parent_id'] != 1) {
+            $parentBackUrl = '/sodai-dorkar/public/?category=' . $parentCategory['parent_id'] . '#categories';
+        }
+
         return View::render('shop/index', [
             'products' => $products,
             'categories' => $categories,
