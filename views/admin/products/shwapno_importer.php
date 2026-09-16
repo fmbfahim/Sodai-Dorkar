@@ -748,7 +748,7 @@ function renderExplorerDrillDown() {
                             <ion-icon name="chevron-forward-outline" class="text-xs"></ion-icon>
                         </button>
                         <button type="button" 
-                                onclick="selectAndFetchCategory('${main.slug}', '${escapeHtml(fullDisplayName)}', null, null, 1)"
+                                onclick="selectAndFetchCategory('${main.slug}', '${escapeHtml(main.name_bn)}', null, null, 1)"
                                 title="এই মূল ক্যাটাগরির পণ্য লোড করুন"
                                 class="py-1.5 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
                             <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
@@ -810,7 +810,7 @@ function renderExplorerDrillDown() {
                             </button>
                         ` : ''}
                         <button type="button" 
-                                onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(subFullName)}', '${main.slug}', '${escapeHtml(mainFullName)}', 2)"
+                                onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(sub.name_bn)}', '${main.slug}', '${escapeHtml(main.name_bn)}', 2)"
                                 class="${subChildrenCount > 0 ? '' : 'w-full'} py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
                             <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
                             <span>পণ্য লোড করুন</span>
@@ -858,7 +858,7 @@ function renderExplorerDrillDown() {
 
                     <div class="pt-2.5 border-t border-secondary-100">
                         <button type="button" 
-                                onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leafFullName)}', '${sub.slug}', '${escapeHtml(subFullName)}', 3)"
+                                onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leaf.name_bn)}', '${sub.slug}', '${escapeHtml(sub.name_bn)}', 3)"
                                 class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer">
                             <ion-icon name="cloud-download-outline" class="text-sm"></ion-icon>
                             <span>এই ক্যাটাগরির পণ্য লোড করুন</span>
@@ -895,7 +895,7 @@ function renderExplorerTree() {
                         </span>
                     </div>
                     <button type="button" 
-                            onclick="event.stopPropagation(); selectAndFetchCategory('${main.slug}', '${escapeHtml(mainFullName)}', null, null, 1)"
+                            onclick="event.stopPropagation(); selectAndFetchCategory('${main.slug}', '${escapeHtml(main.name_bn)}', null, null, 1)"
                             class="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer">
                         <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
                         <span>লোড</span>
@@ -926,7 +926,7 @@ function renderExplorerTree() {
                                         ` : ''}
                                     </div>
                                     <button type="button" 
-                                            onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(subFullName)}', '${main.slug}', '${escapeHtml(mainFullName)}', 2)"
+                                            onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(sub.name_bn)}', '${main.slug}', '${escapeHtml(main.name_bn)}', 2)"
                                             class="px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-600 hover:text-white text-teal-800 text-[10px] font-bold border border-teal-200 transition-all flex items-center gap-1 cursor-pointer">
                                         <ion-icon name="flash" class="text-xs"></ion-icon>
                                         <span>লোড</span>
@@ -946,7 +946,7 @@ function renderExplorerTree() {
                                                         <span class="text-[10px] text-secondary-400 font-normal ml-1">(${escapeHtml(leaf.name_en)})</span>
                                                     </div>
                                                     <button type="button" 
-                                                            onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leafFullName)}', '${sub.slug}', '${escapeHtml(subFullName)}', 3)"
+                                                            onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leaf.name_bn)}', '${sub.slug}', '${escapeHtml(sub.name_bn)}', 3)"
                                                             class="px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-800 text-[10px] font-bold border border-purple-200 transition-all cursor-pointer">
                                                         লোড
                                                     </button>
@@ -1043,7 +1043,7 @@ function handleCategoryFilter(val) {
                 </div>
 
                 <button type="button" 
-                        onclick="selectAndFetchCategory('${item.slug}', '${escapeHtml(item.name)}', '${item.parent_slug || ''}', '${escapeHtml(item.parent_name || '')}', ${item.level})"
+                        onclick="selectAndFetchCategory('${item.slug}', '${escapeHtml(item.name_bn)}', '${item.parent_slug || ''}', '${escapeHtml(item.parent_name || '')}', ${item.level})"
                         class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
                     <ion-icon name="cloud-download-outline" class="text-xs"></ion-icon>
                     <span>পণ্য লোড করুন</span>

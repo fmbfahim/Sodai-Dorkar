@@ -21,8 +21,27 @@ class Category {
         return $stmt->fetchAll();
     }
     
+    private static $slugColChecked = null;
+
+    private function checkSlugColumn() {
+        if (self::$slugColChecked !== null) return self::$slugColChecked;
+        try {
+            $col = $this->db->query("SHOW COLUMNS FROM categories LIKE 'slug'")->fetch();
+            self::$slugColChecked = !empty($col);
+        } catch (\Throwable $e) {
+            self::$slugColChecked = false;
+        }
+        return self::$slugColChecked;
+    }
+
     public function findByName($name) {
-        $stmt = $this->db->query("SELECT * FROM categories WHERE name = :name", ['name' => $name]);
+        $stmt = $this->db->query("SELECT * FROM categories WHERE name = :name LIMIT 1", ['name' => $name]);
+        return $stmt->fetch();
+    }
+
+    public function findBySlug($slug) {
+        if (!$this->checkSlugColumn()) return null;
+        $stmt = $this->db->query("SELECT * FROM categories WHERE slug = :slug LIMIT 1", ['slug' => $slug]);
         return $stmt->fetch();
     }
 
@@ -32,32 +51,51 @@ class Category {
     }
 
     public function create($data) {
-        $this->db->query("INSERT INTO categories (name, description, parent_id, image_path) VALUES (:name, :description, :parent_id, :image_path)", [
-            'name' => $data['name'],
-            'description' => $data['description'],
-            'parent_id' => $data['parent_id'] ?: null,
-            'image_path' => $data['image_path'] ?? null
-        ]);
+        $hasSlug = $this->checkSlugColumn();
+        $name = trim($data['name'] ?? '');
+        $slug = !empty($data['slug']) ? trim($data['slug']) : null;
+
+        if ($hasSlug) {
+            $this->db->query("INSERT INTO categories (name, slug, description, parent_id, image_path) VALUES (:name, :slug, :description, :parent_id, :image_path)", [
+                'name' => $name,
+                'slug' => $slug,
+                'description' => $data['description'] ?? null,
+                'parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+                'image_path' => $data['image_path'] ?? null
+            ]);
+        } else {
+            $this->db->query("INSERT INTO categories (name, description, parent_id, image_path) VALUES (:name, :description, :parent_id, :image_path)", [
+                'name' => $name,
+                'description' => $data['description'] ?? null,
+                'parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+                'image_path' => $data['image_path'] ?? null
+            ]);
+        }
         return $this->db->lastInsertId();
     }
 
     public function update($id, $data) {
-        if (isset($data['image_path'])) {
-             $this->db->query("UPDATE categories SET name = :name, description = :description, parent_id = :parent_id, image_path = :image_path WHERE id = :id", [
-                'name' => $data['name'],
-                'description' => $data['description'],
-                'parent_id' => $data['parent_id'] ?: null,
-                'image_path' => $data['image_path'],
-                'id' => $id
-            ]);
-        } else {
-            $this->db->query("UPDATE categories SET name = :name, description = :description, parent_id = :parent_id WHERE id = :id", [
-                'name' => $data['name'],
-                'description' => $data['description'],
-                'parent_id' => $data['parent_id'] ?: null,
-                'id' => $id
-            ]);
+        $hasSlug = $this->checkSlugColumn();
+        $fields = ['name = :name', 'description = :description', 'parent_id = :parent_id'];
+        $params = [
+            'id' => $id,
+            'name' => trim($data['name'] ?? ''),
+            'description' => $data['description'] ?? null,
+            'parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null
+        ];
+
+        if ($hasSlug && isset($data['slug'])) {
+            $fields[] = 'slug = :slug';
+            $params['slug'] = trim($data['slug']);
         }
+
+        if (array_key_exists('image_path', $data)) {
+            $fields[] = 'image_path = :image_path';
+            $params['image_path'] = $data['image_path'];
+        }
+
+        $sql = "UPDATE categories SET " . implode(', ', $fields) . " WHERE id = :id";
+        $this->db->query($sql, $params);
     }
 
     public function delete($id) {

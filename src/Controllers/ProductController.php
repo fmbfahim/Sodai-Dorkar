@@ -1738,9 +1738,13 @@ class ProductController extends Controller {
             ];
         }
 
-        // 2. Auto-create new category with the image and parent_id!
+        // 2. Auto-create new category with the image, English slug and parent_id!
+        $catItem = \Core\ShwapnoCatalog::findItem($categoryName);
+        $categorySlug = ($catItem && !empty($catItem['slug'])) ? $catItem['slug'] : null;
+
         $newCatId = $categoryModel->create([
             'name' => $categoryName,
+            'slug' => $categorySlug,
             'parent_id' => $parentId ?: null,
             'description' => $description ?: ($categoryName . ' - স্বয়ংক্রিয়ভাবে তৈরি ক্যাটাগরি'),
             'image_path' => $categoryImagePath
@@ -2317,6 +2321,7 @@ class ProductController extends Controller {
         $catModel = new \Models\Category();
         return (int)$catModel->create([
             'name' => $parentCatalog['name'],
+            'slug' => $parentCatalog['slug'],
             'parent_id' => $grandparentId,
             'description' => $parentCatalog['name'] . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
             'image_path' => $savedImg
@@ -2413,9 +2418,10 @@ class ProductController extends Controller {
             exit;
         }
 
-        // Auto-create new category with image and parent_id
+        // Auto-create new category with image, slug and parent_id
         $newId = $categoryModel->create([
             'name' => $name,
+            'slug' => $slug,
             'parent_id' => $parentId ?: null,
             'description' => $name . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
             'image_path' => $savedImagePath
@@ -2481,6 +2487,7 @@ class ProductController extends Controller {
                 }
                 $newId = $categoryModel->create([
                     'name' => $cat['name'],
+                    'slug' => $cat['slug'],
                     'parent_id' => $parentId,
                     'description' => $cat['name'] . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
                     'image_path' => $savedImg

@@ -127,6 +127,8 @@ $router->post('/admin/categories/store', 'CategoryController@store');
 $router->post('/admin/categories/delete', 'CategoryController@destroy');
 $router->get('/admin/categories/edit', 'CategoryController@edit');
 $router->post('/admin/categories/update', 'CategoryController@update');
+$router->get('/admin/categories/fetch-image', 'CategoryController@fetchImageCandidates');
+$router->post('/admin/categories/auto-image', 'CategoryController@autoImage');
 
 // Brand Routes
 $router->get('/admin/brands', 'BrandController@index');
