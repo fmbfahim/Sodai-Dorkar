@@ -1338,5 +1338,242 @@ class ProductController extends Controller {
         ], JSON_UNESCAPED_UNICODE);
             exit;
     }
+
+    public function autoMatchSingle() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+        if (!\Core\CSRF::verify($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'CSRF security token mismatch!'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $productId = intval($_POST['product_id'] ?? 0);
+        if (!$productId) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid product ID'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+        $product = $db->query("SELECT * FROM products WHERE id = ?", [$productId])->fetch();
+
+        if (!$product) {
+            echo json_encode(['status' => 'error', 'message' => 'পণ্য পাওয়া যায়নি'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // If product already has an image, skip
+        if (!empty($product['image_path']) && trim($product['image_path']) !== '') {
+            echo json_encode([
+                'status' => 'already_has_image',
+                'product_id' => $productId,
+                'product_name' => $product['name'],
+                'image_path' => $product['image_path'],
+                'message' => 'পূর্বে থেকেই ছবি যুক্ত আছে'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $productName = trim($product['name']);
+        
+        // 1. Fetch candidates from Shwapno
+        $candidates = $this->fetchShwapnoImages($productName);
+
+        // If 0 candidates and name has common package noise, try broader query
+        if (empty($candidates)) {
+            $cleaned = trim(preg_replace('/\b(\d+\s*(?:kg|gm|g|ltr|ml|liter|কেজি|গ্রাম|লিটার|বস্তা|প্যাকেট))\b/iu', '', $productName));
+            if ($cleaned && strtolower($cleaned) !== strtolower($productName)) {
+                $candidates = $this->fetchShwapnoImages($cleaned);
+            }
+        }
+
+        if (empty($candidates)) {
+            echo json_encode([
+                'status' => 'skipped',
+                'product_id' => $productId,
+                'product_name' => $productName,
+                'reason' => 'ওয়েবে কোনো ফলাফল পাওয়া যায়নি'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // 2. Evaluate each candidate for a 100% exact match
+        $matchedCandidate = null;
+        $matchedReason = '';
+
+        foreach ($candidates as $cand) {
+            $matchResult = $this->evaluateExactMatch($productName, $cand['title']);
+            if ($matchResult['matched']) {
+                $matchedCandidate = $cand;
+                $matchedReason = $matchResult['reason'];
+                break;
+            }
+        }
+
+        // If no 100% match found, SKIP!
+        if (!$matchedCandidate) {
+            echo json_encode([
+                'status' => 'skipped',
+                'product_id' => $productId,
+                'product_name' => $productName,
+                'reason' => '১০০% নিশ্চিত মিল নেই (স্কিপ করা হয়েছে)',
+                'top_candidate' => $candidates[0]['title'] ?? null
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // 3. Download & Save the matched image
+        $downloadResult = $this->downloadAndSaveImageFile($productId, $matchedCandidate['image']);
+        if (!$downloadResult['success']) {
+            echo json_encode([
+                'status' => 'error',
+                'product_id' => $productId,
+                'product_name' => $productName,
+                'message' => $downloadResult['message']
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Update database
+        $db->query("UPDATE products SET image_path = ? WHERE id = ?", [$downloadResult['image_path'], $productId]);
+
+        echo json_encode([
+            'status' => 'matched',
+            'product_id' => $productId,
+            'product_name' => $productName,
+            'matched_title' => $matchedCandidate['title'],
+            'image_path' => $downloadResult['image_path'],
+            'reason' => $matchedReason,
+            'message' => '১০০% মিলেছে এবং সেভ করা হয়েছে!'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    private function evaluateExactMatch($dbName, $sourceTitle) {
+        $norm1 = $this->normalizeProductString($dbName);
+        $norm2 = $this->normalizeProductString($sourceTitle);
+
+        // 1. Direct identical match
+        if ($norm1 === $norm2) {
+            return ['matched' => true, 'confidence' => 100, 'reason' => 'Exact string match'];
+        }
+
+        // 2. Strict quantity/numeric tokens check: If DB has 5L and source has 1L or 2L, REJECT!
+        $q1 = $this->extractQuantityTokens($norm1);
+        $q2 = $this->extractQuantityTokens($norm2);
+        if (!empty($q1) && !empty($q2)) {
+            if (array_diff($q1, $q2) || array_diff($q2, $q1)) {
+                return ['matched' => false, 'confidence' => 0, 'reason' => 'Package size mismatch (' . implode(',', $q1) . ' vs ' . implode(',', $q2) . ')'];
+            }
+        }
+
+        // 3. Token coverage check: Every word (>1 char) in DB name must exist in source title
+        $tokens1 = explode(' ', $norm1);
+        $tokens2 = explode(' ', $norm2);
+        
+        $missingTokens = [];
+        foreach ($tokens1 as $t) {
+            if (mb_strlen($t, 'UTF-8') <= 1) continue;
+            if (!in_array($t, $tokens2)) {
+                $missingTokens[] = $t;
+            }
+        }
+
+        if (empty($missingTokens)) {
+            return ['matched' => true, 'confidence' => 98, 'reason' => 'All tokens verified in source title'];
+        }
+
+        // 4. Similarity ratio
+        similar_text($norm1, $norm2, $percent);
+        if ($percent >= 92 && empty($missingTokens)) {
+            return ['matched' => true, 'confidence' => round($percent), 'reason' => 'High similarity score (' . round($percent) . '%)'];
+        }
+
+        return ['matched' => false, 'confidence' => round($percent), 'reason' => 'Missing tokens'];
+    }
+
+    private function normalizeProductString($str) {
+        $str = mb_strtolower($str, 'UTF-8');
+        $str = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $str);
+        // Standardize units
+        $str = preg_replace('/\b(\d+)\s*(l|ltr|liter|liters|লিটার)\b/u', '$1ltr', $str);
+        $str = preg_replace('/\b(\d+)\s*(g|gm|gms|gram|grams|গ্রাম)\b/u', '$1gm', $str);
+        $str = preg_replace('/\b(\d+)\s*(kg|kgs|কেজি)\b/u', '$1kg', $str);
+        $str = preg_replace('/\b(\d+)\s*(ml|মিলি)\b/u', '$1ml', $str);
+        return trim(preg_replace('/\s+/', ' ', $str));
+    }
+
+    private function extractQuantityTokens($str) {
+        preg_match_all('/\b\d+(?:kg|gm|g|ltr|l|ml|pcs|pack|pieces|কেজি|গ্রাম|লিটার|মিলি|পিস|প্যাকেট|টি)?\b/iu', $str, $matches);
+        $tokens = [];
+        foreach ($matches[0] as $m) {
+            $m = trim($m);
+            if ($m !== '') $tokens[] = $m;
+        }
+        return $tokens;
+    }
+
+    private function downloadAndSaveImageFile($productId, $imageUrl) {
+        $ch = curl_init($imageUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_REFERER, "https://www.shwapno.com/");
+        $imageData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || empty($imageData)) {
+            return ['success' => false, 'message' => 'ইমেজ ডাউনলোড করা যায়নি (HTTP ' . $httpCode . '): ' . $curlErr];
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $imageData);
+        finfo_close($finfo);
+
+        $allowedMimes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif'
+        ];
+
+        if (!isset($allowedMimes[$mime])) {
+            if (stripos($contentType, 'webp') !== false) {
+                $ext = 'webp';
+            } elseif (stripos($contentType, 'png') !== false) {
+                $ext = 'png';
+            } elseif (stripos($contentType, 'jpeg') !== false || stripos($contentType, 'jpg') !== false) {
+                $ext = 'jpg';
+            } else {
+                return ['success' => false, 'message' => 'অসমর্থিত ফরম্যাট (' . $mime . ')'];
+            }
+        } else {
+            $ext = $allowedMimes[$mime];
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/products/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = 'prod_' . $productId . '_' . time() . '_' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+        $targetFile = $uploadDir . $fileName;
+
+        if (file_put_contents($targetFile, $imageData) === false) {
+            return ['success' => false, 'message' => 'ফাইল রাইট করা যায়নি'];
+        }
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $imagePath = ($base ?: '') . '/uploads/products/' . $fileName;
+
+        return ['success' => true, 'image_path' => $imagePath];
+    }
 }
+
 

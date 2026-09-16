@@ -27,6 +27,12 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
+                <button type="button" 
+                        onclick="openBulkAutoMatcherModal()" 
+                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-amber-950/40 transform hover:scale-105 active:scale-95 border border-amber-200">
+                    <ion-icon name="flash" class="text-base text-slate-950"></ion-icon>
+                    <span>১-ক্লিকে ১০০% অটো-ম্যাচ রান করুন</span>
+                </button>
                 <a href="<?= $base ?>/admin/products/bulk-import" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
                     <ion-icon name="cloud-upload-outline" class="text-base"></ion-icon>
                     বাল্ক সিএসভি ইমপোর্ট
@@ -133,8 +139,14 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <ion-icon name="list-outline" class="text-base text-secondary-500"></ion-icon>
                 <span>মোট প্রদর্শিত পণ্য: <strong class="text-secondary-900"><?= count($products) ?></strong> টি</span>
             </div>
-            <div class="text-[11px] text-secondary-500">
-                যেকোনো পণ্যের <span class="font-bold text-emerald-700">"ওয়েব থেকে ছবি খুঁজুন"</span> বাটনে ক্লিক করুন
+            <div class="flex items-center gap-3">
+                <span class="text-[11px] text-secondary-500 hidden sm:inline">
+                    ম্যানুয়াল অনুসন্ধান অথবা:
+                </span>
+                <button type="button" onclick="openBulkAutoMatcherModal()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition-all shadow-xs">
+                    <ion-icon name="flash"></ion-icon>
+                    <span>১০০% অটো-ম্যাচ ও সেভ</span>
+                </button>
             </div>
         </div>
 
@@ -369,7 +381,120 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </div>
 </div>
 
+<!-- ========================================================== -->
+<!-- 1-CLICK 100% BULK AUTO MATCHER MODAL                       -->
+<!-- ========================================================== -->
+<div id="bulkAutoMatcherModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 transition-all duration-200">
+    <div class="bg-white rounded-3xl shadow-2xl border border-secondary-200 w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all scale-95 opacity-0" id="bulkAutoMatcherModalContent">
+        
+        <!-- Header -->
+        <div class="px-6 py-5 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white flex items-center justify-between border-b border-white/10">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-md shadow-amber-500/20">
+                    <ion-icon name="flash"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-white flex items-center gap-2">
+                        <span>১-ক্লিকে ১০০% অটো ইমেজ ফাইন্ডার</span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/30 text-[10px] text-amber-300 font-bold">100% Exact Match Only</span>
+                    </h3>
+                    <p class="text-xs text-secondary-300 mt-0.5">যেসব পণ্যের সাথে Shwapno-এর ১০০% নিশ্চিত মিলবে কেবল সেগুলোই সেভ হবে, বাকিগুলো স্কিপ করবে।</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeBulkAutoMatcherModal()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-secondary-300 hover:text-white flex items-center justify-center transition-colors">
+                <ion-icon name="close-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-5 bg-slate-50/50 overflow-y-auto flex-1">
+            <!-- Rules / Notice card -->
+            <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900 text-xs flex items-start gap-3">
+                <ion-icon name="shield-checkmark" class="text-xl text-emerald-600 flex-shrink-0 mt-0.5"></ion-icon>
+                <div>
+                    <div class="font-bold text-emerald-950 mb-0.5">নিরাপদ অটো-ম্যাচিং গ্যারান্টি:</div>
+                    <ul class="list-disc list-inside space-y-0.5 text-emerald-800 text-[11px]">
+                        <li>পণ্যের নাম, ব্র্যান্ড এবং আকার (যেমন: ৫ লিটার, ৫০০ গ্রাম, ১৬ পিস) হুবহু মিললে তবেই ছবি যুক্ত হবে।</li>
+                        <li>সাইজ বা পণ্যের ধরনের সামান্যতম অমিল বা সন্দেহ থাকলে ভুল এড়াতে সিস্টেম স্বয়ংক্রিয়ভাবে <strong>স্কিপ (Skip)</strong> করবে।</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Counters Grid -->
+            <div class="grid grid-cols-4 gap-3 text-center">
+                <div class="bg-white p-3.5 rounded-2xl border border-secondary-200 shadow-2xs">
+                    <div class="text-[10px] font-bold text-secondary-500 uppercase tracking-wider">মোট প্রক্রিয়া</div>
+                    <div class="text-xl font-black text-secondary-900 mt-0.5" id="bmCounterProcessed">0 / 0</div>
+                </div>
+                <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 shadow-2xs">
+                    <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">✓ ১০০% ম্যাচ ও সেভ</div>
+                    <div class="text-xl font-black text-emerald-700 mt-0.5" id="bmCounterMatched">0</div>
+                </div>
+                <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 shadow-2xs">
+                    <div class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">⏭ স্কিপ হয়েছে</div>
+                    <div class="text-xl font-black text-amber-700 mt-0.5" id="bmCounterSkipped">0</div>
+                </div>
+                <div class="bg-red-50 p-3.5 rounded-2xl border border-red-200 shadow-2xs">
+                    <div class="text-[10px] font-bold text-red-700 uppercase tracking-wider">❌ ত্রুটি (Error)</div>
+                    <div class="text-xl font-black text-red-700 mt-0.5" id="bmCounterError">0</div>
+                </div>
+            </div>
+
+            <!-- Animated Progress Bar -->
+            <div>
+                <div class="flex items-center justify-between text-xs font-bold text-secondary-700 mb-1.5">
+                    <span id="bmStatusText">প্রক্রিয়া শুরু করার জন্য প্রস্তুত</span>
+                    <span id="bmProgressPct" class="text-emerald-700 font-mono">0%</span>
+                </div>
+                <div class="w-full h-3.5 bg-secondary-200 rounded-full overflow-hidden shadow-inner p-0.5">
+                    <div id="bmProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Live Terminal Log -->
+            <div>
+                <div class="flex items-center justify-between text-[11px] font-bold text-secondary-500 uppercase tracking-wider mb-1.5">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        রিয়েল-টাইম অ্যাক্টিভিটি লগ (Live Activity Stream)
+                    </span>
+                    <button type="button" onclick="clearBmLogs()" class="text-secondary-400 hover:text-secondary-600 font-normal lowercase hover:underline">ক্লিয়ার</button>
+                </div>
+                <div id="bmLogConsole" class="h-44 bg-slate-900 rounded-2xl p-3.5 font-mono text-[11px] text-slate-300 overflow-y-auto space-y-1 border border-slate-800 shadow-inner">
+                    <div class="text-slate-500">// অটো-ম্যাচ শুরু করতে নিচের 'অটো-ম্যাচ শুরু করুন' বাটনে চাপুন...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Control Buttons -->
+        <div class="px-6 py-4 bg-white border-t border-secondary-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="text-xs text-secondary-500" id="bmFooterSummary">
+                ছবি ছাড়া পণ্য পাওয়া গেছে: <strong class="text-secondary-900" id="bmPendingCount">0</strong> টি
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" id="bmStartBtn" onclick="startBulkAutoMatching()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black transition-all shadow-md shadow-emerald-700/20 flex items-center gap-2">
+                    <ion-icon name="play" class="text-sm"></ion-icon>
+                    <span>অটো-ম্যাচ শুরু করুন</span>
+                </button>
+                <button type="button" id="bmPauseBtn" onclick="togglePauseBulkMatching()" class="hidden px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+                    <ion-icon name="pause" class="text-sm"></ion-icon>
+                    <span id="bmPauseBtnText">পজ করুন</span>
+                </button>
+                <button type="button" id="bmStopBtn" onclick="stopBulkMatching()" class="hidden px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+                    <ion-icon name="stop" class="text-sm"></ion-icon>
+                    <span>থামান</span>
+                </button>
+                <button type="button" onclick="closeBulkAutoMatcherModal()" class="px-4 py-2.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-colors">
+                    বন্ধ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+
 // Global state
 let currentProductId = null;
 let currentProductName = '';
@@ -678,4 +803,219 @@ function escapeHtml(text) {
         }[m];
     });
 }
+
+// ==========================================================
+// 1-CLICK 100% BULK AUTO MATCHER QUEUE ENGINE
+// ==========================================================
+let isMatchingRunning = false;
+let isMatchingPaused = false;
+let autoMatchQueue = [];
+let autoMatchIndex = 0;
+let bmStats = { processed: 0, matched: 0, skipped: 0, errors: 0, total: 0 };
+
+function openBulkAutoMatcherModal() {
+    // 1. Gather all rows missing image from table
+    const rows = Array.from(document.querySelectorAll('.product-row'));
+    autoMatchQueue = [];
+    
+    rows.forEach(r => {
+        if (r.getAttribute('data-has-image') === '0') {
+            autoMatchQueue.push({
+                id: r.getAttribute('data-id'),
+                name: r.getAttribute('data-name'),
+                sku: r.getAttribute('data-sku')
+            });
+        }
+    });
+
+    if (autoMatchQueue.length === 0) {
+        alert('চমৎকার! বর্তমান তালিকার সব পণ্যের ছবি ইতিমধ্যে যুক্ত রয়েছে।');
+        return;
+    }
+
+    bmStats = { processed: 0, matched: 0, skipped: 0, errors: 0, total: autoMatchQueue.length };
+    autoMatchIndex = 0;
+    isMatchingRunning = false;
+    isMatchingPaused = false;
+
+    updateBmCounters();
+    document.getElementById('bmPendingCount').innerText = autoMatchQueue.length;
+    document.getElementById('bmProgressBar').style.width = '0%';
+    document.getElementById('bmProgressPct').innerText = '0%';
+    document.getElementById('bmStatusText').innerText = `মোট ${autoMatchQueue.length}টি ছবিহীন পণ্য প্রসেসের জন্য প্রস্তুত`;
+    document.getElementById('bmLogConsole').innerHTML = `<div class="text-slate-500">// মোট ${autoMatchQueue.length}টি ছবিহীন পণ্য পাওয়া গেছে। শুরু করতে 'অটো-ম্যাচ শুরু করুন' চাপুন...</div>`;
+    
+    // Reset buttons
+    const startBtn = document.getElementById('bmStartBtn');
+    startBtn.innerHTML = `<ion-icon name="play" class="text-sm"></ion-icon> <span>অটো-ম্যাচ শুরু করুন</span>`;
+    startBtn.classList.remove('hidden');
+    document.getElementById('bmPauseBtn').classList.add('hidden');
+    document.getElementById('bmStopBtn').classList.add('hidden');
+
+    const modal = document.getElementById('bulkAutoMatcherModal');
+    const content = document.getElementById('bulkAutoMatcherModalContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeBulkAutoMatcherModal() {
+    if (isMatchingRunning) {
+        if (!confirm('অটো-ম্যাচিং প্রক্রিয়া চলছে। আপনি কি এটি থামাতে ও বন্ধ করতে চান?')) {
+            return;
+        }
+        isMatchingRunning = false;
+    }
+    const modal = document.getElementById('bulkAutoMatcherModal');
+    const content = document.getElementById('bulkAutoMatcherModalContent');
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 150);
+}
+
+function updateBmCounters() {
+    document.getElementById('bmCounterProcessed').innerText = `${bmStats.processed} / ${bmStats.total}`;
+    document.getElementById('bmCounterMatched').innerText = bmStats.matched;
+    document.getElementById('bmCounterSkipped').innerText = bmStats.skipped;
+    document.getElementById('bmCounterError').innerText = bmStats.errors;
+
+    const pct = bmStats.total > 0 ? Math.round((bmStats.processed / bmStats.total) * 100) : 0;
+    document.getElementById('bmProgressBar').style.width = `${pct}%`;
+    document.getElementById('bmProgressPct').innerText = `${pct}%`;
+}
+
+function appendBmLog(msg, type = 'info') {
+    const consoleEl = document.getElementById('bmLogConsole');
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const div = document.createElement('div');
+    
+    let colorClass = 'text-slate-300';
+    if (type === 'match') colorClass = 'text-emerald-400 font-bold';
+    else if (type === 'skip') colorClass = 'text-amber-300';
+    else if (type === 'error') colorClass = 'text-red-400 font-bold';
+    else if (type === 'done') colorClass = 'text-teal-300 font-bold';
+
+    div.className = `${colorClass} leading-tight py-0.5`;
+    div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${msg}`;
+    consoleEl.appendChild(div);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function clearBmLogs() {
+    document.getElementById('bmLogConsole').innerHTML = '';
+}
+
+async function startBulkAutoMatching() {
+    if (isMatchingRunning) return;
+
+    isMatchingRunning = true;
+    isMatchingPaused = false;
+
+    document.getElementById('bmStartBtn').classList.add('hidden');
+    document.getElementById('bmPauseBtn').classList.remove('hidden');
+    document.getElementById('bmStopBtn').classList.remove('hidden');
+    document.getElementById('bmPauseBtnText').innerText = 'পজ করুন';
+
+    appendBmLog(`🚀 অটো-ম্যাচিং প্রক্রিয়া শুরু হয়েছে (মোট লক্ষ্য: ${bmStats.total}টি পণ্য)...`, 'info');
+
+    while (autoMatchIndex < autoMatchQueue.length && isMatchingRunning) {
+        if (isMatchingPaused) {
+            await new Promise(r => setTimeout(r, 250));
+            continue;
+        }
+
+        const item = autoMatchQueue[autoMatchIndex];
+        document.getElementById('bmStatusText').innerText = `প্রক্রিয়া চলছে: "${item.name}" (${autoMatchIndex + 1}/${bmStats.total})`;
+        appendBmLog(`🔍 [${autoMatchIndex + 1}/${bmStats.total}] অনুসন্ধান: "${item.name}"...`, 'info');
+
+        try {
+            const formData = new FormData();
+            formData.append('product_id', item.id);
+            formData.append('csrf_token', csrfToken);
+
+            const response = await fetch(`${baseUri}/admin/products/auto-match-single`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'matched') {
+                bmStats.matched++;
+                appendBmLog(`✅ ১০০% ম্যাচ! "${data.matched_title}" ছবি সংরক্ষিত হয়েছে।`, 'match');
+                updateTableRowImage(item.id, data.image_path);
+            } else if (data.status === 'skipped') {
+                bmStats.skipped++;
+                const extra = data.top_candidate ? ` (শীর্ষ ফলাফল: "${data.top_candidate}")` : '';
+                appendBmLog(`⏭ স্কিপ: "${item.name}" - ${data.reason}${extra}`, 'skip');
+            } else if (data.status === 'already_has_image') {
+                bmStats.skipped++;
+                appendBmLog(`ℹ️ পূর্বে থেকেই ছবি যুক্ত ছিল: "${item.name}"`, 'skip');
+            } else {
+                bmStats.errors++;
+                appendBmLog(`❌ ত্রুটি (${item.name}): ${data.message || 'অজানা সমস্যা'}`, 'error');
+            }
+        } catch (err) {
+            console.error('Auto match single error:', err);
+            bmStats.errors++;
+            appendBmLog(`❌ নেটওয়ার্ক/সার্ভার ত্রুটি: ${item.name}`, 'error');
+        }
+
+        bmStats.processed++;
+        autoMatchIndex++;
+        updateBmCounters();
+
+        // Brief delay between requests to keep execution smooth
+        await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (isMatchingRunning) {
+        isMatchingRunning = false;
+        document.getElementById('bmStatusText').innerText = '🎉 অটো-ম্যাচিং প্রক্রিয়া সম্পন্ন হয়েছে!';
+        appendBmLog(`🏁 প্রক্রিয়া সম্পন্ন! মোট ম্যাচ ও সেভ: ${bmStats.matched}টি, স্কিপ: ${bmStats.skipped}টি, ত্রুটি: ${bmStats.errors}টি।`, 'done');
+        
+        const startBtn = document.getElementById('bmStartBtn');
+        startBtn.innerHTML = `<ion-icon name="refresh" class="text-sm"></ion-icon> <span>পুনরায় শুরু করুন</span>`;
+        startBtn.classList.remove('hidden');
+        document.getElementById('bmPauseBtn').classList.add('hidden');
+        document.getElementById('bmStopBtn').classList.add('hidden');
+    }
+}
+
+function togglePauseBulkMatching() {
+    if (!isMatchingRunning) return;
+    isMatchingPaused = !isMatchingPaused;
+    const btnText = document.getElementById('bmPauseBtnText');
+    if (isMatchingPaused) {
+        btnText.innerText = 'চালিয়ে যান (Resume)';
+        appendBmLog('⏸ প্রক্রিয়া সাময়িক স্থগিত (Paused) করা হয়েছে...', 'skip');
+        document.getElementById('bmStatusText').innerText = 'প্রক্রিয়া সাময়িক স্থগিত (Paused)';
+    } else {
+        btnText.innerText = 'পজ করুন';
+        appendBmLog('▶️ প্রক্রিয়া পুনরায় চালু করা হলো...', 'info');
+    }
+}
+
+function stopBulkMatching() {
+    if (!isMatchingRunning) return;
+    if (confirm('আপনি কি সত্যি অটো-ম্যাচিং থামাতে চান?')) {
+        isMatchingRunning = false;
+        appendBmLog('🛑 ব্যবহারকারী কর্তৃক প্রক্রিয়া থামানো হয়েছে।', 'error');
+        document.getElementById('bmStatusText').innerText = 'প্রক্রিয়া থামানো হয়েছে';
+        const startBtn = document.getElementById('bmStartBtn');
+        startBtn.innerHTML = `<ion-icon name="refresh" class="text-sm"></ion-icon> <span>পুনরায় শুরু করুন</span>`;
+        startBtn.classList.remove('hidden');
+        document.getElementById('bmPauseBtn').classList.add('hidden');
+        document.getElementById('bmStopBtn').classList.add('hidden');
+    }
+}
 </script>
+

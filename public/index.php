@@ -111,6 +111,8 @@ $router->get('/admin/products/procurement', 'ProductController@procurementIndex'
 $router->get('/admin/products/image-finder', 'ProductController@imageFinderIndex');
 $router->get('/admin/products/search-web-images', 'ProductController@searchWebImages');
 $router->post('/admin/products/save-web-image', 'ProductController@saveWebImage');
+$router->post('/admin/products/auto-match-single', 'ProductController@autoMatchSingle');
+
 
 
 // Category Routes
