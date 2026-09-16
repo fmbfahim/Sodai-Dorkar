@@ -50,44 +50,84 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         </div>
     </div>
 
-    <!-- Category Selector & Search Section -->
+    <!-- Hierarchical Category Explorer & Search Section -->
     <div class="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-secondary-200 space-y-6">
         <div>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+            <!-- Explorer Header Bar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-secondary-100">
                 <div>
-                    <h3 class="text-sm font-black text-secondary-900 uppercase tracking-wider flex items-center gap-2">
-                        <ion-icon name="apps-outline" class="text-emerald-600 text-base"></ion-icon>
-                        <span>জনপ্রিয় ক্যাটাগরি সমূহ (১-ক্লিকে লোড করুন)</span>
+                    <h3 class="text-base font-black text-secondary-900 flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-lg shadow-2xs">
+                            <ion-icon name="git-network-outline"></ion-icon>
+                        </span>
+                        <span>স্বপ্নের ক্যাটাগরি এক্সপ্লোরার (হায়ারার্কিক্যাল ড্রিল-ডাউন)</span>
                     </h3>
-                    <p class="text-[11px] text-secondary-500 font-medium mt-0.5">পণ্য ইমপোর্টের আগে চাইলে এক ক্লিকেই সব ক্যাটাগরি ছবি সহ আপনার ডাটাবেসে সেভ করতে পারেন</p>
+                    <p class="text-xs text-secondary-500 font-medium mt-1">
+                        মূল ক্যাটাগরি ➔ সাব-ক্যাটাগরি ➔ সাব-সাব ক্যাটাগরি ড্রিল-ডাউন করে সরাসরি নির্দিষ্ট ক্যাটাগরির পণ্য লোড করুন
+                    </p>
                 </div>
-                <button type="button" 
-                        onclick="openCategorySetupModal()"
-                        class="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer hover:shadow-xs self-start sm:self-auto">
-                    <ion-icon name="folder-open-outline" class="text-sm text-emerald-700"></ion-icon>
-                    <span>সব ক্যাটাগরি আগে তৈরি করুন</span>
+
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <!-- View Mode Toggle Buttons -->
+                    <div class="inline-flex p-1 bg-secondary-100 rounded-xl border border-secondary-200">
+                        <button type="button" id="btnViewDrillDown" onclick="setExplorerViewMode('drilldown')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer">
+                            <ion-icon name="apps-outline" class="text-sm"></ion-icon>
+                            <span>ড্রিল-ডাউন ভিউ</span>
+                        </button>
+                        <button type="button" id="btnViewTree" onclick="setExplorerViewMode('tree')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer">
+                            <ion-icon name="list-outline" class="text-sm"></ion-icon>
+                            <span>সম্পূর্ণ ট্রি ভিউ</span>
+                        </button>
+                    </div>
+
+                    <button type="button" 
+                            onclick="openCategorySetupModal()"
+                            class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer hover:shadow-xs">
+                        <ion-icon name="folder-open" class="text-sm text-emerald-700"></ion-icon>
+                        <span>১-ক্লিকে সব ক্যাটাগরি তৈরি করুন</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Breadcrumb Navigation Bar for Drill-Down -->
+            <div id="explorerBreadcrumbs" class="flex items-center gap-2 text-xs font-bold mb-4 overflow-x-auto py-2 px-3.5 bg-secondary-50 rounded-2xl border border-secondary-200">
+                <!-- Dynamically populated via JS -->
+            </div>
+
+            <!-- Instant Real-Time Search Filter inside Explorer -->
+            <div class="relative mb-4">
+                <ion-icon name="filter-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
+                <input type="text" 
+                       id="categoryFilterInput" 
+                       oninput="handleCategoryFilter(this.value)" 
+                       placeholder="১১৮টি ক্যাটাগরির মধ্যে খুঁজুন (যেমন: চাল, সয়াবিন তেল, মসলা, দুধ, বিস্কুট, চা, কফি, নুডলস, মাছ, মাংস)..." 
+                       class="w-full pl-10 pr-10 py-2.5 bg-white border border-secondary-200 rounded-xl text-xs font-semibold text-secondary-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-2xs">
+                <button type="button" onclick="clearCategoryFilter()" id="clearCatFilterBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-secondary-400 hover:text-secondary-600 text-sm cursor-pointer">
+                    <ion-icon name="close-circle"></ion-icon>
                 </button>
             </div>
-            
-            <!-- Category Chips Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5" id="popularCategoryChips">
-                <?php foreach ($popularCategories as $cat): ?>
-                    <button type="button" 
-                            onclick="selectCategory('<?= htmlspecialchars($cat['slug']) ?>', '<?= htmlspecialchars(addslashes($cat['name'])) ?>')"
-                            class="category-chip group p-3 rounded-2xl border border-secondary-200 bg-secondary-50/50 hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-xs transition-all text-left flex items-center gap-2.5 cursor-pointer">
-                        <div class="w-8 h-8 rounded-xl bg-white border border-secondary-200 text-secondary-600 group-hover:text-emerald-600 group-hover:border-emerald-200 flex items-center justify-center text-base transition-colors flex-shrink-0">
-                            <ion-icon name="<?= $cat['icon'] ?>"></ion-icon>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="text-xs font-bold text-secondary-800 group-hover:text-emerald-900 truncate">
-                                <?= htmlspecialchars(explode('(', $cat['name'])[0]) ?>
-                            </div>
-                            <div class="text-[10px] font-mono text-secondary-400 truncate">
-                                <?= htmlspecialchars($cat['slug']) ?>
-                            </div>
-                        </div>
-                    </button>
-                <?php endforeach; ?>
+
+            <!-- View 1: Drill-Down Grid Container -->
+            <div id="explorerDrillDownContainer" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5" id="explorerCardsGrid">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- View 2: Full Hierarchical Tree Accordion Container -->
+            <div id="explorerTreeContainer" class="hidden space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Filter Results Container -->
+            <div id="explorerFilterResultsContainer" class="hidden space-y-2">
+                <div class="text-xs font-bold text-secondary-600 mb-2 flex items-center justify-between">
+                    <span id="filterResultsTitle">সার্চ ফলাফল</span>
+                    <button type="button" onclick="clearCategoryFilter()" class="text-xs text-emerald-600 hover:underline cursor-pointer">রিসেট করুন</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" id="explorerFilterResultsGrid">
+                    <!-- Filter result cards -->
+                </div>
             </div>
         </div>
 
@@ -101,7 +141,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <ion-icon name="search-outline" class="absolute left-4 top-1/2 -translate-y-1/2 text-secondary-400 text-lg"></ion-icon>
                     <input type="text" 
                            id="shwapnoCategoryInput" 
-                           placeholder="উদাহরণ: rice, tea, noodles, fresh-fruits অথবা https://www.shwapno.com/fresh-fruits"
+                           placeholder="উদাহরণ: rice, soybean-oil, tea, noodles, fresh-fruits অথবা https://www.shwapno.com/fresh-fruits"
                            class="w-full pl-11 pr-4 py-3.5 bg-secondary-50 border border-secondary-300 rounded-2xl text-xs sm:text-sm font-semibold text-secondary-900 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-emerald-500 transition-all shadow-2xs"
                            onkeydown="if(event.key === 'Enter') { fetchCategoryProducts(); }">
                 </div>
@@ -132,11 +172,27 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <select id="targetCategoryId" class="w-full px-3.5 py-2.5 bg-secondary-50 border border-secondary-300 rounded-xl text-xs font-semibold text-secondary-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white">
                     <option value="auto" selected>✨ স্বয়ংক্রিয় / ক্যাটাগরি না থাকলে ছবি সহ অটো তৈরি করুন</option>
                     <option value="">-- কোনো ক্যাটাগরি ছাড়া --</option>
-                    <?php foreach ($categories as $c): ?>
-                        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
-                    <?php endforeach; ?>
+                    <?php
+                    $renderHierarchyOptions = function($items, $depth = 0) use (&$renderHierarchyOptions) {
+                        foreach ($items as $item) {
+                            $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $depth);
+                            $bullet = ($depth === 0) ? '📁 ' : ($depth === 1 ? '↳ 📂 ' : '↳ ↳ 📄 ');
+                            echo '<option value="' . $item['id'] . '">' . $indent . $bullet . htmlspecialchars($item['name']) . '</option>';
+                            if (!empty($item['children'])) {
+                                $renderHierarchyOptions($item['children'], $depth + 1);
+                            }
+                        }
+                    };
+                    if (!empty($categoryHierarchy)) {
+                        $renderHierarchyOptions($categoryHierarchy);
+                    } else {
+                        foreach ($categories as $c) {
+                            echo '<option value="' . $c['id'] . '">' . htmlspecialchars($c['name']) . '</option>';
+                        }
+                    }
+                    ?>
                 </select>
-                <p class="text-[10px] text-emerald-600 font-semibold mt-1">✓ ক্যাটাগরি না থাকলে ইমেজ সহ নতুন ক্যাটাগরি অটো-তৈরি হবে</p>
+                <p class="text-[10px] text-emerald-600 font-semibold mt-1">✓ ক্যাটাগরি না থাকলে হায়ারার্কি ও ইমেজ সহ নতুন ক্যাটাগরি অটো-তৈরি হবে</p>
             </div>
 
             <!-- Target Vendor -->
@@ -395,20 +451,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
              style="background: linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 80%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center text-2xl shadow-inner">
-                    <ion-icon name="folder-open"></ion-icon>
+                    <ion-icon name="git-network"></ion-icon>
                 </div>
                 <div>
                     <h3 class="text-lg font-black text-white flex items-center gap-2.5">
-                        <span>১-ক্লিকে সব ক্যাটাগরি ডাটাবেসে যুক্ত করুন</span>
-                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-[10px] text-emerald-200 font-bold uppercase tracking-wider">Shwapno Auto-Sync</span>
+                        <span>১-ক্লিকে সব ক্যাটাগরি ও সাব-ক্যাটাগরি ডাটাবেসে তৈরি করুন</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-[10px] text-emerald-200 font-bold uppercase tracking-wider">Shwapno Full Tree</span>
                     </h3>
                     <p class="text-xs text-emerald-100/80 mt-0.5">
-                        স্বপ্ন (Shwapno)-এর ১৫টি জনপ্রিয় ক্যাটাগরি ও তাদের হাই-রেজ্যুলেশন ছবি স্বয়ংক্রিয়ভাবে ডাটাবেসে যুক্ত হবে।
+                        মূল ক্যাটাগরি (১৪টি), সাব-ক্যাটাগরি (৬১টি) ও সাব-সাব ক্যাটাগরি (৪৩টি) সহ মোট ১১৮টি ক্যাটাগরি সঠিক প্যারেন্ট রিলেশন এবং ছবি সহ ডাটাবেসে সেভ হবে।
                     </p>
                 </div>
             </div>
 
-            <button type="button" onclick="closeCategorySetupModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors">
+            <button type="button" onclick="closeCategorySetupModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
                 <ion-icon name="close-outline" class="text-xl"></ion-icon>
             </button>
         </div>
@@ -418,7 +474,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <!-- Progress Bar Section -->
             <div class="space-y-2 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="font-bold text-secondary-800" id="catSetupProgressStatusText">ক্যাটাগরি সিঙ্ক শুরু করতে প্রস্তুত...</span>
+                    <span class="font-bold text-secondary-800" id="catSetupProgressStatusText">হায়ারার্কিক্যাল ক্যাটাগরি সিঙ্ক শুরু করতে প্রস্তুত...</span>
                     <span class="font-mono font-black text-emerald-700 text-sm" id="catSetupProgressPct">0%</span>
                 </div>
                 <div class="w-full h-3.5 bg-secondary-200/80 rounded-full overflow-hidden p-0.5">
@@ -427,29 +483,48 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             </div>
 
             <!-- KPI Counters -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-4 gap-3">
                 <div class="p-3 bg-secondary-50 border border-secondary-200 rounded-2xl text-center">
-                    <div class="text-[11px] font-bold text-secondary-500 uppercase">মোট ক্যাটাগরি</div>
-                    <div class="text-xl font-black text-secondary-900 mt-0.5" id="catSetupTotal">15</div>
+                    <div class="text-[10px] font-bold text-secondary-500 uppercase">মোট ক্যাটাগরি</div>
+                    <div class="text-lg font-black text-secondary-900 mt-0.5" id="catSetupTotal">118</div>
                 </div>
                 <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
-                    <div class="text-[11px] font-bold text-emerald-600 uppercase">নতুন তৈরি (ছবি সহ)</div>
-                    <div class="text-xl font-black text-emerald-700 mt-0.5" id="catSetupCreated">0</div>
+                    <div class="text-[10px] font-bold text-emerald-600 uppercase">নতুন তৈরি (ছবি সহ)</div>
+                    <div class="text-lg font-black text-emerald-700 mt-0.5" id="catSetupCreated">0</div>
                 </div>
                 <div class="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
-                    <div class="text-[11px] font-bold text-blue-600 uppercase">ইতোমধ্যে বিদ্যমান</div>
-                    <div class="text-xl font-black text-blue-700 mt-0.5" id="catSetupExisting">0</div>
+                    <div class="text-[10px] font-bold text-blue-600 uppercase">বিদ্যমান / আপডেট</div>
+                    <div class="text-lg font-black text-blue-700 mt-0.5" id="catSetupExisting">0</div>
+                </div>
+                <div class="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-center">
+                    <div class="text-[10px] font-bold text-purple-600 uppercase">হায়ারার্কি স্তর</div>
+                    <div class="text-lg font-black text-purple-700 mt-0.5">৩ টি লেভেল</div>
                 </div>
             </div>
 
-            <!-- 15 Categories Grid Status -->
-            <div class="space-y-2">
-                <div class="text-xs font-black text-secondary-700 uppercase tracking-wider flex items-center justify-between">
-                    <span>১৫টি ক্যাটাগরির স্ট্যাটাস ও ছবি প্রিভিউ</span>
-                    <span class="text-[11px] font-normal text-secondary-500">Shwapno API থেকে অটো-ইমেজ ডাউনলোড হবে</span>
+            <!-- Filter Tabs for Category Levels in Modal -->
+            <div class="flex items-center justify-between gap-2 border-b border-secondary-200 pb-2">
+                <div class="flex items-center gap-1.5 overflow-x-auto">
+                    <button type="button" onclick="filterModalCatTab('all')" id="modalTabAll" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer">
+                        সকল (১১৮)
+                    </button>
+                    <button type="button" onclick="filterModalCatTab(1)" id="modalTabL1" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors text-secondary-600 hover:bg-secondary-100 cursor-pointer">
+                        মূল বিভাগ (১৪)
+                    </button>
+                    <button type="button" onclick="filterModalCatTab(2)" id="modalTabL2" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors text-secondary-600 hover:bg-secondary-100 cursor-pointer">
+                        সাব-ক্যাটাগরি (৬১)
+                    </button>
+                    <button type="button" onclick="filterModalCatTab(3)" id="modalTabL3" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors text-secondary-600 hover:bg-secondary-100 cursor-pointer">
+                        সাব-সাব ক্যাটাগরি (৪৩)
+                    </button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto p-1" id="catSetupListContainer">
-                    <!-- Populated dynamically via JS from presetCategoriesList -->
+                <span class="text-[11px] text-secondary-400 font-medium">প্যারেন্ট ক্রমানুসারে সিঙ্ক হবে</span>
+            </div>
+
+            <!-- Categories Tree/List Status in Modal -->
+            <div class="space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto p-1" id="catSetupListContainer">
+                    <!-- Populated dynamically via JS -->
                 </div>
             </div>
 
@@ -458,9 +533,9 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <div class="flex items-center justify-between text-xs">
                     <span class="font-bold text-secondary-600 flex items-center gap-1.5">
                         <ion-icon name="terminal-outline" class="text-secondary-500"></ion-icon>
-                        <span>লাইভ লগ টার্মিনাল</span>
+                        <span>লাইভ হায়ারার্কি লগ টার্মিনাল</span>
                     </span>
-                    <button type="button" onclick="clearCatSetupLogs()" class="text-[11px] text-secondary-400 hover:text-secondary-600 font-medium">
+                    <button type="button" onclick="clearCatSetupLogs()" class="text-[11px] text-secondary-400 hover:text-secondary-600 font-medium cursor-pointer">
                         ক্লিয়ার লগ
                     </button>
                 </div>
@@ -473,15 +548,15 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         <!-- Modal Footer Controls -->
         <div class="px-6 py-4 bg-white border-t border-secondary-200 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="text-xs text-secondary-600" id="catSetupFooterSummary">
-                ১৫টি ক্যাটাগরির ছবি Shwapno থেকে ডাউনলোড করে আপনার ডাটাবেসে যুক্ত হবে
+                মোট ১১৮টি ক্যাটাগরি ৩-স্তরে প্যারেন্ট-চাইল্ড লিংক ও ছবি সহ আপনার ডাটাবেসে সেভ হবে
             </div>
 
             <div class="flex items-center gap-2.5">
                 <button type="button" id="catSetupStartBtn" onclick="startBatchCategorySetup()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black transition-all shadow-md shadow-emerald-700/20 flex items-center gap-2 cursor-pointer">
                     <ion-icon name="play" class="text-sm"></ion-icon>
-                    <span id="catSetupStartBtnText">সব ক্যাটাগরি তৈরি শুরু করুন</span>
+                    <span id="catSetupStartBtnText">সব ক্যাটাগরি তৈরি শুরু করুন (১১৮টি)</span>
                 </button>
-                <button type="button" onclick="closeCategorySetupModal()" class="px-4 py-2.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-colors">
+                <button type="button" onclick="closeCategorySetupModal()" class="px-4 py-2.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-colors cursor-pointer">
                     বন্ধ করুন
                 </button>
             </div>
@@ -490,14 +565,23 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 </div>
 
 <script>
-// State
+// Escape HTML helper
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Global State
 let loadedProducts = [];
 let bulkQueue = [];
 let bulkIndex = 0;
 let isBulkRunning = false;
 let isBulkPaused = false;
-let currentCategoryName = '';
-let currentCategorySlug = '';
 let bulkStats = {
     total: 0,
     processed: 0,
@@ -509,11 +593,497 @@ let bulkStats = {
 const csrfToken = '<?= \Core\CSRF::token() ?>';
 const baseUri = '<?= $base ?>';
 
-// ============================================================
-// 1-CLICK CATEGORY BATCH SETUP CONTROLLER
-// ============================================================
-const presetCategoriesList = <?= json_encode($popularCategories, JSON_UNESCAPED_UNICODE) ?>;
+// Shwapno Catalog Data from Controller
+const categoryTree = <?= json_encode($categoryTree ?? [], JSON_UNESCAPED_UNICODE) ?>;
+const categoryFlatList = <?= json_encode($categoryFlatList ?? [], JSON_UNESCAPED_UNICODE) ?>;
+
+// Category Explorer State
+let explorerCurrentPath = []; // [] = Level 1 (Roots), [mainSlug] = Level 2 (Subs), [mainSlug, subSlug] = Level 3 (Sub-Subs)
+let explorerViewMode = 'drilldown'; // 'drilldown' or 'tree'
+let modalActiveTab = 'all'; // 'all', 1, 2, 3
 let isCatSetupRunning = false;
+
+// Active Category Context for Fetch and Import
+let currentCategorySlug = '';
+let currentCategoryName = '';
+let currentCategoryParentSlug = '';
+let currentCategoryParentName = '';
+let currentCategoryLevel = 1;
+
+// ============================================================
+// HIERARCHICAL CATEGORY EXPLORER ENGINE
+// ============================================================
+
+function initCategoryExplorer() {
+    renderBreadcrumbs();
+    renderExplorerDrillDown();
+    renderExplorerTree();
+}
+
+function setExplorerViewMode(mode) {
+    explorerViewMode = mode;
+    const btnDrill = document.getElementById('btnViewDrillDown');
+    const btnTree = document.getElementById('btnViewTree');
+    const drillContainer = document.getElementById('explorerDrillDownContainer');
+    const treeContainer = document.getElementById('explorerTreeContainer');
+    const breadcrumbs = document.getElementById('explorerBreadcrumbs');
+
+    if (mode === 'drilldown') {
+        btnDrill.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
+        btnTree.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+        drillContainer.classList.remove('hidden');
+        treeContainer.classList.add('hidden');
+        breadcrumbs.classList.remove('hidden');
+        renderBreadcrumbs();
+        renderExplorerDrillDown();
+    } else {
+        btnTree.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
+        btnDrill.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+        drillContainer.classList.add('hidden');
+        treeContainer.classList.remove('hidden');
+        breadcrumbs.classList.add('hidden');
+    }
+}
+
+function renderBreadcrumbs() {
+    const bar = document.getElementById('explorerBreadcrumbs');
+    if (!bar) return;
+
+    let html = `
+        <button type="button" onclick="navigateExplorerTo([])" class="hover:text-emerald-700 flex items-center gap-1.5 transition-colors cursor-pointer ${explorerCurrentPath.length === 0 ? 'text-emerald-800 font-black' : 'text-secondary-500 font-semibold'}">
+            <ion-icon name="home-outline" class="text-sm"></ion-icon>
+            <span>সকল মূল ক্যাটাগরি (${categoryTree.length})</span>
+        </button>
+    `;
+
+    if (explorerCurrentPath.length >= 1) {
+        const mainCat = categoryTree.find(m => m.slug === explorerCurrentPath[0]);
+        if (mainCat) {
+            html += `
+                <span class="text-secondary-400">›</span>
+                <button type="button" onclick="navigateExplorerTo(['${mainCat.slug}'])" class="hover:text-emerald-700 transition-colors cursor-pointer ${explorerCurrentPath.length === 1 ? 'text-emerald-800 font-black' : 'text-secondary-500 font-semibold'}">
+                    <span>${escapeHtml(mainCat.name_bn)}</span>
+                </button>
+            `;
+        }
+    }
+
+    if (explorerCurrentPath.length >= 2) {
+        const mainCat = categoryTree.find(m => m.slug === explorerCurrentPath[0]);
+        const subCat = (mainCat && mainCat.children) ? mainCat.children.find(s => s.slug === explorerCurrentPath[1]) : null;
+        if (subCat) {
+            html += `
+                <span class="text-secondary-400">›</span>
+                <span class="text-emerald-800 font-black">
+                    ${escapeHtml(subCat.name_bn)}
+                </span>
+            `;
+        }
+    }
+
+    if (explorerCurrentPath.length > 0) {
+        html += `
+            <div class="ml-auto">
+                <button type="button" onclick="goBackExplorer()" class="px-2.5 py-1 rounded-xl bg-secondary-200 hover:bg-secondary-300 text-secondary-800 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer">
+                    <ion-icon name="arrow-back-outline"></ion-icon>
+                    <span>পেছনে যান</span>
+                </button>
+            </div>
+        `;
+    }
+
+    bar.innerHTML = html;
+}
+
+function navigateExplorerTo(path) {
+    explorerCurrentPath = path;
+    renderBreadcrumbs();
+    renderExplorerDrillDown();
+}
+
+function goBackExplorer() {
+    if (explorerCurrentPath.length > 0) {
+        explorerCurrentPath.pop();
+        renderBreadcrumbs();
+        renderExplorerDrillDown();
+    }
+}
+
+function renderExplorerDrillDown() {
+    const grid = document.getElementById('explorerCardsGrid');
+    if (!grid) return;
+
+    // Level 1: Root Categories
+    if (explorerCurrentPath.length === 0) {
+        grid.innerHTML = categoryTree.map(main => {
+            const childrenCount = (main.children || []).length;
+            const fullDisplayName = `${main.name_bn} (${main.name_en})`;
+            return `
+                <div class="group bg-gradient-to-b from-white to-secondary-50/50 rounded-2xl border border-secondary-200 hover:border-emerald-300 hover:shadow-md transition-all p-3.5 flex flex-col justify-between gap-3">
+                    <div class="flex items-start gap-3 cursor-pointer" onclick="navigateExplorerTo(['${main.slug}'])">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                            <ion-icon name="${main.icon || 'folder-outline'}"></ion-icon>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs font-black text-secondary-900 group-hover:text-emerald-800 transition-colors truncate">
+                                ${escapeHtml(main.name_bn)}
+                            </h4>
+                            <p class="text-[10px] text-secondary-500 truncate mt-0.5">
+                                ${escapeHtml(main.name_en)}
+                            </p>
+                            <div class="mt-1.5">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <ion-icon name="layers-outline" class="text-xs"></ion-icon>
+                                    <span>${childrenCount}টি সাব-ক্যাটাগরি</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-secondary-100 flex items-center gap-2">
+                        <button type="button" 
+                                onclick="navigateExplorerTo(['${main.slug}'])"
+                                class="flex-1 py-1.5 px-2 rounded-xl bg-secondary-100 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 border border-secondary-200 text-[11px] font-bold text-secondary-700 transition-all flex items-center justify-center gap-1 cursor-pointer">
+                            <span>সাব-ক্যাটাগরি</span>
+                            <ion-icon name="chevron-forward-outline" class="text-xs"></ion-icon>
+                        </button>
+                        <button type="button" 
+                                onclick="selectAndFetchCategory('${main.slug}', '${escapeHtml(fullDisplayName)}', null, null, 1)"
+                                title="এই মূল ক্যাটাগরির পণ্য লোড করুন"
+                                class="py-1.5 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
+                            <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
+                            <span>পণ্য লোড</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        return;
+    }
+
+    // Level 2: Sub-Categories under Main
+    if (explorerCurrentPath.length === 1) {
+        const main = categoryTree.find(m => m.slug === explorerCurrentPath[0]);
+        if (!main || !main.children || main.children.length === 0) {
+            grid.innerHTML = `<div class="col-span-full p-6 text-center text-xs text-secondary-500 bg-secondary-50 rounded-2xl">এই ক্যাটাগরিতে কোনো সাব-ক্যাটাগরি নেই।</div>`;
+            return;
+        }
+
+        const mainFullName = `${main.name_bn} (${main.name_en})`;
+
+        grid.innerHTML = main.children.map(sub => {
+            const subChildrenCount = (sub.children || []).length;
+            const subFullName = `${sub.name_bn} (${sub.name_en})`;
+            return `
+                <div class="group bg-gradient-to-b from-white to-blue-50/30 rounded-2xl border border-secondary-200 hover:border-blue-300 hover:shadow-md transition-all p-3.5 flex flex-col justify-between gap-3">
+                    <div class="flex items-start gap-3 cursor-pointer" onclick="${subChildrenCount > 0 ? `navigateExplorerTo(['${main.slug}', '${sub.slug}'])` : `selectAndFetchCategory('${sub.slug}', '${escapeHtml(subFullName)}', '${main.slug}', '${escapeHtml(mainFullName)}', 2)`}">
+                        <div class="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                            <ion-icon name="${sub.icon || main.icon || 'folder-outline'}"></ion-icon>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs font-black text-secondary-900 group-hover:text-blue-800 transition-colors truncate">
+                                ${escapeHtml(sub.name_bn)}
+                            </h4>
+                            <p class="text-[10px] text-secondary-500 truncate mt-0.5">
+                                ${escapeHtml(sub.name_en)}
+                            </p>
+                            <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary-100 text-secondary-600">
+                                    ${escapeHtml(main.name_bn)}
+                                </span>
+                                ${subChildrenCount > 0 ? `
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                                        ${subChildrenCount}টি সাব-সাব ক্যাটাগরি
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-secondary-100 flex items-center gap-2">
+                        ${subChildrenCount > 0 ? `
+                            <button type="button" 
+                                    onclick="navigateExplorerTo(['${main.slug}', '${sub.slug}'])"
+                                    class="flex-1 py-1.5 px-2 rounded-xl bg-secondary-100 hover:bg-purple-50 hover:text-purple-800 hover:border-purple-300 border border-secondary-200 text-[11px] font-bold text-secondary-700 transition-all flex items-center justify-center gap-1 cursor-pointer">
+                                <span>সাব-সাব ক্যাটাগরি</span>
+                                <ion-icon name="chevron-forward-outline" class="text-xs"></ion-icon>
+                            </button>
+                        ` : ''}
+                        <button type="button" 
+                                onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(subFullName)}', '${main.slug}', '${escapeHtml(mainFullName)}', 2)"
+                                class="${subChildrenCount > 0 ? '' : 'w-full'} py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
+                            <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
+                            <span>পণ্য লোড করুন</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        return;
+    }
+
+    // Level 3: Sub-Sub Categories
+    if (explorerCurrentPath.length === 2) {
+        const main = categoryTree.find(m => m.slug === explorerCurrentPath[0]);
+        const sub = (main && main.children) ? main.children.find(s => s.slug === explorerCurrentPath[1]) : null;
+        if (!sub || !sub.children || sub.children.length === 0) {
+            grid.innerHTML = `<div class="col-span-full p-6 text-center text-xs text-secondary-500 bg-secondary-50 rounded-2xl">এই সাব-ক্যাটাগরিতে কোনো সাব-সাব ক্যাটাগরি নেই।</div>`;
+            return;
+        }
+
+        const subFullName = `${sub.name_bn} (${sub.name_en})`;
+
+        grid.innerHTML = sub.children.map(leaf => {
+            const leafFullName = `${leaf.name_bn} (${leaf.name_en})`;
+            return `
+                <div class="group bg-gradient-to-b from-white to-purple-50/30 rounded-2xl border border-secondary-200 hover:border-purple-300 hover:shadow-md transition-all p-3.5 flex flex-col justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                            <ion-icon name="${leaf.icon || sub.icon || 'document-outline'}"></ion-icon>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs font-black text-secondary-900 group-hover:text-purple-800 transition-colors truncate">
+                                ${escapeHtml(leaf.name_bn)}
+                            </h4>
+                            <p class="text-[10px] text-secondary-500 truncate mt-0.5">
+                                ${escapeHtml(leaf.name_en)}
+                            </p>
+                            <div class="mt-1.5 flex items-center gap-1.5 flex-wrap text-[9px] font-bold text-secondary-500">
+                                <span>${escapeHtml(main.name_bn)}</span>
+                                <span>›</span>
+                                <span class="text-purple-700 font-bold">${escapeHtml(sub.name_bn)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-secondary-100">
+                        <button type="button" 
+                                onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leafFullName)}', '${sub.slug}', '${escapeHtml(subFullName)}', 3)"
+                                class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer">
+                            <ion-icon name="cloud-download-outline" class="text-sm"></ion-icon>
+                            <span>এই ক্যাটাগরির পণ্য লোড করুন</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function renderExplorerTree() {
+    const treeEl = document.getElementById('explorerTreeContainer');
+    if (!treeEl) return;
+
+    treeEl.innerHTML = categoryTree.map((main, mIdx) => {
+        const mainFullName = `${main.name_bn} (${main.name_en})`;
+        const subs = main.children || [];
+        return `
+            <div class="border border-secondary-200 rounded-2xl overflow-hidden bg-white mb-2 shadow-2xs">
+                <!-- Level 1 Main Category Item -->
+                <div class="p-3 bg-secondary-50/80 hover:bg-emerald-50/50 flex items-center justify-between gap-3 cursor-pointer transition-colors" onclick="toggleTreeSection('tree-main-${mIdx}')">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <ion-icon name="chevron-down-outline" class="text-secondary-400 text-sm transition-transform" id="tree-icon-tree-main-${mIdx}"></ion-icon>
+                        <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm flex-shrink-0">
+                            <ion-icon name="${main.icon || 'folder-outline'}"></ion-icon>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <span class="text-xs font-black text-secondary-900">${escapeHtml(main.name_bn)}</span>
+                            <span class="text-[10px] text-secondary-500 font-normal ml-1">(${escapeHtml(main.name_en)})</span>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                            ${subs.length}টি সাব-ক্যাটাগরি
+                        </span>
+                    </div>
+                    <button type="button" 
+                            onclick="event.stopPropagation(); selectAndFetchCategory('${main.slug}', '${escapeHtml(mainFullName)}', null, null, 1)"
+                            class="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer">
+                        <ion-icon name="flash" class="text-xs text-amber-300"></ion-icon>
+                        <span>লোড</span>
+                    </button>
+                </div>
+
+                <!-- Level 2 Sub-Categories List -->
+                <div id="tree-main-${mIdx}" class="divide-y divide-secondary-100 border-t border-secondary-100">
+                    ${subs.map((sub, sIdx) => {
+                        const subFullName = `${sub.name_bn} (${sub.name_en})`;
+                        const leaves = sub.children || [];
+                        return `
+                            <div class="pl-6 pr-3 py-2.5 bg-white hover:bg-secondary-50/60 transition-colors">
+                                <div class="flex items-center justify-between gap-2.5">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1 ${leaves.length > 0 ? 'cursor-pointer' : ''}" onclick="${leaves.length > 0 ? `toggleTreeSection('tree-sub-${mIdx}-${sIdx}')` : ''}">
+                                        ${leaves.length > 0 ? `
+                                            <ion-icon name="chevron-down-outline" class="text-secondary-400 text-xs transition-transform" id="tree-icon-tree-sub-${mIdx}-${sIdx}"></ion-icon>
+                                        ` : '<span class="w-3"></span>'}
+                                        <span class="text-emerald-600 font-bold text-xs">↳</span>
+                                        <div class="min-w-0 flex-1">
+                                            <span class="text-xs font-bold text-secondary-800">${escapeHtml(sub.name_bn)}</span>
+                                            <span class="text-[10px] text-secondary-400 font-normal ml-1">(${escapeHtml(sub.name_en)})</span>
+                                        </div>
+                                        ${leaves.length > 0 ? `
+                                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                                                ${leaves.length}টি
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    <button type="button" 
+                                            onclick="selectAndFetchCategory('${sub.slug}', '${escapeHtml(subFullName)}', '${main.slug}', '${escapeHtml(mainFullName)}', 2)"
+                                            class="px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-600 hover:text-white text-teal-800 text-[10px] font-bold border border-teal-200 transition-all flex items-center gap-1 cursor-pointer">
+                                        <ion-icon name="flash" class="text-xs"></ion-icon>
+                                        <span>লোড</span>
+                                    </button>
+                                </div>
+
+                                <!-- Level 3 Sub-Sub Categories List -->
+                                ${leaves.length > 0 ? `
+                                    <div id="tree-sub-${mIdx}-${sIdx}" class="mt-2 pl-6 space-y-1.5 border-l-2 border-purple-200 ml-4 pb-1">
+                                        ${leaves.map(leaf => {
+                                            const leafFullName = `${leaf.name_bn} (${leaf.name_en})`;
+                                            return `
+                                                <div class="py-1 px-2 rounded-lg hover:bg-purple-50 flex items-center justify-between gap-2 text-xs transition-colors">
+                                                    <div class="min-w-0 flex-1">
+                                                        <span class="text-purple-600 font-bold">↳</span>
+                                                        <span class="font-semibold text-secondary-700 ml-1">${escapeHtml(leaf.name_bn)}</span>
+                                                        <span class="text-[10px] text-secondary-400 font-normal ml-1">(${escapeHtml(leaf.name_en)})</span>
+                                                    </div>
+                                                    <button type="button" 
+                                                            onclick="selectAndFetchCategory('${leaf.slug}', '${escapeHtml(leafFullName)}', '${sub.slug}', '${escapeHtml(subFullName)}', 3)"
+                                                            class="px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-800 text-[10px] font-bold border border-purple-200 transition-all cursor-pointer">
+                                                        লোড
+                                                    </button>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleTreeSection(sectionId) {
+    const el = document.getElementById(sectionId);
+    const icon = document.getElementById(`tree-icon-${sectionId}`);
+    if (!el) return;
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    } else {
+        el.classList.add('hidden');
+        if (icon) icon.style.transform = 'rotate(-90deg)';
+    }
+}
+
+// Real-Time Search Filter across all 118 categories
+function handleCategoryFilter(val) {
+    const query = val.trim().toLowerCase();
+    const clearBtn = document.getElementById('clearCatFilterBtn');
+    const drillContainer = document.getElementById('explorerDrillDownContainer');
+    const treeContainer = document.getElementById('explorerTreeContainer');
+    const filterContainer = document.getElementById('explorerFilterResultsContainer');
+    const breadcrumbs = document.getElementById('explorerBreadcrumbs');
+
+    if (!query) {
+        clearBtn.classList.add('hidden');
+        filterContainer.classList.add('hidden');
+        if (explorerViewMode === 'drilldown') {
+            drillContainer.classList.remove('hidden');
+            breadcrumbs.classList.remove('hidden');
+        } else {
+            treeContainer.classList.remove('hidden');
+        }
+        return;
+    }
+
+    clearBtn.classList.remove('hidden');
+    drillContainer.classList.add('hidden');
+    treeContainer.classList.add('hidden');
+    breadcrumbs.classList.add('hidden');
+    filterContainer.classList.remove('hidden');
+
+    const matches = categoryFlatList.filter(item => {
+        return item.name_bn.toLowerCase().includes(query) ||
+               item.name_en.toLowerCase().includes(query) ||
+               item.slug.toLowerCase().includes(query) ||
+               (item.parent_name && item.parent_name.toLowerCase().includes(query));
+    });
+
+    document.getElementById('filterResultsTitle').innerText = `"${val}" এর জন্য ${matches.length}টি ক্যাটাগরি পাওয়া গেছে:`;
+
+    const grid = document.getElementById('explorerFilterResultsGrid');
+    if (matches.length === 0) {
+        grid.innerHTML = `<div class="col-span-full p-6 text-center text-xs text-secondary-500 bg-secondary-50 rounded-2xl">কোনো ক্যাটাগরি পাওয়া যায়নি। আপনি নিচে সরাসরি Shwapno সার্চ করতে পারেন।</div>`;
+        return;
+    }
+
+    const levelBadgeMap = {
+        1: '<span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">মূল বিভাগ</span>',
+        2: '<span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">সাব-ক্যাটাগরি</span>',
+        3: '<span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">সাব-সাব</span>'
+    };
+
+    grid.innerHTML = matches.map(item => {
+        return `
+            <div class="p-3 rounded-2xl border border-secondary-200 bg-white hover:border-emerald-300 hover:shadow-xs transition-all flex flex-col justify-between gap-2.5">
+                <div class="flex items-start gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-secondary-100 text-secondary-700 flex items-center justify-center text-base flex-shrink-0">
+                        <ion-icon name="${item.icon || 'folder-outline'}"></ion-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs font-black text-secondary-900">${escapeHtml(item.name_bn)}</span>
+                            ${levelBadgeMap[item.level] || ''}
+                        </div>
+                        <div class="text-[10px] text-secondary-400 mt-0.5">${escapeHtml(item.name_en)}</div>
+                        ${item.parent_name ? `<div class="text-[9px] text-secondary-500 mt-1">প্যারেন্ট: <span class="font-bold text-secondary-700">${escapeHtml(item.parent_name.split('(')[0])}</span></div>` : ''}
+                    </div>
+                </div>
+
+                <button type="button" 
+                        onclick="selectAndFetchCategory('${item.slug}', '${escapeHtml(item.name)}', '${item.parent_slug || ''}', '${escapeHtml(item.parent_name || '')}', ${item.level})"
+                        class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-[11px] font-black transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer">
+                    <ion-icon name="cloud-download-outline" class="text-xs"></ion-icon>
+                    <span>পণ্য লোড করুন</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function clearCategoryFilter() {
+    const input = document.getElementById('categoryFilterInput');
+    if (input) input.value = '';
+    handleCategoryFilter('');
+}
+
+// Select category and immediately load products with hierarchy context
+function selectAndFetchCategory(slug, displayName, parentSlug = null, parentName = null, level = 1) {
+    const input = document.getElementById('shwapnoCategoryInput');
+    if (input) input.value = slug;
+
+    currentCategorySlug = slug;
+    currentCategoryName = displayName;
+    currentCategoryParentSlug = parentSlug || '';
+    currentCategoryParentName = parentName || '';
+    currentCategoryLevel = level || 1;
+
+    fetchCategoryProducts();
+
+    // Smooth scroll down to products section
+    setTimeout(() => {
+        const preview = document.getElementById('previewContainer');
+        if (preview && !preview.classList.contains('hidden')) {
+            preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 600);
+}
+
+// ============================================================
+// 1-CLICK ALL CATEGORIES BATCH SETUP MODAL LOGIC (118 ITEMS)
+// ============================================================
 
 function openCategorySetupModal() {
     const modal = document.getElementById('categorySetupModal');
@@ -528,7 +1098,7 @@ function openCategorySetupModal() {
 
 function closeCategorySetupModal() {
     if (isCatSetupRunning) {
-        if (!confirm('ক্যাটাগরি সিঙ্ক চলছে। আপনি কি সত্যি এটি বন্ধ করতে চান?')) return;
+        if (!confirm('ক্যাটাগরি সিঙ্ক প্রক্রিয়া এখনও চলছে। আপনি কি সত্যিই এটি বন্ধ করতে চান?')) return;
         isCatSetupRunning = false;
     }
     const modal = document.getElementById('categorySetupModal');
@@ -540,25 +1110,55 @@ function closeCategorySetupModal() {
     }, 200);
 }
 
+function filterModalCatTab(tab) {
+    modalActiveTab = tab;
+    ['all', 1, 2, 3].forEach(t => {
+        const btn = document.getElementById(`modalTab${t === 'all' ? 'All' : 'L' + t}`);
+        if (!btn) return;
+        if (t === tab) {
+            btn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer';
+        } else {
+            btn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition-colors text-secondary-600 hover:bg-secondary-100 cursor-pointer';
+        }
+    });
+    renderCatSetupList();
+}
+
 function renderCatSetupList() {
     const container = document.getElementById('catSetupListContainer');
     if (!container) return;
-    
-    container.innerHTML = presetCategoriesList.map((cat, idx) => {
-        const cleanName = cat.name.split('(')[0].trim();
+
+    let items = categoryFlatList;
+    if (modalActiveTab !== 'all') {
+        items = categoryFlatList.filter(c => c.level === modalActiveTab);
+    }
+
+    const levelBadgeMap = {
+        1: '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">মূল</span>',
+        2: '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">সাব</span>',
+        3: '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">সাব-সাব</span>'
+    };
+
+    container.innerHTML = items.map((cat) => {
+        const cleanName = cat.name_bn || cat.name.split('(')[0].trim();
+        const originalIndex = categoryFlatList.findIndex(c => c.slug === cat.slug);
         return `
-            <div class="p-2.5 rounded-2xl border border-secondary-200 bg-secondary-50/70 flex items-center justify-between gap-2.5 transition-all" id="cat-row-${idx}">
+            <div class="p-2.5 rounded-2xl border border-secondary-200 bg-secondary-50/70 flex items-center justify-between gap-2.5 transition-all" id="cat-row-${originalIndex}">
                 <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div class="w-9 h-9 rounded-xl bg-white border border-secondary-200 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-2xs" id="cat-thumb-${idx}">
+                    <div class="w-9 h-9 rounded-xl bg-white border border-secondary-200 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-2xs" id="cat-thumb-${originalIndex}">
                         <ion-icon name="${cat.icon || 'folder-outline'}" class="text-secondary-400 text-lg"></ion-icon>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="text-xs font-bold text-secondary-800 truncate">${escapeHtml(cleanName)}</div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="text-xs font-bold text-secondary-800 truncate">${escapeHtml(cleanName)}</div>
+                            ${levelBadgeMap[cat.level] || ''}
+                        </div>
                         <div class="text-[10px] text-secondary-400 font-mono truncate">${escapeHtml(cat.slug)}</div>
+                        ${cat.parent_name ? `<div class="text-[9px] text-secondary-500 truncate">প্যারেন্ট: ${escapeHtml(cat.parent_name.split('(')[0])}</div>` : ''}
                     </div>
                 </div>
                 <div class="flex-shrink-0">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-600 border border-secondary-300 whitespace-nowrap inline-block" id="cat-badge-${idx}">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-600 border border-secondary-300 whitespace-nowrap inline-block" id="cat-badge-${originalIndex}">
                         অপেক্ষারত
                     </span>
                 </div>
@@ -609,21 +1209,21 @@ async function startBatchCategorySetup() {
     const statExisting = document.getElementById('catSetupExisting');
     const statTotal = document.getElementById('catSetupTotal');
 
-    statTotal.innerText = presetCategoriesList.length;
+    statTotal.innerText = categoryFlatList.length;
     let createdCount = 0;
     let existingCount = 0;
 
     clearCatSetupLogs();
-    appendCatSetupLog(`🚀 স্বপ্নের মোট ${presetCategoriesList.length}টি ক্যাটাগরি তৈরি ও ইমেজ ডাউনলোড শুরু হচ্ছে...`, 'info');
+    appendCatSetupLog(`🚀 ৩-স্তরে স্বপ্নের মোট ${categoryFlatList.length}টি ক্যাটাগরি ও সাব-ক্যাটাগরি প্যারেন্ট রিলেশন সহ সিঙ্ক শুরু হচ্ছে...`, 'info');
 
-    for (let i = 0; i < presetCategoriesList.length; i++) {
+    for (let i = 0; i < categoryFlatList.length; i++) {
         if (!isCatSetupRunning) {
-            appendCatSetupLog('🛑 প্রক্রিয়া ব্যবহারকারী কর্তৃক বন্ধ করা হয়েছে।', 'error');
+            appendCatSetupLog('🛑 প্রক্রিয়া ব্যবহারকারী কর্তৃক স্থগিত করা হয়েছে।', 'error');
             break;
         }
 
-        const cat = presetCategoriesList[i];
-        const cleanName = cat.name.split('(')[0].trim();
+        const cat = categoryFlatList[i];
+        const cleanName = cat.name_bn || cat.name.split('(')[0].trim();
         const row = document.getElementById(`cat-row-${i}`);
         const badge = document.getElementById(`cat-badge-${i}`);
         const thumb = document.getElementById(`cat-thumb-${i}`);
@@ -636,13 +1236,17 @@ async function startBatchCategorySetup() {
             badge.innerText = 'ডাউনলোড হচ্ছে...';
         }
 
-        progressStatus.innerText = `[${i + 1}/${presetCategoriesList.length}] "${cleanName}" তৈরি ও ছবি সিঙ্ক হচ্ছে...`;
-        appendCatSetupLog(`[${i + 1}/${presetCategoriesList.length}] ${cleanName} (${cat.slug}) সিঙ্ক শুরু...`, 'info');
+        const levelPrefix = cat.level === 1 ? '[L1 মূল]' : (cat.level === 2 ? '[L2 সাব]' : '[L3 সাব-সাব]');
+        progressStatus.innerText = `[${i + 1}/${categoryFlatList.length}] ${levelPrefix} "${cleanName}" তৈরি ও ছবি সিঙ্ক হচ্ছে...`;
+        appendCatSetupLog(`[${i + 1}/${categoryFlatList.length}] ${levelPrefix} ${cleanName} (${cat.slug}) সিঙ্ক শুরু...`, 'info');
 
         try {
             const formData = new URLSearchParams();
             formData.append('slug', cat.slug);
             formData.append('name', cat.name);
+            formData.append('parent_slug', cat.parent_slug || '');
+            formData.append('parent_name', cat.parent_name || '');
+            formData.append('level', cat.level);
 
             const res = await fetch(`${baseUri}/admin/products/shwapno-setup-category`, {
                 method: 'POST',
@@ -663,50 +1267,50 @@ async function startBatchCategorySetup() {
                         badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap';
                         badge.innerText = '✅ তৈরি হয়েছে';
                     }
-                    appendCatSetupLog(`✅ "${cleanName}" ক্যাটাগরি সফলভাবে তৈরি হয়েছে (ছবি সহ)।`, 'success');
-                } else if (data.status === 'updated_image') {
+                    appendCatSetupLog(`✅ ${levelPrefix} "${cleanName}" ক্যাটাগরি সফলভাবে তৈরি হয়েছে (ছবি সহ, প্যারেন্ট ID: ${data.parent_id || 'নেই'})।`, 'success');
+                } else if (data.status === 'updated') {
                     createdCount++;
                     statCreated.innerText = createdCount;
                     if (badge) {
                         badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300 whitespace-nowrap';
-                        badge.innerText = '🖼️ ছবি যুক্ত হয়েছে';
+                        badge.innerText = '🖼️ তথ্য আপডেট';
                     }
-                    appendCatSetupLog(`🖼️ "${cleanName}" বিদ্যমান ছিল, নতুন ছবি ডাউনলোড করে সেট করা হয়েছে।`, 'success');
+                    appendCatSetupLog(`🖼️ ${levelPrefix} "${cleanName}" বিদ্যমান ছিল, ছবি ও প্যারেন্ট রিলেশন আপডেট হয়েছে।`, 'success');
                 } else {
                     existingCount++;
                     statExisting.innerText = existingCount;
                     if (badge) {
                         badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 whitespace-nowrap';
-                        badge.innerText = '✓ বিদ্যমান ছিল';
+                        badge.innerText = '✓ বিদ্যমান';
                     }
-                    appendCatSetupLog(`✓ "${cleanName}" ইতোমধ্যে সিস্টেমে ছবি সহ বিদ্যমান ছিল।`, 'skip');
+                    appendCatSetupLog(`✓ ${levelPrefix} "${cleanName}" ইতোমধ্যে সিস্টেমে সঠিক তথ্য সহ বিদ্যমান।`, 'skip');
                 }
 
                 // Update thumbnail image if available
                 if (data.image_path && thumb) {
-                    thumb.innerHTML = `<img src="${data.image_path}" class="w-full h-full object-cover" alt="${cleanName}">`;
+                    thumb.innerHTML = `<img src="${data.image_path}" class="w-full h-full object-cover" alt="${escapeHtml(cleanName)}">`;
                 }
 
                 // Dynamically update target category select box on page
-                updateTargetCategoryDropdown(data.id, data.name);
+                updateTargetCategoryDropdown(data.id, data.name, data.level, data.parent_id);
 
             } else {
                 if (badge) {
                     badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 whitespace-nowrap';
                     badge.innerText = 'ত্রুটি';
                 }
-                appendCatSetupLog(`❌ "${cleanName}" প্রক্রিয়া ব্যর্থ: ${data.message || 'অজানা ত্রুটি'}`, 'error');
+                appendCatSetupLog(`❌ ${levelPrefix} "${cleanName}" ব্যর্থ: ${data.message || 'অজানা ত্রুটি'}`, 'error');
             }
         } catch (err) {
             if (badge) {
                 badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 whitespace-nowrap';
                 badge.innerText = 'নেটওয়ার্ক ত্রুটি';
             }
-            appendCatSetupLog(`❌ "${cleanName}" সংযোগ ত্রুটি: ${err.message}`, 'error');
+            appendCatSetupLog(`❌ ${levelPrefix} "${cleanName}" সংযোগ ত্রুটি: ${err.message}`, 'error');
         }
 
         // Update progress bar
-        const pct = Math.round(((i + 1) / presetCategoriesList.length) * 100);
+        const pct = Math.round(((i + 1) / categoryFlatList.length) * 100);
         progressBar.style.width = `${pct}%`;
         progressPct.innerText = `${pct}%`;
     }
@@ -714,19 +1318,16 @@ async function startBatchCategorySetup() {
     isCatSetupRunning = false;
     startBtn.disabled = false;
     startBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-    startBtn.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600');
-    startBtn.classList.add('bg-emerald-600');
-    startBtnText.innerText = 'পুনরায় সব ক্যাটাগরি যাচাই করুন';
-    progressStatus.innerText = '🎉 সব ক্যাটাগরি ছবি সহ সফলভাবে সম্পন্ন হয়েছে!';
-    appendCatSetupLog(`🏁 সকল ক্যাটাগরি প্রক্রিয়া সম্পন্ন! মোট নতুন তৈরি: ${createdCount}টি, বিদ্যমান: ${existingCount}টি।`, 'success');
+    startBtnText.innerText = 'পুনরায় সব ক্যাটাগরি সিঙ্ক করুন';
+    progressStatus.innerText = '🎉 সব ক্যাটাগরি ও সাব-ক্যাটাগরি হায়ারার্কি সহ সফলভাবে ডাটাবেসে সম্পন্ন হয়েছে!';
+    appendCatSetupLog(`🏁 ৩-স্তরের সকল ক্যাটাগরি প্রক্রিয়া সম্পন্ন! মোট নতুন: ${createdCount}টি, বিদ্যমান: ${existingCount}টি।`, 'success');
 }
 
 // Dynamically add category to dropdown if not present
-function updateTargetCategoryDropdown(catId, catName) {
+function updateTargetCategoryDropdown(catId, catName, level = 1, parentId = null) {
     const select = document.getElementById('targetCategoryId');
     if (!select) return;
     
-    // Check if option with this value or name exists
     let exists = false;
     for (let opt of select.options) {
         if (opt.value == catId || opt.text.trim().toLowerCase() === catName.trim().toLowerCase()) {
@@ -735,20 +1336,12 @@ function updateTargetCategoryDropdown(catId, catName) {
         }
     }
     if (!exists) {
+        const indent = level === 1 ? '📁 ' : (level === 2 ? '    ↳ 📂 ' : '        ↳ ↳ 📄 ');
         const newOption = document.createElement('option');
         newOption.value = catId;
-        newOption.text = catName;
+        newOption.text = indent + catName;
         select.appendChild(newOption);
     }
-}
-
-// Quick select popular category chip
-function selectCategory(slug, displayName) {
-    const input = document.getElementById('shwapnoCategoryInput');
-    input.value = slug;
-    currentCategorySlug = slug;
-    currentCategoryName = displayName;
-    fetchCategoryProducts();
 }
 
 // Fetch products from backend proxy
@@ -773,6 +1366,10 @@ async function fetchCategoryProducts() {
             loadedProducts = data.products;
             currentCategoryName = data.category_name || catQuery;
             currentCategorySlug = data.category || catQuery;
+            currentCategoryParentSlug = data.parent_slug || '';
+            currentCategoryParentName = data.parent_name || '';
+            currentCategoryLevel = data.level || 1;
+
             renderProductsTable(loadedProducts);
             document.getElementById('initialStateBox').classList.add('hidden');
             document.getElementById('previewContainer').classList.remove('hidden');
@@ -787,6 +1384,11 @@ async function fetchCategoryProducts() {
         btnText.innerText = 'পণ্য লোড করুন';
     }
 }
+
+// Initialize Explorer on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initCategoryExplorer();
+});
 
 // Render Products Preview Table
 function renderProductsTable(products) {
@@ -960,6 +1562,10 @@ async function importSingleProduct(idx) {
         if (p.old_price) formData.append('old_price', p.old_price);
         if (targetCat === 'auto' || !targetCat) {
             formData.append('category_name', p.category_name || currentCategoryName || '');
+            formData.append('category_slug', currentCategorySlug || '');
+            formData.append('parent_slug', currentCategoryParentSlug || '');
+            formData.append('parent_name', currentCategoryParentName || '');
+            formData.append('level', currentCategoryLevel || 1);
         } else {
             formData.append('category_id', targetCat);
         }
@@ -1163,6 +1769,10 @@ async function startBulkImporting() {
             if (p.old_price) formData.append('old_price', p.old_price);
             if (targetCat === 'auto' || !targetCat) {
                 formData.append('category_name', p.category_name || currentCategoryName || '');
+                formData.append('category_slug', currentCategorySlug || '');
+                formData.append('parent_slug', currentCategoryParentSlug || '');
+                formData.append('parent_name', currentCategoryParentName || '');
+                formData.append('level', currentCategoryLevel || 1);
             } else {
                 formData.append('category_id', targetCat);
             }

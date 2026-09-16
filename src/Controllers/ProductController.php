@@ -1679,13 +1679,13 @@ class ProductController extends Controller {
         $categoryModel = new \Models\Category();
 
         // 1. Check if category already exists (exact name or case-insensitive)
-        $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$categoryName])->fetch();
+        $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$categoryName])->fetch();
 
         // Also check if existing name matches before parenthesis, e.g. "চা ও কফি" from "চা ও কফি (Tea & Coffee)"
         if (!$existing && strpos($categoryName, '(') !== false) {
             $shortName = trim(explode('(', $categoryName)[0]);
             if ($shortName) {
-                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
+                $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
             }
         }
 
@@ -1693,7 +1693,7 @@ class ProductController extends Controller {
         if (!$existing && preg_match('/\((.*?)\)/', $categoryName, $m)) {
             $engPart = trim($m[1]);
             if ($engPart) {
-                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
+                $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
             }
         }
 
@@ -1702,20 +1702,43 @@ class ProductController extends Controller {
             $categoryImagePath = $this->downloadAndSaveCategoryImage($imageUrl, $categoryName);
         }
 
+        // Fallback to fetchShwapnoCategoryImage if no image yet
+        if (!$categoryImagePath) {
+            $remoteCatImg = $this->fetchShwapnoCategoryImage($categoryName);
+            if ($remoteCatImg) {
+                $categoryImagePath = $this->downloadAndSaveCategoryImage($remoteCatImg, $categoryName);
+            }
+        }
+
         if ($existing) {
+            $updates = [];
+            $params = [];
             // If existing category has no image, update with the newly downloaded category image
             if (empty($existing['image_path']) && $categoryImagePath) {
-                $db->query("UPDATE categories SET image_path = ? WHERE id = ?", [$categoryImagePath, $existing['id']]);
+                $updates[] = "image_path = ?";
+                $params[] = $categoryImagePath;
             }
+            // If existing category has no parent_id and parentId is provided, link it
+            if (empty($existing['parent_id']) && $parentId) {
+                $updates[] = "parent_id = ?";
+                $params[] = $parentId;
+            }
+
+            if (!empty($updates)) {
+                $params[] = $existing['id'];
+                $db->query("UPDATE categories SET " . implode(', ', $updates) . " WHERE id = ?", $params);
+            }
+
             return [
                 'id' => (int)$existing['id'],
                 'name' => $existing['name'],
+                'parent_id' => $parentId ?: ($existing['parent_id'] ?? null),
                 'created' => false,
                 'image_path' => $existing['image_path'] ?: $categoryImagePath
             ];
         }
 
-        // 2. Auto-create new category with the image!
+        // 2. Auto-create new category with the image and parent_id!
         $newCatId = $categoryModel->create([
             'name' => $categoryName,
             'parent_id' => $parentId ?: null,
@@ -1737,30 +1760,33 @@ class ProductController extends Controller {
         $categories = $categoryModel->all();
         $vendors = $vendorModel->all();
 
-        // Preset popular Shwapno categories with Bengali names and icons
-        $popularCategories = [
-            ['slug' => 'rice', 'name' => 'চাল ও শস্য (Rice & Grains)', 'icon' => 'leaf-outline'],
-            ['slug' => 'Soybean Oil', 'name' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)', 'icon' => 'water-outline'],
-            ['slug' => 'tea', 'name' => 'চা ও কফি (Tea & Coffee)', 'icon' => 'cafe-outline'],
-            ['slug' => 'dairy', 'name' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)', 'icon' => 'nutrition-outline'],
-            ['slug' => 'fresh-fruits', 'name' => 'তাজা ফলমূল (Fresh Fruits)', 'icon' => 'nutrition-outline'],
-            ['slug' => 'fresh-vegetables', 'name' => 'তাজা শাকসবজি (Fresh Vegetables)', 'icon' => 'flower-outline'],
-            ['slug' => 'spices', 'name' => 'মসলা ও রান্নার উপাদান (Spices)', 'icon' => 'flame-outline'],
-            ['slug' => 'fish', 'name' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)', 'icon' => 'fish-outline'],
-            ['slug' => 'meat', 'name' => 'মাংস ও ডিম (Meat & Eggs)', 'icon' => 'restaurant-outline'],
-            ['slug' => 'beverages', 'name' => 'জুস ও পানীয় (Beverages)', 'icon' => 'wine-outline'],
-            ['slug' => 'snacks', 'name' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)', 'icon' => 'pizza-outline'],
-            ['slug' => 'flours', 'name' => 'আটা, ময়দা ও সুজি (Flour & Suji)', 'icon' => 'color-fill-outline'],
-            ['slug' => 'cleaning', 'name' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)', 'icon' => 'sparkles-outline'],
-            ['slug' => 'baby-food-care', 'name' => 'শিশু খাদ্য ও যত্ন (Baby Care)', 'icon' => 'happy-outline'],
-            ['slug' => 'personal-care', 'name' => 'পার্সোনাল কেয়ার (Personal Care)', 'icon' => 'body-outline']
-        ];
+        // Build category hierarchy for dropdown
+        $categoriesById = [];
+        foreach ($categories as $c) {
+            $categoriesById[$c['id']] = $c;
+            $categoriesById[$c['id']]['children'] = [];
+        }
+        $categoryHierarchy = [];
+        foreach ($categoriesById as $id => &$cat) {
+            if (!empty($cat['parent_id']) && isset($categoriesById[$cat['parent_id']])) {
+                $categoriesById[$cat['parent_id']]['children'][] = &$cat;
+            } else {
+                $categoryHierarchy[] = &$cat;
+            }
+        }
+        unset($cat);
+
+        // Multi-level Shwapno catalog tree & flattened list
+        $categoryTree = \Core\ShwapnoCatalog::getTree();
+        $categoryFlatList = \Core\ShwapnoCatalog::getFlattenedList();
 
         return $this->view('admin/products/shwapno_importer', [
             'title' => 'Shwapno Category Auto-Importer (ক্যাটাগরি অনুযায়ী পণ্য ও ছবি ইমপোর্ট)',
             'categories' => $categories,
-            'vendors' => $vendors,
-            'popularCategories' => $popularCategories
+            'categoryHierarchy' => $categoryHierarchy,
+            'categoryTree' => $categoryTree,
+            'categoryFlatList' => $categoryFlatList,
+            'vendors' => $vendors
         ]);
     }
 
@@ -1779,9 +1805,48 @@ class ProductController extends Controller {
             $catInput = trim($parsed, '/');
         }
 
+        // Look up in ShwapnoCatalog tree
+        $catalogItem = \Core\ShwapnoCatalog::findItem($catInput);
+        $resolvedCategoryName = $catInput;
+        $parentName = null;
+        $parentSlug = null;
+        $categorySlug = $catInput;
+        $level = 1;
+        $searchQuery = null;
+
+        if ($catalogItem) {
+            $resolvedCategoryName = $catalogItem['name'];
+            $parentName = $catalogItem['parent_name'] ?? null;
+            $parentSlug = $catalogItem['parent_slug'] ?? null;
+            $categorySlug = $catalogItem['slug'];
+            $level = $catalogItem['level'] ?? 1;
+            $searchQuery = $catalogItem['search_query'] ?? null;
+        } else {
+            // Preset fallback map
+            $popularCategoryMap = [
+                'rice' => 'চাল ও শস্য (Rice & Grains)',
+                'soybean oil' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)',
+                'tea' => 'চা ও কফি (Tea & Coffee)',
+                'dairy' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)',
+                'fresh-fruits' => 'তাজা ফলমূল (Fresh Fruits)',
+                'fresh-vegetables' => 'তাজা শাকসবজি (Fresh Vegetables)',
+                'spices' => 'মসলা ও রান্নার উপাদান (Spices)',
+                'fish' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)',
+                'meat' => 'মাংস ও ডিম (Meat & Eggs)',
+                'beverages' => 'জুস ও পানীয় (Beverages)',
+                'snacks' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)',
+                'flours' => 'আটা, ময়দা ও সুজি (Flour & Suji)',
+                'cleaning' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)',
+                'baby-food-care' => 'শিশু খাদ্য ও যত্ন (Baby Care)',
+                'personal-care' => 'পার্সোনাল কেয়ার (Personal Care)'
+            ];
+            $lowerKey = strtolower($catInput);
+            $resolvedCategoryName = $popularCategoryMap[$lowerKey] ?? ucwords(str_replace(['-', '_'], ' ', $catInput));
+        }
+
         // 1. Try fetching via category parameter
         $products = [];
-        $url1 = "https://www.shwapno.com/api/search?category=" . urlencode($catInput);
+        $url1 = "https://www.shwapno.com/api/search?category=" . urlencode($categorySlug);
         $ch = curl_init($url1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -1799,10 +1864,10 @@ class ProductController extends Controller {
             }
         }
 
-        // 2. If 0 products, try search query
+        // 2. If 0 products, try search query from catalog or cleaned input
         if (empty($products)) {
-            $cleaned = str_replace('-', ' ', $catInput);
-            $url2 = "https://www.shwapno.com/api/search?q=" . urlencode($cleaned);
+            $queryToUse = $searchQuery ?: str_replace(['-', '_'], ' ', $categorySlug);
+            $url2 = "https://www.shwapno.com/api/search?q=" . urlencode($queryToUse);
             $ch = curl_init($url2);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -1820,28 +1885,6 @@ class ProductController extends Controller {
                 }
             }
         }
-
-        // Map preset categories to friendly Bengali names
-        $popularCategoryMap = [
-            'rice' => 'চাল ও শস্য (Rice & Grains)',
-            'soybean oil' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)',
-            'tea' => 'চা ও কফি (Tea & Coffee)',
-            'dairy' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)',
-            'fresh-fruits' => 'তাজা ফলমূল (Fresh Fruits)',
-            'fresh-vegetables' => 'তাজা শাকসবজি (Fresh Vegetables)',
-            'spices' => 'মসলা ও রান্নার উপাদান (Spices)',
-            'fish' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)',
-            'meat' => 'মাংস ও ডিম (Meat & Eggs)',
-            'beverages' => 'জুস ও পানীয় (Beverages)',
-            'snacks' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)',
-            'flours' => 'আটা, ময়দা ও সুজি (Flour & Suji)',
-            'cleaning' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)',
-            'baby-food-care' => 'শিশু খাদ্য ও যত্ন (Baby Care)',
-            'personal-care' => 'পার্সোনাল কেয়ার (Personal Care)'
-        ];
-
-        $lowerKey = strtolower($catInput);
-        $resolvedCategoryName = $popularCategoryMap[$lowerKey] ?? ucwords(str_replace(['-', '_'], ' ', $catInput));
 
         if (empty($products)) {
             echo json_encode([
@@ -1956,8 +1999,11 @@ class ProductController extends Controller {
 
         echo json_encode([
             'success' => true,
-            'category' => $catInput,
+            'category' => $categorySlug,
             'category_name' => $resolvedCategoryName,
+            'parent_slug' => $parentSlug,
+            'parent_name' => $parentName,
+            'level' => $level,
             'category_image' => $categoryImage,
             'count' => count($parsedItems),
             'products' => $parsedItems
@@ -1997,6 +2043,10 @@ class ProductController extends Controller {
 
         $categoryId = (!empty($_POST['category_id']) && is_numeric($_POST['category_id']) && intval($_POST['category_id']) > 0) ? intval($_POST['category_id']) : null;
         $categoryName = trim($_POST['category_name'] ?? '');
+        $categorySlug = trim($_POST['category_slug'] ?? '');
+        $parentSlug = trim($_POST['parent_slug'] ?? '');
+        $parentName = trim($_POST['parent_name'] ?? '');
+        $level = intval($_POST['level'] ?? 1);
         $vendorId = !empty($_POST['vendor_id']) ? intval($_POST['vendor_id']) : null;
         $stockQty = !empty($_POST['stock_qty']) ? floatval($_POST['stock_qty']) : 50;
         $unitType = $_POST['unit_type'] ?? 'piece';
@@ -2006,9 +2056,21 @@ class ProductController extends Controller {
 
         $createdCategoryInfo = null;
 
-        // Auto-create category with image if category_id is empty/auto and category_name is present
+        // Auto-create category with image and proper parent_id if category_id is empty/auto and category_name is present
         if (empty($categoryId) && !empty($categoryName)) {
-            $catResult = $this->ensureCategoryExistsWithImage($categoryName, $imageUrl);
+            $catItem = \Core\ShwapnoCatalog::findItem($categorySlug ?: $categoryName);
+            if ($catItem) {
+                $parentSlug = $parentSlug ?: ($catItem['parent_slug'] ?? null);
+                $parentName = $parentName ?: ($catItem['parent_name'] ?? null);
+            }
+
+            $parentId = null;
+            if (!empty($parentSlug) || !empty($parentName)) {
+                $dbConn = new \Core\Database(require __DIR__ . '/../../config/database.php');
+                $parentId = $this->resolveOrBuildCategoryHierarchy($dbConn, $parentSlug, $parentName);
+            }
+
+            $catResult = $this->ensureCategoryExistsWithImage($categoryName, $imageUrl, $parentId);
             if ($catResult) {
                 $categoryId = $catResult['id'];
                 if (!empty($catResult['created'])) {
@@ -2125,26 +2187,35 @@ class ProductController extends Controller {
         $slug = trim($slug);
         if (empty($slug)) return null;
 
-        $catSearchMap = [
-            'rice' => 'miniket rice',
-            'soybean oil' => 'rupchanda soybean oil',
-            'tea' => 'taaza tea',
-            'dairy' => 'diploma milk powder',
-            'fresh-fruits' => 'apple fuji',
-            'fresh-vegetables' => 'fresh tomato',
-            'spices' => 'radhuni cumin',
-            'fish' => 'rui fish',
-            'meat' => 'beef premium',
-            'beverages' => 'mango juice',
-            'snacks' => 'digestive biscuit',
-            'flours' => 'pusti atta',
-            'cleaning' => 'wheel detergent',
-            'baby-food-care' => 'cerelac baby food',
-            'personal-care' => 'lux soap'
-        ];
+        $searchQuery = null;
 
-        $lowerSlug = strtolower($slug);
-        $searchQuery = $catSearchMap[$lowerSlug] ?? $catSearchMap[$slug] ?? str_replace(['-', '_'], ' ', $slug);
+        // 1. Look up in ShwapnoCatalog tree for curated search query
+        $catalogItem = \Core\ShwapnoCatalog::findItem($slug);
+        if ($catalogItem && !empty($catalogItem['search_query'])) {
+            $searchQuery = $catalogItem['search_query'];
+        }
+
+        if (!$searchQuery) {
+            $catSearchMap = [
+                'rice' => 'miniket rice',
+                'soybean oil' => 'rupchanda soybean oil',
+                'tea' => 'taaza tea',
+                'dairy' => 'diploma milk powder',
+                'fresh-fruits' => 'apple fuji',
+                'fresh-vegetables' => 'fresh tomato',
+                'spices' => 'radhuni cumin',
+                'fish' => 'rui fish',
+                'meat' => 'beef premium',
+                'beverages' => 'mango juice',
+                'snacks' => 'digestive biscuit',
+                'flours' => 'pusti atta',
+                'cleaning' => 'wheel detergent',
+                'baby-food-care' => 'cerelac baby food',
+                'personal-care' => 'lux soap'
+            ];
+            $lowerSlug = strtolower($slug);
+            $searchQuery = $catSearchMap[$lowerSlug] ?? $catSearchMap[$slug] ?? str_replace(['-', '_'], ' ', $slug);
+        }
 
         // Search Shwapno API with representative query
         $url = "https://www.shwapno.com/api/search?q=" . urlencode($searchQuery);
@@ -2171,10 +2242,105 @@ class ProductController extends Controller {
         return null;
     }
 
+    /**
+     * Helper to find existing category in DB by full name or prefix/english inside parens
+     */
+    private function findCategoryInDb($db, $name) {
+        $clean = trim($name);
+        if (empty($clean)) return null;
+
+        $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$clean])->fetch();
+        if ($existing) return $existing;
+
+        if (strpos($clean, '(') !== false) {
+            $shortName = trim(explode('(', $clean)[0]);
+            if ($shortName) {
+                $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
+                if ($existing) return $existing;
+            }
+        }
+
+        if (preg_match('/\((.*?)\)/', $clean, $m)) {
+            $engPart = trim($m[1]);
+            if ($engPart) {
+                $existing = $db->query("SELECT id, name, parent_id, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
+                if ($existing) return $existing;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Recursively resolve or create parent category in database
+     */
+    private function resolveOrBuildCategoryHierarchy($db, $parentSlug, $parentName = null) {
+        if (empty($parentSlug) && empty($parentName)) return null;
+
+        // 1. Check if parent already in DB
+        if (!empty($parentName)) {
+            $found = $this->findCategoryInDb($db, $parentName);
+            if ($found) return (int)$found['id'];
+        }
+        if (!empty($parentSlug)) {
+            $found = $this->findCategoryInDb($db, $parentSlug);
+            if ($found) return (int)$found['id'];
+        }
+
+        // 2. Look up parent in ShwapnoCatalog
+        $parentCatalog = \Core\ShwapnoCatalog::findItem($parentSlug ?: $parentName);
+        if (!$parentCatalog) {
+            $nameToUse = $parentName ?: ucwords(str_replace(['-', '_'], ' ', $parentSlug));
+            $catModel = new \Models\Category();
+            return (int)$catModel->create([
+                'name' => $nameToUse,
+                'parent_id' => null,
+                'description' => $nameToUse . ' - স্বয়ংক্রিয়ভাবে তৈরি ক্যাটাগরি',
+                'image_path' => null
+            ]);
+        }
+
+        // 3. If parent has its own parent (e.g. grandparent for leaf)
+        $grandparentId = null;
+        if (!empty($parentCatalog['parent_slug']) || !empty($parentCatalog['parent_name'])) {
+            $grandparentId = $this->resolveOrBuildCategoryHierarchy($db, $parentCatalog['parent_slug'], $parentCatalog['parent_name']);
+        }
+
+        // 4. Download representative image for parent
+        $parentImg = $this->fetchShwapnoCategoryImage($parentCatalog['slug']);
+        $savedImg = null;
+        if ($parentImg) {
+            $savedImg = $this->downloadAndSaveCategoryImage($parentImg, $parentCatalog['name']);
+        }
+
+        // 5. Create parent in DB
+        $catModel = new \Models\Category();
+        return (int)$catModel->create([
+            'name' => $parentCatalog['name'],
+            'parent_id' => $grandparentId,
+            'description' => $parentCatalog['name'] . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
+            'image_path' => $savedImg
+        ]);
+    }
+
     public function shwapnoSetupCategory() {
         header('Content-Type: application/json; charset=utf-8');
         $slug = trim($_POST['slug'] ?? '');
         $name = trim($_POST['name'] ?? '');
+        $parentSlug = trim($_POST['parent_slug'] ?? '');
+        $parentName = trim($_POST['parent_name'] ?? '');
+        $level = intval($_POST['level'] ?? 1);
+
+        // If name is empty but slug is provided, find in catalog
+        if (empty($name) && !empty($slug)) {
+            $catItem = \Core\ShwapnoCatalog::findItem($slug);
+            if ($catItem) {
+                $name = $catItem['name'];
+                $parentSlug = $parentSlug ?: ($catItem['parent_slug'] ?? '');
+                $parentName = $parentName ?: ($catItem['parent_name'] ?? '');
+                $level = $catItem['level'] ?? $level;
+            }
+        }
 
         if (empty($name)) {
             echo json_encode(['success' => false, 'message' => 'ক্যাটাগরির নাম প্রদান করা হয়নি!'], JSON_UNESCAPED_UNICODE);
@@ -2196,33 +2362,14 @@ class ProductController extends Controller {
 
         $categoryModel = new \Models\Category();
 
-        // 1. Check if category already exists (exact name or case-insensitive)
-        $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$name])->fetch();
-        if (!$existing && strpos($name, '(') !== false) {
-            $shortName = trim(explode('(', $name)[0]);
-            if ($shortName) {
-                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
-            }
-        }
-        if (!$existing && preg_match('/\((.*?)\)/', $name, $m)) {
-            $engPart = trim($m[1]);
-            if ($engPart) {
-                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
-            }
+        // 1. Resolve parent_id if parent is specified
+        $parentId = null;
+        if (!empty($parentName) || !empty($parentSlug)) {
+            $parentId = $this->resolveOrBuildCategoryHierarchy($db, $parentSlug, $parentName);
         }
 
-        // If category exists and already has an image
-        if ($existing && !empty($existing['image_path'])) {
-            echo json_encode([
-                'success' => true,
-                'status' => 'already_exists',
-                'id' => (int)$existing['id'],
-                'name' => $existing['name'],
-                'image_path' => $existing['image_path'],
-                'message' => 'ক্যাটাগরি ছবি সহ ইতোমধ্যে ডাটাবেসে বিদ্যমান'
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
+        // 2. Check if category already exists (exact name or case-insensitive)
+        $existing = $this->findCategoryInDb($db, $name);
 
         // Fetch category image from Shwapno
         $remoteImageUrl = $this->fetchShwapnoCategoryImage($slug);
@@ -2232,25 +2379,44 @@ class ProductController extends Controller {
         }
 
         if ($existing) {
-            // Update existing category with image
-            if ($savedImagePath) {
-                $db->query("UPDATE categories SET image_path = ? WHERE id = ?", [$savedImagePath, $existing['id']]);
+            $updates = [];
+            $params = [];
+
+            // Update image if missing and newly downloaded
+            if (empty($existing['image_path']) && $savedImagePath) {
+                $updates[] = "image_path = ?";
+                $params[] = $savedImagePath;
             }
+
+            // Update parent_id if currently null and we have a resolved parent
+            if (empty($existing['parent_id']) && $parentId) {
+                $updates[] = "parent_id = ?";
+                $params[] = $parentId;
+            }
+
+            if (!empty($updates)) {
+                $params[] = $existing['id'];
+                $db->query("UPDATE categories SET " . implode(', ', $updates) . " WHERE id = ?", $params);
+            }
+
             echo json_encode([
                 'success' => true,
-                'status' => 'updated_image',
+                'status' => !empty($updates) ? 'updated' : 'already_exists',
                 'id' => (int)$existing['id'],
                 'name' => $existing['name'],
+                'parent_id' => $parentId ?: $existing['parent_id'],
+                'parent_name' => $parentName,
+                'level' => $level,
                 'image_path' => $savedImagePath ?: $existing['image_path'],
-                'message' => 'বিদ্যমান ক্যাটাগরির ছবি আপডেট করা হয়েছে'
+                'message' => !empty($updates) ? 'ক্যাটাগরির তথ্য ও হায়ারার্কি আপডেট করা হয়েছে' : 'ক্যাটাগরি ইতোমধ্যে ডাটাবেসে বিদ্যমান'
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }
 
-        // Auto-create new category with image
+        // Auto-create new category with image and parent_id
         $newId = $categoryModel->create([
             'name' => $name,
-            'parent_id' => null,
+            'parent_id' => $parentId ?: null,
             'description' => $name . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
             'image_path' => $savedImagePath
         ]);
@@ -2260,8 +2426,11 @@ class ProductController extends Controller {
             'status' => 'created',
             'id' => (int)$newId,
             'name' => $name,
+            'parent_id' => $parentId ?: null,
+            'parent_name' => $parentName,
+            'level' => $level,
             'image_path' => $savedImagePath,
-            'message' => 'নতুন ক্যাটাগরি ছবি সহ সফলভাবে তৈরি হয়েছে'
+            'message' => 'নতুন ক্যাটাগরি প্যারেন্ট সহ সফলভাবে তৈরি হয়েছে'
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -2269,54 +2438,72 @@ class ProductController extends Controller {
     public function shwapnoSetupAllCategories() {
         header('Content-Type: application/json; charset=utf-8');
 
-        $popularCategories = [
-            ['slug' => 'rice', 'name' => 'চাল ও শস্য (Rice & Grains)'],
-            ['slug' => 'Soybean Oil', 'name' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)'],
-            ['slug' => 'tea', 'name' => 'চা ও কফি (Tea & Coffee)'],
-            ['slug' => 'dairy', 'name' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)'],
-            ['slug' => 'fresh-fruits', 'name' => 'তাজা ফলমূল (Fresh Fruits)'],
-            ['slug' => 'fresh-vegetables', 'name' => 'তাজা শাকসবজি (Fresh Vegetables)'],
-            ['slug' => 'spices', 'name' => 'মসলা ও রান্নার উপাদান (Spices)'],
-            ['slug' => 'fish', 'name' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)'],
-            ['slug' => 'meat', 'name' => 'মাংস ও ডিম (Meat & Eggs)'],
-            ['slug' => 'beverages', 'name' => 'জুস ও পানীয় (Beverages)'],
-            ['slug' => 'snacks', 'name' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)'],
-            ['slug' => 'flours', 'name' => 'আটা, ময়দা ও সুজি (Flour & Suji)'],
-            ['slug' => 'cleaning', 'name' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)'],
-            ['slug' => 'baby-food-care', 'name' => 'শিশু খাদ্য ও যত্ন (Baby Care)'],
-            ['slug' => 'personal-care', 'name' => 'পার্সোনাল কেয়ার (Personal Care)']
-        ];
+        $catalogFlat = \Core\ShwapnoCatalog::getFlattenedList();
+        $db = null;
+        try {
+            $cfg = require __DIR__ . '/../../config/database.php';
+            $db = new \Core\Database($cfg);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'ডাটাবেস কানেকশন ব্যর্থ: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
 
+        $categoryModel = new \Models\Category();
         $results = [];
         $createdCount = 0;
         $existingCount = 0;
 
-        foreach ($popularCategories as $cat) {
-            $catRes = $this->ensureCategoryExistsWithImage($cat['name']);
-            if (!$catRes || empty($catRes['image_path'])) {
-                $imgUrl = $this->fetchShwapnoCategoryImage($cat['slug']);
-                if ($imgUrl) {
-                    $catRes = $this->ensureCategoryExistsWithImage($cat['name'], $imgUrl);
-                }
+        foreach ($catalogFlat as $cat) {
+            $parentId = null;
+            if (!empty($cat['parent_slug']) || !empty($cat['parent_name'])) {
+                $parentId = $this->resolveOrBuildCategoryHierarchy($db, $cat['parent_slug'], $cat['parent_name']);
             }
-            if ($catRes) {
-                if (!empty($catRes['created'])) {
-                    $createdCount++;
-                } else {
-                    $existingCount++;
+
+            $existing = $this->findCategoryInDb($db, $cat['name']);
+            if ($existing) {
+                $existingCount++;
+                if (empty($existing['parent_id']) && $parentId) {
+                    $db->query("UPDATE categories SET parent_id = ? WHERE id = ?", [$parentId, $existing['id']]);
                 }
-                $results[] = $catRes;
+                $results[] = [
+                    'id' => (int)$existing['id'],
+                    'name' => $existing['name'],
+                    'parent_id' => $parentId ?: $existing['parent_id'],
+                    'level' => $cat['level'],
+                    'created' => false,
+                    'image_path' => $existing['image_path']
+                ];
+            } else {
+                $imgUrl = $this->fetchShwapnoCategoryImage($cat['slug']);
+                $savedImg = null;
+                if ($imgUrl) {
+                    $savedImg = $this->downloadAndSaveCategoryImage($imgUrl, $cat['name']);
+                }
+                $newId = $categoryModel->create([
+                    'name' => $cat['name'],
+                    'parent_id' => $parentId,
+                    'description' => $cat['name'] . ' - Shwapno থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত ক্যাটাগরি',
+                    'image_path' => $savedImg
+                ]);
+                $createdCount++;
+                $results[] = [
+                    'id' => (int)$newId,
+                    'name' => $cat['name'],
+                    'parent_id' => $parentId,
+                    'level' => $cat['level'],
+                    'created' => true,
+                    'image_path' => $savedImg
+                ];
             }
         }
 
-        $categoryModel = new \Models\Category();
         $allCategories = $categoryModel->all();
 
         echo json_encode([
             'success' => true,
             'created_count' => $createdCount,
             'existing_count' => $existingCount,
-            'total_processed' => count($popularCategories),
+            'total_processed' => count($catalogFlat),
             'results' => $results,
             'all_categories' => $allCategories,
             'message' => "মোট {$createdCount}টি নতুন ক্যাটাগরি তৈরি ও {$existingCount}টি ক্যাটাগরি সফলভাবে যাচাই করা হয়েছে।"
