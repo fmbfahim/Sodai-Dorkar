@@ -55,6 +55,11 @@ class Product {
             }
         }
 
+        if (!empty($filters['availability_status'])) {
+            $sql .= " AND products.availability_status = ?";
+            $params[] = $filters['availability_status'];
+        }
+
         $sql .= " ORDER BY products.id DESC";
         return $this->db->query($sql, $params)->fetchAll();
     }

@@ -23,7 +23,8 @@ class ProductController extends Controller {
             'search' => trim($_GET['search'] ?? ''),
             'category_id' => $_GET['category_id'] ?? '',
             'vendor_id' => $_GET['vendor_id'] ?? '',
-            'stock_status' => $_GET['stock_status'] ?? ''
+            'stock_status' => $_GET['stock_status'] ?? '',
+            'availability_status' => $_GET['availability_status'] ?? ''
         ];
 
         $products = $productModel->all($filters);
@@ -1025,6 +1026,101 @@ class ProductController extends Controller {
         
         header('Location: /sodai-dorkar/public/admin/products/availability');
         exit;
+    }
+
+    public function bulkStatusUpdate() {
+        if (!\Core\CSRF::validate($_POST['csrf_token'] ?? '')) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'CSRF security token invalid!']);
+                exit;
+            }
+            $_SESSION['error'] = 'নিরাপত্তা ত্রুটি! আবার চেষ্টা করুন।';
+            header('Location: /sodai-dorkar/public/admin/products');
+            exit;
+        }
+
+        $productIds = $_POST['product_ids'] ?? [];
+        if (is_string($productIds)) {
+            $productIds = explode(',', $productIds);
+        }
+        $productIds = array_filter(array_map('intval', (array)$productIds));
+
+        if (empty($productIds)) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'কোনো পণ্য সিলেক্ট করা হয়নি!']);
+                exit;
+            }
+            $_SESSION['error'] = 'কোনো পণ্য সিলেক্ট করা হয়নি!';
+            header('Location: /sodai-dorkar/public/admin/products');
+            exit;
+        }
+
+        $availabilityStatus = trim($_POST['availability_status'] ?? '');
+        $isVerified = isset($_POST['is_verified']) && $_POST['is_verified'] !== '' && $_POST['is_verified'] !== 'no_change' ? intval($_POST['is_verified']) : null;
+
+        $updates = [];
+        $params = [];
+
+        $validStatuses = ['in_stock', 'out_of_stock', 'pending'];
+        if (in_array($availabilityStatus, $validStatuses)) {
+            $updates[] = "availability_status = :avail_status";
+            $params['avail_status'] = $availabilityStatus;
+        }
+
+        if ($isVerified !== null && in_array($isVerified, [0, 1])) {
+            $updates[] = "is_verified = :is_verified";
+            $params['is_verified'] = $isVerified;
+        }
+
+        if (empty($updates)) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'কোনো স্ট্যাটাস নির্বাচন করা হয়নি!']);
+                exit;
+            }
+            $_SESSION['error'] = 'কোনো স্ট্যাটাস পরিবর্তন নির্বাচন করা হয়নি!';
+            header('Location: /sodai-dorkar/public/admin/products');
+            exit;
+        }
+
+        $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
+        $idPlaceholders = implode(',', array_map('intval', $productIds));
+        $updateSql = "UPDATE products SET " . implode(', ', $updates) . " WHERE id IN ($idPlaceholders)";
+        $db->query($updateSql, $params);
+
+        $count = count($productIds);
+        $statusLabels = [
+            'in_stock' => 'ইন স্টক (In Stock)',
+            'out_of_stock' => 'স্টক শেষ (Out of Stock)',
+            'pending' => 'পেন্ডিং (Pending)'
+        ];
+        $updatedText = isset($statusLabels[$availabilityStatus]) ? $statusLabels[$availabilityStatus] : 'স্ট্যাটাস';
+        $msg = "সফলভাবে {$count} টি পণ্যের স্ট্যাটাস [{$updatedText}] এ আপডেট করা হয়েছে!";
+
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => $msg,
+                'count' => $count,
+                'product_ids' => $productIds,
+                'availability_status' => $availabilityStatus,
+                'is_verified' => $isVerified
+            ]);
+            exit;
+        }
+
+        $_SESSION['success'] = $msg;
+        header('Location: /sodai-dorkar/public/admin/products');
+        exit;
+    }
+
+    private function isAjaxRequest() {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+            || (isset($_POST['is_ajax']) && $_POST['is_ajax'] == '1');
     }
     public function procurementIndex() {
         $db = new \Core\Database(require __DIR__ . '/../../config/database.php');

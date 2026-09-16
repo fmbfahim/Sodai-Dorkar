@@ -251,7 +251,7 @@ foreach ($categories as $c) {
                 </div>
 
                 <!-- Category Filter -->
-                <div class="w-full md:w-48">
+                <div class="w-full md:w-44">
                     <select name="category_id" id="categoryFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
                         <option value="">সব ক্যাটাগরি</option>
                         <?php foreach ($categories as $cat): ?>
@@ -263,12 +263,22 @@ foreach ($categories as $c) {
                 </div>
 
                 <!-- Stock Status Filter -->
-                <div class="w-full md:w-40">
+                <div class="w-full md:w-36">
                     <select name="stock_status" id="stockStatusFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
                         <option value="">সকল স্টক</option>
                         <option value="in_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'in_stock') ? 'selected' : '' ?>>স্টক আছে (&ge;10)</option>
                         <option value="low_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'low_stock') ? 'selected' : '' ?>>কম স্টক (&lt;10)</option>
                         <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (=0)</option>
+                    </select>
+                </div>
+
+                <!-- Availability Status Filter -->
+                <div class="w-full md:w-36">
+                    <select name="availability_status" id="availabilityStatusFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                        <option value="">সকল প্রাপ্যতা</option>
+                        <option value="in_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'in_stock') ? 'selected' : '' ?>>🟢 ইন স্টক</option>
+                        <option value="out_of_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'out_of_stock') ? 'selected' : '' ?>>🔴 স্টক শেষ</option>
+                        <option value="pending" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'pending') ? 'selected' : '' ?>>⏳ পেন্ডিং</option>
                     </select>
                 </div>
 
@@ -278,7 +288,7 @@ foreach ($categories as $c) {
                         <ion-icon name="funnel-outline" class="text-sm"></ion-icon>
                         ফিল্টার
                     </button>
-                    <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['stock_status'])): ?>
+                    <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['stock_status']) || !empty($filters['availability_status'])): ?>
                         <a href="<?= $base ?>/admin/products" class="w-full md:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
                             <ion-icon name="close-circle-outline" class="text-sm"></ion-icon>
                             রিসেট
@@ -289,37 +299,50 @@ foreach ($categories as $c) {
 
             <div class="flex items-center justify-between text-[11px] text-secondary-400 mt-2.5 pt-2 border-t border-secondary-100">
                 <span id="productCounterText">মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold"><?= count($products) ?></strong> টি</span>
-                <span class="text-[10px] text-secondary-400">টাইপ করে তাৎক্ষণিক বা ফিল্টারে ক্লিক করুন</span>
+                <span class="text-[10px] text-secondary-400">চেকবক্স সিলেক্ট করে একসাথে সব পণ্যের স্ট্যাটাস আপডেট করুন</span>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-100 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-secondary-600 min-w-[820px]">
+                <table class="w-full text-left text-sm text-secondary-600 min-w-[860px]">
                     <thead class="bg-secondary-50/80 text-secondary-500 border-b border-secondary-200">
                         <tr>
-                            <th class="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">পণ্য</th>
+                            <th class="w-12 px-4 py-3.5 text-center">
+                                <input type="checkbox" id="selectAllProducts" class="w-4 h-4 rounded text-primary-600 border-secondary-300 focus:ring-primary-500 cursor-pointer" title="সব পণ্য সিলেক্ট / আনসিলেক্ট করুন">
+                            </th>
+                            <th class="px-4 py-3.5 font-bold text-xs uppercase tracking-wider">পণ্য</th>
                             <th class="px-4 py-3.5 font-bold text-xs uppercase tracking-wider">ক্যাটাগরি ও SKU</th>
+                            <th class="px-3 py-3.5 font-bold text-xs uppercase tracking-wider text-center">স্ট্যাটাস</th>
                             <th class="px-4 py-3.5 font-bold text-xs uppercase tracking-wider text-right">ক্রয় / বিক্রয় মূল্য</th>
-                            <th class="px-5 py-3.5 font-bold text-xs uppercase tracking-wider text-center">মজুদ (Stock)</th>
-                            <th class="px-5 py-3.5 font-bold text-xs uppercase tracking-wider text-right">অ্যাকশন</th>
+                            <th class="px-4 py-3.5 font-bold text-xs uppercase tracking-wider text-center">মজুদ (Stock)</th>
+                            <th class="px-4 py-3.5 font-bold text-xs uppercase tracking-wider text-right">অ্যাকশন</th>
                         </tr>
                     </thead>
                     <tbody id="mainProductsTbody" class="divide-y divide-secondary-100">
                         <?php if (empty($products)): ?>
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-secondary-400">
+                                <td colspan="7" class="px-6 py-12 text-center text-secondary-400">
                                     কোনো পণ্য পাওয়া যায়নি। উপরের ফর্ম বা বাল্ক ক্রিয়েটর ব্যবহার করে পণ্য যোগ করুন।
                                 </td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($products as $p): ?>
                                 <tr class="hover:bg-secondary-50/60 transition-colors group main-product-row"
+                                    id="product-row-<?= $p['id'] ?>"
+                                    data-product-id="<?= $p['id'] ?>"
                                     data-name="<?= strtolower(htmlspecialchars($p['name'])) ?>"
                                     data-sku="<?= strtolower(htmlspecialchars($p['sku'] ?? '')) ?>"
                                     data-vendor="<?= strtolower(htmlspecialchars($p['vendor_name'] ?? '')) ?>"
                                     data-category="<?= strtolower(htmlspecialchars($p['category_name'] ?? '')) ?>">
-                                    <td class="px-5 py-3.5">
+                                    <td class="w-12 px-4 py-3.5 text-center">
+                                        <input type="checkbox" 
+                                               class="product-bulk-cb w-4 h-4 rounded text-primary-600 border-secondary-300 focus:ring-primary-500 cursor-pointer" 
+                                               value="<?= $p['id'] ?>" 
+                                               data-product-id="<?= $p['id'] ?>"
+                                               data-name="<?= htmlspecialchars($p['name']) ?>">
+                                    </td>
+                                    <td class="px-4 py-3.5">
                                         <div class="flex items-center gap-3">
                                             <div class="w-11 h-11 rounded-xl bg-secondary-100 border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                                 <?php 
@@ -351,6 +374,26 @@ foreach ($categories as $c) {
                                             <?php echo htmlspecialchars($p['sku'] ?? 'N/A'); ?>
                                         </div>
                                     </td>
+                                    <td class="px-3 py-3.5 text-center product-status-col" data-product-id="<?= $p['id'] ?>">
+                                        <div class="flex flex-col items-center gap-1">
+                                            <?php
+                                            $avail = $p['availability_status'] ?? 'pending';
+                                            if ($avail === 'in_stock') {
+                                                echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 ইন স্টক</span>';
+                                            } elseif ($avail === 'out_of_stock') {
+                                                echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">🔴 স্টক শেষ</span>';
+                                            } else {
+                                                echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ পেন্ডিং</span>';
+                                            }
+
+                                            if (!empty($p['is_verified'])) {
+                                                echo '<span class="status-badge-verify text-[10px] text-emerald-600 font-bold flex items-center gap-0.5" title="যাচাইকৃত">✓ যাচাইকৃত</span>';
+                                            } else {
+                                                echo '<span class="status-badge-verify text-[10px] text-secondary-400 font-normal flex items-center gap-0.5" title="অযাচাইকৃত">⏳ অযাচাইকৃত</span>';
+                                            }
+                                            ?>
+                                        </div>
+                                    </td>
                                     <td class="px-4 py-3.5 text-right">
                                         <div class="text-secondary-900 font-bold text-sm flex items-center justify-end gap-1.5 flex-wrap">
                                             <?php if (\Models\Product::hasDiscount($p)): ?>
@@ -368,7 +411,7 @@ foreach ($categories as $c) {
                                             Cost: ৳ <?php echo number_format($p['buy_price']); ?>
                                         </div>
                                     </td>
-                                    <td class="px-5 py-3.5 text-center">
+                                    <td class="px-4 py-3.5 text-center">
                                         <?php 
                                             $stockVal = floatval($p['stock_qty']);
                                             $stockColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
@@ -379,14 +422,14 @@ foreach ($categories as $c) {
                                             <?php echo \Models\Product::formatStockDisplay($p); ?>
                                         </span>
                                     </td>
-                                    <td class="px-5 py-3.5 text-right">
+                                    <td class="px-4 py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1.5">
                                             <a href="<?= $base ?>/admin/products/image-finder?search=<?= urlencode($p['name']) ?>" 
-                                               class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="ওয়েব থেকে ছবি খুঁজুন (Auto Image Finder)">
+                                                class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="ওয়েব থেকে ছবি খুঁজুন (Auto Image Finder)">
                                                 <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
                                             </a>
                                             <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
-                                               class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
+                                                class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
                                                 <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                             </a>
                                             <form action="/sodai-dorkar/public/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
@@ -405,9 +448,55 @@ foreach ($categories as $c) {
                 </table>
             </div>
         </div>
-    </div>
-</div>
 
+        <!-- FLOATING BULK STATUS UPDATE BAR -->
+        <div id="bulkActionBar" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-secondary-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl px-5 py-3.5 border border-secondary-700/60 hidden transition-all duration-300 transform translate-y-8 opacity-0 max-w-4xl w-[94%] flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Counter & Select All -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-primary-500/20 text-primary-400 flex items-center justify-center font-black text-sm border border-primary-500/30" id="bulkCounterDisplay">0</span>
+                    <span class="text-xs font-semibold text-secondary-200"><span id="bulkCounterText">টি পণ্য সিলেক্টেড</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="selectAllTableProducts(true)" class="text-[11px] text-primary-400 hover:text-white underline font-semibold transition-colors">
+                        সবগুলো সিলেক্ট (<?= count($products) ?>)
+                    </button>
+                    <span class="text-secondary-600 text-xs">|</span>
+                    <button type="button" onclick="selectAllTableProducts(false)" class="text-[11px] text-secondary-400 hover:text-secondary-200 transition-colors">
+                        ক্লিয়ার
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Selectors & Submit -->
+            <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+                <!-- Status Dropdown -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-[11px] text-secondary-300 font-bold uppercase hidden sm:inline">স্ট্যাটাস:</label>
+                    <select id="bulkAvailabilitySelect" class="bg-secondary-800 text-white text-xs rounded-xl px-3 py-2 border border-secondary-600 focus:ring-2 focus:ring-primary-500 font-medium">
+                        <option value="in_stock">🟢 ইন স্টক (In Stock)</option>
+                        <option value="out_of_stock">🔴 স্টক শেষ (Out of Stock)</option>
+                        <option value="pending">⏳ পেন্ডিং (Pending)</option>
+                    </select>
+                </div>
+
+                <!-- Verification Dropdown -->
+                <div class="flex items-center gap-1.5">
+                    <select id="bulkVerificationSelect" class="bg-secondary-800 text-secondary-200 text-xs rounded-xl px-3 py-2 border border-secondary-600 focus:ring-2 focus:ring-primary-500 font-medium">
+                        <option value="no_change">ভেরিফিকেশন: অপরিবর্তিত</option>
+                        <option value="1">✓ যাচাইকৃত (Verified)</option>
+                        <option value="0">⏳ অযাচাইকৃত (Unverified)</option>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" id="btnSubmitBulkStatus" onclick="submitBulkStatusUpdate()" class="bg-primary-600 hover:bg-primary-500 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer">
+                    <ion-icon name="checkmark-done-outline" class="text-base"></ion-icon>
+                    <span id="bulkSubmitBtnText">স্ট্যাটাস আপডেট করুন</span>
+                </button>
+            </div>
+        </div>
+    </div>
 <!-- UPGRADED BULK PRODUCT CREATOR MODAL WITH SEARCHABLE CATEGORIES & IMAGES -->
 <div id="productModal" class="fixed inset-0 z-50 flex items-center justify-center bg-secondary-900/60 backdrop-blur-sm hidden">
     <!-- Modal Container -->
@@ -1072,6 +1161,210 @@ document.addEventListener('DOMContentLoaded', function() {
                 counterText.innerHTML = `মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold">${visibleCount}</strong> টি`;
             }
         });
+    }
+
+    // --- BULK PRODUCT SELECTION & STATUS UPDATE LOGIC ---
+    const selectAllCb = document.getElementById('selectAllProducts');
+    const bulkBar = document.getElementById('bulkActionBar');
+    const bulkCountDisplay = document.getElementById('bulkCounterDisplay');
+    const bulkCountText = document.getElementById('bulkCounterText');
+
+    function getSelectedProductCheckboxes() {
+        return Array.from(document.querySelectorAll('.product-bulk-cb:checked'));
+    }
+
+    function getAllProductCheckboxes() {
+        return Array.from(document.querySelectorAll('.product-bulk-cb'));
+    }
+
+    window.updateBulkBarState = function() {
+        const selected = getSelectedProductCheckboxes();
+        const totalSelected = selected.length;
+
+        if (bulkCountDisplay) bulkCountDisplay.textContent = totalSelected;
+        if (bulkCountText) bulkCountText.textContent = `${totalSelected} টি পণ্য সিলেক্টেড`;
+
+        if (totalSelected > 0) {
+            bulkBar.classList.remove('hidden');
+            setTimeout(() => {
+                bulkBar.classList.remove('translate-y-8', 'opacity-0');
+            }, 10);
+        } else {
+            bulkBar.classList.add('translate-y-8', 'opacity-0');
+            setTimeout(() => {
+                if (getSelectedProductCheckboxes().length === 0) {
+                    bulkBar.classList.add('hidden');
+                }
+            }, 300);
+        }
+
+        // Update master checkbox state
+        const all = getAllProductCheckboxes();
+        if (selectAllCb) {
+            if (totalSelected === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            } else if (totalSelected === all.length) {
+                selectAllCb.checked = true;
+                selectAllCb.indeterminate = false;
+            } else {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = true;
+            }
+        }
+    };
+
+    window.selectAllTableProducts = function(check) {
+        const cbs = getAllProductCheckboxes();
+        cbs.forEach(cb => {
+            const row = cb.closest('tr');
+            // Only select visible rows if filtered
+            if (!check || !row || row.style.display !== 'none') {
+                cb.checked = check;
+                if (row) {
+                    if (check) row.classList.add('bg-primary-50/50');
+                    else row.classList.remove('bg-primary-50/50');
+                }
+            }
+        });
+        updateBulkBarState();
+    };
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function() {
+            selectAllTableProducts(this.checked);
+        });
+    }
+
+    if (tbody) {
+        tbody.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('product-bulk-cb')) {
+                const row = e.target.closest('tr');
+                if (row) {
+                    if (e.target.checked) row.classList.add('bg-primary-50/50');
+                    else row.classList.remove('bg-primary-50/50');
+                }
+                updateBulkBarState();
+            }
+        });
+    }
+
+    // Ajax Bulk Status Submit
+    window.submitBulkStatusUpdate = function() {
+        const selectedCbs = getSelectedProductCheckboxes();
+        if (selectedCbs.length === 0) {
+            alert('অনুগ্রহ করে অন্তত একটি পণ্য সিলেক্ট করুন!');
+            return;
+        }
+
+        const productIds = selectedCbs.map(cb => cb.value);
+        const availStatus = document.getElementById('bulkAvailabilitySelect').value;
+        const verifyStatus = document.getElementById('bulkVerificationSelect').value;
+        const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+        const btn = document.getElementById('btnSubmitBulkStatus');
+        const btnText = document.getElementById('bulkSubmitBtnText');
+
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        const originalText = btnText.innerHTML;
+        btnText.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> আপডেট হচ্ছে...';
+
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('is_ajax', '1');
+        formData.append('availability_status', availStatus);
+        formData.append('is_verified', verifyStatus);
+        productIds.forEach(id => formData.append('product_ids[]', id));
+
+        fetch('<?= $base ?>/admin/products/bulk-status-update', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            btnText.innerHTML = originalText;
+
+            if (data.success) {
+                // Dynamically update status badges in the table rows
+                productIds.forEach(id => {
+                    const statusCell = document.querySelector(`.product-status-col[data-product-id="${id}"]`);
+                    if (statusCell) {
+                        let availBadgeHtml = '';
+                        if (availStatus === 'in_stock') {
+                            availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 ইন স্টক</span>';
+                        } else if (availStatus === 'out_of_stock') {
+                            availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">🔴 স্টক শেষ</span>';
+                        } else {
+                            availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ পেন্ডিং</span>';
+                        }
+
+                        let verifyBadgeHtml = '';
+                        if (verifyStatus === '1') {
+                            verifyBadgeHtml = '<span class="status-badge-verify text-[10px] text-emerald-600 font-bold flex items-center gap-0.5" title="যাচাইকৃত">✓ যাচাইকৃত</span>';
+                        } else if (verifyStatus === '0') {
+                            verifyBadgeHtml = '<span class="status-badge-verify text-[10px] text-secondary-400 font-normal flex items-center gap-0.5" title="অযাচাইকৃত">⏳ অযাচাইকৃত</span>';
+                        } else {
+                            const existingVerify = statusCell.querySelector('.status-badge-verify');
+                            if (existingVerify) verifyBadgeHtml = existingVerify.outerHTML;
+                        }
+
+                        statusCell.innerHTML = `
+                            <div class="flex flex-col items-center gap-1">
+                                ${availBadgeHtml}
+                                ${verifyBadgeHtml}
+                            </div>
+                        `;
+                    }
+                });
+
+                // Toast notification
+                showAdminToast(data.message || 'স্ট্যাটাস সফলভাবে আপডেট করা হয়েছে!', 'success');
+
+                // Clear selection
+                selectAllTableProducts(false);
+            } else {
+                showAdminToast(data.message || 'আপডেট করতে সমস্যা হয়েছে!', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            btnText.innerHTML = originalText;
+            console.error('Bulk update error:', err);
+            showAdminToast('সার্ভার এরর! পুনরায় চেষ্টা করুন।', 'error');
+        });
+    };
+
+    function showAdminToast(msg, type = 'success') {
+        let toast = document.getElementById('adminLiveToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'adminLiveToast';
+            toast.className = 'fixed top-6 right-6 z-[9999] max-w-md px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-x-full opacity-0';
+            document.body.appendChild(toast);
+        }
+
+        if (type === 'success') {
+            toast.className = 'fixed top-6 right-6 z-[9999] max-w-md px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform bg-emerald-600 text-white font-bold text-xs border border-emerald-500 shadow-emerald-900/20';
+            toast.innerHTML = `<ion-icon name="checkmark-circle" class="text-xl flex-shrink-0"></ion-icon><span>${msg}</span>`;
+        } else {
+            toast.className = 'fixed top-6 right-6 z-[9999] max-w-md px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform bg-red-600 text-white font-bold text-xs border border-red-500 shadow-red-900/20';
+            toast.innerHTML = `<ion-icon name="alert-circle" class="text-xl flex-shrink-0"></ion-icon><span>${msg}</span>`;
+        }
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        });
+
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+        }, 4000);
     }
 });
 </script>

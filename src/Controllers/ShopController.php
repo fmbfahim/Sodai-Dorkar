@@ -43,6 +43,7 @@ class ShopController {
     public function index() {
         // Get filter parameters
         $categoryId = $_GET['category'] ?? null;
+        $subId = $_GET['sub'] ?? null;
         $search = $_GET['search'] ?? '';
         $isDeals = isset($_GET['deals']) && $_GET['deals'] == '1';
 
@@ -53,8 +54,9 @@ class ShopController {
                 WHERE products.availability_status = 'in_stock'";
         $params = [];
 
-        if ($categoryId) {
-            $catIds = $this->getCategoryDescendantIds($categoryId);
+        $targetCatId = $subId ?: $categoryId;
+        if ($targetCatId) {
+            $catIds = $this->getCategoryDescendantIds($targetCatId);
             if (!empty($catIds)) {
                 $inPlaceholders = [];
                 foreach ($catIds as $idx => $cId) {
@@ -175,10 +177,26 @@ class ShopController {
             $dealProducts = array_slice($products, 0, 6);
         }
 
-        $parentBackUrl = '/sodai-dorkar/public/#categories';
-        if ($parentCategory && !empty($parentCategory['parent_id']) && $parentCategory['parent_id'] != 1) {
-            $parentBackUrl = '/sodai-dorkar/public/?category=' . $parentCategory['parent_id'] . '#categories';
+        // Determine active category for the hero banner and left rail
+        $activeCategory = null;
+        if ($categoryId && isset($catById[$categoryId])) {
+            $activeCategory = $catById[$categoryId];
+        } elseif ($parentCategory) {
+            $activeCategory = $parentCategory;
+        } elseif (!empty($mainCategories)) {
+            $activeCategory = $mainCategories[0];
         }
+
+        // Ensure subcategories are populated for the active category
+        if (empty($subCategories) && $activeCategory && !empty($childrenMap[$activeCategory['id']])) {
+            foreach ($childrenMap[$activeCategory['id']] as $sId) {
+                if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
+            }
+        }
+
+        // Subcategory list subtitle for the hero banner
+        $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
+        $bannerSubtitle = !empty($subNames) ? implode(', ', array_slice($subNames, 0, 7)) : 'চাল, ডাল, মশলা, রেডি মিক্স, লবণ এবং চিনি, সেমাই ও সুজি';
 
         return View::render('shop/index', [
             'products' => $products,
@@ -187,6 +205,9 @@ class ShopController {
             'mainCategories' => $mainCategories,
             'childrenMap' => $childrenMap,
             'parentCategory' => $parentCategory,
+            'activeCategory' => $activeCategory,
+            'activeSubId' => $_GET['sub'] ?? null,
+            'bannerSubtitle' => $bannerSubtitle,
             'subCategories' => $subCategories,
             'parentBackUrl' => $parentBackUrl,
             'dealProducts' => $dealProducts,

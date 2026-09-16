@@ -107,6 +107,7 @@ $router->post('/admin/products/verification-update', 'ProductController@verifica
 $router->get('/admin/products/on-demand', 'ProductController@onDemandIndex');
 $router->get('/admin/products/availability', 'ProductController@availabilityIndex');
 $router->post('/admin/products/availability-update', 'ProductController@availabilityUpdate');
+$router->post('/admin/products/bulk-status-update', 'ProductController@bulkStatusUpdate');
 $router->get('/admin/products/procurement', 'ProductController@procurementIndex');
 $router->get('/admin/products/image-finder', 'ProductController@imageFinderIndex');
 $router->get('/admin/products/search-web-images', 'ProductController@searchWebImages');

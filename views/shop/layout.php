@@ -477,17 +477,28 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </div>
     </aside>
 
-    <!-- MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on Mobile) -->
+    <!-- MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on Mobile with Elevated Floating Center Button) -->
     <?php
     $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
     $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
+    $isHomePage = ($cleanPath === '' || $cleanPath === '/');
     $isCategoryPage = (strpos($cleanPath, '/category') === 0);
     $isShopPage = (strpos($cleanPath, '/shop') === 0);
     $isAccountPage = (strpos($cleanPath, '/account') === 0 || strpos($cleanPath, '/checkout/auth') === 0);
     ?>
-    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] px-3 py-1.5 transition-all">
-        <div class="flex items-center justify-around max-w-md mx-auto">
+    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.1)] px-2 py-1 transition-all">
+        <div class="flex items-center justify-between max-w-md mx-auto relative">
             
+            <!-- Home Tab -->
+            <a href="<?= $base ?>/" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isHomePage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
+                <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isHomePage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <span class="text-[10px] leading-tight tracking-tight">হোম</span>
+            </a>
+
             <!-- Category Tab -->
             <a href="<?= $base ?>/category" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isCategoryPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
                 <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
@@ -495,8 +506,25 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                 </div>
-                <span class="text-[11px] leading-tight tracking-tight">Category</span>
+                <span class="text-[10px] leading-tight tracking-tight">ক্যাটাগরি</span>
             </a>
+
+            <!-- ELEVATED FLOATING CIRCULAR CENTER CART BUTTON (Matching iPhone 17 - 1) -->
+            <div class="flex-shrink-0 relative -top-4 px-1.5">
+                <button type="button" 
+                        onclick="openCartDrawer()" 
+                        class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-xl shadow-emerald-950/30 border-[3.5px] border-white flex flex-col items-center justify-center transform active:scale-95 transition-all cursor-pointer group"
+                        title="ব্যাগ দেখুন (View Cart)">
+                    <div class="relative flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span id="mobile-center-cart-badge" class="absolute -top-2 -right-2 bg-amber-400 text-gray-900 font-black text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-xs <?= $cartCount > 0 ? '' : 'hidden' ?>">
+                            <?= $cartCount ?>
+                        </span>
+                    </div>
+                </button>
+            </div>
 
             <!-- Shop Tab -->
             <a href="<?= $base ?>/shop" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isShopPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
@@ -505,7 +533,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                 </div>
-                <span class="text-[11px] leading-tight tracking-tight">Shop</span>
+                <span class="text-[10px] leading-tight tracking-tight">শপ</span>
             </a>
 
             <!-- Profile Tab -->
@@ -515,7 +543,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </div>
-                <span class="text-[11px] leading-tight tracking-tight">Profile</span>
+                <span class="text-[10px] leading-tight tracking-tight">প্রোফাইল</span>
             </a>
 
         </div>
@@ -910,6 +938,17 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 stickyBtn.classList.remove('cart-bump');
                 void stickyBtn.offsetWidth; // Trigger reflow
                 stickyBtn.classList.add('cart-bump');
+            }
+
+            // Mobile center floating button badge
+            const mobileCenterBadge = document.getElementById('mobile-center-cart-badge');
+            if (mobileCenterBadge) {
+                if (count > 0) {
+                    mobileCenterBadge.textContent = count;
+                    mobileCenterBadge.classList.remove('hidden');
+                } else {
+                    mobileCenterBadge.classList.add('hidden');
+                }
             }
 
             // 3. Drawer UI
