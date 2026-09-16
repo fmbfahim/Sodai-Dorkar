@@ -687,11 +687,25 @@ class ProductController extends Controller {
                         }
                         if ($foundCat) {
                             $parentId = $foundCat['id'];
+                            if (empty($foundCat['image_path']) && !empty($p['image_path'])) {
+                                $catImg = $this->downloadAndSaveCategoryImage($p['image_path'], $catName);
+                                if ($catImg) {
+                                    $categoryModel->update($foundCat['id'], [
+                                        'image_path' => $catImg, 
+                                        'name' => $foundCat['name'], 
+                                        'description' => $foundCat['description'], 
+                                        'parent_id' => $foundCat['parent_id']
+                                    ]);
+                                    $allCategories = $categoryModel->all();
+                                }
+                            }
                         } else {
+                            $catImg = !empty($p['image_path']) ? $this->downloadAndSaveCategoryImage($p['image_path'], $catName) : null;
                             $parentId = $categoryModel->create([
                                 'name' => $catName,
-                                'description' => '',
-                                'parent_id' => $parentId
+                                'description' => $catName . ' - Auto-created via Bulk Import',
+                                'parent_id' => $parentId,
+                                'image_path' => $catImg
                             ]);
                             $allCategories = $categoryModel->all();
                         }
@@ -1575,6 +1589,148 @@ class ProductController extends Controller {
         return ['success' => true, 'image_path' => $imagePath];
     }
 
+    public function downloadAndSaveCategoryImage($imageUrl, $categoryName = '') {
+        $imageUrl = trim($imageUrl);
+        if (empty($imageUrl)) return null;
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $uploadDir = __DIR__ . '/../../public/uploads/categories/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        // If already a local file path on server
+        if (strpos($imageUrl, 'http://') !== 0 && strpos($imageUrl, 'https://') !== 0) {
+            $cleanLocal = preg_replace('#^/sodai-dorkar/public/#', '', $imageUrl);
+            $cleanLocal = ltrim($cleanLocal, '/');
+            $fullLocalSource = __DIR__ . '/../../public/' . $cleanLocal;
+            if (file_exists($fullLocalSource)) {
+                $ext = pathinfo($fullLocalSource, PATHINFO_EXTENSION) ?: 'webp';
+                $newFileName = 'cat_' . time() . '_' . substr(md5(uniqid($categoryName)), 0, 6) . '.' . $ext;
+                if (copy($fullLocalSource, $uploadDir . $newFileName)) {
+                    return ($base ?: '') . '/uploads/categories/' . $newFileName;
+                }
+            }
+        }
+
+        if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        // Download image from remote web via cURL
+        $ch = curl_init($imageUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        curl_setopt($ch, CURLOPT_REFERER, "https://www.shwapno.com/");
+        $imageData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || empty($imageData)) {
+            return null;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $imageData);
+        finfo_close($finfo);
+
+        $allowedMimes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif'
+        ];
+
+        $ext = $allowedMimes[$mime] ?? (stripos($contentType, 'webp') !== false ? 'webp' : 'jpg');
+        $fileName = 'cat_' . time() . '_' . substr(md5(uniqid($categoryName)), 0, 6) . '.' . $ext;
+        $targetFile = $uploadDir . $fileName;
+
+        if (file_put_contents($targetFile, $imageData) !== false) {
+            return ($base ?: '') . '/uploads/categories/' . $fileName;
+        }
+
+        return null;
+    }
+
+    public function ensureCategoryExistsWithImage($categoryName, $imageUrl = null, $parentId = null, $description = null) {
+        $categoryName = trim($categoryName);
+        if (empty($categoryName)) {
+            return null;
+        }
+
+        $db = null;
+        try {
+            $cfg = require __DIR__ . '/../../config/database.php';
+            $dsn = "mysql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['dbname']};charset=utf8mb4";
+            $pdo = new \PDO($dsn, $cfg['user'], $cfg['password'], [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 2
+            ]);
+            $db = new \Core\Database($cfg);
+        } catch (\Throwable $e) {
+            $db = null;
+        }
+
+        if (!$db) return null;
+        $categoryModel = new \Models\Category();
+
+        // 1. Check if category already exists (exact name or case-insensitive)
+        $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$categoryName])->fetch();
+
+        // Also check if existing name matches before parenthesis, e.g. "চা ও কফি" from "চা ও কফি (Tea & Coffee)"
+        if (!$existing && strpos($categoryName, '(') !== false) {
+            $shortName = trim(explode('(', $categoryName)[0]);
+            if ($shortName) {
+                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$shortName])->fetch();
+            }
+        }
+
+        // Also check English part inside parenthesis, e.g. "Tea & Coffee"
+        if (!$existing && preg_match('/\((.*?)\)/', $categoryName, $m)) {
+            $engPart = trim($m[1]);
+            if ($engPart) {
+                $existing = $db->query("SELECT id, name, image_path FROM categories WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$engPart])->fetch();
+            }
+        }
+
+        $categoryImagePath = null;
+        if (!empty($imageUrl)) {
+            $categoryImagePath = $this->downloadAndSaveCategoryImage($imageUrl, $categoryName);
+        }
+
+        if ($existing) {
+            // If existing category has no image, update with the newly downloaded category image
+            if (empty($existing['image_path']) && $categoryImagePath) {
+                $db->query("UPDATE categories SET image_path = ? WHERE id = ?", [$categoryImagePath, $existing['id']]);
+            }
+            return [
+                'id' => (int)$existing['id'],
+                'name' => $existing['name'],
+                'created' => false,
+                'image_path' => $existing['image_path'] ?: $categoryImagePath
+            ];
+        }
+
+        // 2. Auto-create new category with the image!
+        $newCatId = $categoryModel->create([
+            'name' => $categoryName,
+            'parent_id' => $parentId ?: null,
+            'description' => $description ?: ($categoryName . ' - স্বয়ংক্রিয়ভাবে তৈরি ক্যাটাগরি'),
+            'image_path' => $categoryImagePath
+        ]);
+
+        return [
+            'id' => (int)$newCatId,
+            'name' => $categoryName,
+            'created' => true,
+            'image_path' => $categoryImagePath
+        ];
+    }
+
     public function shwapnoImporterIndex() {
         $categoryModel = new \Models\Category();
         $vendorModel = new \Models\Vendor();
@@ -1664,6 +1820,28 @@ class ProductController extends Controller {
                 }
             }
         }
+
+        // Map preset categories to friendly Bengali names
+        $popularCategoryMap = [
+            'rice' => 'চাল ও শস্য (Rice & Grains)',
+            'soybean oil' => 'ভোজ্য তেল ও ঘি (Oil & Ghee)',
+            'tea' => 'চা ও কফি (Tea & Coffee)',
+            'dairy' => 'দুধ ও দুগ্ধজাত (Dairy & Milk)',
+            'fresh-fruits' => 'তাজা ফলমূল (Fresh Fruits)',
+            'fresh-vegetables' => 'তাজা শাকসবজি (Fresh Vegetables)',
+            'spices' => 'মসলা ও রান্নার উপাদান (Spices)',
+            'fish' => 'মাছ ও সামুদ্রিক খাদ্য (Fish & Seafood)',
+            'meat' => 'মাংস ও ডিম (Meat & Eggs)',
+            'beverages' => 'জুস ও পানীয় (Beverages)',
+            'snacks' => 'বিস্কুট ও স্ন্যাক্স (Snacks & Bakery)',
+            'flours' => 'আটা, ময়দা ও সুজি (Flour & Suji)',
+            'cleaning' => 'পরিষ্কার পরিচ্ছন্নতা (Cleaning)',
+            'baby-food-care' => 'শিশু খাদ্য ও যত্ন (Baby Care)',
+            'personal-care' => 'পার্সোনাল কেয়ার (Personal Care)'
+        ];
+
+        $lowerKey = strtolower($catInput);
+        $resolvedCategoryName = $popularCategoryMap[$lowerKey] ?? ucwords(str_replace(['-', '_'], ' ', $catInput));
 
         if (empty($products)) {
             echo json_encode([
@@ -1767,15 +1945,20 @@ class ProductController extends Controller {
                 'base_unit' => $baseUnit,
                 'image_url' => $img,
                 'thumbnail' => $thumb,
+                'category_name' => $resolvedCategoryName,
                 'variants' => $variants,
                 'exists_in_db' => $exists,
                 'existing_id' => $existingId
             ];
         }
 
+        $categoryImage = !empty($parsedItems[0]['image_url']) ? $parsedItems[0]['image_url'] : '';
+
         echo json_encode([
             'success' => true,
             'category' => $catInput,
+            'category_name' => $resolvedCategoryName,
+            'category_image' => $categoryImage,
             'count' => count($parsedItems),
             'products' => $parsedItems
         ], JSON_UNESCAPED_UNICODE);
@@ -1812,13 +1995,27 @@ class ProductController extends Controller {
             $discountValue = $oldPrice - $sellPrice;
         }
 
-        $categoryId = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
+        $categoryId = (!empty($_POST['category_id']) && is_numeric($_POST['category_id']) && intval($_POST['category_id']) > 0) ? intval($_POST['category_id']) : null;
+        $categoryName = trim($_POST['category_name'] ?? '');
         $vendorId = !empty($_POST['vendor_id']) ? intval($_POST['vendor_id']) : null;
         $stockQty = !empty($_POST['stock_qty']) ? floatval($_POST['stock_qty']) : 50;
         $unitType = $_POST['unit_type'] ?? 'piece';
         $baseUnit = $_POST['base_unit'] ?? 'pcs';
         $imageUrl = trim($_POST['image_url'] ?? '');
         $variantsJson = !empty($_POST['variants']) ? (is_string($_POST['variants']) ? $_POST['variants'] : json_encode($_POST['variants'], JSON_UNESCAPED_UNICODE)) : null;
+
+        $createdCategoryInfo = null;
+
+        // Auto-create category with image if category_id is empty/auto and category_name is present
+        if (empty($categoryId) && !empty($categoryName)) {
+            $catResult = $this->ensureCategoryExistsWithImage($categoryName, $imageUrl);
+            if ($catResult) {
+                $categoryId = $catResult['id'];
+                if (!empty($catResult['created'])) {
+                    $createdCategoryInfo = $catResult;
+                }
+            }
+        }
 
         $db = new \Core\Database(require __DIR__ . '/../../config/database.php');
         $productModel = new Product();
@@ -1852,13 +2049,21 @@ class ProductController extends Controller {
             $params[] = $existing['id'];
             $db->query($sql, $params);
 
+            $msg = 'বিদ্যমান পণ্য আপডেট করা হয়েছে!';
+            if ($createdCategoryInfo) {
+                $msg .= ' এবং "' . $createdCategoryInfo['name'] . '" ক্যাটাগরি ছবি সহ তৈরি হয়েছে!';
+            }
+
             echo json_encode([
                 'success' => true,
                 'status' => 'updated',
                 'id' => $existing['id'],
                 'name' => $name,
+                'category_id' => $categoryId,
+                'category_created' => !empty($createdCategoryInfo),
+                'category_info' => $createdCategoryInfo,
                 'image_path' => $localImagePath,
-                'message' => 'বিদ্যমান পণ্য আপডেট করা হয়েছে!'
+                'message' => $msg
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }
@@ -1897,13 +2102,21 @@ class ProductController extends Controller {
 
         $newId = $db->lastInsertId();
 
+        $msg = 'নতুন পণ্য হিসেবে সফলভাবে ইনপুট হয়েছে!';
+        if ($createdCategoryInfo) {
+            $msg .= ' এবং "' . $createdCategoryInfo['name'] . '" ক্যাটাগরি ছবি সহ স্বয়ংক্রিয়ভাবে তৈরি হয়েছে!';
+        }
+
         echo json_encode([
             'success' => true,
             'status' => 'created',
             'id' => $newId,
             'name' => $name,
+            'category_id' => $categoryId,
+            'category_created' => !empty($createdCategoryInfo),
+            'category_info' => $createdCategoryInfo,
             'image_path' => $localImagePath,
-            'message' => 'নতুন পণ্য হিসেবে সফলভাবে ইনপুট হয়েছে!'
+            'message' => $msg
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }

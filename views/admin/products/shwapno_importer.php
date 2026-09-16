@@ -115,12 +115,13 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     আপনার স্টোরের ক্যাটাগরি (Target Category)
                 </label>
                 <select id="targetCategoryId" class="w-full px-3.5 py-2.5 bg-secondary-50 border border-secondary-300 rounded-xl text-xs font-semibold text-secondary-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white">
-                    <option value="">-- কোনো ক্যাটাগরি ছাড়া / স্বয়ংক্রিয় --</option>
+                    <option value="auto" selected>✨ স্বয়ংক্রিয় / ক্যাটাগরি না থাকলে ছবি সহ অটো তৈরি করুন</option>
+                    <option value="">-- কোনো ক্যাটাগরি ছাড়া --</option>
                     <?php foreach ($categories as $c): ?>
                         <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <p class="text-[10px] text-secondary-400 mt-1">ইমপোর্ট করা সকল পণ্য এই ক্যাটাগরিতে যুক্ত হবে</p>
+                <p class="text-[10px] text-emerald-600 font-semibold mt-1">✓ ক্যাটাগরি না থাকলে ইমেজ সহ নতুন ক্যাটাগরি অটো-তৈরি হবে</p>
             </div>
 
             <!-- Target Vendor -->
@@ -231,6 +232,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             </th>
                             <th class="py-3.5 px-4 w-12 text-center">#</th>
                             <th class="py-3.5 px-4">পণ্য ও ছবি</th>
+                            <th class="py-3.5 px-4">ক্যাটাগরি</th>
                             <th class="py-3.5 px-4">SKU / কোড</th>
                             <th class="py-3.5 px-4 text-right">বিক্রয় মূল্য</th>
                             <th class="py-3.5 px-4">একক ও ধরন</th>
@@ -373,6 +375,8 @@ let bulkQueue = [];
 let bulkIndex = 0;
 let isBulkRunning = false;
 let isBulkPaused = false;
+let currentCategoryName = '';
+let currentCategorySlug = '';
 let bulkStats = {
     total: 0,
     processed: 0,
@@ -388,6 +392,8 @@ const baseUri = '<?= $base ?>';
 function selectCategory(slug, displayName) {
     const input = document.getElementById('shwapnoCategoryInput');
     input.value = slug;
+    currentCategorySlug = slug;
+    currentCategoryName = displayName;
     fetchCategoryProducts();
 }
 
@@ -411,6 +417,8 @@ async function fetchCategoryProducts() {
 
         if (data.success && data.products && data.products.length > 0) {
             loadedProducts = data.products;
+            currentCategoryName = data.category_name || catQuery;
+            currentCategorySlug = data.category || catQuery;
             renderProductsTable(loadedProducts);
             document.getElementById('initialStateBox').classList.add('hidden');
             document.getElementById('previewContainer').classList.remove('hidden');
@@ -459,6 +467,8 @@ function renderProductsTable(products) {
             ? `<div class="text-[10px] text-secondary-400 line-through">৳${p.old_price.toFixed(2)}</div>`
             : '';
 
+        const catDisplayName = p.category_name || currentCategoryName || 'স্বয়ংক্রিয়';
+
         tr.innerHTML = `
             <td class="py-3 px-4 text-center">
                 <input type="checkbox" 
@@ -488,6 +498,12 @@ function renderProductsTable(products) {
                         </div>
                     </div>
                 </div>
+            </td>
+            <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 text-[11px] font-bold border border-teal-200 shadow-2xs" title="${escapeHtml(catDisplayName)}">
+                    <ion-icon name="folder-outline" class="text-xs text-teal-600"></ion-icon>
+                    <span class="max-w-[120px] truncate">${escapeHtml(catDisplayName)}</span>
+                </span>
             </td>
             <td class="py-3 px-4 font-mono text-secondary-600 text-[11px]">
                 ${p.sku ? escapeHtml(p.sku) : '<span class="text-secondary-400 italic">অটো-জেনারেটেড</span>'}
@@ -588,7 +604,11 @@ async function importSingleProduct(idx) {
         formData.append('sku', p.sku || '');
         formData.append('sell_price', p.sell_price);
         if (p.old_price) formData.append('old_price', p.old_price);
-        formData.append('category_id', targetCat);
+        if (targetCat === 'auto' || !targetCat) {
+            formData.append('category_name', p.category_name || currentCategoryName || '');
+        } else {
+            formData.append('category_id', targetCat);
+        }
         formData.append('vendor_id', targetVen);
         formData.append('stock_qty', stockQty);
         formData.append('unit_type', p.unit_type);
@@ -611,10 +631,17 @@ async function importSingleProduct(idx) {
         if (data.success) {
             btn.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-xs';
             btn.innerHTML = `<ion-icon name="checkmark-circle" class="text-sm"></ion-icon> <span>সম্পন্ন!</span>`;
+            
+            let catNotice = '';
+            if (data.category_created && data.category_info) {
+                catNotice = `<div class="text-[9px] text-teal-700 font-bold mt-0.5">📁 ক্যাটাগরি তৈরি: ${escapeHtml(data.category_info.name)}</div>`;
+            }
+
             document.getElementById(`item-status-col-${idx}`).innerHTML = `
                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
                     <ion-icon name="checkmark-done" class="text-xs"></ion-icon> ইমপোর্ট সম্পন্ন (#${data.id})
                 </span>
+                ${catNotice}
             `;
             p.exists_in_db = true;
             p.existing_id = data.id;
@@ -780,7 +807,11 @@ async function startBulkImporting() {
             formData.append('sku', p.sku || '');
             formData.append('sell_price', p.sell_price);
             if (p.old_price) formData.append('old_price', p.old_price);
-            formData.append('category_id', targetCat);
+            if (targetCat === 'auto' || !targetCat) {
+                formData.append('category_name', p.category_name || currentCategoryName || '');
+            } else {
+                formData.append('category_id', targetCat);
+            }
             formData.append('vendor_id', targetVen);
             formData.append('stock_qty', stockQty);
             formData.append('unit_type', p.unit_type);
@@ -804,6 +835,10 @@ async function startBulkImporting() {
             if (data.success) {
                 bulkStats.imported++;
                 const actWord = data.status === 'updated' ? 'আপডেট' : 'তৈরি';
+
+                if (data.category_created && data.category_info) {
+                    appendBulkLog(`📁 [অটো-ক্যাটাগরি] "${data.category_info.name}" ক্যাটাগরি ছবি সহ সফলভাবে তৈরি হয়েছে (ID #${data.category_info.id})!`, 'done');
+                }
                 appendBulkLog(`✅ সফলভাবে ${actWord}: "${p.name}" (ID #${data.id})`, 'success');
                 
                 // Update table row
