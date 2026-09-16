@@ -13,9 +13,12 @@ $storeAddress = $settings['store_address'] ?? 'Dhaka, Bangladesh';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>বেতন রশিদ (Salary Slip) - <?= htmlspecialchars($payroll['emp_code']) ?> - <?= htmlspecialchars($payroll['salary_month']) ?></title>
     <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <style>
+        body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
         @media print {
             body { background: white !important; }
             .no-print { display: none !important; }

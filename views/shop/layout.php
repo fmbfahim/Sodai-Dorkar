@@ -40,12 +40,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', 'Noto Sans Bengali', sans-serif; }
-        <?php if ($locale === 'bn'): ?>
-        body, button, input, select, textarea { font-family: 'Noto Sans Bengali', 'Outfit', sans-serif; }
-        <?php endif; ?>
+        body { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+        body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
 
         /* Toast animation */
         @keyframes slideInRight {
