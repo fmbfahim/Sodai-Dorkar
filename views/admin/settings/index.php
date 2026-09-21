@@ -148,6 +148,7 @@
     <?php endif; ?>
 
     <form action="<?= $base ?>/admin/settings/update" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         
         <!-- Delivery Logic Section -->
         <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden mb-6">

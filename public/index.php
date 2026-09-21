@@ -1,5 +1,20 @@
 <?php
 
+// ── Session must start ONCE at the very top ─────────────────────────────
+if (session_status() === PHP_SESSION_NONE) {
+    // On live servers, ensure secure cookie settings
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'secure'   => true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+    session_start();
+}
+
 // Autoloader (Manual implementation since we might not have Composer autoloader set up for custom namespace yet, standard PSR-4 is better)
 spl_autoload_register(function ($class) {
     $base_dir = __DIR__ . '/../src/';
