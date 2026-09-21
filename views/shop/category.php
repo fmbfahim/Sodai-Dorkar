@@ -96,24 +96,60 @@ function getProductUnits($product) {
 if (!function_exists('getCategoryVisual')) {
 function getCategoryVisual($cat) {
     if (!empty($cat['image_path'])) {
-        return ['type' => 'image', 'val' => $cat['image_path'], 'bg' => 'bg-white border border-gray-100'];
+        $img = $cat['image_path'];
+        if (strpos($img, 'http') !== 0 && strpos($img, '/sodai-dorkar') !== 0) {
+            $img = '/sodai-dorkar/' . ltrim($img, '/');
+        }
+        return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
     }
     $n = mb_strtolower($cat['name'] ?? '');
-    if (strpos($n, 'মাছ ও মাংস') !== false) return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
-    if (strpos($n, 'দুধ') !== false || strpos($n, 'দুগ্ধ') !== false || strpos($n, 'dairy') !== false) return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/products/bottle-milk-1liter.jpg', 'bg' => 'bg-white border border-gray-100'];
+    
+    // Priority mappings to actual category uploads
+    if (strpos($n, 'চাল') !== false || strpos($n, 'শস্য') !== false || strpos($n, 'rice') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678696_rice.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'তেল') !== false || strpos($n, 'ঘি') !== false || strpos($n, 'oil') !== false || strpos($n, 'ghee') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/oil.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মসলা') !== false || strpos($n, 'মশলা') !== false || strpos($n, 'spice') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768677548_spices.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'ডাল') !== false || strpos($n, 'dal') !== false || strpos($n, 'lentil') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678718_dal-or-lentil.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'লবণ') !== false || strpos($n, 'লবন') !== false || strpos($n, 'চিনি') !== false || strpos($n, 'salt') !== false || strpos($n, 'sugar') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678670_salt-sugar.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'রেডি মিক্স') !== false || strpos($n, 'ready mix') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1779792323_ready-mix.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'সেমাই') !== false || strpos($n, 'সুজি') !== false || strpos($n, 'shemai') !== false || strpos($n, 'suji') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1779792371_shemai-suji.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মাছ ও মাংস') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মাছ') !== false || strpos($n, 'fish') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মাংস') !== false || strpos($n, 'meat') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452809_Screenshot 2026-09-03 222638.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'রান্না') !== false || strpos($n, 'cook') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768677504_cooking.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'খাবার') !== false || strpos($n, 'মুদি') !== false || strpos($n, 'grocery') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768692781_unnamed.jpg', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'দুধ') !== false || strpos($n, 'দুগ্ধ') !== false || strpos($n, 'dairy') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/products/bottle-milk-1liter.jpg', 'bg' => 'bg-white border border-gray-100'];
+    }
+    
+    // Emoji fallbacks
     if (strpos($n, 'ফল') !== false || strpos($n, 'fruit') !== false) return ['type' => 'emoji', 'val' => '🍎', 'bg' => 'bg-rose-50 text-rose-500'];
     if (strpos($n, 'শাক') !== false || strpos($n, 'সবজি') !== false || strpos($n, 'vege') !== false) return ['type' => 'emoji', 'val' => '🥦', 'bg' => 'bg-emerald-50 text-emerald-600'];
     if (strpos($n, 'ডিম') !== false || strpos($n, 'egg') !== false) return ['type' => 'emoji', 'val' => '🥚', 'bg' => 'bg-amber-50 text-amber-600'];
-    if (strpos($n, 'চাল') !== false || strpos($n, 'rice') !== false) return ['type' => 'emoji', 'val' => '🌾', 'bg' => 'bg-amber-50 text-amber-700'];
-    if (strpos($n, 'ডাল') !== false || strpos($n, 'dal') !== false || strpos($n, 'lentil') !== false) return ['type' => 'emoji', 'val' => '🥣', 'bg' => 'bg-orange-50 text-orange-600'];
-    if (strpos($n, 'তেল') !== false || strpos($n, 'oil') !== false) return ['type' => 'emoji', 'val' => '🫒', 'bg' => 'bg-lime-50 text-lime-700'];
     if (strpos($n, 'চা') !== false || strpos($n, 'tea') !== false) return ['type' => 'emoji', 'val' => '🍵', 'bg' => 'bg-emerald-50 text-emerald-600'];
-    if (strpos($n, 'মাছ') !== false || strpos($n, 'fish') !== false) return ['type' => 'emoji', 'val' => '🐟', 'bg' => 'bg-cyan-50 text-cyan-600'];
-    if (strpos($n, 'মাংস') !== false || strpos($n, 'meat') !== false) return ['type' => 'emoji', 'val' => '🥩', 'bg' => 'bg-rose-50 text-rose-600'];
-    if (strpos($n, 'লবন') !== false || strpos($n, 'চিনি') !== false || strpos($n, 'salt') !== false || strpos($n, 'sugar') !== false) return ['type' => 'emoji', 'val' => '🧂', 'bg' => 'bg-blue-50 text-blue-600'];
-    if (strpos($n, 'মশলা') !== false || strpos($n, 'spice') !== false) return ['type' => 'emoji', 'val' => '🌶️', 'bg' => 'bg-red-50 text-red-600'];
-    if (strpos($n, 'সেমাই') !== false || strpos($n, 'সুজি') !== false || strpos($n, 'মিক্স') !== false) return ['type' => 'emoji', 'val' => '🥣', 'bg' => 'bg-amber-50 text-amber-700'];
-    if (strpos($n, 'রান্না') !== false || strpos($n, 'cook') !== false) return ['type' => 'emoji', 'val' => '🍳', 'bg' => 'bg-amber-50 text-amber-600'];
     if (strpos($n, 'আইসক্রিম') !== false || strpos($n, 'ice cream') !== false) return ['type' => 'emoji', 'val' => '🍦', 'bg' => 'bg-pink-50 text-pink-500'];
     if (strpos($n, 'ক্যান্ডি') !== false || strpos($n, 'চকলেট') !== false || strpos($n, 'chocolate') !== false || strpos($n, 'candy') !== false) return ['type' => 'emoji', 'val' => '🍫', 'bg' => 'bg-amber-50 text-amber-800'];
     if (strpos($n, 'জল খাবার') !== false || strpos($n, 'নাশতা') !== false || strpos($n, 'snack') !== false || strpos($n, 'breakfast') !== false) return ['type' => 'emoji', 'val' => '🥪', 'bg' => 'bg-orange-50 text-orange-600'];

@@ -131,6 +131,18 @@ class ShopController {
             }
         }
 
+        // Sort main categories: feature 'রান্নাবান্না' (Cooking) first, followed by categories with children/products
+        usort($mainCategories, function($a, $b) use ($childrenMap) {
+            $aIsCooking = (mb_strpos($a['name'], 'রান্না') !== false);
+            $bIsCooking = (mb_strpos($b['name'], 'রান্না') !== false);
+            if ($aIsCooking && !$bIsCooking) return -1;
+            if (!$aIsCooking && $bIsCooking) return 1;
+            $aHasChildren = !empty($childrenMap[$a['id']]) ? 1 : 0;
+            $bHasChildren = !empty($childrenMap[$b['id']]) ? 1 : 0;
+            if ($aHasChildren !== $bHasChildren) return $bHasChildren - $aHasChildren;
+            return strcmp($a['name'], $b['name']);
+        });
+
         // Determine parent category and subcategories to display based on selected category
         $parentCategory = null;
         $subCategories = [];
@@ -184,7 +196,24 @@ class ShopController {
         } elseif ($parentCategory) {
             $activeCategory = $parentCategory;
         } elseif (!empty($mainCategories)) {
-            $activeCategory = $mainCategories[0];
+            // Priority: 'রান্নাবান্না' (Cooking) as the hero showcase category
+            foreach ($mainCategories as $mc) {
+                if (mb_strpos($mc['name'], 'রান্না') !== false) {
+                    $activeCategory = $mc;
+                    break;
+                }
+            }
+            if (!$activeCategory) {
+                foreach ($mainCategories as $mc) {
+                    if (!empty($childrenMap[$mc['id']])) {
+                        $activeCategory = $mc;
+                        break;
+                    }
+                }
+            }
+            if (!$activeCategory) {
+                $activeCategory = $mainCategories[0];
+            }
         }
 
         // Ensure subcategories are populated for the active category

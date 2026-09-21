@@ -303,7 +303,7 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
                 <?php endif; ?>
 
                 <!-- Administration & Access Control Section -->
-                <?php if (\Core\Auth::can('users') || \Core\Auth::can('settings') || \Core\Auth::can('database_reset') || \Core\Auth::isAdmin()): ?>
+                <?php if (\Core\Auth::can('users') || \Core\Auth::can('settings')): ?>
                     <li class="px-4 pt-4 pb-2 text-[11px] font-bold text-secondary-400 uppercase tracking-wider">Administration</li>
                     
                     <?php if (\Core\Auth::can('users')): ?>
@@ -320,15 +320,6 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
                             <a href="<?= $base ?>/admin/ecommerce-settings" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group text-sm">
                                 <ion-icon name="storefront-outline" class="text-lg mr-3 group-hover:text-emerald-600"></ion-icon>
                                 <span class="font-medium">E-Commerce Config</span>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-
-                    <?php if (\Core\Auth::can('database_reset') || \Core\Auth::isAdmin()): ?>
-                        <li>
-                            <a href="<?= $base ?>/admin/settings/cleanup" class="flex items-center px-4 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors group text-sm">
-                                <ion-icon name="trash-bin-outline" class="text-lg mr-3 text-red-500"></ion-icon>
-                                <span class="font-medium">Data Cleanup & Reset</span>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -355,7 +346,7 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
     </aside>
 
     <!-- Main Content -->
-    <main class="lg:ml-64 flex-1 min-w-0 p-4 lg:p-6 w-full lg:max-w-[calc(100vw-16rem)] overflow-x-hidden transition-all duration-300">
+    <main class="lg:ml-64 flex-1 min-w-0 p-4 lg:p-6 w-full lg:w-[calc(100%-16rem)] overflow-x-hidden transition-all duration-300">
         <header class="flex justify-between items-center mb-5 shrink-0 gap-2">
             <div class="flex items-center gap-3">
                 <button id="sidebarToggle" class="lg:hidden p-2 -ml-2 rounded-xl text-secondary-600 hover:bg-secondary-100 focus:outline-none flex items-center justify-center">

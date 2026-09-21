@@ -83,30 +83,60 @@ function getProductUnits($product) {
 if (!function_exists('getCategoryVisual')) {
 function getCategoryVisual($cat) {
     if (!empty($cat['image_path'])) {
-        return ['type' => 'image', 'val' => $cat['image_path'], 'bg' => 'bg-white border border-gray-100'];
+        $img = $cat['image_path'];
+        if (strpos($img, 'http') !== 0 && strpos($img, '/sodai-dorkar') !== 0) {
+            $img = '/sodai-dorkar/' . ltrim($img, '/');
+        }
+        return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
     }
     $n = mb_strtolower($cat['name'] ?? '');
     
+    // Priority mappings to actual category uploads
+    if (strpos($n, 'চাল') !== false || strpos($n, 'শস্য') !== false || strpos($n, 'rice') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678696_rice.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'তেল') !== false || strpos($n, 'ঘি') !== false || strpos($n, 'oil') !== false || strpos($n, 'ghee') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/oil.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মসলা') !== false || strpos($n, 'মশলা') !== false || strpos($n, 'spice') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768677548_spices.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'ডাল') !== false || strpos($n, 'dal') !== false || strpos($n, 'lentil') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678718_dal-or-lentil.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'লবণ') !== false || strpos($n, 'লবন') !== false || strpos($n, 'চিনি') !== false || strpos($n, 'salt') !== false || strpos($n, 'sugar') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768678670_salt-sugar.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'রেডি মিক্স') !== false || strpos($n, 'ready mix') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1779792323_ready-mix.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'সেমাই') !== false || strpos($n, 'সুজি') !== false || strpos($n, 'shemai') !== false || strpos($n, 'suji') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1779792371_shemai-suji.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
     if (strpos($n, 'মাছ ও মাংস') !== false) {
         return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মাছ') !== false || strpos($n, 'fish') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'মাংস') !== false || strpos($n, 'meat') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1788452809_Screenshot 2026-09-03 222638.png', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'রান্না') !== false || strpos($n, 'cook') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768677504_cooking.webp', 'bg' => 'bg-white border border-gray-100'];
+    }
+    if (strpos($n, 'খাবার') !== false || strpos($n, 'মুদি') !== false || strpos($n, 'grocery') !== false) {
+        return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/categories/1768692781_unnamed.jpg', 'bg' => 'bg-white border border-gray-100'];
     }
     if (strpos($n, 'দুধ') !== false || strpos($n, 'দুগ্ধ') !== false || strpos($n, 'dairy') !== false) {
         return ['type' => 'image', 'val' => '/sodai-dorkar/public/uploads/products/bottle-milk-1liter.jpg', 'bg' => 'bg-white border border-gray-100'];
     }
     
+    // Emoji fallbacks
     if (strpos($n, 'ফল') !== false || strpos($n, 'fruit') !== false) return ['type' => 'emoji', 'val' => '🍎', 'bg' => 'bg-rose-50 text-rose-500'];
     if (strpos($n, 'শাক') !== false || strpos($n, 'সবজি') !== false || strpos($n, 'vege') !== false) return ['type' => 'emoji', 'val' => '🥦', 'bg' => 'bg-emerald-50 text-emerald-600'];
     if (strpos($n, 'ডিম') !== false || strpos($n, 'egg') !== false) return ['type' => 'emoji', 'val' => '🥚', 'bg' => 'bg-amber-50 text-amber-600'];
-    if (strpos($n, 'চাল') !== false || strpos($n, 'rice') !== false) return ['type' => 'emoji', 'val' => '🌾', 'bg' => 'bg-amber-50 text-amber-700'];
-    if (strpos($n, 'ডাল') !== false || strpos($n, 'dal') !== false || strpos($n, 'lentil') !== false) return ['type' => 'emoji', 'val' => '🥣', 'bg' => 'bg-orange-50 text-orange-600'];
-    if (strpos($n, 'তেল') !== false || strpos($n, 'oil') !== false) return ['type' => 'emoji', 'val' => '🫒', 'bg' => 'bg-lime-50 text-lime-700'];
     if (strpos($n, 'চা') !== false || strpos($n, 'tea') !== false) return ['type' => 'emoji', 'val' => '🍵', 'bg' => 'bg-emerald-50 text-emerald-600'];
-    if (strpos($n, 'মাছ') !== false || strpos($n, 'fish') !== false) return ['type' => 'emoji', 'val' => '🐟', 'bg' => 'bg-cyan-50 text-cyan-600'];
-    if (strpos($n, 'মাংস') !== false || strpos($n, 'meat') !== false) return ['type' => 'emoji', 'val' => '🥩', 'bg' => 'bg-rose-50 text-rose-600'];
-    if (strpos($n, 'লবন') !== false || strpos($n, 'চিনি') !== false || strpos($n, 'salt') !== false || strpos($n, 'sugar') !== false) return ['type' => 'emoji', 'val' => '🧂', 'bg' => 'bg-blue-50 text-blue-600'];
-    if (strpos($n, 'মশলা') !== false || strpos($n, 'spice') !== false) return ['type' => 'emoji', 'val' => '🌶️', 'bg' => 'bg-red-50 text-red-600'];
-    if (strpos($n, 'সেমাই') !== false || strpos($n, 'সুজি') !== false || strpos($n, 'মিক্স') !== false) return ['type' => 'emoji', 'val' => '🥣', 'bg' => 'bg-amber-50 text-amber-700'];
-    if (strpos($n, 'রান্না') !== false || strpos($n, 'cook') !== false) return ['type' => 'emoji', 'val' => '🍳', 'bg' => 'bg-amber-50 text-amber-600'];
     if (strpos($n, 'আইসক্রিম') !== false || strpos($n, 'ice cream') !== false) return ['type' => 'emoji', 'val' => '🍦', 'bg' => 'bg-pink-50 text-pink-500'];
     if (strpos($n, 'ক্যান্ডি') !== false || strpos($n, 'চকলেট') !== false || strpos($n, 'chocolate') !== false || strpos($n, 'candy') !== false) return ['type' => 'emoji', 'val' => '🍫', 'bg' => 'bg-amber-50 text-amber-800'];
     if (strpos($n, 'জল খাবার') !== false || strpos($n, 'নাশতা') !== false || strpos($n, 'snack') !== false || strpos($n, 'breakfast') !== false) return ['type' => 'emoji', 'val' => '🥪', 'bg' => 'bg-orange-50 text-orange-600'];
@@ -151,12 +181,21 @@ if (empty($subs) && !empty($activeCat['id']) && !empty($childrenMap[$activeCat['
 }
 if (empty($subs) && !empty($activeCat) && mb_strpos($activeCat['name'], 'রান্না') !== false) {
     // Default subcategories if database hasn't populated children yet
-    $sampleSubs = ['চাল ও শস্য', 'ভোজ্য তেল ও ঘি', 'মসলা', 'ডাল ও ডালজাতীয়', 'লবণ ও চিনি', 'রেডি মিক্স', 'সেমাই ও সুজি'];
-    $subDummyId = 100;
-    foreach ($sampleSubs as $sName) {
+    $sampleSubs = [
+        ['name' => 'চাল ও শস্য', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678696_rice.webp'],
+        ['name' => 'ভোজ্য তেল ও ঘি', 'image_path' => '/sodai-dorkar/public/uploads/categories/oil.webp'],
+        ['name' => 'মসলা', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768677548_spices.webp'],
+        ['name' => 'ডাল ও ডালজাতীয়', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678718_dal-or-lentil.webp'],
+        ['name' => 'লবণ ও চিনি', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678670_salt-sugar.webp'],
+        ['name' => 'রেডি মিক্স', 'image_path' => '/sodai-dorkar/public/uploads/categories/1779792323_ready-mix.webp'],
+        ['name' => 'সেমাই ও সুজি', 'image_path' => '/sodai-dorkar/public/uploads/categories/1779792371_shemai-suji.webp'],
+    ];
+    $subDummyId = 16;
+    foreach ($sampleSubs as $sData) {
         $subs[] = [
             'id' => $subDummyId++,
-            'name' => $sName,
+            'name' => $sData['name'],
+            'image_path' => $sData['image_path'],
             'total_product_count' => null
         ];
     }
@@ -275,27 +314,44 @@ if (empty($bannerSubtitle)) {
 
             <!-- 2. SUBCATEGORY FILTER PILLS BAR -->
             <div class="mb-3 sm:mb-4">
-                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                <div class="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-1">
                     <!-- Pill 1: "সবগুলো" (All) -->
                     <?php 
                         $isAllActive = empty($activeSubId);
                         $allPillUrl = !empty($activeCat) ? $base . '/?category=' . $activeCat['id'] : $base . '/';
                     ?>
                     <a href="<?= $allPillUrl ?>" 
-                       class="flex-shrink-0 px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all <?= $isAllActive ? 'bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900' ?>">
-                        সবগুলো
+                       class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 <?= $isAllActive ? 'bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
+                        <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                            <span class="text-xs sm:text-sm leading-none select-none">🛒</span>
+                        </div>
+                        <span class="whitespace-nowrap">সবগুলো</span>
                     </a>
 
                     <!-- Subcategory Pills -->
                     <?php foreach ($subs as $sc): ?>
                         <?php 
                             $isScActive = ($activeSubId && (int)$activeSubId === (int)$sc['id']);
+                            $scVis = getCategoryVisual($sc);
                         ?>
                         <a href="<?= $base ?>/?category=<?= $activeCat['id'] ?? '' ?>&sub=<?= $sc['id'] ?>" 
-                           class="flex-shrink-0 px-3.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm transition-all flex items-center gap-1.5 <?= $isScActive ? 'bg-emerald-800 text-white font-bold shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-semibold' ?>">
-                            <span><?= htmlspecialchars($sc['name']) ?></span>
+                           class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm transition-all flex items-center gap-2 <?= $isScActive ? 'bg-emerald-800 text-white font-bold shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
+                            
+                            <!-- Subcategory Visual Image / Icon Container -->
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-2xs shrink-0 <?= $isScActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                                <?php if ($scVis['type'] === 'image'): ?>
+                                    <img src="<?= htmlspecialchars($scVis['val']) ?>" 
+                                         alt="<?= htmlspecialchars($sc['name']) ?>" 
+                                         class="w-full h-full object-contain p-0.5" 
+                                         onerror="this.parentElement.innerHTML='🛒'">
+                                <?php else: ?>
+                                    <span class="text-xs sm:text-sm leading-none select-none"><?= $scVis['val'] ?></span>
+                                <?php endif; ?>
+                            </div>
+
+                            <span class="whitespace-nowrap"><?= htmlspecialchars($sc['name']) ?></span>
                             <?php if (!empty($sc['total_product_count'])): ?>
-                                <span class="text-[10px] px-1.5 py-0.2 rounded-full <?= $isScActive ? 'bg-white/20 text-white' : 'bg-emerald-200 text-emerald-900' ?>">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full <?= $isScActive ? 'bg-white/20 text-white' : 'bg-emerald-200 text-emerald-900 font-bold' ?>">
                                     <?= $sc['total_product_count'] ?>
                                 </span>
                             <?php endif; ?>

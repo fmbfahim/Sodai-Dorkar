@@ -263,6 +263,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <ion-icon name="checkbox-outline" class="text-base text-purple-600"></ion-icon>
                     <span>নির্বাচিত: <strong id="statSelectedCount" class="text-purple-950">0</strong> টি</span>
                 </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5">
+                    <ion-icon name="albums-outline" class="text-base text-slate-600"></ion-icon>
+                    <span>পৃষ্ঠা: <strong class="current-page-display text-slate-950">1</strong> / <span class="total-pages-display">1</span></span>
+                </div>
             </div>
 
             <!-- Bulk Action Buttons -->
@@ -292,6 +296,81 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             </div>
         </div>
 
+        <!-- All Duplicates Notification Banner -->
+        <div id="allDuplicatesBanner" class="hidden p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-900 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-200/80 border border-amber-300 text-amber-800 flex items-center justify-center text-xl flex-shrink-0">
+                    <ion-icon name="alert-circle"></ion-icon>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                        <span>এই পৃষ্ঠার সব ৫০টি পণ্য ইতিমধ্যে আপনার ডাটাবেসে সেভ আছে!</span>
+                    </h4>
+                    <p class="text-[11px] text-amber-800 mt-0.5" id="allDuplicatesBannerSub">
+                        নতুন পণ্য পেতে পরবর্তী পৃষ্ঠা দেখুন অথবা নিচে 'বিদ্যমান পণ্য লুকান' ফিল্টার ব্যবহার করুন।
+                    </p>
+                </div>
+            </div>
+            <button type="button" 
+                    id="allDuplicatesNextBtn"
+                    onclick="loadNextPage()" 
+                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black transition-all shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
+                <span id="allDuplicatesNextBtnText">পরবর্তী পৃষ্ঠা (Next Page) লোড করুন</span>
+                <ion-icon name="arrow-forward" class="text-sm"></ion-icon>
+            </button>
+        </div>
+
+        <!-- Top Pagination & Filter Bar -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-secondary-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <!-- Left: Page status & navigation buttons -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" 
+                        id="prevPageBtn" 
+                        onclick="loadPrevPage()" 
+                        disabled
+                        class="px-3 py-1.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 disabled:opacity-40 disabled:cursor-not-allowed text-secondary-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+                    <ion-icon name="chevron-back-outline"></ion-icon>
+                    <span>পূর্ববর্তী পৃষ্ঠা</span>
+                </button>
+
+                <div class="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-extrabold flex items-center gap-1.5">
+                    <ion-icon name="albums-outline" class="text-emerald-700"></ion-icon>
+                    <span>পৃষ্ঠা <strong class="current-page-display text-emerald-800">1</strong> / <span class="total-pages-display">1</span></span>
+                    <span class="text-secondary-400 font-normal text-[11px]">(মোট <span class="total-items-display">0</span>টি পণ্য)</span>
+                </div>
+
+                <button type="button" 
+                        id="nextPageBtn" 
+                        onclick="loadNextPage()" 
+                        disabled
+                        class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-xs flex items-center gap-1 cursor-pointer">
+                    <span>পরবর্তী পৃষ্ঠা</span>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
+                </button>
+
+                <button type="button" 
+                        id="loadMoreBtn" 
+                        onclick="loadMoreProducts()" 
+                        disabled
+                        class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="বর্তমান তালিকার নিচে পরবর্তী ৫০টি পণ্য যুক্ত করুন">
+                    <ion-icon name="add-circle-outline" class="text-sm text-teal-600"></ion-icon>
+                    <span>আরও ৫০টি পণ্য যোগ করুন</span>
+                </button>
+            </div>
+
+            <!-- Right: Filter out duplicates toggle -->
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        id="toggleHideExistingBtn"
+                        onclick="toggleHideExisting()" 
+                        class="px-3 py-1.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-all flex items-center gap-1.5 border border-secondary-200 cursor-pointer">
+                    <ion-icon name="eye-off-outline" class="text-sm"></ion-icon>
+                    <span id="toggleHideExistingText">বিদ্যমান পণ্য লুকান</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Products Table -->
         <div class="bg-white rounded-3xl shadow-xs border border-secondary-200 overflow-hidden">
             <div class="overflow-x-auto">
@@ -316,6 +395,48 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         <!-- Populated via JavaScript -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Bottom Pagination Bar -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-secondary-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" 
+                        id="prevPageBtnBottom" 
+                        onclick="loadPrevPage()" 
+                        disabled
+                        class="px-3 py-1.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 disabled:opacity-40 disabled:cursor-not-allowed text-secondary-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+                    <ion-icon name="chevron-back-outline"></ion-icon>
+                    <span>পূর্ববর্তী পৃষ্ঠা</span>
+                </button>
+
+                <div class="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-extrabold flex items-center gap-1.5">
+                    <ion-icon name="albums-outline" class="text-emerald-700"></ion-icon>
+                    <span>পৃষ্ঠা <strong class="current-page-display text-emerald-800">1</strong> / <span class="total-pages-display">1</span></span>
+                    <span class="text-secondary-400 font-normal text-[11px]">(মোট <span class="total-items-display">0</span>টি পণ্য)</span>
+                </div>
+
+                <button type="button" 
+                        id="nextPageBtnBottom" 
+                        onclick="loadNextPage()" 
+                        disabled
+                        class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-xs flex items-center gap-1 cursor-pointer">
+                    <span>পরবর্তী পৃষ্ঠা</span>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
+                </button>
+
+                <button type="button" 
+                        id="loadMoreBtnBottom" 
+                        onclick="loadMoreProducts()" 
+                        disabled
+                        class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    <ion-icon name="add-circle-outline" class="text-sm text-teal-600"></ion-icon>
+                    <span>আরও ৫০টি পণ্য যোগ করুন</span>
+                </button>
+            </div>
+
+            <div class="text-xs text-secondary-500 font-medium">
+                পৃষ্ঠা পরিবর্তন করলে নতুন পণ্য তালিকা লোড হবে
             </div>
         </div>
     </div>
@@ -432,6 +553,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <ion-icon name="cube-outline"></ion-icon>
                     <span>পণ্য দেখুন</span>
                 </a>
+                <button type="button" id="bulkNextPageBtn" onclick="closeBulkImportModal(); loadNextPage();" class="hidden px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-black transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
+                    <span id="bulkNextPageBtnText">পরবর্তী পৃষ্ঠা লোড করুন</span>
+                    <ion-icon name="arrow-forward"></ion-icon>
+                </button>
                 <button type="button" onclick="closeBulkImportModal()" class="px-4 py-2.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-colors">
                     বন্ধ করুন
                 </button>
@@ -589,6 +714,14 @@ let bulkStats = {
     skipped: 0,
     errors: 0
 };
+
+// Pagination State
+let currentFetchPage = 1;
+let totalFetchPages = 1;
+let totalFetchCount = 0;
+let hasNextPage = false;
+let hasPrevPage = false;
+let isHideExistingActive = false;
 
 const csrfToken = '<?= \Core\CSRF::token() ?>';
 const baseUri = '<?= $base ?>';
@@ -1069,8 +1202,9 @@ function selectAndFetchCategory(slug, displayName, parentSlug = null, parentName
     currentCategoryParentSlug = parentSlug || '';
     currentCategoryParentName = parentName || '';
     currentCategoryLevel = level || 1;
+    currentFetchPage = 1;
 
-    fetchCategoryProducts();
+    fetchCategoryProducts(1, false);
 
     // Smooth scroll down to products section
     setTimeout(() => {
@@ -1345,7 +1479,7 @@ function updateTargetCategoryDropdown(catId, catName, level = 1, parentId = null
 }
 
 // Fetch products from backend proxy
-async function fetchCategoryProducts() {
+async function fetchCategoryProducts(page = 1, append = false) {
     const input = document.getElementById('shwapnoCategoryInput');
     const catQuery = input.value.trim();
     if (!catQuery) {
@@ -1355,24 +1489,82 @@ async function fetchCategoryProducts() {
 
     const btn = document.getElementById('loadProductsBtn');
     const btnText = document.getElementById('loadProductsBtnText');
-    btn.disabled = true;
-    btnText.innerText = 'লোড হচ্ছে...';
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const loadMoreBtnBottom = document.getElementById('loadMoreBtnBottom');
+    
+    if (append) {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = `<span class="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span> <span>লোড হচ্ছে...</span>`;
+        }
+        if (loadMoreBtnBottom) {
+            loadMoreBtnBottom.disabled = true;
+            loadMoreBtnBottom.innerHTML = `<span class="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span> <span>লোড হচ্ছে...</span>`;
+        }
+    } else {
+        btn.disabled = true;
+        btnText.innerText = 'লোড হচ্ছে...';
+    }
 
     try {
-        const res = await fetch(`${baseUri}/admin/products/shwapno-category-fetch?category=${encodeURIComponent(catQuery)}`);
+        const res = await fetch(`${baseUri}/admin/products/shwapno-category-fetch?category=${encodeURIComponent(catQuery)}&page=${page}`);
         const data = await res.json();
 
         if (data.success && data.products && data.products.length > 0) {
-            loadedProducts = data.products;
+            currentFetchPage = data.current_page || page;
+            totalFetchPages = data.total_pages || 1;
+            totalFetchCount = data.total_count || data.products.length;
+            hasNextPage = !!data.has_next_page;
+            hasPrevPage = !!data.has_prev_page;
+
             currentCategoryName = data.category_name || catQuery;
             currentCategorySlug = data.category || catQuery;
             currentCategoryParentSlug = data.parent_slug || '';
             currentCategoryParentName = data.parent_name || '';
             currentCategoryLevel = data.level || 1;
 
+            if (append) {
+                // Append only products not already in loadedProducts (by SKU / Name)
+                const existingSkus = new Set(loadedProducts.map(p => p.sku).filter(Boolean));
+                const existingNames = new Set(loadedProducts.map(p => p.name.toLowerCase()));
+                const freshItems = data.products.filter(p => {
+                    if (p.sku && existingSkus.has(p.sku)) return false;
+                    if (p.name && existingNames.has(p.name.toLowerCase())) return false;
+                    return true;
+                });
+                loadedProducts = [...loadedProducts, ...freshItems];
+            } else {
+                loadedProducts = data.products;
+            }
+
             renderProductsTable(loadedProducts);
+            updatePaginationUI();
+            
+            // Check if all items in this page are already in database
+            const allDuplicatesBanner = document.getElementById('allDuplicatesBanner');
+            if (allDuplicatesBanner) {
+                if (!append && data.new_count === 0 && data.total_pages > data.current_page) {
+                    allDuplicatesBanner.classList.remove('hidden');
+                    const sub = document.getElementById('allDuplicatesBannerSub');
+                    if (sub) {
+                        sub.innerHTML = `এই পৃষ্ঠার সব ৫০টি পণ্য ইতিমধ্যে আপনার ডাটাবেসে সেভ আছে। নতুন পণ্য পেতে পরবর্তী পৃষ্ঠা দেখুন (পৃষ্ঠা ${currentFetchPage + 1} / ${totalFetchPages})।`;
+                    }
+                    const nextText = document.getElementById('allDuplicatesNextBtnText');
+                    if (nextText) {
+                        nextText.innerText = `পরবর্তী পৃষ্ঠা (${currentFetchPage + 1}) লোড করুন`;
+                    }
+                } else {
+                    allDuplicatesBanner.classList.add('hidden');
+                }
+            }
+
             document.getElementById('initialStateBox').classList.add('hidden');
             document.getElementById('previewContainer').classList.remove('hidden');
+
+            if (!append && page > 1) {
+                const preview = document.getElementById('previewContainer');
+                if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         } else {
             alert(data.message || 'কোনো পণ্য পাওয়া যায়নি।');
         }
@@ -1382,6 +1574,86 @@ async function fetchCategoryProducts() {
     } finally {
         btn.disabled = false;
         btnText.innerText = 'পণ্য লোড করুন';
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = (currentFetchPage >= totalFetchPages);
+            loadMoreBtn.innerHTML = `<ion-icon name="add-circle-outline" class="text-sm text-teal-600"></ion-icon> <span>আরও ৫০টি পণ্য যোগ করুন</span>`;
+        }
+        if (loadMoreBtnBottom) {
+            loadMoreBtnBottom.disabled = (currentFetchPage >= totalFetchPages);
+            loadMoreBtnBottom.innerHTML = `<ion-icon name="add-circle-outline" class="text-sm text-teal-600"></ion-icon> <span>আরও ৫০টি পণ্য যোগ করুন</span>`;
+        }
+    }
+}
+
+function loadNextPage() {
+    if (currentFetchPage < totalFetchPages) {
+        fetchCategoryProducts(currentFetchPage + 1, false);
+    } else {
+        alert('আপনি শেষ পৃষ্ঠায় আছেন।');
+    }
+}
+
+function loadPrevPage() {
+    if (currentFetchPage > 1) {
+        fetchCategoryProducts(currentFetchPage - 1, false);
+    }
+}
+
+function loadMoreProducts() {
+    if (currentFetchPage < totalFetchPages) {
+        fetchCategoryProducts(currentFetchPage + 1, true);
+    } else {
+        alert('আর কোনো অতিরিক্ত পৃষ্ঠা বা পণ্য নেই।');
+    }
+}
+
+function updatePaginationUI() {
+    // Current page numbers
+    document.querySelectorAll('.current-page-display').forEach(el => el.innerText = currentFetchPage);
+    document.querySelectorAll('.total-pages-display').forEach(el => el.innerText = totalFetchPages);
+    document.querySelectorAll('.total-items-display').forEach(el => el.innerText = totalFetchCount);
+
+    // Prev / Next button states
+    const prevBtns = [document.getElementById('prevPageBtn'), document.getElementById('prevPageBtnBottom')];
+    prevBtns.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = (currentFetchPage <= 1);
+    });
+
+    const nextBtns = [document.getElementById('nextPageBtn'), document.getElementById('nextPageBtnBottom')];
+    nextBtns.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = (currentFetchPage >= totalFetchPages);
+    });
+
+    const moreBtns = [document.getElementById('loadMoreBtn'), document.getElementById('loadMoreBtnBottom')];
+    moreBtns.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = (currentFetchPage >= totalFetchPages);
+    });
+}
+
+function toggleHideExisting() {
+    isHideExistingActive = !isHideExistingActive;
+    const btn = document.getElementById('toggleHideExistingBtn');
+    const text = document.getElementById('toggleHideExistingText');
+    const rows = document.querySelectorAll('#shwapnoProductsTbody tr');
+
+    rows.forEach(tr => {
+        const isNew = tr.getAttribute('data-is-new') === '1';
+        if (isHideExistingActive && !isNew) {
+            tr.classList.add('hidden');
+        } else {
+            tr.classList.remove('hidden');
+        }
+    });
+
+    if (isHideExistingActive) {
+        btn.className = 'px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer';
+        text.innerText = 'সব পণ্য দেখান';
+    } else {
+        btn.className = 'px-3 py-1.5 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-all flex items-center gap-1.5 border border-secondary-200 cursor-pointer';
+        text.innerText = 'বিদ্যমান পণ্য লুকান';
     }
 }
 
@@ -1403,10 +1675,11 @@ function renderProductsTable(products) {
         else newCount++;
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-emerald-50/30 transition-colors group item-row';
-        tr.id = `item-row-${idx}`;
-
         const isNew = !p.exists_in_db;
+        tr.className = 'hover:bg-emerald-50/30 transition-colors group item-row' + (isHideExistingActive && !isNew ? ' hidden' : '');
+        tr.id = `item-row-${idx}`;
+        tr.setAttribute('data-is-new', isNew ? '1' : '0');
+
         const statusBadge = isNew
             ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
                  <ion-icon name="sparkles" class="text-xs text-emerald-600"></ion-icon> নতুন পণ্য
@@ -1431,7 +1704,7 @@ function renderProductsTable(products) {
                        class="product-checkbox rounded text-emerald-600 focus:ring-emerald-500" 
                        data-index="${idx}" 
                        data-is-new="${isNew ? '1' : '0'}"
-                       checked
+                       ${isNew ? 'checked' : (document.querySelector('input[name="duplicateAction"]:checked')?.value === 'skip' ? '' : 'checked')}
                        onchange="updateSelectedStats()">
             </td>
             <td class="py-3 px-4 text-center font-mono text-secondary-400 text-[11px]">
@@ -1661,6 +1934,8 @@ function openBulkImportModal() {
     document.getElementById('bulkPauseBtn').classList.add('hidden');
     document.getElementById('bulkStopBtn').classList.add('hidden');
     document.getElementById('bulkViewProductsBtn').classList.add('hidden');
+    const nextModalBtn = document.getElementById('bulkNextPageBtn');
+    if (nextModalBtn) nextModalBtn.classList.add('hidden');
     document.getElementById('bulkProgressStatusText').innerText = `মোট ${bulkStats.total}টি পণ্য ইমপোর্ট করার জন্য প্রস্তুত...`;
 }
 
@@ -1847,6 +2122,16 @@ async function startBulkImporting() {
         document.getElementById('bulkPauseBtn').classList.add('hidden');
         document.getElementById('bulkStopBtn').classList.add('hidden');
         document.getElementById('bulkViewProductsBtn').classList.remove('hidden');
+
+        if (currentFetchPage < totalFetchPages) {
+            const nextBtn = document.getElementById('bulkNextPageBtn');
+            const nextBtnText = document.getElementById('bulkNextPageBtnText');
+            if (nextBtn) {
+                if (nextBtnText) nextBtnText.innerText = `পরবর্তী পৃষ্ঠা (${currentFetchPage + 1}) লোড করুন`;
+                nextBtn.classList.remove('hidden');
+            }
+            appendBulkLog(`💡 টিপস: এই ক্যাটাগরির পরবর্তী পৃষ্ঠা (পৃষ্ঠা ${currentFetchPage + 1} / ${totalFetchPages}) লোড করে আরও নতুন পণ্য ইমপোর্ট করতে পারবেন।`, 'info');
+        }
 
         const startBtn = document.getElementById('bulkStartBtn');
         startBtn.innerHTML = `<ion-icon name="refresh" class="text-sm"></ion-icon> <span>পুনরায় চালান</span>`;

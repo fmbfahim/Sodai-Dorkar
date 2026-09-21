@@ -44,9 +44,9 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
         </div>
     <?php endif; ?>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Add Category Form Section (4 Cols) -->
-        <div class="lg:col-span-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-12 gap-6">
+        <!-- Add Category Form Section (1 of 3 / 4 of 12) -->
+        <div class="lg:col-span-1 xl:col-span-4">
             <div class="bg-white rounded-2xl shadow-xs border border-secondary-200 p-5 sm:p-6 sticky top-6">
                 <div class="flex items-center justify-between pb-3 mb-4 border-b border-secondary-100">
                     <h3 class="text-base font-black text-secondary-900 flex items-center gap-2">
@@ -211,8 +211,8 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
             </div>
         </div>
 
-        <!-- Categories List & Real-time Search Section (8 Cols) -->
-        <div class="lg:col-span-8">
+        <!-- Categories List & Real-time Search Section (2 of 3 / 8 of 12) -->
+        <div class="lg:col-span-2 xl:col-span-8 min-w-0">
             <div class="bg-white rounded-2xl shadow-xs border border-secondary-200 overflow-hidden">
                 <!-- Search & Filters Header Bar -->
                 <div class="p-4 sm:p-5 border-b border-secondary-100 bg-secondary-50/50 space-y-3">
@@ -236,9 +236,9 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
                     </div>
 
                     <!-- Instant Search Input & Level Filter -->
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1">
+                    <div class="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                         <!-- Search Input -->
-                        <div class="sm:col-span-8 relative">
+                        <div class="w-full sm:flex-1 relative">
                             <input type="text" 
                                    id="categorySearchInput" 
                                    oninput="filterCategoriesTable()" 
@@ -256,7 +256,7 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
                         </div>
 
                         <!-- Level Filter Dropdown -->
-                        <div class="sm:col-span-4">
+                        <div class="w-full sm:w-60 shrink-0">
                             <select id="categoryLevelFilter" 
                                     onchange="filterCategoriesTable()" 
                                     class="w-full px-3 py-2 text-xs border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-2xs font-bold text-secondary-700 cursor-pointer">
@@ -271,14 +271,14 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
 
                 <!-- Categories Table -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-secondary-600" id="categoriesTable">
+                    <table class="w-full text-left text-xs text-secondary-600 min-w-[620px]" id="categoriesTable">
                         <thead class="bg-secondary-100/70 text-secondary-600 font-bold border-b border-secondary-200">
                             <tr>
                                 <th class="px-4 py-3 font-bold w-16 text-center">ছবি</th>
-                                <th class="px-4 py-3 font-bold">ক্যাটাগরির নাম ও স্ল্যাগ</th>
-                                <th class="px-4 py-3 font-bold">প্যারেন্ট ক্যাটাগরি</th>
-                                <th class="px-4 py-3 font-bold">বিবরণ</th>
-                                <th class="px-4 py-3 font-bold text-right">অ্যাকশন</th>
+                                <th class="px-4 py-3 font-bold min-w-[200px]">ক্যাটাগরির নাম ও স্ল্যাগ</th>
+                                <th class="px-4 py-3 font-bold min-w-[130px]">প্যারেন্ট ক্যাটাগরি</th>
+                                <th class="px-4 py-3 font-bold min-w-[120px]">বিবরণ</th>
+                                <th class="px-4 py-3 font-bold w-24 text-right">অ্যাকশন</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-secondary-100" id="categoriesTbody">

@@ -1944,44 +1944,163 @@ class ProductController extends Controller {
             $resolvedCategoryName = $popularCategoryMap[$lowerKey] ?? ucwords(str_replace(['-', '_'], ' ', $catInput));
         }
 
-        // 1. Try fetching via category parameter
-        $products = [];
-        $url1 = "https://www.shwapno.com/api/search?category=" . urlencode($categorySlug);
-        $ch = curl_init($url1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
-        $res1 = curl_exec($ch);
-        $code1 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $cleanSlug = trim(str_replace(['-', '_'], ' ', $categorySlug));
 
-        if ($code1 === 200 && $res1) {
-            $data1 = json_decode($res1, true);
-            if (!empty($data1['products'])) {
-                $products = $data1['products'];
+        // Candidate search queries in priority order for comprehensive catalog results
+        $slugKeywordMap = [
+            'rice' => 'rice',
+            'packed-rice' => 'packed rice',
+            'loose-rice' => 'loose rice',
+            'polao-rice' => 'polao rice',
+            'oil' => 'cooking oil',
+            'soybean-oil' => 'soybean oil',
+            'mustard-oil' => 'mustard oil',
+            'sunflower-oil' => 'sunflower oil',
+            'ghee' => 'ghee',
+            'olive-oil' => 'olive oil',
+            'fish' => 'fish',
+            'fresh-water-fish' => 'fresh water fish',
+            'sea-fish' => 'sea fish',
+            'meat' => 'meat',
+            'beef' => 'beef',
+            'chicken' => 'chicken',
+            'mutton' => 'mutton',
+            'meat-and-eggs' => 'meat',
+            'meat-and-fish' => 'meat fish',
+            'fruits-and-vegetables' => 'fresh fruits',
+            'fresh-fruits' => 'fresh fruits',
+            'fresh-vegetables' => 'fresh vegetables',
+            'dry-fruits' => 'dry fruits',
+            'spices' => 'spices',
+            'daal-or-lentil' => 'dal lentil',
+            'flours' => 'flour atta',
+            'dairy' => 'milk dairy',
+            'baby-food' => 'baby food',
+            'cleaning' => 'cleaning',
+            'personal-care' => 'personal care',
+            'tea' => 'tea',
+            'coffee' => 'coffee',
+            'snacks' => 'biscuits snacks'
+        ];
+
+        $candidateQueries = [];
+        if (!empty($slugKeywordMap[$categorySlug])) {
+            $candidateQueries[] = $slugKeywordMap[$categorySlug];
+        }
+        if (!empty($searchQuery) && !in_array($searchQuery, $candidateQueries)) {
+            $candidateQueries[] = $searchQuery;
+        }
+        if (!empty($cleanSlug) && !in_array($cleanSlug, $candidateQueries)) {
+            $candidateQueries[] = $cleanSlug;
+        }
+        if (!empty($parentSlug)) {
+            $cleanParent = trim(str_replace(['-', '_'], ' ', $parentSlug));
+            if (!empty($cleanParent) && !in_array($cleanParent, $candidateQueries)) {
+                $candidateQueries[] = $cleanParent;
             }
         }
 
-        // 2. If 0 products, try search query from catalog or cleaned input
-        if (empty($products)) {
-            $queryToUse = $searchQuery ?: str_replace(['-', '_'], ' ', $categorySlug);
-            $url2 = "https://www.shwapno.com/api/search?q=" . urlencode($queryToUse);
-            $ch = curl_init($url2);
+        // Known catalogIds for fallback /api/category/products endpoint
+        $knownCatalogIds = [
+            'rice' => '65ed45e3e429af37f903ae15',
+            'packed-rice' => '65ed45e3e429af37f903ae15',
+            'loose-rice' => '65ed45e3e429af37f903ae15',
+            'polao-rice' => '65ed45e3e429af37f903ae15',
+            'oil' => '65ed45dfe429af37f903aded',
+            'soybean-oil' => '65ed45dfe429af37f903aded',
+            'mustard-oil' => '65ed45dfe429af37f903aded',
+            'sunflower-oil' => '65ed45dfe429af37f903aded',
+            'olive-oil' => '65ed45dfe429af37f903aded',
+            'ghee' => '65ed45dfe429af37f903aded',
+            'fish' => '65ed45e2e429af37f903ae0b',
+            'fresh-water-fish' => '65ed45e2e429af37f903ae0b',
+            'sea-fish' => '65ed45e2e429af37f903ae0b',
+            'meat' => '65ed45e2e429af37f903ae0f',
+            'beef' => '65ed45e2e429af37f903ae0f',
+            'chicken' => '65ed45e2e429af37f903ae0f',
+            'mutton' => '65ed45e2e429af37f903ae0f',
+            'fresh-fruits' => '65ed45e2e429af37f903ae07',
+            'fresh-vegetables' => '65ed45e2e429af37f903ae08',
+            'dairy' => '65ed45e0e429af37f903adf4',
+            'liquid-milk' => '65ed45e0e429af37f903adf4',
+            'powder-milk' => '65ed45e0e429af37f903adf4',
+            'baby-food' => '65ed45e1e429af37f903adff',
+            'spices' => '65ed45e4e429af37f903ae22',
+            'powder-spice' => '65ed45e4e429af37f903ae22',
+            'whole-spice' => '65ed45e4e429af37f903ae22',
+            'salt-and-sugar' => '65ed45e4e429af37f903ae23',
+            'daal-or-lentil' => '65ed45e3e429af37f903ae18',
+            'flours' => '65ed45e4e429af37f903ae27',
+            'shemai-and-suji' => '65ed45e6e429af37f903ae39',
+            'sauces-and-pickles' => '65ed45e0e429af37f903adf3',
+            'canned-food' => '65ed45e7e429af37f903ae45',
+            'home-cleaning' => '65ed45e0e429af37f903adf5',
+            'personal-care' => '65ed45e9e429af37f903ae5c',
+            'beauty-and-health' => '65ed45e9e429af37f903ae5b',
+            'pet-care' => '65ed45e1e429af37f903ae02',
+            'gadget' => '6684075f8c4b6f7aaf96d8c4'
+        ];
+
+        $catalogId = $knownCatalogIds[$categorySlug] ?? ($knownCatalogIds[strtolower($catInput)] ?? null);
+        $products = [];
+        $totalPages = 1;
+        $totalCount = 0;
+        $currentPage = $page;
+        $hasNextPage = false;
+        $hasPrevPage = ($page > 1);
+
+        $requestType = ($page > 1) ? '20' : '0';
+
+        // 1. Try Search API with candidate queries (provides rich catalog with up to 300+ items across 6 pages)
+        foreach ($candidateQueries as $q) {
+            $urlSearch = "https://www.shwapno.com/api/search?q=" . urlencode($q) . "&pageNumber={$page}&requestType={$requestType}";
+            $ch = curl_init($urlSearch);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
             curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
             curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
-            $res2 = curl_exec($ch);
-            $code2 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $resSearch = curl_exec($ch);
+            $codeSearch = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            if ($code2 === 200 && $res2) {
-                $data2 = json_decode($res2, true);
-                if (!empty($data2['products'])) {
-                    $products = $data2['products'];
+            if ($codeSearch === 200 && $resSearch) {
+                $dataSearch = json_decode($resSearch, true);
+                if (!empty($dataSearch['products'])) {
+                    $products = $dataSearch['products'];
+                    $totalPages = intval($dataSearch['totalPages'] ?? 1);
+                    $totalCount = intval($dataSearch['totalCount'] ?? count($products));
+                    $currentPage = intval($dataSearch['currentPage'] ?? $page);
+                    $hasNextPage = ($currentPage < $totalPages);
+                    $hasPrevPage = ($currentPage > 1);
+                    break;
+                }
+            }
+        }
+
+        // 2. Fallback to Category API if search returned empty and catalogId exists
+        if (empty($products) && $catalogId) {
+            $urlCat = "https://www.shwapno.com/api/category/products?id={$catalogId}&pageNumber={$page}";
+            $ch = curl_init($urlCat);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Accept: application/json", "Referer: https://www.shwapno.com/"]);
+            $resCat = curl_exec($ch);
+            $codeCat = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($codeCat === 200 && $resCat) {
+                $dataCat = json_decode($resCat, true);
+                if (!empty($dataCat['products'])) {
+                    $products = $dataCat['products'];
+                    $totalPages = intval($dataCat['totalPages'] ?? 1);
+                    $totalCount = intval($dataCat['totalItems'] ?? count($products));
+                    $currentPage = intval($dataCat['pageNumber'] ?? $page);
+                    $hasNextPage = !empty($dataCat['hasNextPage']) || ($currentPage < $totalPages);
+                    $hasPrevPage = !empty($dataCat['hasPreviousPage']) || ($currentPage > 1);
                 }
             }
         }
@@ -1989,8 +2108,13 @@ class ProductController extends Controller {
         if (empty($products)) {
             echo json_encode([
                 'success' => false,
-                'message' => "Shwapno-তে '{$catInput}' ক্যাটাগরির কোনো পণ্য পাওয়া যায়নি। অনুগ্রহ করে অন্য নাম বা ইংরেজি নাম চেষ্টা করুন।",
-                'products' => []
+                'message' => "Shwapno-তে '{$catInput}' ক্যাটাগরির কোনো পণ্য পাওয়া যায়নি (পৃষ্ঠা {$page})। অনুগ্রহ করে অন্য নাম বা ইংরেজি নাম চেষ্টা করুন।",
+                'products' => [],
+                'current_page' => $page,
+                'total_pages' => 0,
+                'total_count' => 0,
+                'has_next_page' => false,
+                'has_prev_page' => false
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }
@@ -2010,6 +2134,8 @@ class ProductController extends Controller {
             $db = null;
         }
         $parsedItems = [];
+        $newCount = 0;
+        $existingCount = 0;
 
         foreach ($products as $item) {
             $p = $item['product'] ?? $item;
@@ -2061,6 +2187,12 @@ class ProductController extends Controller {
                 }
             }
 
+            if ($exists) {
+                $existingCount++;
+            } else {
+                $newCount++;
+            }
+
             // Extract variants if available
             $variants = [];
             if (!empty($p['uomOptions']) && is_array($p['uomOptions'])) {
@@ -2105,7 +2237,14 @@ class ProductController extends Controller {
             'parent_name' => $parentName,
             'level' => $level,
             'category_image' => $categoryImage,
+            'current_page' => $currentPage,
+            'total_pages' => $totalPages,
+            'total_count' => $totalCount,
+            'has_next_page' => $hasNextPage,
+            'has_prev_page' => $hasPrevPage,
             'count' => count($parsedItems),
+            'new_count' => $newCount,
+            'existing_count' => $existingCount,
             'products' => $parsedItems
         ], JSON_UNESCAPED_UNICODE);
         exit;
