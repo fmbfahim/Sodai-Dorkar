@@ -1,9 +1,9 @@
 <?php 
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
-$storeName = $settings['store_name'] ?? 'Sodai Dorkar';
-$storePhone = $settings['store_phone'] ?? '+8801700-000000';
-$storeEmail = $settings['store_email'] ?? 'support@sodaidorkar.com';
-$storeAddress = $settings['store_address'] ?? 'Dhaka, Bangladesh';
+$storeName = $settings['site_title'] ?? $settings['store_name'] ?? 'Fresh E mart';
+$storePhone = $settings['contact_phone'] ?? $settings['store_phone'] ?? '+8801700-000000';
+$storeEmail = $settings['contact_email'] ?? $settings['store_email'] ?? 'support@freshemart.com';
+$storeAddress = $settings['contact_address'] ?? $settings['store_address'] ?? 'Dhaka, Bangladesh';
 ?>
 
 <!DOCTYPE html>
@@ -12,7 +12,7 @@ $storeAddress = $settings['store_address'] ?? 'Dhaka, Bangladesh';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>বেতন রশিদ (Salary Slip) - <?= htmlspecialchars($payroll['emp_code']) ?> - <?= htmlspecialchars($payroll['salary_month']) ?></title>
-    <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
+    <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">

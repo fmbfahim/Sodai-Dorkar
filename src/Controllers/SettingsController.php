@@ -31,7 +31,8 @@ class SettingsController extends Controller {
             $settingModel->update($key, $value);
         }
 
-        header('Location: /sodai-dorkar/public/admin/settings?success=1');
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        header("Location: {$base}/admin/settings?success=1");
         exit;
     }
 

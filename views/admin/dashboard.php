@@ -24,7 +24,7 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
             <div class="space-y-2">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wider text-emerald-300" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Sodai Dorkar &bull; Executive Command Center
+                    <?= htmlspecialchars(class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart') ?> &bull; Executive Command Center
                 </div>
                 <h1 class="text-2xl lg:text-3xl font-black tracking-tight text-white">
                     Welcome back, Admin!

@@ -17,7 +17,7 @@
         <!-- Header -->
         <div class="flex justify-between items-start mb-8 border-b pb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-800"><?php echo htmlspecialchars($settings['site_title'] ?? 'Sodai Dorkar'); ?></h1>
+                <h1 class="text-2xl font-bold text-gray-800"><?php echo htmlspecialchars($settings['site_title'] ?? 'Fresh E mart'); ?></h1>
                 <p class="text-gray-500 mt-1"><?php echo htmlspecialchars($settings['contact_address'] ?? 'Dhaka, Bangladesh'); ?></p>
                 <p class="text-gray-500"><?php echo htmlspecialchars($settings['contact_phone'] ?? ''); ?></p>
             </div>
@@ -94,7 +94,7 @@
 
         <!-- Footer -->
         <div class="mt-12 text-center text-xs text-gray-400">
-            <p>Thank you for shopping with <?php echo htmlspecialchars($settings['site_title'] ?? 'Sodai Dorkar'); ?>!</p>
+            <p>Thank you for shopping with <?php echo htmlspecialchars($settings['site_title'] ?? 'Fresh E mart'); ?>!</p>
             <p class="mt-1">This is a system generated invoice.</p>
         </div>
     </div>

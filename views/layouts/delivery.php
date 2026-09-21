@@ -1,17 +1,21 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$deliverySiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $title ?? 'Deliveries'; ?> - Sodai Dorkar</title>
-    <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
+    <title><?php echo $title ?? 'Deliveries'; ?> - <?= htmlspecialchars($deliverySiteTitle) ?></title>
+    <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
     </style>
-    <link rel="manifest" href="/sodai-dorkar/public/manifest.json">
+    <link rel="manifest" href="<?= $base ?>/manifest.json">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">

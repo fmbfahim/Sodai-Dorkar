@@ -13,12 +13,18 @@
 
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden" id="invoice">
     <!-- Header -->
+    <?php
+    $siteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
+    $siteTagline = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_tagline', 'Grocery Delivery Service') : 'Grocery Delivery Service';
+    $contactAddress = class_exists('\Models\Setting') ? \Models\Setting::getValue('contact_address', 'Chandpur, Bangladesh') : 'Chandpur, Bangladesh';
+    $contactPhone = class_exists('\Models\Setting') ? \Models\Setting::getValue('contact_phone', '01700-000000') : '01700-000000';
+    ?>
     <div class="p-8 border-b border-secondary-100 flex justify-between items-start">
         <div>
-            <h1 class="text-3xl font-bold text-primary-600 mb-2">Sodai Dorkar</h1>
-            <p class="text-secondary-500 text-sm">Grocery Delivery Service</p>
-            <p class="text-secondary-500 text-sm">Chandpur, Bangladesh</p>
-            <p class="text-secondary-500 text-sm">Hotline: 01700-000000</p>
+            <h1 class="text-3xl font-bold text-primary-600 mb-2"><?= htmlspecialchars($siteTitle) ?></h1>
+            <p class="text-secondary-500 text-sm"><?= htmlspecialchars($siteTagline) ?></p>
+            <p class="text-secondary-500 text-sm"><?= htmlspecialchars($contactAddress) ?></p>
+            <p class="text-secondary-500 text-sm">Hotline: <?= htmlspecialchars($contactPhone) ?></p>
         </div>
         <div class="text-right">
             <h2 class="text-xl font-bold text-secondary-800">INVOICE</h2>

@@ -27,7 +27,7 @@
         <div>
             <div class="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
                 <div>
-                   <h1 class="font-bold text-xl uppercase"><?php echo htmlspecialchars($settings['site_title'] ?? 'Sodai Dorkar'); ?></h1>
+                   <h1 class="font-bold text-xl uppercase"><?php echo htmlspecialchars($settings['site_title'] ?? 'Fresh E mart'); ?></h1>
                    <p class="text-xs"><?php echo htmlspecialchars($settings['contact_phone'] ?? ''); ?></p>
                 </div>
                 <div class="text-right">

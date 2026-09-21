@@ -11,13 +11,14 @@ $roleTitles = [
     'delivery_man' => 'Delivery Rider'
 ];
 $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
+$adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Sodai Dorkar</title>
+    <title>Admin - <?= htmlspecialchars($adminSiteTitle) ?></title>
     <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +39,7 @@ $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
     <aside id="adminSidebar" class="w-64 bg-white border-r border-secondary-200 flex flex-col fixed h-full z-50 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
         <div class="p-5 flex items-center justify-between border-b border-secondary-100">
             <div>
-                <a href="<?= $base ?>/admin/dashboard" class="text-2xl font-bold text-primary-600 tracking-tight block">Sodai Dorkar</a>
+                <a href="<?= $base ?>/admin/dashboard" class="text-2xl font-bold text-primary-600 tracking-tight block"><?= htmlspecialchars($adminSiteTitle) ?></a>
                 <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 inline-block mt-0.5">
                     <?= htmlspecialchars($displayRole) ?>
                 </span>

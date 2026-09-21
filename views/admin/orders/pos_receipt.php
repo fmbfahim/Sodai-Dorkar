@@ -131,7 +131,7 @@
     <div class="receipt-container">
         <!-- Store Header -->
         <div class="text-center">
-            <h1 style="font-size: 18px; font-weight: 900; letter-spacing: -0.5px;"><?= htmlspecialchars($settings['site_title'] ?? 'Sodai Dorkar') ?></h1>
+            <h1 style="font-size: 18px; font-weight: 900; letter-spacing: -0.5px;"><?= htmlspecialchars($settings['site_title'] ?? 'Fresh E mart') ?></h1>
             <p style="font-size: 11px; margin-top: 2px;"><?= htmlspecialchars($settings['contact_address'] ?? 'Chandpur, Bangladesh') ?></p>
             <p style="font-size: 11px;">Hotline: <?= htmlspecialchars($settings['contact_phone'] ?? '01700-000000') ?></p>
             <div class="dashed-line"></div>
@@ -272,7 +272,7 @@
             <p class="font-bold" style="font-size: 14px; letter-spacing: 2px; font-family: monospace;">*ORD-<?= str_pad($order['id'], 6, '0', STR_PAD_LEFT) ?>*</p>
             <p style="margin-top: 4px;">Thank you for shopping with us!</p>
             <p style="color: #666; font-size: 9px; margin-top: 2px;">Items once sold can be returned within 24h with receipt.</p>
-            <p style="color: #888; font-size: 8px; margin-top: 4px;">Powered by Sodai Dorkar Smart POS</p>
+            <p style="color: #888; font-size: 8px; margin-top: 4px;">Powered by <?= htmlspecialchars($settings['site_title'] ?? 'Fresh E mart') ?> Smart POS</p>
         </div>
     </div>
 

@@ -82,8 +82,8 @@ function getProductUnits($product) {
 // Category visual icon/image helper
 if (!function_exists('getCategoryVisual')) {
 function getCategoryVisual($cat, $base = '') {
-    if (!empty($cat['image_path'])) {
-        $img = $cat['image_path'];
+    $img = $cat['image_path'] ?? '';
+    if (!empty($img) && $img !== 'none') {
         if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
             return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
         }
@@ -91,6 +91,7 @@ function getCategoryVisual($cat, $base = '') {
         $finalUrl = !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
         return ['type' => 'image', 'val' => $finalUrl, 'bg' => 'bg-white border border-gray-100'];
     }
+    
     $n = mb_strtolower($cat['name'] ?? '');
     
     // Priority mappings to actual category uploads with normalized base
@@ -114,14 +115,73 @@ function getCategoryVisual($cat, $base = '') {
         'রেডি মিক্স' => '/uploads/categories/1779792323_ready-mix.webp',
         'সেমাই' => '/uploads/categories/1779792371_shemai-suji.webp',
         'সুজি' => '/uploads/categories/1779792371_shemai-suji.webp',
+        'ফল' => '/uploads/categories/fruits-veg.jpg',
+        'সবজি' => '/uploads/categories/fruits-veg.jpg',
+        'শাক' => '/uploads/categories/fruits-veg.jpg',
+        'fruit' => '/uploads/categories/fruits-veg.jpg',
+        'vege' => '/uploads/categories/fruits-veg.jpg',
+        'দুধ' => '/uploads/categories/dairy-milk.jpg',
+        'দুগ্ধ' => '/uploads/categories/dairy-milk.jpg',
+        'dairy' => '/uploads/categories/dairy-milk.jpg',
+        'milk' => '/uploads/categories/dairy-milk.jpg',
+        'ডিম' => '/uploads/categories/dairy-milk.jpg',
+        'egg' => '/uploads/categories/dairy-milk.jpg',
+        'বিস্কুট' => '/uploads/categories/snacks.jpg',
+        'স্ন্যাক্স' => '/uploads/categories/snacks.jpg',
+        'snack' => '/uploads/categories/snacks.jpg',
+        'biscuit' => '/uploads/categories/snacks.jpg',
+        'নাস্তা' => '/uploads/categories/breakfast.jpg',
+        'নাশতা' => '/uploads/categories/breakfast.jpg',
+        'বেকারি' => '/uploads/categories/breakfast.jpg',
+        'breakfast' => '/uploads/categories/breakfast.jpg',
+        'bakery' => '/uploads/categories/breakfast.jpg',
+        'চা' => '/uploads/categories/tea-beverages.webp',
+        'কফি' => '/uploads/categories/tea-beverages.webp',
+        'পানীয়' => '/uploads/categories/tea-beverages.webp',
+        'পানীয়' => '/uploads/categories/tea-beverages.webp',
+        'tea' => '/uploads/categories/tea-beverages.webp',
+        'coffee' => '/uploads/categories/tea-beverages.webp',
+        'beverage' => '/uploads/categories/tea-beverages.webp',
+        'juice' => '/uploads/categories/tea-beverages.webp',
         'মাছ ও মাংস' => '/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png',
         'মাছ' => '/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png',
         'মাংস' => '/uploads/categories/1788452809_Screenshot 2026-09-03 222638.png',
+        'fish' => '/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png',
+        'meat' => '/uploads/categories/1788452809_Screenshot 2026-09-03 222638.png',
+        'খেলনা' => '/uploads/categories/cat_toys.svg',
+        'খেলাধুলা' => '/uploads/categories/cat_toys.svg',
+        'toy' => '/uploads/categories/cat_toys.svg',
+        'sports' => '/uploads/categories/cat_toys.svg',
+        'গ্যাজেট' => '/uploads/categories/cat_gadgets.svg',
+        'gadget' => '/uploads/categories/cat_gadgets.svg',
+        'electronic' => '/uploads/categories/cat_gadgets.svg',
+        'ডায়াপার' => '/uploads/categories/cat_diapers.svg',
+        'ডায়াপার' => '/uploads/categories/cat_diapers.svg',
+        'শিশু' => '/uploads/categories/cat_diapers.svg',
+        'diaper' => '/uploads/categories/cat_diapers.svg',
+        'baby' => '/uploads/categories/cat_diapers.svg',
+        'পেট' => '/uploads/categories/cat_pet.svg',
+        'pet' => '/uploads/categories/cat_pet.svg',
+        'ফ্যাশন' => '/uploads/categories/cat_fashion.svg',
+        'লাইফস্টাইল' => '/uploads/categories/cat_fashion.svg',
+        'fashion' => '/uploads/categories/cat_fashion.svg',
+        'lifestyle' => '/uploads/categories/cat_fashion.svg',
+        'ক্লিনিং' => '/uploads/categories/cat_cleaning.svg',
+        'cleaning' => '/uploads/categories/cat_cleaning.svg',
+        'ব্যক্তিগত' => '/uploads/categories/cat_personal.svg',
+        'personal' => '/uploads/categories/cat_personal.svg',
+        'care' => '/uploads/categories/cat_personal.svg',
         'রান্না' => '/uploads/categories/1768677504_cooking.webp',
-        'খাবার' => '/uploads/categories/1768692781_unnamed.jpg',
-        'মুদি' => '/uploads/categories/1768692781_unnamed.jpg',
-        'দুধ' => '/uploads/products/bottle-milk-1liter.jpg',
-        'দুগ্ধ' => '/uploads/products/bottle-milk-1liter.jpg',
+        'cooking' => '/uploads/categories/1768677504_cooking.webp',
+        'খাবার' => '/uploads/categories/1768677504_cooking.webp',
+        'মুদি' => '/uploads/categories/1768677504_cooking.webp',
+        'food' => '/uploads/categories/1768677504_cooking.webp',
+        'grocery' => '/uploads/categories/1768677504_cooking.webp',
+        'চকলেট' => '/uploads/categories/snacks.jpg',
+        'ক্যান্ডি' => '/uploads/categories/snacks.jpg',
+        'chocolate' => '/uploads/categories/snacks.jpg',
+        'আইসক্রিম' => '/uploads/categories/dairy-milk.jpg',
+        'ice cream' => '/uploads/categories/dairy-milk.jpg',
     ];
     
     foreach ($imgMap as $keyword => $relPath) {
@@ -131,23 +191,8 @@ function getCategoryVisual($cat, $base = '') {
         }
     }
     
-    // Emoji fallbacks
-    if (strpos($n, 'ফল') !== false || strpos($n, 'শাক') !== false || strpos($n, 'সবজি') !== false || strpos($n, 'vege') !== false || strpos($n, 'fruit') !== false) return ['type' => 'emoji', 'val' => '🥦', 'bg' => 'bg-emerald-50 text-emerald-600'];
-    if (strpos($n, 'ডিম') !== false || strpos($n, 'egg') !== false) return ['type' => 'emoji', 'val' => '🥚', 'bg' => 'bg-amber-50 text-amber-600'];
-    if (strpos($n, 'চা') !== false || strpos($n, 'কফি') !== false || strpos($n, 'tea') !== false || strpos($n, 'coffee') !== false) return ['type' => 'emoji', 'val' => '🍵', 'bg' => 'bg-emerald-50 text-emerald-600'];
-    if (strpos($n, 'পানীয়') !== false || strpos($n, 'beverage') !== false || strpos($n, 'juice') !== false || strpos($n, 'drinks') !== false) return ['type' => 'emoji', 'val' => '🧃', 'bg' => 'bg-teal-50 text-teal-600'];
-    if (strpos($n, 'বিস্কুট') !== false || strpos($n, 'স্ন্যাক্স') !== false || strpos($n, 'snack') !== false || strpos($n, 'biscuit') !== false) return ['type' => 'emoji', 'val' => '🍪', 'bg' => 'bg-amber-50 text-amber-700'];
-    if (strpos($n, 'সকালের নাস্তা') !== false || strpos($n, 'নাস্তা') !== false || strpos($n, 'নাশতা') !== false || strpos($n, 'বেকারি') !== false || strpos($n, 'bakery') !== false) return ['type' => 'emoji', 'val' => '🥐', 'bg' => 'bg-orange-50 text-orange-600'];
-    if (strpos($n, 'আইসক্রিম') !== false || strpos($n, 'ice cream') !== false) return ['type' => 'emoji', 'val' => '🍦', 'bg' => 'bg-pink-50 text-pink-500'];
-    if (strpos($n, 'ক্যান্ডি') !== false || strpos($n, 'চকলেট') !== false || strpos($n, 'chocolate') !== false) return ['type' => 'emoji', 'val' => '🍫', 'bg' => 'bg-amber-50 text-amber-800'];
-    if (strpos($n, 'খেলনা') !== false || strpos($n, 'খেলাধুলা') !== false || strpos($n, 'toy') !== false) return ['type' => 'emoji', 'val' => '🧸', 'bg' => 'bg-blue-50 text-blue-600'];
-    if (strpos($n, 'গ্যাজেট') !== false || strpos($n, 'gadget') !== false) return ['type' => 'emoji', 'val' => '🎧', 'bg' => 'bg-purple-50 text-purple-600'];
-    if (strpos($n, 'ডায়াপার') !== false || strpos($n, 'ডায়াপার') !== false || strpos($n, 'diaper') !== false || strpos($n, 'baby') !== false) return ['type' => 'emoji', 'val' => '👶', 'bg' => 'bg-yellow-50 text-yellow-600'];
-    if (strpos($n, 'পেট') !== false || strpos($n, 'pet') !== false) return ['type' => 'emoji', 'val' => '🐾', 'bg' => 'bg-orange-50 text-orange-600'];
-    if (strpos($n, 'ফ্যাশন') !== false || strpos($n, 'লাইফস্টাইল') !== false || strpos($n, 'fashion') !== false) return ['type' => 'emoji', 'val' => '👕', 'bg' => 'bg-indigo-50 text-indigo-600'];
-    if (strpos($n, 'সস') !== false || strpos($n, 'আচার') !== false) return ['type' => 'emoji', 'val' => '🫙', 'bg' => 'bg-red-50 text-red-700'];
-    
-    return ['type' => 'emoji', 'val' => '🛒', 'bg' => 'bg-emerald-50 text-emerald-600'];
+    $defaultImg = (!empty($base) ? rtrim($base, '/') : '') . '/uploads/categories/1768677504_cooking.webp';
+    return ['type' => 'image', 'val' => $defaultImg, 'bg' => 'bg-white border border-gray-100'];
 }
 }
 
@@ -265,7 +310,7 @@ if (empty($bannerSubtitle)) {
                             <!-- Circular Badge (Green circle matching wireframe) -->
                             <div class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xs relative overflow-hidden <?= $isRcActive ? 'bg-emerald-700 text-white ring-3 ring-emerald-500 ring-offset-2 scale-105 shadow-md' : 'bg-emerald-700/90 sm:bg-emerald-700 text-white hover:bg-emerald-800 hover:scale-105' ?>">
                                 <?php if ($vis['type'] === 'image'): ?>
-                                    <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($rc['name']) ?>" class="w-full h-full object-contain p-1 sm:p-1.5 transition-transform duration-200 group-hover:scale-110" onerror="this.parentElement.innerHTML='🛒'">
+                                    <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($rc['name']) ?>" class="w-full h-full object-contain p-1 sm:p-1.5 transition-transform duration-200 group-hover:scale-110" loading="lazy">
                                 <?php else: ?>
                                     <span class="text-base sm:text-xl md:text-2xl select-none leading-none"><?= $vis['val'] ?></span>
                                 <?php endif; ?>
@@ -393,7 +438,7 @@ if (empty($bannerSubtitle)) {
                                     <img src="<?= htmlspecialchars($scVis['val']) ?>" 
                                          alt="<?= htmlspecialchars($sc['name']) ?>" 
                                          class="w-full h-full object-contain p-0.5" 
-                                         onerror="this.parentElement.innerHTML='🛒'">
+                                         loading="lazy">
                                 <?php else: ?>
                                     <span class="text-xs sm:text-sm leading-none select-none"><?= $scVis['val'] ?></span>
                                 <?php endif; ?>

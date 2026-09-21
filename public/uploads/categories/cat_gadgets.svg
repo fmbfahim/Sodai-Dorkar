@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+        <defs>
+            <filter id="sh_gad" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+            </filter>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="#faf5ff"/>
+        <g filter="url(#sh_gad)" transform="translate(15, 12)">
+            <!-- Headphones -->
+            <path d="M 12 40 A 24 24 0 0 1 58 40" fill="none" stroke="#7c3aed" stroke-width="6" stroke-linecap="round"/>
+            <!-- Ear Cups -->
+            <rect x="6" y="36" width="12" height="24" rx="6" fill="#6d28d9"/>
+            <rect x="52" y="36" width="12" height="24" rx="6" fill="#6d28d9"/>
+            <rect x="9" y="39" width="6" height="18" rx="3" fill="#c4b5fd"/>
+            <rect x="55" y="39" width="6" height="18" rx="3" fill="#c4b5fd"/>
+            <!-- Smart Watch -->
+            <rect x="25" y="44" width="20" height="24" rx="6" fill="#1e1b4b"/>
+            <rect x="27" y="47" width="16" height="18" rx="3" fill="#06b6d4"/>
+            <circle cx="35" cy="56" r="4" fill="#ffffff" opacity="0.8"/>
+        </g>
+    </svg>

@@ -2,7 +2,7 @@
 
 return [
     // Header & Navigation
-    'site_name' => 'Sodai Dorkar',
+    'site_name' => 'Fresh E mart',
     'site_tagline' => 'Fresh Grocery Delivery',
     'nav_home' => 'Home',
     'nav_cart' => 'Cart',

@@ -1,15 +1,23 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$siteName = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sodai Dorkar</title>
-    <link href="/sodai-dorkar/public/css/output.css" rel="stylesheet">
+    <title>Login - <?= htmlspecialchars($siteName) ?></title>
+    <link href="<?= $base ?>/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+    </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold text-center text-green-600 mb-6">Sodai Dorkar Login</h1>
+        <h1 class="text-2xl font-bold text-center text-green-600 mb-6"><?= htmlspecialchars($siteName) ?> Login</h1>
         
         <?php if (isset($error)): ?>
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">

@@ -41,9 +41,26 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["'Hind Siliguri'", "'Outfit'", 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
     <style>
-        body { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
-        body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Hind Siliguri', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        html, body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, label, div {
+            font-family: 'Hind Siliguri', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
 
         /* Toast animation */
         @keyframes slideInRight {
@@ -201,7 +218,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <?= $__('topbar_location') ?>
+                    <?= htmlspecialchars($storeSettings['contact_address'] ?? $__('topbar_location')) ?>
                 </span>
                 <span class="hidden sm:flex items-center gap-1.5 text-emerald-700 font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,7 +234,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <?= $__('topbar_phone') ?>
+                    <?= htmlspecialchars($storeSettings['contact_phone'] ?? $__('topbar_phone')) ?>
                 </span>
                 <span class="hidden lg:flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,24 +266,30 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         <div class="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6 transition-all duration-200" id="header-top-row">
             
             <!-- Brand Logo -->
-            <a href="/sodai-dorkar/public/" class="flex items-center gap-2.5 group flex-shrink-0">
+            <a href="<?= $base ?>/" class="flex items-center gap-2.5 group flex-shrink-0">
                 <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 </div>
                 <div>
+                    <?php
+                        $rawBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
+                        $parts = explode(' ', $rawBrand, 2);
+                        $part1 = $parts[0] ?? 'Fresh';
+                        $part2 = $parts[1] ?? 'E mart';
+                    ?>
                     <div class="text-xl sm:text-2xl font-black text-gray-900 leading-none tracking-tight">
-                        Fresh<span class="text-emerald-600">Mart</span>
+                        <?= htmlspecialchars($part1) ?> <span class="text-emerald-600"><?= htmlspecialchars($part2) ?></span>
                     </div>
                     <div class="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1 hidden sm:block">
-                        Fresh. Quality. Everyday.
+                        <?= htmlspecialchars($storeSettings['site_tagline'] ?? 'Fresh. Quality. Everyday.') ?>
                     </div>
                 </div>
             </a>
 
             <!-- Central Search Bar with Category Dropdown -->
-            <form action="/sodai-dorkar/public/" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-2 relative">
+            <form action="<?= $base ?>/" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-2 relative">
                 <?php if (!empty($isDeals)): ?>
                     <input type="hidden" name="deals" value="1">
                 <?php endif; ?>
@@ -661,15 +684,15 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     <ul class="space-y-2.5 text-xs text-emerald-100/70">
                         <li class="flex items-start gap-2">
                             <span class="text-emerald-400">📍</span>
-                            <span><?= $__('topbar_location') ?></span>
+                            <span><?= htmlspecialchars($storeSettings['contact_address'] ?? 'Dhaka, Bangladesh') ?></span>
                         </li>
                         <li class="flex items-center gap-2">
                             <span class="text-emerald-400">📞</span>
-                            <span><?= $__('topbar_phone') ?></span>
+                            <span><?= htmlspecialchars($storeSettings['contact_phone'] ?? '01609448066') ?></span>
                         </li>
                         <li class="flex items-center gap-2">
                             <span class="text-emerald-400">✉️</span>
-                            <span>support@sodaidorkar.com</span>
+                            <span><?= htmlspecialchars($storeSettings['contact_email'] ?? 'support@freshemart.com') ?></span>
                         </li>
                     </ul>
 
@@ -691,7 +714,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
             <!-- Bottom Copyright -->
             <div class="pt-6 text-center text-xs text-emerald-100/50">
-                &copy; <?= date('Y') ?> <span class="text-emerald-300 font-semibold"><?= $__('site_name') ?> (FreshMart)</span>. <?= $__('footer_rights') ?>
+                &copy; <?= date('Y') ?> <span class="text-emerald-300 font-semibold"><?= htmlspecialchars($storeSettings['site_title'] ?? 'Fresh E mart') ?></span>. <?= $__('footer_rights') ?>
             </div>
         </div>
     </footer>

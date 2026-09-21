@@ -2,7 +2,7 @@
 
 return [
     // Header & Navigation
-    'site_name' => 'সদাই দরকার',
+    'site_name' => 'Fresh E mart',
     'site_tagline' => 'ফ্রেশ গ্রোসারি ডেলিভারি',
     'nav_home' => 'হোম',
     'nav_cart' => 'কার্ট',

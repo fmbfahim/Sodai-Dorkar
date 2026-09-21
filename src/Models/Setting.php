@@ -28,6 +28,11 @@ class Setting {
         return $row ? $row['value'] : $default;
     }
 
+    public static function getValue($key, $default = null) {
+        $model = new self();
+        return $model->get($key, $default);
+    }
+
     public function update($key, $value) {
         // Check if exists
         $stmt = $this->db->query("SELECT id FROM settings WHERE key_name = :key", ['key' => $key]);
