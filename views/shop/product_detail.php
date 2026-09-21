@@ -15,7 +15,8 @@ $stockQty = intval($product['stock_qty'] ?? 0);
 $isInStock = ($product['availability_status'] === 'in_stock' && $stockQty > 0);
 
 // Default image
-$productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : $base . '/images/default-product.svg';
+$productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
+$fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
 
 // Check variants
 $hasVariants = !empty($variants) && is_array($variants);
@@ -88,10 +89,10 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                         </div>
 
                         <img id="main-product-img" 
-                             src="<?= $productImg ?>" 
+                             src="<?= htmlspecialchars($productImg) ?>" 
                              alt="<?= htmlspecialchars($product['name']) ?>" 
                              class="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
-                             onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                             onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                     </div>
                 </div>
 

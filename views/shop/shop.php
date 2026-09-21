@@ -209,26 +209,24 @@ if (!empty($search)) $activeFilterCount++;
                         $pHasDisc = ($pReg && $pReg > $pSell);
                         $pDiscPercent = $pHasDisc ? round((($pReg - $pSell) / $pReg) * 100) : 0;
                         
-                        $pImg = !empty($prod['image_path']) ? htmlspecialchars($prod['image_path']) : $base . '/images/default-product.svg';
-                        if (strpos($pImg, 'http') !== 0 && strpos($pImg, $base) !== 0 && strpos($pImg, '/') === 0) {
-                            $pImg = $base . $pImg;
-                        }
+                        $pImg = \Models\Product::getImageUrl($prod['image_path'] ?? '', $base);
+                        $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
                         $unitDisplay = $prod['selling_unit'] ?? $prod['base_unit'] ?? '1 Unit';
                     ?>
                     <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
                         
                         <!-- Product Image -->
-                        <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" class="relative block pt-5 pb-3 px-3 bg-white flex items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                        <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" class="relative pt-5 pb-3 px-3 bg-white flex items-center justify-center min-h-[140px] sm:min-h-[160px]">
                             <?php if ($pHasDisc): ?>
                                 <span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs">
                                     -<?= $pDiscPercent ?>%
                                 </span>
                             <?php endif; ?>
-                            <img src="<?= $pImg ?>" 
+                            <img src="<?= htmlspecialchars($pImg) ?>" 
                                  alt="<?= htmlspecialchars($prod['name']) ?>" 
                                  class="max-h-28 sm:max-h-32 w-auto max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-300"
                                  loading="lazy"
-                                 onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                                 onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                         </a>
 
                         <!-- Product Body -->

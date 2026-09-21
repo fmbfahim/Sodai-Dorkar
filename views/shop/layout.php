@@ -330,7 +330,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
                 <!-- User Account Widget -->
                 <?php if (isset($_SESSION['customer_id'])): ?>
-                    <a href="/sodai-dorkar/public/account" class="flex items-center gap-2 text-gray-700 hover:text-emerald-600 transition-colors">
+                    <a href="<?= $base ?>/account" class="flex items-center gap-2 text-gray-700 hover:text-emerald-600 transition-colors">
                         <div class="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-2xs">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -342,7 +342,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         </div>
                     </a>
                 <?php else: ?>
-                    <a href="/sodai-dorkar/public/checkout/auth" class="flex items-center gap-2 text-gray-700 hover:text-emerald-600 transition-colors">
+                    <a href="<?= $base ?>/checkout/auth" class="flex items-center gap-2 text-gray-700 hover:text-emerald-600 transition-colors">
                         <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 shadow-2xs">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -392,7 +392,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     </button>
                     <!-- Category Dropdown Menu with Subcategory Flyouts -->
                     <div class="absolute left-0 top-full w-64 bg-white rounded-b-xl shadow-2xl border border-gray-100 py-2 z-50 hidden group-hover/cat:block transition-all">
-                        <a href="/sodai-dorkar/public/" class="flex items-center justify-between px-4 py-2.5 text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 font-bold border-b border-gray-50 transition-colors">
+                        <a href="<?= $base ?>/" class="flex items-center justify-between px-4 py-2.5 text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 font-bold border-b border-gray-50 transition-colors">
                             <span><?= $__('products_all_categories') ?></span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
@@ -402,7 +402,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                                 $subIds = $hasSub ? $childrenMap[$cat['id']] : [];
                             ?>
                             <div class="relative group/sub">
-                                <a href="/sodai-dorkar/public/category?id=<?= $cat['id'] ?>" 
+                                <a href="<?= $base ?>/category?id=<?= $cat['id'] ?>" 
                                    class="flex items-center justify-between px-4 py-2.5 text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 font-medium transition-colors">
                                     <span class="truncate"><?= htmlspecialchars($cat['name']) ?></span>
                                     <?php if ($hasSub): ?>
@@ -418,7 +418,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                                         </div>
                                         <?php foreach ($subIds as $sId): ?>
                                             <?php $sCat = $catById[$sId] ?? null; if ($sCat): ?>
-                                                <a href="/sodai-dorkar/public/category?id=<?= $sCat['id'] ?>" 
+                                                <a href="<?= $base ?>/category?id=<?= $sCat['id'] ?>" 
                                                    class="flex items-center justify-between px-4 py-2 text-xs text-gray-600 hover:bg-emerald-50 hover:text-emerald-800 font-medium transition-colors">
                                                     <span class="truncate"><?= htmlspecialchars($sCat['name']) ?></span>
                                                     <span class="text-[10px] text-gray-400">→</span>
@@ -434,9 +434,9 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
                 <!-- Nav Links -->
                 <div class="hidden lg:flex items-center gap-7 text-xs sm:text-sm font-semibold text-gray-700">
-                    <a href="/sodai-dorkar/public/" class="hover:text-emerald-600 transition-colors <?= empty($currentCategory) && empty($search) && empty($isDeals) ? 'text-emerald-600 font-bold' : '' ?>"><?= $__('nav_home') ?></a>
+                    <a href="<?= $base ?>/" class="hover:text-emerald-600 transition-colors <?= empty($currentCategory) && empty($search) && empty($isDeals) ? 'text-emerald-600 font-bold' : '' ?>"><?= $__('nav_home') ?></a>
                     <a href="#categories" class="hover:text-emerald-600 transition-colors"><?= $__('sec_shop_by_category') ?></a>
-                    <a href="/sodai-dorkar/public/?deals=1" class="hover:text-emerald-600 transition-colors <?= !empty($isDeals) ? 'text-emerald-600 font-bold' : '' ?>"><?= $__('nav_deals') ?></a>
+                    <a href="<?= $base ?>/?deals=1" class="hover:text-emerald-600 transition-colors <?= !empty($isDeals) ? 'text-emerald-600 font-bold' : '' ?>"><?= $__('nav_deals') ?></a>
                     <a href="#products" class="hover:text-emerald-600 transition-colors"><?= $__('nav_new_arrivals') ?></a>
                     <a href="#why-choose" class="hover:text-emerald-600 transition-colors"><?= $__('nav_about') ?></a>
                     <a href="#footer" class="hover:text-emerald-600 transition-colors"><?= $__('nav_contact') ?></a>

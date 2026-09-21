@@ -341,4 +341,19 @@ class Product {
             }
         }
     }
+
+    public static function getImageUrl($imagePath, $base = null) {
+        if ($base === null) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        }
+        $img = trim($imagePath ?? '');
+        if (empty($img)) {
+            return !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
+        }
+        if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+            return $img;
+        }
+        $clean = preg_replace('#^/?(sodai-dorkar/public/|public/)#', '', ltrim($img, '/'));
+        return !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
+    }
 }

@@ -515,15 +515,16 @@ if (empty($bannerSubtitle)) {
                             </div>
 
                             <!-- Centered Image Container -->
-                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white pt-6 pb-2 px-2 flex items-center justify-center min-h-[125px] sm:min-h-[150px] block cursor-pointer">
+                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white pt-6 pb-2 px-2 flex items-center justify-center min-h-[125px] sm:min-h-[150px] cursor-pointer">
                                 <?php 
-                                $productImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : $base . '/images/default-product.svg';
+                                $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
+                                $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
                                 ?>
-                                <img src="<?= $productImg ?>" 
+                                <img src="<?= htmlspecialchars($productImg) ?>" 
                                      alt="<?= htmlspecialchars($product['name']) ?>" 
                                      class="max-h-24 sm:max-h-32 w-auto max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105" 
                                      loading="lazy"
-                                     onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                                     onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                             </a>
 
                             <!-- Card Content -->
