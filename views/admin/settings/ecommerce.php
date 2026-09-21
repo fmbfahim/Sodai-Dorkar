@@ -295,35 +295,35 @@
         <div class="flex items-center gap-1 min-w-max">
             
             <!-- Tab 1: Products -->
-            <a href="/sodai-dorkar/public/admin/ecommerce-settings?tab=products" 
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=products" 
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'products' ? 'bg-emerald-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
                 <ion-icon name="cube-outline" class="text-lg"></ion-icon>
                 <span>Products</span>
             </a>
 
             <!-- Tab 2: Shipping -->
-            <a href="/sodai-dorkar/public/admin/ecommerce-settings?tab=shipping" 
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=shipping" 
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'shipping' ? 'bg-emerald-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
                 <ion-icon name="bicycle-outline" class="text-lg"></ion-icon>
                 <span>Shipping</span>
             </a>
 
             <!-- Tab 3: Payments -->
-            <a href="/sodai-dorkar/public/admin/ecommerce-settings?tab=payments" 
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=payments" 
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'payments' ? 'bg-emerald-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
                 <ion-icon name="card-outline" class="text-lg"></ion-icon>
                 <span>Payments</span>
             </a>
 
             <!-- Tab 4: Accounts & Privacy -->
-            <a href="/sodai-dorkar/public/admin/ecommerce-settings?tab=privacy" 
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=privacy" 
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'privacy' ? 'bg-emerald-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
                 <ion-icon name="shield-checkmark-outline" class="text-lg"></ion-icon>
                 <span>Accounts & Privacy</span>
             </a>
 
             <!-- Tab 5: Site Visibility -->
-            <a href="/sodai-dorkar/public/admin/ecommerce-settings?tab=visibility" 
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=visibility" 
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'visibility' ? 'bg-emerald-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
                 <ion-icon name="eye-outline" class="text-lg"></ion-icon>
                 <span>Site Visibility</span>
@@ -333,7 +333,7 @@
     </div>
 
     <!-- Active Tab Form Container -->
-    <form action="/sodai-dorkar/public/admin/ecommerce-settings/update" method="POST" class="space-y-6">
+    <form action="<?= $base ?>/admin/ecommerce-settings/update" method="POST" class="space-y-6">
         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         <input type="hidden" name="active_tab" value="<?= htmlspecialchars($activeTab) ?>">
 
@@ -1625,6 +1625,98 @@
             </div>
         </div>
 
+        <!-- SMS Gateway Configuration -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center text-lg">
+                    <ion-icon name="phone-portrait-outline"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary-800 text-sm sm:text-base">📱 SMS Gateway (OTP Delivery)</h3>
+                    <p class="text-[11px] text-secondary-400">Configure a real SMS provider to send OTP verification codes to customers.</p>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-5">
+
+                <!-- Enable SMS -->
+                <div class="flex items-start justify-between gap-4">
+                    <div class="space-y-1">
+                        <label class="font-bold text-xs sm:text-sm text-secondary-800 cursor-pointer" for="sms_enabled">
+                            Enable Real SMS Delivery
+                        </label>
+                        <p class="text-xs text-secondary-500 leading-relaxed">
+                            When ON, OTPs are sent via SMS. When OFF, OTPs are only written to <code class="bg-gray-100 px-1 rounded text-xs">otp_log.txt</code> on the server.
+                        </p>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" id="sms_enabled" name="sms_enabled" value="1"
+                               <?= ($settings['sms_enabled'] ?? '0') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['sms_enabled'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Provider Select -->
+                <div>
+                    <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">SMS Provider</label>
+                    <select name="sms_provider" id="sms_provider"
+                            class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            onchange="toggleSmsFields()">
+                        <option value=""           <?= ($settings['sms_provider'] ?? '') === ''             ? 'selected' : '' ?>>— Select Provider —</option>
+                        <option value="greenweb"   <?= ($settings['sms_provider'] ?? '') === 'greenweb'     ? 'selected' : '' ?>>GreenWeb SMS (Bangladesh)</option>
+                        <option value="ssl_wireless" <?= ($settings['sms_provider'] ?? '') === 'ssl_wireless' ? 'selected' : '' ?>>SSL Wireless (Bangladesh)</option>
+                        <option value="bulksmsbd"  <?= ($settings['sms_provider'] ?? '') === 'bulksmsbd'   ? 'selected' : '' ?>>BulkSMSBD (Bangladesh)</option>
+                        <option value="twilio"     <?= ($settings['sms_provider'] ?? '') === 'twilio'      ? 'selected' : '' ?>>Twilio (International)</option>
+                    </select>
+                </div>
+
+                <!-- API Token (GreenWeb / SSL Wireless / BulkSMSBD) -->
+                <div id="field_api_token" class="sms-field">
+                    <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">API Token / API Key</label>
+                    <input type="text" name="sms_api_token" value="<?= htmlspecialchars($settings['sms_api_token'] ?? '') ?>"
+                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                           placeholder="Your API token from the provider dashboard">
+                </div>
+
+                <!-- Sender ID -->
+                <div id="field_sender_id" class="sms-field">
+                    <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">Sender ID / SID</label>
+                    <input type="text" name="sms_sender_id" value="<?= htmlspecialchars($settings['sms_sender_id'] ?? '') ?>"
+                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                           placeholder="e.g. FreshMart or your approved Sender ID">
+                </div>
+
+                <!-- Twilio Account SID + Auth Token -->
+                <div id="field_twilio" class="sms-field hidden">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">Twilio Account SID</label>
+                            <input type="text" name="sms_username" value="<?= htmlspecialchars($settings['sms_username'] ?? '') ?>"
+                                   class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                   placeholder="ACxxxxxxxxxxxxxxxx">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">Twilio Auth Token</label>
+                            <input type="password" name="sms_password" value="<?= htmlspecialchars($settings['sms_password'] ?? '') ?>"
+                                   class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                   placeholder="Auth token">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Provider-specific help links -->
+                <div id="sms_help_links" class="text-xs text-secondary-500 space-y-1">
+                    <p id="help_greenweb"   class="sms-help hidden">🔗 Get API token: <a href="https://greenweb.com.bd" target="_blank" class="text-violet-600 hover:underline">greenweb.com.bd</a></p>
+                    <p id="help_ssl"        class="sms-help hidden">🔗 Get API token: <a href="https://www.sslwireless.com" target="_blank" class="text-violet-600 hover:underline">sslwireless.com</a></p>
+                    <p id="help_bulksmsbd"  class="sms-help hidden">🔗 Get API key: <a href="https://bulksmsbd.net" target="_blank" class="text-violet-600 hover:underline">bulksmsbd.net</a></p>
+                    <p id="help_twilio"     class="sms-help hidden">🔗 Dashboard: <a href="https://console.twilio.com" target="_blank" class="text-violet-600 hover:underline">console.twilio.com</a></p>
+                </div>
+
+            </div>
+        </div>
+
         <!-- Privacy Policy & Consent Notices -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
             <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center gap-2.5">
@@ -2088,6 +2180,23 @@
             alert('You must keep at least one promotional offer milestone tier.');
         }
     }
+
+    // ── SMS Gateway field visibility ──────────────────────────────────────
+    function toggleSmsFields() {
+        const provider = document.getElementById('sms_provider').value;
+
+        // All sms-field divs
+        document.getElementById('field_api_token').style.display = provider && provider !== 'twilio' ? '' : 'none';
+        document.getElementById('field_sender_id').style.display = provider ? '' : 'none';
+        document.getElementById('field_twilio').classList.toggle('hidden', provider !== 'twilio');
+
+        // Help links
+        document.querySelectorAll('.sms-help').forEach(el => el.classList.add('hidden'));
+        const helpMap = { greenweb: 'help_greenweb', ssl_wireless: 'help_ssl', bulksmsbd: 'help_bulksmsbd', twilio: 'help_twilio' };
+        if (helpMap[provider]) document.getElementById(helpMap[provider]).classList.remove('hidden');
+    }
+    // Run on page load to reflect saved provider
+    document.addEventListener('DOMContentLoaded', toggleSmsFields);
     </script>
 
 </div>

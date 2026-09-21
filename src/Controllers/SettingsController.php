@@ -107,6 +107,7 @@ class SettingsController extends Controller {
                 'auth_firebase_otp_enabled',
                 'otp_required_signup',
                 'otp_required_password_change',
+                'sms_enabled',
             ],
             'visibility' => [
                 'top_announcement_bar_enabled',
