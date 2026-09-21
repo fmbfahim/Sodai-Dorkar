@@ -47,42 +47,7 @@ class ShopController {
         $search = $_GET['search'] ?? '';
         $isDeals = isset($_GET['deals']) && $_GET['deals'] == '1';
 
-        // Build product query with filters
-        $sql = "SELECT products.*, categories.name as category_name 
-                FROM products 
-                LEFT JOIN categories ON products.category_id = categories.id
-                WHERE products.availability_status = 'in_stock'";
-        $params = [];
-
-        $targetCatId = $subId ?: $categoryId;
-        if ($targetCatId) {
-            $catIds = $this->getCategoryDescendantIds($targetCatId);
-            if (!empty($catIds)) {
-                $inPlaceholders = [];
-                foreach ($catIds as $idx => $cId) {
-                    $pKey = "cat_id_" . $idx;
-                    $inPlaceholders[] = ":" . $pKey;
-                    $params[$pKey] = $cId;
-                }
-                $sql .= " AND products.category_id IN (" . implode(',', $inPlaceholders) . ")";
-            }
-        }
-
-        if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
-            $params['search'] = "%{$search}%";
-            $params['search2'] = "%{$search}%";
-        }
-
-        if ($isDeals) {
-            $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
-        }
-
-        $sql .= " ORDER BY products.created_at DESC";
-        $stmt = $this->db->query($sql, $params);
-        $products = $stmt->fetchAll();
-
-        // Fetch all categories
+        // Fetch all categories first
         $allCategories = $this->db->query("SELECT categories.* FROM categories ORDER BY categories.name ASC")->fetchAll();
 
         $catById = [];
@@ -115,8 +80,15 @@ class ShopController {
         }
         unset($cat);
 
-        // Determine main categories
-        // If single root (parent_id is null/0 has only 1, e.g. 'খাবার সামগ্রী'), its children are the main categories!
+        // Smart Category Drill-Down:
+        // If a subId is provided AND that subId has subcategories of its own (e.g. user clicked "রান্নার উপাদান ও মুদি"),
+        // promote it to the active category so its subcategories are displayed in the SUBCATEGORY FILTER PILLS BAR!
+        if ($subId && isset($catById[$subId]) && !empty($childrenMap[$subId])) {
+            $categoryId = $subId;
+            $subId = null;
+        }
+
+        // Determine main categories (top-level or children of single root)
         $rootIds = $childrenMap[0] ?? [];
         if (count($rootIds) === 1 && isset($childrenMap[$rootIds[0]])) {
             $mainCatIds = $childrenMap[$rootIds[0]];
@@ -131,10 +103,10 @@ class ShopController {
             }
         }
 
-        // Sort main categories: feature 'রান্নাবান্না' (Cooking) first, followed by categories with children/products
+        // Sort main categories: feature 'রান্নাবান্না'/'খাদ্য ও মুদি' first, followed by categories with children/products
         usort($mainCategories, function($a, $b) use ($childrenMap) {
-            $aIsCooking = (mb_strpos($a['name'], 'রান্না') !== false);
-            $bIsCooking = (mb_strpos($b['name'], 'রান্না') !== false);
+            $aIsCooking = (mb_strpos($a['name'], 'রান্না') !== false || mb_strpos($a['name'], 'খাদ্য') !== false);
+            $bIsCooking = (mb_strpos($b['name'], 'রান্না') !== false || mb_strpos($b['name'], 'খাদ্য') !== false);
             if ($aIsCooking && !$bIsCooking) return -1;
             if (!$aIsCooking && $bIsCooking) return 1;
             $aHasChildren = !empty($childrenMap[$a['id']]) ? 1 : 0;
@@ -143,28 +115,97 @@ class ShopController {
             return strcmp($a['name'], $b['name']);
         });
 
-        // Determine parent category and subcategories to display based on selected category
+        // Determine active category and parent category
+        $activeCategory = null;
         $parentCategory = null;
         $subCategories = [];
 
         if ($categoryId && isset($catById[$categoryId])) {
             $selectedCat = $catById[$categoryId];
             if (!empty($childrenMap[$categoryId])) {
-                // Category itself has subcategories (e.g. user clicked "রান্নাবান্না")
-                $parentCategory = $selectedCat;
+                // Category itself has subcategories (e.g. user clicked "রান্নার উপাদান ও মুদি")
+                $activeCategory = $selectedCat;
+                if (!empty($selectedCat['parent_id']) && isset($catById[$selectedCat['parent_id']])) {
+                    $parentCategory = $catById[$selectedCat['parent_id']];
+                }
                 foreach ($childrenMap[$categoryId] as $sId) {
                     if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
                 }
-            } elseif (!empty($selectedCat['parent_id']) && isset($catById[$selectedCat['parent_id']]) && $selectedCat['parent_id'] != 1) {
-                // User clicked a subcategory (e.g. "চাল") -> parent is "রান্নাবান্না"
-                $parentCategory = $catById[$selectedCat['parent_id']];
-                if (!empty($childrenMap[$parentCategory['id']])) {
-                    foreach ($childrenMap[$parentCategory['id']] as $sId) {
+            } elseif (!empty($selectedCat['parent_id']) && isset($catById[$selectedCat['parent_id']])) {
+                // Category is a leaf subcategory (e.g. "চাল ও শস্য"), show its siblings under parent
+                $parentCategory = !empty($catById[$selectedCat['parent_id']]['parent_id']) && isset($catById[$catById[$selectedCat['parent_id']]['parent_id']]) 
+                    ? $catById[$catById[$selectedCat['parent_id']]['parent_id']] 
+                    : null;
+                $activeCategory = $catById[$selectedCat['parent_id']];
+                $subId = $categoryId;
+                if (!empty($childrenMap[$activeCategory['id']])) {
+                    foreach ($childrenMap[$activeCategory['id']] as $sId) {
                         if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
                     }
                 }
+            } else {
+                $activeCategory = $selectedCat;
+            }
+        } else {
+            // Default home category
+            foreach ($mainCategories as $mc) {
+                if (mb_strpos($mc['name'], 'রান্না') !== false || mb_strpos($mc['name'], 'খাদ্য') !== false) {
+                    $activeCategory = $mc;
+                    break;
+                }
+            }
+            if (!$activeCategory) {
+                foreach ($mainCategories as $mc) {
+                    if (!empty($childrenMap[$mc['id']])) {
+                        $activeCategory = $mc;
+                        break;
+                    }
+                }
+            }
+            if (!$activeCategory && !empty($mainCategories)) {
+                $activeCategory = $mainCategories[0];
+            }
+            if ($activeCategory && !empty($childrenMap[$activeCategory['id']])) {
+                foreach ($childrenMap[$activeCategory['id']] as $sId) {
+                    if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
+                }
             }
         }
+
+        // Build product query based on targetCatId ($subId ?: activeCategory['id'])
+        $targetCatId = $subId ?: ($activeCategory['id'] ?? null);
+        $sql = "SELECT products.*, categories.name as category_name 
+                FROM products 
+                LEFT JOIN categories ON products.category_id = categories.id
+                WHERE products.availability_status = 'in_stock'";
+        $params = [];
+
+        if ($targetCatId) {
+            $catIds = $this->getCategoryDescendantIds($targetCatId);
+            if (!empty($catIds)) {
+                $inPlaceholders = [];
+                foreach ($catIds as $idx => $cId) {
+                    $pKey = "cat_id_" . $idx;
+                    $inPlaceholders[] = ":" . $pKey;
+                    $params[$pKey] = $cId;
+                }
+                $sql .= " AND products.category_id IN (" . implode(',', $inPlaceholders) . ")";
+            }
+        }
+
+        if ($search) {
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
+            $params['search'] = "%{$search}%";
+            $params['search2'] = "%{$search}%";
+        }
+
+        if ($isDeals) {
+            $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
+        }
+
+        $sql .= " ORDER BY products.created_at DESC";
+        $stmt = $this->db->query($sql, $params);
+        $products = $stmt->fetchAll();
 
         // Fetch categories with in-stock products for filter tabs
         $stmtCat = $this->db->query("SELECT categories.*, COUNT(products.id) as product_count 
@@ -189,58 +230,25 @@ class ShopController {
             $dealProducts = array_slice($products, 0, 6);
         }
 
-        // Determine active category for the hero banner and left rail
-        $activeCategory = null;
-        if ($categoryId && isset($catById[$categoryId])) {
-            $activeCategory = $catById[$categoryId];
-        } elseif ($parentCategory) {
-            $activeCategory = $parentCategory;
-        } elseif (!empty($mainCategories)) {
-            // Priority: 'রান্নাবান্না' (Cooking) as the hero showcase category
-            foreach ($mainCategories as $mc) {
-                if (mb_strpos($mc['name'], 'রান্না') !== false) {
-                    $activeCategory = $mc;
-                    break;
-                }
-            }
-            if (!$activeCategory) {
-                foreach ($mainCategories as $mc) {
-                    if (!empty($childrenMap[$mc['id']])) {
-                        $activeCategory = $mc;
-                        break;
-                    }
-                }
-            }
-            if (!$activeCategory) {
-                $activeCategory = $mainCategories[0];
-            }
-        }
-
-        // Ensure subcategories are populated for the active category
-        if (empty($subCategories) && $activeCategory && !empty($childrenMap[$activeCategory['id']])) {
-            foreach ($childrenMap[$activeCategory['id']] as $sId) {
-                if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
-            }
-        }
-
         // Subcategory list subtitle for the hero banner
         $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
         $bannerSubtitle = !empty($subNames) ? implode(', ', array_slice($subNames, 0, 7)) : 'চাল, ডাল, মশলা, রেডি মিক্স, লবণ এবং চিনি, সেমাই ও সুজি';
 
-        $parentBackUrl = '/sodai-dorkar/public/#categories';
-        if ($parentCategory && !empty($parentCategory['parent_id']) && $parentCategory['parent_id'] != 1) {
-            $parentBackUrl = '/sodai-dorkar/public/?category=' . $parentCategory['parent_id'] . '#categories';
+        $parentBackUrl = '';
+        if ($parentCategory) {
+            $parentBackUrl = '?category=' . $parentCategory['id'];
         }
 
         return View::render('shop/index', [
             'products' => $products,
             'categories' => $categories,
             'allCategories' => $allCategories,
+            'catById' => $catById,
             'mainCategories' => $mainCategories,
             'childrenMap' => $childrenMap,
             'parentCategory' => $parentCategory,
             'activeCategory' => $activeCategory,
-            'activeSubId' => $_GET['sub'] ?? null,
+            'activeSubId' => $subId,
             'bannerSubtitle' => $bannerSubtitle,
             'subCategories' => $subCategories,
             'parentBackUrl' => $parentBackUrl,
