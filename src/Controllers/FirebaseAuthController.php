@@ -3,7 +3,7 @@
 namespace Controllers;
 
 use Core\Database;
-use Core\View;
+use Models\Setting;
 
 /**
  * Handles Firebase Phone Authentication token verification.
@@ -48,8 +48,13 @@ class FirebaseAuthController
 
     private function verifyIdToken(string $idToken): ?string
     {
-        // Firebase Web API Key (from firebaseConfig)
-        $apiKey = 'AIzaSyCqRe6RdZ6XPtr06L6lCbDs5_uf0ryMMDc';
+        // API Key — Admin Settings থেকে পড়াহয় বে (Admin সেটিংস → Firebase API Key)
+        $apiKey = Setting::getValue('firebase_api_key', '');
+
+        if (empty($apiKey)) {
+            error_log('FirebaseAuthController: firebase_api_key is not configured in Admin Settings.');
+            return null;
+        }
 
         $url  = "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={$apiKey}";
         $body = json_encode(['idToken' => $idToken]);

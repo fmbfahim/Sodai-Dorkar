@@ -315,13 +315,82 @@
                 </div>
 
                 <!-- Firebase OTP -->
-                <div>
-                    <label class="block text-sm font-bold text-secondary-700 mb-2">Firebase OTP SMS Login</label>
-                    <select name="auth_firebase_otp_enabled" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
-                        <option value="1" <?php echo ($settings['auth_firebase_otp_enabled'] ?? '1') == '1' ? 'selected' : ''; ?>>Enabled</option>
-                        <option value="0" <?php echo ($settings['auth_firebase_otp_enabled'] ?? '1') == '0' ? 'selected' : ''; ?>>Disabled</option>
-                    </select>
-                    <p class="text-xs text-secondary-400 mt-1">Allows customers to login or verify their identity using a Firebase SMS code.</p>
+                <div class="md:col-span-2">
+                    <div class="bg-orange-50 border border-orange-200 rounded-xl overflow-hidden">
+                        <div class="px-5 py-3 border-b border-orange-200 bg-orange-100 flex items-center gap-2">
+                            <ion-icon name="flame-outline" class="text-orange-600 text-xl"></ion-icon>
+                            <div>
+                                <h4 class="font-bold text-orange-800 text-sm">Firebase Phone Authentication (OTP)</h4>
+                                <p class="text-xs text-orange-600">বিনামূল্যে SMS OTP — Firebase Console থেকে config কপি করুন।</p>
+                            </div>
+                        </div>
+                        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Enable/Disable -->
+                            <div class="md:col-span-2 flex items-center justify-between gap-4 pb-3 border-b border-orange-200">
+                                <div>
+                                    <label class="block text-sm font-bold text-secondary-700">Firebase OTP Status</label>
+                                    <p class="text-xs text-secondary-400 mt-0.5">Signup ও Login-এ Firebase Phone OTP চালু/বন্ধ করুন।</p>
+                                </div>
+                                <select name="auth_firebase_otp_enabled" class="px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-bold">
+                                    <option value="1" <?= ($settings['auth_firebase_otp_enabled'] ?? '0') == '1' ? 'selected' : '' ?>>✅ Enabled</option>
+                                    <option value="0" <?= ($settings['auth_firebase_otp_enabled'] ?? '0') == '0' ? 'selected' : '' ?>>❌ Disabled</option>
+                                </select>
+                            </div>
+
+                            <!-- API Key -->
+                            <div>
+                                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wide">API Key</label>
+                                <input type="text" name="firebase_api_key"
+                                       value="<?= htmlspecialchars($settings['firebase_api_key'] ?? '') ?>"
+                                       placeholder="AIzaSy..."
+                                       class="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm font-mono">
+                            </div>
+
+                            <!-- Auth Domain -->
+                            <div>
+                                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wide">Auth Domain</label>
+                                <input type="text" name="firebase_auth_domain"
+                                       value="<?= htmlspecialchars($settings['firebase_auth_domain'] ?? '') ?>"
+                                       placeholder="your-project.firebaseapp.com"
+                                       class="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm font-mono">
+                            </div>
+
+                            <!-- Project ID -->
+                            <div>
+                                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wide">Project ID</label>
+                                <input type="text" name="firebase_project_id"
+                                       value="<?= htmlspecialchars($settings['firebase_project_id'] ?? '') ?>"
+                                       placeholder="your-project-id"
+                                       class="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm font-mono">
+                            </div>
+
+                            <!-- App ID -->
+                            <div>
+                                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wide">App ID</label>
+                                <input type="text" name="firebase_app_id"
+                                       value="<?= htmlspecialchars($settings['firebase_app_id'] ?? '') ?>"
+                                       placeholder="1:000000000000:web:xxxxxxxxxxxxxxxx"
+                                       class="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm font-mono">
+                            </div>
+
+                            <!-- Messaging Sender ID (needed for SDK init, optional) -->
+                            <div>
+                                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wide">Messaging Sender ID</label>
+                                <input type="text" name="firebase_messaging_sender_id"
+                                       value="<?= htmlspecialchars($settings['firebase_messaging_sender_id'] ?? '') ?>"
+                                       placeholder="290621496533"
+                                       class="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm font-mono">
+                            </div>
+
+                            <!-- Help note -->
+                            <div class="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-xs text-blue-700 leading-relaxed">
+                                💡 <strong>কোথায় পাবেন?</strong>
+                                <a href="https://console.firebase.google.com" target="_blank" class="underline font-bold">console.firebase.google.com</a>
+                                → Project → Project Settings → Your apps → Web app → <code class="bg-blue-100 px-1 rounded">firebaseConfig</code><br>
+                                ⚠️ <strong>Authorized domain:</strong> Firebase Console → Authentication → Settings → Authorized domains → <code class="bg-blue-100 px-1 rounded">digisoftbd.xyz</code> যোগ করুন।
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

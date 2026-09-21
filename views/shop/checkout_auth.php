@@ -495,13 +495,14 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   import { getAuth, RecaptchaVerifier,
            signInWithPhoneNumber }             from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 
+  // Firebase config — DB থেকে Admin Settings-এ যা সেভ তাই ব্যবহার হবে
   const firebaseConfig = {
-    apiKey:            "AIzaSyCqRe6RdZ6XPtr06L6lCbDs5_uf0ryMMDc",
-    authDomain:        "sodai-dorkar01.firebaseapp.com",
-    projectId:         "sodai-dorkar01",
-    storageBucket:     "sodai-dorkar01.firebasestorage.app",
-    messagingSenderId: "290621496533",
-    appId:             "1:290621496533:web:ed121bf764be513a8d565c",
+    apiKey:            <?= json_encode($settings['firebase_api_key']            ?? '') ?>,
+    authDomain:        <?= json_encode($settings['firebase_auth_domain']        ?? '') ?>,
+    projectId:         <?= json_encode($settings['firebase_project_id']         ?? '') ?>,
+    storageBucket:     <?= json_encode(($settings['firebase_project_id'] ?? '') . '.firebasestorage.app') ?>,
+    messagingSenderId: <?= json_encode($settings['firebase_messaging_sender_id'] ?? '') ?>,
+    appId:             <?= json_encode($settings['firebase_app_id']             ?? '') ?>,
   };
 
   const app  = initializeApp(firebaseConfig);
