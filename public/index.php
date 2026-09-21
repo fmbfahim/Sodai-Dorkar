@@ -69,6 +69,8 @@ $router->post('/checkout/signup', 'CustomerAuthController@signup');
 $router->get('/checkout/reset-password', 'CustomerAuthController@showResetPassword');
 $router->post('/checkout/reset-password', 'CustomerAuthController@updatePassword');
 $router->post('/checkout/firebase-login', 'CustomerAuthController@firebaseLogin');
+$router->post('/checkout/firebase-verify-signup', 'FirebaseAuthController@verifySignup');
+$router->post('/checkout/firebase-verify-login', 'FirebaseAuthController@verifyLogin');
 $router->get('/customer/logout', 'CustomerAuthController@logout');
 
 // OTP Routes

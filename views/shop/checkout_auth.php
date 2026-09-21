@@ -4,8 +4,10 @@ use Core\Lang;
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $base     = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 $siteName = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
-$activeTab = $tab ?? ($_GET['tab'] ?? 'login');
+$activeTab  = $tab ?? ($_GET['tab'] ?? 'login');
 $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
+$fbEnabled  = ($settings['auth_firebase_otp_enabled'] ?? '0') === '1';
+$preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 ?>
 
 <style>
@@ -110,6 +112,17 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
   transform: translateY(-1px); box-shadow: 0 10px 28px rgba(5,150,105,.35);
 }
 .auth-btn-primary:active { transform: translateY(0); }
+.auth-btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none !important; }
+
+.auth-btn-firebase {
+  width: 100%; padding: 13px 20px;
+  background: #fff;
+  border: 2px solid #e5e7eb; border-radius: 14px;
+  color: #374151; font-weight: 700; font-size: .9rem;
+  cursor: pointer; transition: all .25s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.auth-btn-firebase:hover { border-color: #f59e0b; color: #b45309; background: #fffbeb; }
 
 .form-label {
   display: block; font-size: .78rem; font-weight: 700;
@@ -147,7 +160,69 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
   background: #d1fae5; color: #065f46; font-size: .72rem; font-weight: 700;
   padding: 3px 10px; border-radius: 999px; border: 1px solid #a7f3d0;
 }
+
+/* ── Firebase OTP Modal ─────────────────────────────── */
+#fb-otp-modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 1rem;
+}
+#fb-otp-modal.open { display: flex; }
+.fb-modal-card {
+  background: #fff; border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.22);
+  padding: 2.5rem 2rem; width: 100%; max-width: 400px;
+  text-align: center; position: relative;
+}
+.fb-otp-digits {
+  display: flex; gap: 10px; justify-content: center; margin: 1.5rem 0;
+}
+.fb-otp-digit {
+  width: 50px; height: 58px; border: 2px solid #d1fae5;
+  border-radius: 14px; font-size: 1.6rem; font-weight: 700;
+  text-align: center; background: #f0fdf4; color: #064e3b;
+  outline: none; transition: all .2s;
+}
+.fb-otp-digit:focus { border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
 </style>
+
+<!-- ───────────────────────────────────── -->
+<!--  Firebase OTP Modal (shared)         -->
+<!-- ───────────────────────────────────── -->
+<div id="fb-otp-modal" role="dialog" aria-modal="true" aria-label="Phone Verification">
+  <div class="fb-modal-card">
+    <div style="font-size:3rem;margin-bottom:.5rem;">📱</div>
+    <h2 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.35rem;">Verify Your Phone</h2>
+    <p style="font-size:.82rem;color:#6b7280;margin-bottom:.25rem;">A 6-digit code was sent to</p>
+    <p id="fb-modal-phone-display" style="font-weight:800;color:#059669;font-size:.95rem;margin-bottom:1rem;"></p>
+
+    <!-- OTP digit boxes -->
+    <div class="fb-otp-digits" id="fb-otp-digits">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="1">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="2">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="3">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="4">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="5">
+      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="6">
+    </div>
+
+    <div id="fb-otp-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:.82rem;font-weight:600;color:#dc2626;margin-bottom:1rem;"></div>
+    <div id="fb-otp-loading" style="display:none;font-size:.82rem;color:#6b7280;margin-bottom:.75rem;">⏳ Verifying…</div>
+
+    <button id="fb-verify-btn" onclick="fbConfirmOtp()"
+            style="width:100%;padding:13px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;border:none;border-radius:14px;cursor:pointer;font-size:.95rem;margin-bottom:.75rem;">
+      ✅ Verify & Continue
+    </button>
+    <button onclick="fbCloseModal()"
+            style="width:100%;padding:10px;background:transparent;border:1.5px solid #e5e7eb;border-radius:12px;font-size:.83rem;color:#6b7280;cursor:pointer;font-weight:600;">
+      ✕ Cancel
+    </button>
+
+    <!-- reCAPTCHA container (invisible) -->
+    <div id="recaptcha-container" style="margin-top:.75rem;"></div>
+  </div>
+</div>
 
 <div class="auth-wrap">
   <div class="w-full max-w-5xl px-2">
@@ -158,6 +233,7 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
       'invalid_credentials'  => 'ফোন নম্বর বা পাসওয়ার্ড ভুল।',
       'phone_exists'         => 'এই ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট আছে। লগইন করুন।',
       'create_account_first' => 'নতুন অ্যাকাউন্ট তৈরি করতে নিচের ফর্ম ব্যবহার করুন।',
+      'firebase_failed'      => 'OTP যাচাই ব্যর্থ হয়েছে। আবার চেষ্টা করুন।',
     ]; ?>
     <div class="error-box mb-4 max-w-5xl mx-auto">
       <ion-icon name="alert-circle" style="font-size:1.2rem;flex-shrink:0"></ion-icon>
@@ -198,8 +274,8 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
                 <div>Create Account</div>
                 <div style="font-size:.72rem;font-weight:500;opacity:.7">
                   New customer
-                  <?php if ($otpEnabled): ?>
-                  &nbsp;<span class="otp-badge">🔐 OTP</span>
+                  <?php if ($fbEnabled): ?>
+                  &nbsp;<span class="otp-badge">🔥 OTP</span>
                   <?php endif; ?>
                 </div>
               </div>
@@ -213,6 +289,12 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
             <ion-icon name="shield-checkmark-outline" style="font-size:1rem;"></ion-icon>
             SSL secured · Your data is safe
           </div>
+          <?php if ($fbEnabled): ?>
+          <div style="display:flex;align-items:center;gap:8px;font-size:.72rem;color:rgba(255,255,255,.35);margin-top:6px;">
+            <ion-icon name="flame-outline" style="font-size:.9rem;"></ion-icon>
+            Powered by Firebase Auth
+          </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -224,7 +306,7 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
           <h2 style="font-size:1.5rem;font-weight:900;color:#111827;margin-bottom:.4rem;">Welcome Back! 👋</h2>
           <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.75rem;">Enter your details to continue shopping.</p>
 
-          <form action="<?= $base ?>/checkout/login" method="POST">
+          <form action="<?= $base ?>/checkout/login" method="POST" id="normal-login-form">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
 
@@ -232,7 +314,9 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
               <label class="form-label">Phone Number</label>
               <div class="auth-input-icon-wrap">
                 <ion-icon name="call-outline"></ion-icon>
-                <input type="tel" name="phone" class="auth-input" placeholder="01700000000" required autocomplete="tel">
+                <input type="tel" name="phone" id="login-phone" class="auth-input"
+                       placeholder="01700000000" required autocomplete="tel"
+                       value="<?= $preFillPhone ?>">
               </div>
             </div>
 
@@ -260,50 +344,54 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
               <ion-icon name="log-in-outline" style="font-size:1.1rem;"></ion-icon>
               Login &amp; Continue
             </button>
-
-            <?php if (($settings['auth_firebase_otp_enabled'] ?? '0') == '1'): ?>
-            <div class="divider">OR</div>
-            <button type="button" onclick="startOtpLogin()"
-                    style="width:100%;padding:12px 20px;border:2px solid #e5e7eb;border-radius:14px;background:#fff;font-weight:700;font-size:.88rem;color:#374151;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;"
-                    onmouseover="this.style.borderColor='#10b981';this.style.color='#059669'"
-                    onmouseout="this.style.borderColor='#e5e7eb';this.style.color='#374151'">
-              <ion-icon name="phone-portrait-outline" style="color:#3b82f6;font-size:1.1rem;"></ion-icon>
-              Login with SMS OTP
-            </button>
-            <?php endif; ?>
           </form>
 
-          <!-- OTP login section (hidden by default) -->
-          <div id="otp-login-section" style="display:none;margin-top:18px;">
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:16px;">
-              <h4 style="font-size:.85rem;font-weight:700;color:#1d4ed8;margin-bottom:6px;">📱 Verify Phone Number</h4>
-              <p style="font-size:.78rem;color:#3b82f6;margin-bottom:12px;">Enter your OTP below (Demo: 123456)</p>
-              <form action="<?= $base ?>/checkout/firebase-login" method="POST" style="display:flex;gap:8px;">
-                <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-                <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
-                <input type="hidden" name="phone" id="otp-login-phone">
-                <input type="text" name="otp" class="auth-input" placeholder="000000" style="flex:1;text-align:center;letter-spacing:.25em;font-family:monospace;font-weight:700;font-size:1.1rem;" required maxlength="6">
-                <button type="submit" class="auth-btn-primary" style="width:auto;padding:11px 18px;">Verify</button>
-              </form>
-            </div>
-          </div>
+          <!-- Firebase OTP Login -->
+          <?php if ($fbEnabled): ?>
+          <div class="divider">OR</div>
+          <!-- Hidden form submitted after Firebase verify -->
+          <form id="fb-login-form" action="<?= $base ?>/checkout/firebase-verify-login" method="POST" style="display:none;">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="firebase_token" id="fb-login-token">
+            <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
+          </form>
+          <button type="button" class="auth-btn-firebase" onclick="fbStartLoginOtp()">
+            🔥 Login with OTP (Free SMS)
+          </button>
+          <?php endif; ?>
         </div>
 
         <!-- ╔══ SIGNUP FORM ══╗ -->
         <div class="form-section <?= $activeTab === 'signup' ? 'active' : '' ?>" id="form-signup">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:.4rem;">
             <h2 style="font-size:1.5rem;font-weight:900;color:#111827;">Create Account</h2>
-            <?php if ($otpEnabled): ?>
-            <span class="otp-badge">🔐 OTP Required</span>
+            <?php if ($fbEnabled): ?>
+            <span class="otp-badge">🔥 OTP Required</span>
             <?php endif; ?>
           </div>
           <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.75rem;">
-            <?= $otpEnabled
-              ? 'Fill in your details. You\'ll verify your phone with an OTP before your account is created.'
-              : 'Join Fresh E mart and get fresh groceries delivered to your door.' ?>
+            <?= $fbEnabled
+              ? 'Fill in your details. Your phone will be verified with a free OTP before account creation.'
+              : 'Join ' . htmlspecialchars($siteName) . ' and get fresh groceries delivered to your door.' ?>
           </p>
 
-          <form action="<?= $base ?>/checkout/signup" method="POST">
+          <!-- Hidden form for Firebase signup: submitted programmatically after OTP verify -->
+          <?php if ($fbEnabled): ?>
+          <form id="fb-signup-form" action="<?= $base ?>/checkout/firebase-verify-signup" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="firebase_token" id="fb-signup-token">
+            <input type="hidden" name="name"     id="fb-signup-name">
+            <input type="hidden" name="email"    id="fb-signup-email">
+            <input type="hidden" name="password" id="fb-signup-password">
+            <input type="hidden" name="area_id"  id="fb-signup-area">
+            <input type="hidden" name="zone_id"  id="fb-signup-zone">
+            <input type="hidden" name="point_id" id="fb-signup-point">
+            <input type="hidden" name="address"  id="fb-signup-address">
+          </form>
+          <?php endif; ?>
+
+          <!-- Normal signup form (always shown as input UI) -->
+          <form action="<?= $base ?>/checkout/signup" method="POST" id="signup-form-ui">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
 
@@ -312,14 +400,16 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
                 <label class="form-label">Full Name *</label>
                 <div class="auth-input-icon-wrap">
                   <ion-icon name="person-outline"></ion-icon>
-                  <input type="text" name="name" class="auth-input" placeholder="Your name" required autocomplete="name">
+                  <input type="text" name="name" id="su-name" class="auth-input" placeholder="Your name" required autocomplete="name">
                 </div>
               </div>
               <div>
                 <label class="form-label">Phone Number *</label>
                 <div class="auth-input-icon-wrap">
                   <ion-icon name="call-outline"></ion-icon>
-                  <input type="tel" name="phone" class="auth-input" placeholder="01700000000" required autocomplete="tel">
+                  <input type="tel" name="phone" id="su-phone" class="auth-input"
+                         placeholder="01700000000" required autocomplete="tel"
+                         value="<?= $preFillPhone ?>">
                 </div>
               </div>
             </div>
@@ -328,7 +418,7 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
               <label class="form-label">Email <span style="font-weight:400;text-transform:none;color:#9ca3af;">(Optional)</span></label>
               <div class="auth-input-icon-wrap">
                 <ion-icon name="mail-outline"></ion-icon>
-                <input type="email" name="email" class="auth-input" placeholder="you@example.com" autocomplete="email">
+                <input type="email" name="email" id="su-email" class="auth-input" placeholder="you@example.com" autocomplete="email">
               </div>
             </div>
 
@@ -366,10 +456,18 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
               <label class="form-label">Set Password *</label>
               <div class="auth-input-icon-wrap">
                 <ion-icon name="lock-closed-outline"></ion-icon>
-                <input type="password" name="password" class="auth-input" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
+                <input type="password" name="password" id="su-password" class="auth-input"
+                       placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
               </div>
             </div>
 
+            <?php if ($fbEnabled): ?>
+            <!-- Firebase OTP button intercepts the form -->
+            <button type="button" id="fb-signup-btn" class="auth-btn-primary" onclick="fbStartSignupOtp()">
+              <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;"></ion-icon>
+              Verify Phone &amp; Create Account
+            </button>
+            <?php else: ?>
             <button type="submit" class="auth-btn-primary">
               <?php if ($otpEnabled): ?>
               <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;"></ion-icon>
@@ -379,6 +477,7 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
               Create Account &amp; Continue
               <?php endif; ?>
             </button>
+            <?php endif; ?>
           </form>
         </div>
 
@@ -386,6 +485,179 @@ $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
     </div><!-- /auth-card -->
   </div>
 </div>
+
+<!-- ─────────────────────────────────────── -->
+<!--  Firebase SDK + Auth Logic             -->
+<!-- ─────────────────────────────────────── -->
+<?php if ($fbEnabled): ?>
+<script type="module">
+  import { initializeApp }                     from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+  import { getAuth, RecaptchaVerifier,
+           signInWithPhoneNumber }             from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCqRe6RdZ6XPtr06L6lCbDs5_uf0ryMMDc",
+    authDomain:        "sodai-dorkar01.firebaseapp.com",
+    projectId:         "sodai-dorkar01",
+    storageBucket:     "sodai-dorkar01.firebasestorage.app",
+    messagingSenderId: "290621496533",
+    appId:             "1:290621496533:web:ed121bf764be513a8d565c",
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ── State ────────────────────────────────────
+  let confirmationResult = null;
+  let currentMode        = null; // 'login' | 'signup'
+  let recaptchaVerifier  = null;
+
+  // Expose globally for non-module buttons
+  window._fbAuth = { start, confirmOtp, closeModal };
+
+  // ── reCAPTCHA setup ───────────────────────────
+  function initRecaptcha() {
+    if (recaptchaVerifier) return;
+    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+    });
+  }
+
+  // ── Send OTP ──────────────────────────────────
+  async function start(phone, mode) {
+    currentMode = mode;
+    initRecaptcha();
+
+    // Format phone → +880...
+    let formatted = phone.replace(/\D/g, '');
+    if (formatted.startsWith('0') && formatted.length === 11) {
+      formatted = '+88' + formatted;
+    } else if (!formatted.startsWith('+')) {
+      formatted = '+' + formatted;
+    }
+
+    try {
+      showModalLoading(formatted);
+      confirmationResult = await signInWithPhoneNumber(auth, formatted, recaptchaVerifier);
+      showModalOtp(formatted);
+    } catch (err) {
+      recaptchaVerifier.clear();
+      recaptchaVerifier = null;
+      showError(friendlyError(err));
+    }
+  }
+
+  // ── Confirm OTP ───────────────────────────────
+  async function confirmOtp(code) {
+    if (!confirmationResult) { showError('Please request OTP first.'); return; }
+    setLoading(true);
+    try {
+      const result    = await confirmationResult.confirm(code);
+      const idToken   = await result.user.getIdToken();
+
+      if (currentMode === 'signup') {
+        populateAndSubmitSignup(idToken);
+      } else {
+        populateAndSubmitLogin(idToken);
+      }
+    } catch (err) {
+      setLoading(false);
+      showError(friendlyError(err));
+    }
+  }
+
+  function populateAndSubmitSignup(idToken) {
+    document.getElementById('fb-signup-token').value   = idToken;
+    document.getElementById('fb-signup-name').value    = document.getElementById('su-name').value;
+    document.getElementById('fb-signup-email').value   = document.getElementById('su-email').value;
+    document.getElementById('fb-signup-password').value= document.getElementById('su-password').value;
+    document.getElementById('fb-signup-area').value    = document.getElementById('area_id').value;
+    document.getElementById('fb-signup-zone').value    = document.getElementById('zone_id').value;
+    document.getElementById('fb-signup-point').value   = document.getElementById('point_id').value;
+    document.getElementById('fb-signup-address').value = (document.getElementById('address') || {}).value || '';
+    document.getElementById('fb-signup-form').submit();
+  }
+
+  function populateAndSubmitLogin(idToken) {
+    document.getElementById('fb-login-token').value = idToken;
+    document.getElementById('fb-login-form').submit();
+  }
+
+  // ── Modal helpers ─────────────────────────────
+  function showModalLoading(phone) {
+    document.getElementById('fb-modal-phone-display').textContent = phone;
+    document.getElementById('fb-otp-error').style.display  = 'none';
+    document.getElementById('fb-otp-loading').style.display = 'block';
+    document.getElementById('fb-otp-loading').textContent   = '📤 Sending OTP…';
+    document.getElementById('fb-verify-btn').disabled        = true;
+    openModal();
+  }
+
+  function showModalOtp(phone) {
+    document.getElementById('fb-otp-loading').style.display = 'none';
+    document.getElementById('fb-verify-btn').disabled        = false;
+    // focus first digit
+    const firstDigit = document.querySelector('.fb-otp-digit');
+    if (firstDigit) setTimeout(() => firstDigit.focus(), 100);
+  }
+
+  function openModal()  { document.getElementById('fb-otp-modal').classList.add('open'); }
+  function closeModal() { document.getElementById('fb-otp-modal').classList.remove('open'); }
+
+  function showError(msg) {
+    const el = document.getElementById('fb-otp-error');
+    el.textContent    = msg;
+    el.style.display  = 'block';
+  }
+
+  function setLoading(on) {
+    document.getElementById('fb-otp-loading').style.display = on ? 'block' : 'none';
+    document.getElementById('fb-otp-loading').textContent   = '⏳ Verifying…';
+    document.getElementById('fb-verify-btn').disabled       = on;
+  }
+
+  function friendlyError(err) {
+    const map = {
+      'auth/invalid-phone-number'  : 'Invalid phone number. Use format: 01700000000',
+      'auth/too-many-requests'     : 'Too many attempts. Please wait a minute and try again.',
+      'auth/invalid-verification-code': 'Wrong OTP code. Please check and try again.',
+      'auth/code-expired'          : 'OTP expired. Please request a new one.',
+      'auth/missing-phone-number'  : 'Please enter your phone number.',
+    };
+    return map[err.code] || err.message || 'Something went wrong. Please try again.';
+  }
+
+  // Expose to window for onclick handlers
+  window.fbStartSignupOtp = function() {
+    const form = document.getElementById('signup-form-ui');
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    const phone = document.getElementById('su-phone').value.trim();
+    window._fbAuth.start(phone, 'signup');
+  };
+
+  window.fbStartLoginOtp = function() {
+    const phone = document.getElementById('login-phone').value.trim();
+    if (!phone || phone.length < 11) {
+      alert('আপনার ১১ সংখ্যার ফোন নম্বর লিখুন।');
+      return;
+    }
+    window._fbAuth.start(phone, 'login');
+  };
+
+  window.fbConfirmOtp = function() {
+    const digits = Array.from(document.querySelectorAll('.fb-otp-digit'));
+    const code   = digits.map(d => d.value).join('');
+    if (code.length < 6) {
+      showError('Please enter all 6 digits.');
+      return;
+    }
+    window._fbAuth.confirmOtp(code);
+  };
+
+  window.fbCloseModal = function() { window._fbAuth.closeModal(); };
+</script>
+<?php endif; ?>
 
 <script>
 // ── Tab switching ────────────────────────────────────────
@@ -398,17 +670,38 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
 }
 
-// Auto-open if URL has ?tab=
 if (window.location.search.includes('tab=signup')) switchTab('signup');
 
-// ── OTP Login helper ────────────────────────────────────
-function startOtpLogin() {
-  const phone = document.querySelector('#form-login input[name="phone"]').value;
-  if (!phone || phone.length < 11) { alert('Please enter your 11-digit phone number first.'); return; }
-  document.getElementById('otp-login-phone').value = phone;
-  document.getElementById('otp-login-section').style.display = 'block';
-  document.getElementById('otp-login-section').scrollIntoView({ behavior: 'smooth' });
-}
+// ── OTP digit navigation in modal ───────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const digits = Array.from(document.querySelectorAll('.fb-otp-digit'));
+  digits.forEach((input, i) => {
+    input.addEventListener('input', e => {
+      const v = e.data || input.value;
+      if (!/^\d$/.test(v)) { input.value = ''; return; }
+      input.value = v;
+      if (i < digits.length - 1) digits[i + 1].focus();
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace') {
+        input.value = '';
+        if (i > 0) digits[i - 1].focus();
+      }
+    });
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+      txt.split('').forEach((c, j) => { if (digits[j]) digits[j].value = c; });
+      const next = Math.min(txt.length, digits.length - 1);
+      digits[next].focus();
+    });
+  });
+
+  // Close modal on backdrop click
+  document.getElementById('fb-otp-modal').addEventListener('click', function(e) {
+    if (e.target === this) window.fbCloseModal && window.fbCloseModal();
+  });
+});
 
 // ── Cascading Dropdowns ─────────────────────────────────
 document.getElementById('area_id').addEventListener('change', function() {
