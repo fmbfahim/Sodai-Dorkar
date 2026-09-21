@@ -153,11 +153,22 @@
                         </div>
 
                         <div>
-                            <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-2" for="description">Short Description</label>
-                            <input type="text" id="description" name="description" 
-                                   value="<?php echo htmlspecialchars($product['description']); ?>"
+                            <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-2" for="description">পণ্যের বিস্তারিত বিবরণ (Description)</label>
+                            <textarea id="description" name="description" rows="4"
+                                      class="w-full px-4 py-3 border border-secondary-300 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 font-sans leading-relaxed" 
+                                      placeholder="পণ্যের বিস্তারিত বিবরণ, পুষ্টিগুণ, ব্যবহারের নিয়ম ইত্যাদি লিখুন..."><?php echo htmlspecialchars($product['description'] ?? ''); ?></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-2" for="tags">ট্যাগ ও সার্চ কীওয়ার্ড (Search Keywords / Tags)</label>
+                            <input type="text" id="tags" name="tags" 
+                                   value="<?php echo htmlspecialchars($product['tags'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-secondary-300 rounded-xl text-sm focus:ring-2 focus:ring-primary-500" 
-                                   placeholder="Optional product description...">
+                                   placeholder="কমা দিয়ে লিখুন, যেমন: চাল, মিনিকেট, basmati, rice, grocery">
+                            <p class="text-[11px] text-secondary-400 mt-1 flex items-center gap-1">
+                                <ion-icon name="information-circle-outline"></ion-icon>
+                                গ্রাহকরা ফ্রন্টএন্ড সার্চ বারে এই শব্দগুলো লিখলে পণ্যটি তৎক্ষণাৎ খুঁজে পাবে।
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -580,12 +591,27 @@
                         $editImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
                         ?>
                         <div class="mb-3 inline-block relative border border-secondary-200 rounded-2xl p-2 bg-secondary-50">
-                            <img src="<?php echo $editImg; ?>" alt="Product Image" class="h-32 w-32 object-contain rounded-xl mx-auto" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                            <img id="previewImage" src="<?php echo $editImg; ?>" alt="Product Image" class="h-32 w-32 object-contain rounded-xl mx-auto" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
                             <?php if(empty($product['image_path'])): ?>
                                 <span class="block text-[11px] text-secondary-400 font-medium mt-1">Default Placeholder Image</span>
                             <?php endif; ?>
                         </div>
                         
+                        <div class="mb-3">
+                            <button type="button" 
+                                    onclick="openProductImageFinderModal(<?= $product['id'] ?>, '<?= htmlspecialchars(addslashes($product['name'])) ?>')" 
+                                    class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer">
+                                <ion-icon name="sparkles" class="text-amber-300 text-base"></ion-icon>
+                                <span>ওয়েব ও গুগল থেকে ছবি খুঁজুন</span>
+                            </button>
+                        </div>
+
+                        <div class="relative flex py-2 items-center">
+                            <div class="flex-grow border-t border-secondary-200"></div>
+                            <span class="flex-shrink mx-2 text-[10px] text-secondary-400 uppercase font-semibold">অথবা ডিভাইস থেকে আপলোড</span>
+                            <div class="flex-grow border-t border-secondary-200"></div>
+                        </div>
+
                         <input type="file" id="image" name="image" accept="image/*" 
                                class="w-full text-xs text-secondary-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
                     </div>
@@ -1206,3 +1232,5 @@ document.addEventListener('DOMContentLoaded', () => {
     applyDiscountCalculation();
 });
 </script>
+
+<?php require __DIR__ . '/image_finder_modal.php'; ?>

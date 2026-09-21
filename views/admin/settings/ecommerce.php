@@ -1584,6 +1584,44 @@
                         </span>
                     </label>
                 </div>
+
+                <!-- OTP Required for Signup -->
+                <div class="flex items-start justify-between gap-4 pt-5">
+                    <div class="space-y-1">
+                        <label class="font-bold text-xs sm:text-sm text-secondary-800 cursor-pointer" for="otp_required_signup">
+                            🔐 OTP Verification for Account Creation
+                        </label>
+                        <p class="text-xs text-secondary-500 leading-relaxed">
+                            When enabled, customers must verify their phone number with a one-time code (OTP) before their account is created. Prevents fake registrations.
+                        </p>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" id="otp_required_signup" name="otp_required_signup" value="1" 
+                               <?= ($settings['otp_required_signup'] ?? '0') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['otp_required_signup'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- OTP Required for Password Change -->
+                <div class="flex items-start justify-between gap-4 pt-5">
+                    <div class="space-y-1">
+                        <label class="font-bold text-xs sm:text-sm text-secondary-800 cursor-pointer" for="otp_required_password_change">
+                            🔐 OTP Verification Before Password Change
+                        </label>
+                        <p class="text-xs text-secondary-500 leading-relaxed">
+                            When enabled, customers must verify their identity with an OTP before they can change their account password. Adds an extra layer of account security.
+                        </p>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" id="otp_required_password_change" name="otp_required_password_change" value="1" 
+                               <?= ($settings['otp_required_password_change'] ?? '0') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['otp_required_password_change'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
             </div>
         </div>
 

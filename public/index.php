@@ -56,6 +56,12 @@ $router->post('/checkout/reset-password', 'CustomerAuthController@updatePassword
 $router->post('/checkout/firebase-login', 'CustomerAuthController@firebaseLogin');
 $router->get('/customer/logout', 'CustomerAuthController@logout');
 
+// OTP Routes
+$router->get('/checkout/otp-verify', 'CustomerAuthController@showOtpVerify');
+$router->post('/checkout/otp-verify', 'CustomerAuthController@verifyOtp');
+$router->post('/checkout/otp-resend', 'CustomerAuthController@resendOtp');
+$router->post('/account/initiate-password-otp', 'CustomerAuthController@initiatePasswordChangeOtp');
+
 // Customer Account / Dashboard Routes
 $router->get('/account', 'CustomerDashboardController@dashboard');
 $router->get('/account/orders', 'CustomerDashboardController@orders');

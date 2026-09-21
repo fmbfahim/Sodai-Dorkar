@@ -143,6 +143,7 @@ class ProductController extends Controller {
         }
 
         $description = $_POST['description'] ?? '';
+        $tags = trim($_POST['tags'] ?? '');
         $buy_price = floatval($_POST['buy_price'] ?? 0);
         $regular_price = !empty($_POST['regular_price']) ? floatval($_POST['regular_price']) : null;
         $discount_type = $_POST['discount_type'] ?? 'none';
@@ -200,6 +201,7 @@ class ProductController extends Controller {
                 'name' => $name,
                 'sku' => $sku,
                 'description' => $description,
+                'tags' => $tags ?: null,
                 'buy_price' => $buy_price,
                 'regular_price' => $regular_price,
                 'discount_type' => $discount_type,
@@ -220,7 +222,8 @@ class ProductController extends Controller {
             ]);
         }
         
-        header('Location: /sodai-dorkar/public/admin/products');
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        header("Location: {$base}/admin/products");
         exit;
     }
 
@@ -267,6 +270,7 @@ class ProductController extends Controller {
         $name = trim($_POST['name'] ?? '');
         $sku = trim($_POST['sku'] ?? '');
         $description = $_POST['description'] ?? '';
+        $tags = trim($_POST['tags'] ?? '');
         $buy_price = floatval($_POST['buy_price'] ?? 0);
         $regular_price = !empty($_POST['regular_price']) ? floatval($_POST['regular_price']) : null;
         $discount_type = $_POST['discount_type'] ?? 'none';
@@ -299,6 +303,7 @@ class ProductController extends Controller {
             'name' => $name,
             'sku' => $sku,
             'description' => $description,
+            'tags' => $tags ?: null,
             'buy_price' => $buy_price,
             'regular_price' => $regular_price,
             'discount_type' => $discount_type,
@@ -345,7 +350,8 @@ class ProductController extends Controller {
             $productModel->update($id, $data);
         }
         
-        header('Location: /sodai-dorkar/public/admin/products');
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        header("Location: {$base}/admin/products");
         exit;
     }
 
@@ -1216,6 +1222,7 @@ class ProductController extends Controller {
     public function searchWebImages() {
         header('Content-Type: application/json; charset=utf-8');
         $query = trim($_GET['query'] ?? '');
+        $source = strtolower(trim($_GET['source'] ?? 'all'));
 
         if (empty($query)) {
             echo json_encode(['success' => false, 'message' => 'সার্চ কিওয়ার্ড দেওয়া হয়নি (Query is empty)', 'results' => []], JSON_UNESCAPED_UNICODE);
@@ -1224,35 +1231,49 @@ class ProductController extends Controller {
 
         $results = [];
 
-        // 1. Primary: Search Shwapno API
-        $shwapnoResults = $this->fetchShwapnoImages($query);
-        foreach ($shwapnoResults as $item) {
-            $results[] = $item;
-        }
+        // 1. Shwapno API
+        if ($source === 'all' || $source === 'shwapno') {
+            $shwapnoResults = $this->fetchShwapnoImages($query);
+            foreach ($shwapnoResults as $item) {
+                $results[] = $item;
+            }
 
-        // If Shwapno returned less than 4 and query has package sizes, try broader query on Shwapno
-        if (count($results) < 4) {
-            // Remove common quantity or packaging words e.g. "500gm", "1kg", "বস্তা", "packet"
-            $cleanedQuery = trim(preg_replace('/\b(\d+\s*(?:kg|gm|g|ltr|ml|liter|কেজি|গ্রাম|লিটার|বস্তা|প্যাকেট))\b/i', '', $query));
-            if ($cleanedQuery && strtolower($cleanedQuery) !== strtolower($query)) {
-                $moreShwapno = $this->fetchShwapnoImages($cleanedQuery);
-                $existingImages = array_column($results, 'image');
-                foreach ($moreShwapno as $item) {
-                    if (!in_array($item['image'], $existingImages)) {
-                        $results[] = $item;
-                        $existingImages[] = $item['image'];
+            // Broader query if few results
+            if (count($shwapnoResults) < 4) {
+                $cleanedQuery = trim(preg_replace('/\b(\d+\s*(?:kg|gm|g|ltr|ml|liter|কেজি|গ্রাম|লিটার|বস্তা|প্যাকেট))\b/iu', '', $query));
+                if ($cleanedQuery && strtolower($cleanedQuery) !== strtolower($query)) {
+                    $moreShwapno = $this->fetchShwapnoImages($cleanedQuery);
+                    $existingImages = array_column($results, 'image');
+                    foreach ($moreShwapno as $item) {
+                        if (!in_array($item['image'], $existingImages)) {
+                            $results[] = $item;
+                            $existingImages[] = $item['image'];
+                        }
                     }
                 }
             }
         }
 
-        // 2. OpenFoodFacts fallback for branded products if Shwapno has few results
-        if (count($results) < 3) {
+        // 2. Wikimedia Commons API (Great for raw groceries, spices, fruits, vegetables, fish, etc.)
+        if ($source === 'all' || $source === 'wikimedia') {
+            $wikiResults = $this->fetchWikimediaImages($query);
+            $existingImages = array_column($results, 'image');
+            foreach ($wikiResults as $item) {
+                if (!in_array($item['image'], $existingImages)) {
+                    $results[] = $item;
+                    $existingImages[] = $item['image'];
+                }
+            }
+        }
+
+        // 3. OpenFoodFacts fallback
+        if ($source === 'all' || $source === 'openfoodfacts') {
             $offResults = $this->fetchOpenFoodFactsImages($query);
             $existingImages = array_column($results, 'image');
             foreach ($offResults as $item) {
                 if (!in_array($item['image'], $existingImages)) {
                     $results[] = $item;
+                    $existingImages[] = $item['image'];
                 }
             }
         }
@@ -1260,8 +1281,9 @@ class ProductController extends Controller {
         echo json_encode([
             'success' => true,
             'query' => $query,
+            'source' => $source,
             'count' => count($results),
-            'results' => array_slice($results, 0, 16)
+            'results' => array_slice($results, 0, 24)
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -1340,6 +1362,49 @@ class ProductController extends Controller {
                             'sku' => $p['code'] ?? '',
                             'price' => ''
                         ];
+                    }
+                }
+            }
+        }
+        return $items;
+    }
+
+    private function fetchWikimediaImages($query) {
+        $clean = trim(preg_replace('/\b(\d+\s*(?:kg|gm|g|ltr|ml|liter|কেজি|গ্রাম|লিটার|বস্তা|প্যাকেট))\b/iu', '', $query));
+        $searchTerms = $clean ?: $query;
+        $url = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=" . urlencode($searchTerms) . "&gsrlimit=10&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=400&format=json";
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, "SodaiDorkar/1.0 (info@freshemart.com)");
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        $items = [];
+        if ($res) {
+            $data = json_decode($res, true);
+            if (!empty($data['query']['pages'])) {
+                foreach ($data['query']['pages'] as $page) {
+                    if (!empty($page['imageinfo'][0])) {
+                        $info = $page['imageinfo'][0];
+                        $imgUrl = $info['url'] ?? '';
+                        $thumbUrl = $info['thumburl'] ?? $imgUrl;
+                        if ($imgUrl && preg_match('/\.(jpe?g|png|webp)/i', $imgUrl)) {
+                            $rawTitle = preg_replace('/^File:/i', '', $page['title'] ?? $query);
+                            $cleanTitle = preg_replace('/\.(jpe?g|png|webp)$/i', '', $rawTitle);
+                            $cleanTitle = str_replace(['_', '-'], ' ', $cleanTitle);
+                            
+                            $items[] = [
+                                'title' => $cleanTitle,
+                                'image' => $imgUrl,
+                                'thumbnail' => $thumbUrl,
+                                'source' => 'Wikimedia Commons',
+                                'sku' => '',
+                                'price' => ''
+                            ];
+                        }
                     }
                 }
             }

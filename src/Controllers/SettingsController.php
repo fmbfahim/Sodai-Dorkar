@@ -104,7 +104,9 @@ class SettingsController extends Controller {
                 'enable_checkout_signup',
                 'require_login_to_checkout',
                 'auth_manual_pin_enabled',
-                'auth_firebase_otp_enabled'
+                'auth_firebase_otp_enabled',
+                'otp_required_signup',
+                'otp_required_password_change',
             ],
             'visibility' => [
                 'top_announcement_bar_enabled',

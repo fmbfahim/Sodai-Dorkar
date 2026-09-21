@@ -192,9 +192,15 @@ foreach ($categories as $c) {
                     <input type="file" id="image" name="image" accept="image/*" class="w-full text-xs text-secondary-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
                 </div>
                 
+                <div class="mb-3">
+                    <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-1.5" for="description">সংক্ষিপ্ত বিবরণ (Description)</label>
+                    <textarea id="description" name="description" rows="2" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs focus:ring-2 focus:ring-primary-500" placeholder="পণ্যের বিস্তারিত বা সংক্ষিপ্ত বিবরণ..."></textarea>
+                </div>
+
                 <div class="mb-5">
-                    <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-1.5" for="description">সংক্ষিপ্ত বিবরণ</label>
-                    <textarea id="description" name="description" rows="2" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs focus:ring-2 focus:ring-primary-500" placeholder="ঐচ্ছিক বিবরণ..."></textarea>
+                    <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-1.5" for="tags">ট্যাগ ও সার্চ কীওয়ার্ড (Tags)</label>
+                    <input type="text" id="tags" name="tags" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs focus:ring-2 focus:ring-primary-500" placeholder="কমা দিয়ে লিখুন, যেমন: চাল, মিনিকেট, rice, grocery">
+                    <p class="text-[10px] text-secondary-400 mt-1">গ্রাহক সার্চ বারে এই শব্দগুলো লিখলে পণ্যটি খুঁজে পাবে।</p>
                 </div>
 
                 <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
@@ -344,11 +350,16 @@ foreach ($categories as $c) {
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-11 h-11 rounded-xl bg-secondary-100 border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                            <div class="w-11 h-11 rounded-xl bg-secondary-100 border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                                                 onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')"
+                                                 title="ক্লিক করে ওয়েব/গুগল থেকে ছবি খুঁজুন">
                                                 <?php 
                                                 $prodImg = !empty($p['image_path']) ? htmlspecialchars($p['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
                                                 ?>
-                                                <img src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain p-0.5" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                                                <img id="prod-thumb-<?= $p['id'] ?>" src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain p-0.5 transition-transform group-hover:scale-105" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                                                <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                    <ion-icon name="sparkles" class="text-xs text-amber-400"></ion-icon>
+                                                </div>
                                             </div>
                                             <div>
                                                 <div class="font-bold text-secondary-900 text-sm group-hover:text-primary-600 transition-colors">
@@ -424,10 +435,12 @@ foreach ($categories as $c) {
                                     </td>
                                     <td class="px-4 py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1.5">
-                                            <a href="<?= $base ?>/admin/products/image-finder?search=<?= urlencode($p['name']) ?>" 
-                                                class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="ওয়েব থেকে ছবি খুঁজুন (Auto Image Finder)">
+                                            <button type="button" 
+                                                onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')" 
+                                                class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" 
+                                                title="ওয়েব ও গুগল থেকে ছবি খুঁজুন (Auto Image Finder)">
                                                 <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
-                                            </a>
+                                            </button>
                                             <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
                                                 class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
                                                 <ion-icon name="create-outline" class="text-lg"></ion-icon>
@@ -1368,3 +1381,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<?php require __DIR__ . '/image_finder_modal.php'; ?>

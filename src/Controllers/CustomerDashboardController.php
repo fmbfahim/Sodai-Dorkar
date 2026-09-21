@@ -166,11 +166,22 @@ class CustomerDashboardController {
 
     public function changePassword() {
         $customer = $this->getCustomer();
+
+        // Fetch settings to pass OTP state
+        $stmt = $this->db->query("SELECT key_name, value FROM settings WHERE key_name IN ('otp_required_password_change')");
+        $settings = [];
+        foreach ($stmt->fetchAll() as $s) $settings[$s['key_name']] = $s['value'];
+
+        $otpRequired = ($settings['otp_required_password_change'] ?? '0') === '1';
+        $otpVerified = !empty($_SESSION['otp_pwd_change_verified']);
+
         return $this->renderAccount("change_password", [
-            "customer" => $customer,
-            "success"  => $_GET["success"] ?? null,
-            "error"    => $_GET["error"] ?? null,
-            "title"    => "Change Password"
+            "customer"    => $customer,
+            "success"     => $_GET["success"] ?? null,
+            "error"       => $_GET["error"] ?? null,
+            "title"       => "Change Password",
+            "otpRequired" => $otpRequired,
+            "otpVerified" => $otpVerified,
         ]);
     }
 
@@ -179,6 +190,16 @@ class CustomerDashboardController {
         $currentPassword = $_POST["current_password"] ?? "";
         $newPassword     = $_POST["new_password"] ?? "";
         $confirmPassword = $_POST["confirm_password"] ?? "";
+
+        // Check OTP requirement
+        $stmt = $this->db->query("SELECT value FROM settings WHERE key_name = 'otp_required_password_change'");
+        $row  = $stmt->fetch();
+        $otpRequired = ($row['value'] ?? '0') === '1';
+
+        if ($otpRequired && empty($_SESSION['otp_pwd_change_verified'])) {
+            header("Location: /sodai-dorkar/public/account/change-password?error=otp_required");
+            exit;
+        }
 
         $stmt = $this->db->query("SELECT password FROM customers WHERE id = ?", [$customerId]);
         $row  = $stmt->fetch();
@@ -200,6 +221,9 @@ class CustomerDashboardController {
 
         $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
         $this->db->query("UPDATE customers SET password = ? WHERE id = ?", [$hashed, $customerId]);
+
+        // Clear OTP verification after successful change
+        unset($_SESSION['otp_pwd_change_verified']);
 
         header("Location: /sodai-dorkar/public/account/change-password?success=1");
         exit;

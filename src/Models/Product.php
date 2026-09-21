@@ -23,7 +23,8 @@ class Product {
 
         if (!empty($filters['search'])) {
             $term = '%' . trim($filters['search']) . '%';
-            $sql .= " AND (products.name LIKE ? OR products.sku LIKE ? OR products.description LIKE ? OR vendors.name LIKE ? OR categories.name LIKE ?)";
+            $sql .= " AND (products.name LIKE ? OR products.sku LIKE ? OR products.description LIKE ? OR products.tags LIKE ? OR vendors.name LIKE ? OR categories.name LIKE ?)";
+            $params[] = $term;
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
@@ -134,12 +135,12 @@ class Product {
 
     public function create($data) {
         $sql = "INSERT INTO products (
-                    name, sku, description, buy_price, regular_price, discount_type, discount_value, sell_price, stock_qty, 
+                    name, sku, description, tags, buy_price, regular_price, discount_type, discount_value, sell_price, stock_qty, 
                     vendor_id, category_id, brand_id, image_path,
                     unit_type, base_unit, purchase_unit, purchase_unit_qty, selling_unit, unit_variants_json,
                     is_verified, availability_status, demand_percentage
                 ) VALUES (
-                    :name, :sku, :description, :buy_price, :regular_price, :discount_type, :discount_value, :sell_price, :stock_qty, 
+                    :name, :sku, :description, :tags, :buy_price, :regular_price, :discount_type, :discount_value, :sell_price, :stock_qty, 
                     :vendor_id, :category_id, :brand_id, :image_path,
                     :unit_type, :base_unit, :purchase_unit, :purchase_unit_qty, :selling_unit, :unit_variants_json,
                     :is_verified, :availability_status, :demand_percentage
@@ -149,6 +150,7 @@ class Product {
             'name' => $data['name'],
             'sku' => $data['sku'],
             'description' => $data['description'] ?? '',
+            'tags' => $data['tags'] ?? null,
             'buy_price' => $data['buy_price'] ?? 0,
             'regular_price' => !empty($data['regular_price']) ? floatval($data['regular_price']) : null,
             'discount_type' => $data['discount_type'] ?? 'none',
@@ -182,6 +184,7 @@ class Product {
                 name = :name, 
                 sku = :sku, 
                 description = :description, 
+                tags = :tags,
                 buy_price = :buy_price, 
                 regular_price = :regular_price,
                 discount_type = :discount_type,
@@ -202,6 +205,7 @@ class Product {
             'name' => $data['name'],
             'sku' => $data['sku'],
             'description' => $data['description'] ?? '',
+            'tags' => $data['tags'] ?? null,
             'buy_price' => $data['buy_price'] ?? 0,
             'regular_price' => !empty($data['regular_price']) ? floatval($data['regular_price']) : null,
             'discount_type' => $data['discount_type'] ?? 'none',

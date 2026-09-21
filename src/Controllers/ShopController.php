@@ -194,9 +194,11 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
             $params['search'] = "%{$search}%";
             $params['search2'] = "%{$search}%";
+            $params['search3'] = "%{$search}%";
+            $params['search4'] = "%{$search}%";
         }
 
         if ($isDeals) {
@@ -433,9 +435,11 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2)";
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
             $params['search'] = "%{$search}%";
             $params['search2'] = "%{$search}%";
+            $params['search3'] = "%{$search}%";
+            $params['search4'] = "%{$search}%";
         }
 
         switch ($sort) {
@@ -600,10 +604,11 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3)";
+            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
             $params['search'] = "%{$search}%";
             $params['search2'] = "%{$search}%";
             $params['search3'] = "%{$search}%";
+            $params['search4'] = "%{$search}%";
         }
 
         // Sorting
