@@ -379,6 +379,33 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
             </div>
         </header>
 
+        <!-- Global Alerts -->
+        <?php if (!empty($_SESSION['error'])): ?>
+            <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <ion-icon name="alert-circle" class="text-2xl text-red-500 shrink-0"></ion-icon>
+                    <span class="font-medium"><?= htmlspecialchars($_SESSION['error']); ?></span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-700 text-lg">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
+        <?php if (!empty($_SESSION['success'])): ?>
+            <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <ion-icon name="checkmark-circle" class="text-2xl text-emerald-600 shrink-0"></ion-icon>
+                    <span class="font-medium"><?= htmlspecialchars($_SESSION['success']); ?></span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-700 text-lg">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
         <!-- Dynamic Content -->
         <?php echo $content ?? ''; ?>
         

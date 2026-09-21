@@ -46,7 +46,7 @@ foreach ($categories as $c) {
             </h3>
             <p class="text-xs text-secondary-500 mb-5">মৌলিক তথ্য, ক্যাটাগরি ও প্যাকেজিং নির্ধারণ করে সেভ করুন।</p>
 
-            <form action="/sodai-dorkar/public/admin/products/store" method="POST" enctype="multipart/form-data">
+            <form action="<?= $base ?>/admin/products/store" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                 <div class="mb-4">
                     <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-2" for="name">
@@ -95,7 +95,7 @@ foreach ($categories as $c) {
                             <ion-icon name="scale-outline" class="text-primary-600"></ion-icon>
                             প্যাকেজিং ও একক নির্ধারণ
                         </label>
-                        <a href="/sodai-dorkar/public/admin/settings/units" target="_blank" class="text-[10px] text-primary-600 hover:text-primary-700 font-bold flex items-center gap-0.5">
+                        <a href="<?= $base ?>/admin/settings/units" target="_blank" class="text-[10px] text-primary-600 hover:text-primary-700 font-bold flex items-center gap-0.5">
                             <ion-icon name="settings-outline" class="text-xs"></ion-icon> একক সেটিংস
                         </a>
                     </div>
@@ -354,9 +354,9 @@ foreach ($categories as $c) {
                                                  onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')"
                                                  title="ক্লিক করে ওয়েব/গুগল থেকে ছবি খুঁজুন">
                                                 <?php 
-                                                $prodImg = !empty($p['image_path']) ? htmlspecialchars($p['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
+                                                $prodImg = !empty($p['image_path']) ? \Models\Product::getImageUrl($p['image_path'], $base) : "{$base}/images/default-product.svg";
                                                 ?>
-                                                <img id="prod-thumb-<?= $p['id'] ?>" src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain p-0.5 transition-transform group-hover:scale-105" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                                                <img id="prod-thumb-<?= $p['id'] ?>" src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain p-0.5 transition-transform group-hover:scale-105" onerror="this.src='<?= $base ?>/images/default-product.svg'">
                                                 <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                     <ion-icon name="sparkles" class="text-xs text-amber-400"></ion-icon>
                                                 </div>
@@ -445,7 +445,7 @@ foreach ($categories as $c) {
                                                 class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
                                                 <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                             </a>
-                                            <form action="/sodai-dorkar/public/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
+                                            <form action="<?= $base ?>/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                                 <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
                                                 <button type="submit" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete Product">
@@ -553,7 +553,7 @@ foreach ($categories as $c) {
         </div>
 
         <!-- Form for Bulk Submission with Image Upload Support -->
-        <form action="/sodai-dorkar/public/admin/products/bulk-store-manual" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
+        <form action="<?= $base ?>/admin/products/bulk-store-manual" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <!-- Modal Body Table -->
             <div class="flex-1 overflow-y-auto p-5">

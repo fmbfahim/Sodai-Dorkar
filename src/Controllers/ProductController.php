@@ -159,6 +159,7 @@ class ProductController extends Controller {
         $stock_qty = floatval($_POST['stock_qty'] ?? 0);
         $vendor_id = !empty($_POST['vendor_id']) ? intval($_POST['vendor_id']) : null;
         $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
+        $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
         
         $availability_status = $_POST['availability_status'] ?? 'pending';
         $is_verified = !empty($_POST['is_verified']) ? 1 : 0;
@@ -171,14 +172,24 @@ class ProductController extends Controller {
         $selling_unit = trim($_POST['selling_unit'] ?? $base_unit);
         $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null));
 
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $image_path = null;
 
-        // Handle Image Upload
+        // Handle Image Upload safely
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $_FILES['image']['tmp_name']);
-            finfo_close($finfo);
+            $mime = '';
+            if (function_exists('finfo_open')) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $_FILES['image']['tmp_name']);
+                finfo_close($finfo);
+            } elseif (function_exists('mime_content_type')) {
+                $mime = mime_content_type($_FILES['image']['tmp_name']);
+            } else {
+                $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+                $extMimes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+                $mime = $extMimes[$ext] ?? '';
+            }
 
             if (in_array($mime, $allowedMimeTypes)) {
                 $uploadDir = __DIR__ . '/../../public/uploads/products/';
@@ -186,56 +197,72 @@ class ProductController extends Controller {
                     mkdir($uploadDir, 0777, true);
                 }
 
-                $fileName = time() . '_' . basename($_FILES['image']['name']);
+                $cleanBase = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($_FILES['image']['name']));
+                $fileName = time() . '_' . $cleanBase;
                 $targetPath = $uploadDir . $fileName;
 
                 if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-                    $image_path = '/sodai-dorkar/public/uploads/products/' . $fileName;
+                    $image_path = (!empty($base) ? $base : '') . '/uploads/products/' . $fileName;
                 }
             }
         }
 
         if ($name && $sell_price >= 0) {
-            $productModel = new Product();
-            $productModel->create([
-                'name' => $name,
-                'sku' => $sku,
-                'description' => $description,
-                'tags' => $tags ?: null,
-                'buy_price' => $buy_price,
-                'regular_price' => $regular_price,
-                'discount_type' => $discount_type,
-                'discount_value' => $discount_value,
-                'sell_price' => $sell_price,
-                'stock_qty' => $stock_qty,
-                'vendor_id' => $vendor_id,
-                'category_id' => $category_id,
-                'image_path' => $image_path,
-                'unit_type' => $unit_type,
-                'base_unit' => $base_unit,
-                'purchase_unit' => $purchase_unit ?: null,
-                'purchase_unit_qty' => $purchase_unit_qty > 0 ? $purchase_unit_qty : 1.000,
-                'selling_unit' => $selling_unit ?: $base_unit,
-                'unit_variants_json' => $unit_variants_json,
-                'availability_status' => $availability_status,
-                'is_verified' => $is_verified
-            ]);
+            try {
+                $productModel = new Product();
+                $productModel->create([
+                    'name' => $name,
+                    'sku' => ($sku !== '') ? $sku : null,
+                    'description' => $description,
+                    'tags' => $tags ?: null,
+                    'buy_price' => $buy_price,
+                    'regular_price' => $regular_price,
+                    'discount_type' => $discount_type,
+                    'discount_value' => $discount_value,
+                    'sell_price' => $sell_price,
+                    'stock_qty' => $stock_qty,
+                    'vendor_id' => $vendor_id,
+                    'category_id' => $category_id,
+                    'brand_id' => $brand_id,
+                    'image_path' => $image_path,
+                    'unit_type' => $unit_type,
+                    'base_unit' => $base_unit,
+                    'purchase_unit' => $purchase_unit ?: null,
+                    'purchase_unit_qty' => $purchase_unit_qty > 0 ? $purchase_unit_qty : 1.000,
+                    'selling_unit' => $selling_unit ?: $base_unit,
+                    'unit_variants_json' => $unit_variants_json,
+                    'availability_status' => $availability_status,
+                    'is_verified' => $is_verified
+                ]);
+                $_SESSION['success'] = "নতুন পণ্য সফলভাবে তৈরি করা হয়েছে!";
+            } catch (\Throwable $e) {
+                error_log("Product create failed: " . $e->getMessage());
+                $_SESSION['error'] = "পণ্য তৈরি ব্যর্থ: " . $e->getMessage();
+            }
+        } else {
+            $_SESSION['error'] = "পণ্যের নাম ও সঠিক মূল্য দিন!";
         }
         
-        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         header("Location: {$base}/admin/products");
         exit;
     }
 
     public function edit() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header('Location: /sodai-dorkar/public/admin/products');
+            header("Location: {$base}/admin/products");
             exit;
         }
 
         $productModel = new Product();
         $product = $productModel->find($id);
+
+        if (!$product) {
+            $_SESSION['error'] = "পণ্যটি খুঁজে পাওয়া যায়নি!";
+            header("Location: {$base}/admin/products");
+            exit;
+        }
 
         $vendorModel = new Vendor();
         $vendors = $vendorModel->all();
@@ -266,6 +293,7 @@ class ProductController extends Controller {
     }
 
     public function update() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $id = $_POST['id'] ?? null;
         $name = trim($_POST['name'] ?? '');
         $sku = trim($_POST['sku'] ?? '');
@@ -301,7 +329,7 @@ class ProductController extends Controller {
 
         $data = [
             'name' => $name,
-            'sku' => $sku,
+            'sku' => ($sku !== '') ? $sku : null,
             'description' => $description,
             'tags' => $tags ?: null,
             'buy_price' => $buy_price,
@@ -323,12 +351,21 @@ class ProductController extends Controller {
             'is_verified' => $is_verified
         ];
 
-        // Handle Image Upload
+        // Handle Image Upload safely
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $_FILES['image']['tmp_name']);
-            finfo_close($finfo);
+            $mime = '';
+            if (function_exists('finfo_open')) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $_FILES['image']['tmp_name']);
+                finfo_close($finfo);
+            } elseif (function_exists('mime_content_type')) {
+                $mime = mime_content_type($_FILES['image']['tmp_name']);
+            } else {
+                $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+                $extMimes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+                $mime = $extMimes[$ext] ?? '';
+            }
 
             if (in_array($mime, $allowedMimeTypes)) {
                 $uploadDir = __DIR__ . '/../../public/uploads/products/';
@@ -336,32 +373,50 @@ class ProductController extends Controller {
                     mkdir($uploadDir, 0777, true);
                 }
 
-                $fileName = time() . '_' . basename($_FILES['image']['name']);
+                $cleanBase = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($_FILES['image']['name']));
+                $fileName = time() . '_' . $cleanBase;
                 $targetPath = $uploadDir . $fileName;
 
                 if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-                     $data['image_path'] = '/sodai-dorkar/public/uploads/products/' . $fileName;
+                    $data['image_path'] = (!empty($base) ? $base : '') . '/uploads/products/' . $fileName;
                 }
             }
         }
 
-        if ($id && $name) {
+        if (!$id || !$name) {
+            $_SESSION['error'] = "পণ্যের নাম ও আইডি আবশ্যক!";
+            header("Location: {$base}/admin/products" . ($id ? "/edit?id={$id}" : ""));
+            exit;
+        }
+
+        try {
             $productModel = new Product();
             $productModel->update($id, $data);
+            $_SESSION['success'] = "পণ্যটি সফলভাবে আপডেট করা হয়েছে!";
+        } catch (\Throwable $e) {
+            error_log("Product update failed for ID {$id}: " . $e->getMessage());
+            $_SESSION['error'] = "পণ্য আপডেট করতে সমস্যা হয়েছে: " . $e->getMessage();
+            header("Location: {$base}/admin/products/edit?id={$id}");
+            exit;
         }
         
-        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         header("Location: {$base}/admin/products");
         exit;
     }
 
     public function destroy() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $id = $_POST['id'] ?? null;
         if ($id) {
-            $productModel = new Product();
-            $productModel->delete($id);
+            try {
+                $productModel = new Product();
+                $productModel->delete($id);
+                $_SESSION['success'] = "পণ্যটি মুছে ফেলা হয়েছে!";
+            } catch (\Throwable $e) {
+                $_SESSION['error'] = "মুছে ফেলতে সমস্যা হয়েছে: " . $e->getMessage();
+            }
         }
-        header('Location: /sodai-dorkar/public/admin/products');
+        header("Location: {$base}/admin/products");
         exit;
     }
 

@@ -1,3 +1,6 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="max-w-5xl mx-auto mb-16">
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
@@ -5,7 +8,7 @@
             <h2 class="text-2xl font-bold text-secondary-900">Edit Product</h2>
             <p class="text-secondary-500 text-xs mt-1">Manage product specifications, unit conversions, pricing strategies, and size variants.</p>
         </div>
-        <a href="/sodai-dorkar/public/admin/products" class="text-secondary-600 hover:text-primary-600 flex items-center font-medium transition-colors">
+        <a href="<?= $base ?>/admin/products" class="text-secondary-600 hover:text-primary-600 flex items-center font-medium transition-colors">
             <ion-icon name="arrow-back-outline" class="mr-2 text-xl"></ion-icon>
             Back to Products
         </a>
@@ -61,7 +64,7 @@
         </div>
     </div>
 
-    <form action="/sodai-dorkar/public/admin/products/update" method="POST" enctype="multipart/form-data" id="edit-product-form">
+    <form action="<?= $base ?>/admin/products/update" method="POST" enctype="multipart/form-data" id="edit-product-form">
     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
 
@@ -324,7 +327,7 @@
                                 <p class="text-xs text-secondary-500 mt-0.5">Map supplier wholesale containers (sacks, drums, cartons) to your warehouse inventory unit.</p>
                             </div>
                         </div>
-                        <a href="/sodai-dorkar/public/admin/settings/units" target="_blank" 
+                        <a href="<?= $base ?>/admin/settings/units" target="_blank" 
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary-50 hover:bg-secondary-100 text-secondary-700 font-bold text-xs transition-colors border border-secondary-200">
                             <ion-icon name="settings-outline" class="text-sm"></ion-icon> Manage Units
                         </a>
@@ -588,10 +591,10 @@
 
                     <div class="mb-4 text-center">
                         <?php 
-                        $editImg = !empty($product['image_path']) ? htmlspecialchars($product['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
+                        $editImg = !empty($product['image_path']) ? \Models\Product::getImageUrl($product['image_path'], $base) : "{$base}/images/default-product.svg";
                         ?>
                         <div class="mb-3 inline-block relative border border-secondary-200 rounded-2xl p-2 bg-secondary-50">
-                            <img id="previewImage" src="<?php echo $editImg; ?>" alt="Product Image" class="h-32 w-32 object-contain rounded-xl mx-auto" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                            <img id="previewImage" src="<?php echo $editImg; ?>" alt="Product Image" class="h-32 w-32 object-contain rounded-xl mx-auto" onerror="this.src='<?= $base ?>/images/default-product.svg'">
                             <?php if(empty($product['image_path'])): ?>
                                 <span class="block text-[11px] text-secondary-400 font-medium mt-1">Default Placeholder Image</span>
                             <?php endif; ?>
@@ -623,7 +626,7 @@
                         <ion-icon name="save-outline" class="text-xl"></ion-icon>
                         Save Changes
                     </button>
-                    <a href="/sodai-dorkar/public/admin/products" class="w-full block text-center px-6 py-2.5 rounded-xl border border-secondary-300 text-secondary-600 hover:bg-secondary-50 font-semibold transition-colors text-sm">
+                    <a href="<?= $base ?>/admin/products" class="w-full block text-center px-6 py-2.5 rounded-xl border border-secondary-300 text-secondary-600 hover:bg-secondary-50 font-semibold transition-colors text-sm">
                         Cancel
                     </a>
                 </div>
