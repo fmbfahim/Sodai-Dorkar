@@ -24,7 +24,8 @@ class ProductController extends Controller {
             'category_id' => $_GET['category_id'] ?? '',
             'vendor_id' => $_GET['vendor_id'] ?? '',
             'stock_status' => $_GET['stock_status'] ?? '',
-            'availability_status' => $_GET['availability_status'] ?? ''
+            'availability_status' => $_GET['availability_status'] ?? '',
+            'is_verified' => $_GET['is_verified'] ?? ''
         ];
 
         $products = $productModel->all($filters);

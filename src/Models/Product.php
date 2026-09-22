@@ -75,43 +75,94 @@ class Product {
         $params = [];
 
         if (!empty($filters['search'])) {
-            $term = '%' . trim($filters['search']) . '%';
-            $sql .= " AND (products.name LIKE ? OR products.sku LIKE ? OR products.description LIKE ? OR products.tags LIKE ? OR vendors.name LIKE ? OR categories.name LIKE ?)";
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
+            $search = trim($filters['search']);
+            $words = preg_split('/\s+/', $search);
+            $searchClauses = [];
+            foreach ($words as $w) {
+                if (mb_strlen($w) > 0) {
+                    $term = '%' . $w . '%';
+                    $searchClauses[] = "(products.name LIKE ? OR products.sku LIKE ? OR products.description LIKE ? OR products.tags LIKE ? OR vendors.name LIKE ? OR categories.name LIKE ?)";
+                    $params[] = $term;
+                    $params[] = $term;
+                    $params[] = $term;
+                    $params[] = $term;
+                    $params[] = $term;
+                    $params[] = $term;
+                }
+            }
+            if (!empty($searchClauses)) {
+                $sql .= " AND (" . implode(" AND ", $searchClauses) . ")";
+            }
         }
 
         if (!empty($filters['category_id'])) {
-            $sql .= " AND products.category_id = ?";
-            $params[] = intval($filters['category_id']);
+            $catId = intval($filters['category_id']);
+            $catIds = [$catId];
+            try {
+                $stmt = $this->db->query("SELECT id, parent_id FROM categories");
+                $allCats = $stmt->fetchAll();
+                $added = true;
+                while ($added) {
+                    $added = false;
+                    foreach ($allCats as $c) {
+                        $cId = (int)$c['id'];
+                        $pId = !empty($c['parent_id']) ? (int)$c['parent_id'] : 0;
+                        if (in_array($pId, $catIds, true) && !in_array($cId, $catIds, true)) {
+                            $catIds[] = $cId;
+                            $added = true;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("Failed resolving category hierarchy: " . $e->getMessage());
+            }
+
+            $placeholders = implode(',', array_fill(0, count($catIds), '?'));
+            $sql .= " AND products.category_id IN ({$placeholders})";
+            foreach ($catIds as $cid) {
+                $params[] = $cid;
+            }
         }
 
         if (!empty($filters['vendor_id'])) {
-            $sql .= " AND products.vendor_id = ?";
-            $params[] = intval($filters['vendor_id']);
+            if ($filters['vendor_id'] === 'none') {
+                $sql .= " AND (products.vendor_id IS NULL OR products.vendor_id = 0)";
+            } else {
+                $sql .= " AND products.vendor_id = ?";
+                $params[] = intval($filters['vendor_id']);
+            }
         }
 
         if (!empty($filters['stock_status'])) {
             switch ($filters['stock_status']) {
                 case 'in_stock':
-                    $sql .= " AND products.stock_qty >= 10";
+                    $sql .= " AND COALESCE(products.stock_qty, 0) >= 10";
                     break;
                 case 'low_stock':
                     $sql .= " AND products.stock_qty > 0 AND products.stock_qty < 10";
                     break;
                 case 'out_of_stock':
-                    $sql .= " AND products.stock_qty <= 0";
+                    $sql .= " AND (products.stock_qty IS NULL OR products.stock_qty <= 0)";
                     break;
             }
         }
 
         if (!empty($filters['availability_status'])) {
-            $sql .= " AND products.availability_status = ?";
-            $params[] = $filters['availability_status'];
+            if ($filters['availability_status'] === 'pending') {
+                $sql .= " AND (products.availability_status = 'pending' OR products.availability_status IS NULL OR products.availability_status = '')";
+            } elseif ($filters['availability_status'] === 'in_stock') {
+                $sql .= " AND products.availability_status = 'in_stock'";
+            } elseif ($filters['availability_status'] === 'out_of_stock') {
+                $sql .= " AND products.availability_status = 'out_of_stock'";
+            } else {
+                $sql .= " AND products.availability_status = ?";
+                $params[] = $filters['availability_status'];
+            }
+        }
+
+        if (isset($filters['is_verified']) && $filters['is_verified'] !== '') {
+            $sql .= " AND products.is_verified = ?";
+            $params[] = intval($filters['is_verified']);
         }
 
         $sql .= " ORDER BY products.id DESC";

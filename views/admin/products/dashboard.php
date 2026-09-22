@@ -73,7 +73,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <div>
                 <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Low Stock Warning</p>
                 <h3 class="text-2xl font-black text-amber-700 mt-1"><?= number_format($lowStock) ?></h3>
-                <a href="/sodai-dorkar/public/admin/products?stock_status=low_stock" class="text-[11px] text-amber-700 font-semibold hover:underline mt-1 inline-block">
+                <a href="<?= $base ?>/admin/products?stock_status=low_stock" class="text-[11px] text-amber-700 font-semibold hover:underline mt-1 inline-block">
                     Needs re-ordering &rarr;
                 </a>
             </div>
@@ -87,7 +87,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <div>
                 <p class="text-xs font-bold text-red-600 uppercase tracking-wider">Out of Stock</p>
                 <h3 class="text-2xl font-black text-red-700 mt-1"><?= number_format($outOfStock) ?></h3>
-                <a href="/sodai-dorkar/public/admin/products?stock_status=out_of_stock" class="text-[11px] text-red-600 font-semibold hover:underline mt-1 inline-block">
+                <a href="<?= $base ?>/admin/products?stock_status=out_of_stock" class="text-[11px] text-red-600 font-semibold hover:underline mt-1 inline-block">
                     Stocked out items &rarr;
                 </a>
             </div>
@@ -251,7 +251,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     </h3>
                     <p class="text-[11px] text-secondary-400 mt-0.5">পণ্যগুলোর স্টক ১০ এর নিচে নেমে গেছে, পুনরায় ক্রয় করুন।</p>
                 </div>
-                <a href="/sodai-dorkar/public/admin/products?stock_status=low_stock" class="text-xs font-bold text-primary-600 hover:underline">
+                <a href="<?= $base ?>/admin/products?stock_status=low_stock" class="text-xs font-bold text-primary-600 hover:underline">
                     সব দেখুন &rarr;
                 </a>
             </div>

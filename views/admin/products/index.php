@@ -34,6 +34,9 @@ foreach ($categories as $c) {
         'path' => getCategoryBreadcrumbPath($c['id'], $categories)
     ];
 }
+usort($categoriesWithPaths, function($a, $b) {
+    return strcasecmp($a['path'], $b['path']);
+});
 ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -244,7 +247,7 @@ foreach ($categories as $c) {
 
         <!-- Search & Filter Toolbar -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-100 p-4 mb-5">
-            <form method="GET" action="<?= $base ?>/admin/products" class="flex flex-col md:flex-row items-center gap-3">
+            <form method="GET" action="<?= $base ?>/admin/products" id="productFilterForm" class="flex flex-col lg:flex-row items-center gap-3">
                 <!-- Search Input -->
                 <div class="relative flex-1 w-full">
                     <ion-icon name="search-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
@@ -252,35 +255,48 @@ foreach ($categories as $c) {
                            name="search" 
                            id="productSearchInput" 
                            value="<?= htmlspecialchars($filters['search'] ?? '') ?>" 
-                           placeholder="পণ্য বা SKU দিয়ে সার্চ করুন (Search by name, SKU, vendor)..." 
+                           placeholder="পণ্য, SKU বা ভেন্ডর দিয়ে খুঁজুন (Search by name, SKU, vendor)..." 
                            class="w-full pl-10 pr-4 py-2.5 border border-secondary-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 bg-secondary-50/50 focus:bg-white transition-colors">
                 </div>
 
                 <!-- Category Filter -->
-                <div class="w-full md:w-44">
-                    <select name="category_id" id="categoryFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                <div class="w-full lg:w-48">
+                    <select name="category_id" id="categoryFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
                         <option value="">সব ক্যাটাগরি</option>
-                        <?php foreach ($categories as $cat): ?>
+                        <?php foreach ($categoriesWithPaths as $cat): ?>
                             <option value="<?= $cat['id'] ?>" <?= (!empty($filters['category_id']) && $filters['category_id'] == $cat['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($cat['name']) ?>
+                                <?= htmlspecialchars($cat['path']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Vendor Filter -->
+                <div class="w-full lg:w-40">
+                    <select name="vendor_id" id="vendorFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
+                        <option value="">সব ভেন্ডর</option>
+                        <option value="none" <?= (isset($filters['vendor_id']) && $filters['vendor_id'] === 'none') ? 'selected' : '' ?>>ভেন্ডর ছাড়া</option>
+                        <?php foreach ($vendors as $v): ?>
+                            <option value="<?= $v['id'] ?>" <?= (!empty($filters['vendor_id']) && $filters['vendor_id'] == $v['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($v['name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
                 <!-- Stock Status Filter -->
-                <div class="w-full md:w-36">
-                    <select name="stock_status" id="stockStatusFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                <div class="w-full lg:w-36">
+                    <select name="stock_status" id="stockStatusFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
                         <option value="">সকল স্টক</option>
                         <option value="in_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'in_stock') ? 'selected' : '' ?>>স্টক আছে (&ge;10)</option>
                         <option value="low_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'low_stock') ? 'selected' : '' ?>>কম স্টক (&lt;10)</option>
-                        <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (=0)</option>
+                        <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (&le;0)</option>
                     </select>
                 </div>
 
                 <!-- Availability Status Filter -->
-                <div class="w-full md:w-36">
-                    <select name="availability_status" id="availabilityStatusFilter" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500">
+                <div class="w-full lg:w-36">
+                    <select name="availability_status" id="availabilityStatusFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
                         <option value="">সকল প্রাপ্যতা</option>
                         <option value="in_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'in_stock') ? 'selected' : '' ?>>🟢 ইন স্টক</option>
                         <option value="out_of_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'out_of_stock') ? 'selected' : '' ?>>🔴 স্টক শেষ</option>
@@ -289,13 +305,13 @@ foreach ($categories as $c) {
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <button type="submit" class="w-full md:w-auto px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5">
+                <div class="flex items-center gap-2 w-full lg:w-auto shrink-0">
+                    <button type="submit" class="w-full lg:w-auto px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
                         <ion-icon name="funnel-outline" class="text-sm"></ion-icon>
                         ফিল্টার
                     </button>
-                    <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['stock_status']) || !empty($filters['availability_status'])): ?>
-                        <a href="<?= $base ?>/admin/products" class="w-full md:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                    <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['vendor_id']) || !empty($filters['stock_status']) || !empty($filters['availability_status']) || (!empty($filters['is_verified']) && $filters['is_verified'] !== '')): ?>
+                        <a href="<?= $base ?>/admin/products" class="w-full lg:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer" title="ফিল্টার রিসেট করুন">
                             <ion-icon name="close-circle-outline" class="text-sm"></ion-icon>
                             রিসেট
                         </a>
@@ -337,10 +353,10 @@ foreach ($categories as $c) {
                                 <tr class="hover:bg-secondary-50/60 transition-colors group main-product-row"
                                     id="product-row-<?= $p['id'] ?>"
                                     data-product-id="<?= $p['id'] ?>"
-                                    data-name="<?= strtolower(htmlspecialchars($p['name'])) ?>"
-                                    data-sku="<?= strtolower(htmlspecialchars($p['sku'] ?? '')) ?>"
-                                    data-vendor="<?= strtolower(htmlspecialchars($p['vendor_name'] ?? '')) ?>"
-                                    data-category="<?= strtolower(htmlspecialchars($p['category_name'] ?? '')) ?>">
+                                    data-name="<?= mb_strtolower(htmlspecialchars($p['name']), 'UTF-8') ?>"
+                                    data-sku="<?= mb_strtolower(htmlspecialchars($p['sku'] ?? ''), 'UTF-8') ?>"
+                                    data-vendor="<?= mb_strtolower(htmlspecialchars($p['vendor_name'] ?? ''), 'UTF-8') ?>"
+                                    data-category="<?= mb_strtolower(htmlspecialchars($p['category_name'] ?? ''), 'UTF-8') ?>">
                                     <td class="w-12 px-4 py-3.5 text-center">
                                         <input type="checkbox" 
                                                class="product-bulk-cb w-4 h-4 rounded text-primary-600 border-secondary-300 focus:ring-primary-500 cursor-pointer" 
@@ -1153,22 +1169,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput && tbody) {
         searchInput.addEventListener('input', function() {
             const query = this.value.trim().toLowerCase();
+            const words = query ? query.split(/\s+/).filter(w => w.length > 0) : [];
             const rows = tbody.querySelectorAll('.main-product-row');
             let visibleCount = 0;
 
             rows.forEach(row => {
-                const name = row.dataset.name || '';
-                const sku = row.dataset.sku || '';
-                const vendor = row.dataset.vendor || '';
-                const category = row.dataset.category || '';
+                const name = (row.dataset.name || '').toLowerCase();
+                const sku = (row.dataset.sku || '').toLowerCase();
+                const vendor = (row.dataset.vendor || '').toLowerCase();
+                const category = (row.dataset.category || '').toLowerCase();
+                const combined = `${name} ${sku} ${vendor} ${category}`;
 
-                if (!query || name.includes(query) || sku.includes(query) || vendor.includes(query) || category.includes(query)) {
+                const match = words.length === 0 || words.every(w => combined.includes(w));
+
+                if (match) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // Handle empty state row
+            let noMatchRow = document.getElementById('clientFilterNoMatchRow');
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!noMatchRow) {
+                    noMatchRow = document.createElement('tr');
+                    noMatchRow.id = 'clientFilterNoMatchRow';
+                    noMatchRow.innerHTML = '<td colspan="7" class="px-6 py-10 text-center text-secondary-400 text-sm">কোনো পণ্য খুঁজে পাওয়া যায়নি। এন্টার চাপুন বা ফিল্টার বাটন দিয়ে খুঁজুন।</td>';
+                    tbody.appendChild(noMatchRow);
+                } else {
+                    noMatchRow.style.display = '';
+                }
+            } else if (noMatchRow) {
+                noMatchRow.style.display = 'none';
+            }
 
             if (counterText) {
                 counterText.innerHTML = `মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold">${visibleCount}</strong> টি`;
