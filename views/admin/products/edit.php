@@ -127,7 +127,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                 <ion-icon name="git-branch-outline" class="text-primary-600 text-sm"></ion-icon>
                                 Category & Sub-Category Selection <span class="text-red-500">*</span>
                             </label>
-                            <span class="text-[11px] text-secondary-400 font-medium">Select step-by-step from root to sub-category</span>
+                            <span class="text-[11px] text-primary-700 font-semibold flex items-center gap-1">🔍 নাম লিখে খুঁজুন অথবা ধাপে ধাপে সিলেক্ট করুন</span>
                         </div>
                         
                         <input type="hidden" name="category_id" id="edit_category_id" value="<?php echo htmlspecialchars($product['category_id'] ?? ''); ?>" required>
@@ -642,13 +642,32 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 const ALL_CATEGORIES = <?php echo json_encode($categories); ?>;
 let variantCount = <?php echo count($variants); ?>;
 
-// --- CASCADING CATEGORY SELECTOR CLASS ---
+// --- CASCADING CATEGORY SELECTOR CLASS WITH LIVE SEARCH ---
 class CascadingCategorySelector {
     constructor(container, hiddenInput, categories, initialId = null) {
         this.container = typeof container === 'string' ? document.getElementById(container) : container;
         this.hiddenInput = typeof hiddenInput === 'string' ? document.getElementById(hiddenInput) : hiddenInput;
         this.categories = categories || [];
         this.selectedId = initialId ? parseInt(initialId) : null;
+        this.activeIndex = -1;
+
+        // Precompute category full paths for searching
+        this.categoryPaths = this.categories.map(c => {
+            const ancestry = this.getAncestry(c.id);
+            const pathNames = ancestry.map(a => a.name).join(' › ');
+            const searchStr = (c.name + ' ' + (c.slug || '') + ' ' + ancestry.map(a => a.name).join(' ')).toLowerCase();
+            const hasChildren = this.getChildren(c.id).length > 0;
+            return {
+                id: c.id,
+                name: c.name,
+                pathNames: pathNames,
+                searchStr: searchStr,
+                hasChildren: hasChildren,
+                level: ancestry.length
+            };
+        });
+
+        this.initStructure();
         this.render();
     }
 
@@ -673,17 +692,202 @@ class CascadingCategorySelector {
         return path;
     }
 
+    initStructure() {
+        this.container.innerHTML = `
+            <!-- Live Category Search Bar -->
+            <div class="relative mb-3 category-search-wrapper">
+                <div class="relative flex items-center">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary-400">
+                        <ion-icon name="search-outline" class="text-base text-primary-600"></ion-icon>
+                    </div>
+                    <input type="text" 
+                           class="category-search-input w-full pl-9 pr-9 py-2.5 bg-white border border-secondary-300 rounded-xl text-xs font-semibold placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all shadow-2xs" 
+                           placeholder="🔍 ক্যাটাগরি বা সাব-ক্যাটাগরির নাম লিখে সরাসরি খুঁজুন (যেমন: নুডলস, তেল, চাল, মসলা)..."
+                           autocomplete="off">
+                    <button type="button" 
+                            class="category-search-clear hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-secondary-400 hover:text-secondary-600 cursor-pointer"
+                            title="মুছে ফেলুন">
+                        <ion-icon name="close-circle" class="text-lg"></ion-icon>
+                    </button>
+                </div>
+                
+                <!-- Autocomplete Dropdown List -->
+                <div class="category-search-dropdown hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-secondary-200 rounded-xl shadow-xl divide-y divide-secondary-100 text-xs">
+                </div>
+            </div>
+
+            <!-- Step-by-Step Cascading Dropdowns -->
+            <div class="category-levels-container space-y-2.5"></div>
+
+            <!-- Breadcrumb / Status Banner -->
+            <div class="category-breadcrumb mt-2 text-xs px-3 py-2 rounded-xl flex items-center gap-1.5" style="display: none;"></div>
+        `;
+
+        this.searchInput = this.container.querySelector('.category-search-input');
+        this.clearBtn = this.container.querySelector('.category-search-clear');
+        this.dropdown = this.container.querySelector('.category-search-dropdown');
+        this.levelsContainer = this.container.querySelector('.category-levels-container');
+        this.breadcrumbEl = this.container.querySelector('.category-breadcrumb');
+
+        this.attachSearchEvents();
+    }
+
+    attachSearchEvents() {
+        this.searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (query.length > 0) {
+                this.clearBtn.classList.remove('hidden');
+                this.performSearch(query);
+            } else {
+                this.clearBtn.classList.add('hidden');
+                this.hideDropdown();
+            }
+        });
+
+        this.searchInput.addEventListener('focus', () => {
+            this.searchInput.select();
+            const query = this.searchInput.value.trim().toLowerCase();
+            if (query.length > 0) {
+                this.performSearch(query);
+            }
+        });
+
+        this.clearBtn.addEventListener('click', () => {
+            this.searchInput.value = '';
+            this.clearBtn.classList.add('hidden');
+            this.hideDropdown();
+            this.searchInput.focus();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.hideDropdown();
+            }
+        });
+
+        this.searchInput.addEventListener('keydown', (e) => {
+            const items = this.dropdown.querySelectorAll('.search-result-item');
+            if (items.length === 0 || this.dropdown.classList.contains('hidden')) {
+                if (e.key === 'Escape') this.hideDropdown();
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.activeIndex = (this.activeIndex + 1) % items.length;
+                this.updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.activeIndex = (this.activeIndex - 1 + items.length) % items.length;
+                this.updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.activeIndex >= 0 && this.activeIndex < items.length) {
+                    items[this.activeIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                this.hideDropdown();
+            }
+        });
+    }
+
+    performSearch(query) {
+        this.activeIndex = -1;
+        const matches = this.categoryPaths.filter(cp => cp.searchStr.includes(query));
+
+        matches.sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            if (aName === query && bName !== query) return -1;
+            if (bName === query && aName !== query) return 1;
+            if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+            if (!aName.startsWith(query) && bName.startsWith(query)) return 1;
+            if (!a.hasChildren && b.hasChildren) return -1;
+            if (a.hasChildren && !b.hasChildren) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        if (matches.length === 0) {
+            this.dropdown.innerHTML = `
+                <div class="p-3.5 text-center text-secondary-500 font-medium flex items-center justify-center gap-1.5">
+                    <ion-icon name="alert-circle-outline" class="text-base text-secondary-400"></ion-icon>
+                    <span>"${this.escapeHtml(query)}" নামে কোনো ক্যাটাগরি পাওয়া যায়নি</span>
+                </div>
+            `;
+            this.dropdown.classList.remove('hidden');
+            return;
+        }
+
+        const displayed = matches.slice(0, 30);
+        this.dropdown.innerHTML = displayed.map(m => {
+            const highlightedName = this.highlightText(m.name, query);
+            const badge = m.hasChildren 
+                ? '<span class="text-[9px] bg-secondary-100 text-secondary-600 font-bold px-1.5 py-0.5 rounded">ক্যাটাগরি গ্রুপ</span>'
+                : '<span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">পণ্য ক্যাটাগরি</span>';
+
+            return `
+                <div class="search-result-item px-3.5 py-2.5 hover:bg-primary-50/80 cursor-pointer transition-colors flex items-center justify-between gap-2"
+                     data-id="${m.id}">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <span class="font-bold text-secondary-900 text-xs">${highlightedName}</span>
+                            ${badge}
+                        </div>
+                        <div class="text-[11px] text-secondary-400 truncate flex items-center gap-1">
+                            <ion-icon name="git-commit-outline" class="text-xs shrink-0 text-secondary-400"></ion-icon>
+                            <span>${this.escapeHtml(m.pathNames)}</span>
+                        </div>
+                    </div>
+                    <ion-icon name="arrow-forward-outline" class="text-secondary-400 text-sm shrink-0"></ion-icon>
+                </div>
+            `;
+        }).join('');
+
+        this.dropdown.querySelectorAll('.search-result-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = parseInt(el.dataset.id);
+                this.selectCategory(id);
+            });
+        });
+
+        this.dropdown.classList.remove('hidden');
+    }
+
+    selectCategory(id) {
+        this.selectedId = id;
+        if (this.hiddenInput) {
+            this.hiddenInput.value = id;
+        }
+
+        const ancestry = this.getAncestry(id);
+        const chain = ancestry.map(c => c.id);
+
+        if (this.searchInput && ancestry.length > 0) {
+            this.searchInput.value = ancestry[ancestry.length - 1].name;
+            this.clearBtn.classList.remove('hidden');
+        }
+
+        this.hideDropdown();
+        this.renderLevels(chain);
+        this.updateBreadcrumb();
+    }
+
     render() {
         let chain = [];
         if (this.selectedId) {
-            chain = this.getAncestry(this.selectedId).map(c => c.id);
+            const ancestry = this.getAncestry(this.selectedId);
+            chain = ancestry.map(c => c.id);
+            if (this.searchInput && ancestry.length > 0) {
+                this.searchInput.value = ancestry[ancestry.length - 1].name;
+                this.clearBtn.classList.remove('hidden');
+            }
         }
         this.renderLevels(chain);
         this.updateBreadcrumb();
     }
 
     renderLevels(chain) {
-        this.container.innerHTML = '';
+        this.levelsContainer.innerHTML = '';
         let parentId = null;
         let levelIndex = 1;
 
@@ -732,11 +936,24 @@ class CascadingCategorySelector {
                     this.hiddenInput.value = this.selectedId || '';
                 }
 
+                if (this.selectedId) {
+                    const selCat = this.getCategory(this.selectedId);
+                    if (this.searchInput && selCat) {
+                        this.searchInput.value = selCat.name;
+                        this.clearBtn.classList.remove('hidden');
+                    }
+                } else {
+                    if (this.searchInput) {
+                        this.searchInput.value = '';
+                        this.clearBtn.classList.add('hidden');
+                    }
+                }
+
                 this.renderLevels(newChain);
                 this.updateBreadcrumb();
             });
 
-            this.container.appendChild(selectDiv);
+            this.levelsContainer.appendChild(selectDiv);
 
             if (!currentSelected) {
                 break;
@@ -748,12 +965,7 @@ class CascadingCategorySelector {
     }
 
     updateBreadcrumb() {
-        let breadcrumbEl = this.container.querySelector('.category-breadcrumb');
-        if (!breadcrumbEl) {
-            breadcrumbEl = document.createElement('div');
-            breadcrumbEl.className = 'category-breadcrumb mt-2 text-xs px-3 py-2 rounded-xl flex items-center gap-1.5';
-            this.container.appendChild(breadcrumbEl);
-        }
+        if (!this.breadcrumbEl) return;
 
         if (this.selectedId) {
             const ancestry = this.getAncestry(this.selectedId);
@@ -761,16 +973,53 @@ class CascadingCategorySelector {
             const hasChildren = this.getChildren(this.selectedId).length > 0;
             
             if (hasChildren) {
-                breadcrumbEl.innerHTML = `<ion-icon name="arrow-forward-circle-outline" class="text-base text-amber-600 flex-shrink-0"></ion-icon> <div><span class="text-amber-800 font-bold">Select next sub-category:</span> <span class="text-secondary-800">${pathNames}</span></div>`;
-                breadcrumbEl.className = 'category-breadcrumb mt-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5';
+                this.breadcrumbEl.innerHTML = `<ion-icon name="arrow-forward-circle-outline" class="text-base text-amber-600 flex-shrink-0"></ion-icon> <div><span class="text-amber-800 font-bold">Select next sub-category:</span> <span class="text-secondary-800">${pathNames}</span></div>`;
+                this.breadcrumbEl.className = 'category-breadcrumb mt-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5';
             } else {
-                breadcrumbEl.innerHTML = `<ion-icon name="checkmark-circle" class="text-base text-emerald-600 flex-shrink-0"></ion-icon> <div><span class="font-bold text-emerald-900">Selected Category:</span> <span class="text-secondary-900 font-semibold">${pathNames}</span></div>`;
-                breadcrumbEl.className = 'category-breadcrumb mt-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl flex items-center gap-1.5';
+                this.breadcrumbEl.innerHTML = `<ion-icon name="checkmark-circle" class="text-base text-emerald-600 flex-shrink-0"></ion-icon> <div><span class="font-bold text-emerald-900">Selected Category:</span> <span class="text-secondary-900 font-semibold">${pathNames}</span></div>`;
+                this.breadcrumbEl.className = 'category-breadcrumb mt-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl flex items-center gap-1.5';
             }
-            breadcrumbEl.style.display = 'flex';
+            this.breadcrumbEl.style.display = 'flex';
         } else {
-            breadcrumbEl.style.display = 'none';
+            this.breadcrumbEl.style.display = 'none';
         }
+    }
+
+    escapeHtml(str) {
+        return String(str || '').replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+    }
+
+    highlightText(text, query) {
+        if (!query) return this.escapeHtml(text);
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        const parts = text.split(regex);
+        return parts.map(part => {
+            if (part.toLowerCase() === query.toLowerCase()) {
+                return `<mark class="bg-amber-100 text-amber-900 font-bold px-0.5 rounded">${this.escapeHtml(part)}</mark>`;
+            }
+            return this.escapeHtml(part);
+        }).join('');
+    }
+
+    updateActiveItem(items) {
+        items.forEach((item, idx) => {
+            if (idx === this.activeIndex) {
+                item.classList.add('bg-primary-50', 'text-primary-900', 'font-bold');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('bg-primary-50', 'text-primary-900', 'font-bold');
+            }
+        });
+    }
+
+    hideDropdown() {
+        if (this.dropdown) {
+            this.dropdown.classList.add('hidden');
+        }
+        this.activeIndex = -1;
     }
 }
 
