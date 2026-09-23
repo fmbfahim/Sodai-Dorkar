@@ -253,14 +253,21 @@ if (!empty($search)) $activeFilterCount++;
                             </div>
 
                             <!-- Add to Bag Button -->
-                            <button type="button" 
-                                    onclick="addToCartAjax(<?= $prod['id'] ?>, this)"
-                                    class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
-                                <span>Add to Cart</span>
-                            </button>
+                            <?php $isProdOutOfStock = (($prod['availability_status'] ?? '') === 'out_of_stock'); ?>
+                            <?php if ($isProdOutOfStock): ?>
+                                <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                    <span><?= (Lang::locale() === 'bn') ? 'স্টক শেষ' : 'Out of Stock' ?></span>
+                                </button>
+                            <?php else: ?>
+                                <button type="button" 
+                                        onclick="addToCartAjax(<?= $prod['id'] ?>, this)"
+                                        class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    <span><?= (Lang::locale() === 'bn') ? 'ব্যাগে যোগ করুন' : 'Add to Cart' ?></span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>

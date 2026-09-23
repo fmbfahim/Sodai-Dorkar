@@ -534,11 +534,13 @@ if (empty($bannerSubtitle)) {
                             $isTopOne = ($pIdx === 0 && !$isFiltered);
                             $demandPct = intval($product['demand_percentage'] ?? 0);
                             $totalSold = intval($product['total_sold'] ?? 0);
+                            $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
                         ?>
 
                         <!-- Product Card -->
                         <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-md transition-all duration-200 group flex flex-col h-full overflow-hidden relative"
                              data-product-id="<?= $product['id'] ?>"
+                             data-out-of-stock="<?= $isOutOfStock ? '1' : '0' ?>"
                              data-base-unit="<?= htmlspecialchars($product['base_unit'] ?? 'pcs') ?>"
                              data-selected-variant-title="<?= htmlspecialchars($initialTitle) ?>"
                              data-selected-variant-price="<?= $initialPrice ?>"
@@ -568,7 +570,11 @@ if (empty($bannerSubtitle)) {
                                     <?php endif; ?>
                                 </div>
 
-                                <?php if ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
+                                <?php if ($isOutOfStock): ?>
+                                    <span class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
+                                        স্টক শেষ
+                                    </span>
+                                <?php elseif ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
                                     <span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
                                         বাকি: <?= $stockClean ?>
                                     </span>
@@ -640,14 +646,20 @@ if (empty($bannerSubtitle)) {
 
                                 <!-- Bottom Action: Add to Bag / Interactive Stepper -->
                                 <div class="mt-auto pt-2 card-action-container" data-product-id="<?= $product['id'] ?>">
-                                    <button type="button" 
-                                            onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
-                                            class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-700 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-700 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        <span>ব্যাগে যোগ করুন</span>
-                                    </button>
+                                    <?php if ($isOutOfStock): ?>
+                                        <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                            <span>স্টক শেষ</span>
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" 
+                                                onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
+                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-700 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-700 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            <span>ব্যাগে যোগ করুন</span>
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -714,6 +726,7 @@ function convertToBanglaNumber(num) {
 function renderCardActionButton(card) {
     const container = card.querySelector('.card-action-container');
     if (!container) return;
+    if (card.dataset.outOfStock === '1') return;
 
     const productId = card.dataset.productId;
     const selectedVariant = card.dataset.selectedVariantTitle || '';

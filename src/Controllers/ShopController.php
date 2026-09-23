@@ -61,7 +61,7 @@ class ShopController {
 
         // Direct product counts per category
         $prodCountsByCat = [];
-        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE (availability_status IS NULL OR availability_status != 'out_of_stock') GROUP BY category_id")->fetchAll();
         foreach ($rawCounts as $rc) {
             $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
         }
@@ -188,7 +188,7 @@ class ShopController {
                        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.product_id = products.id), 0) AS total_sold
                 FROM products 
                 LEFT JOIN categories ON products.category_id = categories.id
-                WHERE products.availability_status = 'in_stock'";
+                WHERE (products.availability_status IS NULL OR products.availability_status != 'out_of_stock')";
         $params = [];
 
         if ($targetCatId) {
@@ -226,10 +226,10 @@ class ShopController {
         $products = $stmt->fetchAll();
         $topPopularProduct = !empty($products) ? $products[0] : null;
 
-        // Fetch categories with in-stock products for filter tabs
+        // Fetch categories with available products for filter tabs
         $stmtCat = $this->db->query("SELECT categories.*, COUNT(products.id) as product_count 
                                       FROM categories 
-                                      LEFT JOIN products ON categories.id = products.category_id AND products.availability_status = 'in_stock'
+                                      LEFT JOIN products ON categories.id = products.category_id AND (products.availability_status IS NULL OR products.availability_status != 'out_of_stock')
                                       GROUP BY categories.id 
                                       HAVING product_count > 0
                                       ORDER BY categories.name ASC");
@@ -239,7 +239,7 @@ class ShopController {
         $dealsStmt = $this->db->query("SELECT products.*, categories.name as category_name 
                                        FROM products 
                                        LEFT JOIN categories ON products.category_id = categories.id
-                                       WHERE products.availability_status = 'in_stock' 
+                                       WHERE (products.availability_status IS NULL OR products.availability_status != 'out_of_stock') 
                                          AND products.regular_price IS NOT NULL 
                                          AND products.regular_price > products.sell_price
                                        ORDER BY (products.regular_price - products.sell_price) DESC 
@@ -313,7 +313,7 @@ class ShopController {
 
         // Direct product counts per category
         $prodCountsByCat = [];
-        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE (availability_status IS NULL OR availability_status != 'out_of_stock') GROUP BY category_id")->fetchAll();
         foreach ($rawCounts as $rc) {
             $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
         }
@@ -402,7 +402,7 @@ class ShopController {
             $bStmt = $this->db->query("SELECT b.id, b.name, COUNT(p.id) as prod_count 
                 FROM brands b 
                 JOIN products p ON p.brand_id = b.id 
-                WHERE p.category_id IN ($inPlaces) AND p.availability_status = 'in_stock'
+                WHERE p.category_id IN ($inPlaces) AND (p.availability_status IS NULL OR p.availability_status != 'out_of_stock')
                 GROUP BY b.id, b.name 
                 ORDER BY b.name ASC", $parentAllCatIds);
             $brands = $bStmt->fetchAll();
@@ -440,7 +440,7 @@ class ShopController {
         }
 
         if ($inStockOnly) {
-            $sql .= " AND products.availability_status = 'in_stock'";
+            $sql .= " AND (products.availability_status IS NULL OR products.availability_status != 'out_of_stock')";
         }
 
         if ($selectedBrand) {
@@ -539,7 +539,7 @@ class ShopController {
 
         // Direct product counts per category
         $prodCountsByCat = [];
-        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE availability_status = 'in_stock' GROUP BY category_id")->fetchAll();
+        $rawCounts = $this->db->query("SELECT category_id, COUNT(*) as cnt FROM products WHERE (availability_status IS NULL OR availability_status != 'out_of_stock') GROUP BY category_id")->fetchAll();
         foreach ($rawCounts as $rc) {
             $prodCountsByCat[$rc['category_id']] = (int)$rc['cnt'];
         }
@@ -581,12 +581,12 @@ class ShopController {
         $brands = $this->db->query("SELECT b.id, b.name, COUNT(p.id) as prod_count 
             FROM brands b 
             JOIN products p ON p.brand_id = b.id 
-            WHERE p.availability_status = 'in_stock'
+            WHERE (p.availability_status IS NULL OR p.availability_status != 'out_of_stock')
             GROUP BY b.id, b.name 
             ORDER BY b.name ASC")->fetchAll();
 
         // Price bounds
-        $priceRow = $this->db->query("SELECT MIN(sell_price) as min_p, MAX(sell_price) as max_p FROM products WHERE availability_status = 'in_stock'")->fetch();
+        $priceRow = $this->db->query("SELECT MIN(sell_price) as min_p, MAX(sell_price) as max_p FROM products WHERE (availability_status IS NULL OR availability_status != 'out_of_stock')")->fetch();
         $minPriceBound = ($priceRow && $priceRow['min_p'] !== null) ? (float)$priceRow['min_p'] : 0;
         $maxPriceBound = ($priceRow && $priceRow['max_p'] !== null) ? (float)$priceRow['max_p'] : 1000;
 
@@ -609,7 +609,7 @@ class ShopController {
         }
 
         if ($inStockOnly) {
-            $sql .= " AND products.availability_status = 'in_stock'";
+            $sql .= " AND (products.availability_status IS NULL OR products.availability_status != 'out_of_stock')";
         }
 
         if ($selectedBrand) {
@@ -732,7 +732,7 @@ class ShopController {
                 SELECT p.*, c.name as category_name 
                 FROM products p 
                 LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.category_id = ? AND p.id != ? AND p.availability_status = 'in_stock' 
+                WHERE p.category_id = ? AND p.id != ? AND (p.availability_status IS NULL OR p.availability_status != 'out_of_stock') 
                 ORDER BY p.id DESC LIMIT 8
             ", [$product['category_id'], $product['id']]);
             $relatedProducts = $relStmt->fetchAll();
@@ -743,7 +743,7 @@ class ShopController {
                 SELECT p.*, c.name as category_name 
                 FROM products p 
                 LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.id != ? AND p.availability_status = 'in_stock' 
+                WHERE p.id != ? AND (p.availability_status IS NULL OR p.availability_status != 'out_of_stock') 
                 ORDER BY p.id DESC LIMIT 6
             ", [$product['id']]);
             $moreProds = $moreStmt->fetchAll();
@@ -807,7 +807,7 @@ class ShopController {
                 $stmt = $this->db->query("SELECT * FROM products WHERE id = ?", [$productId]);
                 $product = $stmt->fetch();
 
-                if ($product && $product['availability_status'] === 'in_stock') {
+                if ($product && (($product['availability_status'] ?? '') !== 'out_of_stock')) {
                     if (!isset($_SESSION['cart'])) {
                         $_SESSION['cart'] = [];
                     }
@@ -861,6 +861,15 @@ class ShopController {
 
                     header('Location: /sodai-dorkar/public/cart');
                     exit;
+                } else {
+                    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'status' => 'error',
+                            'message' => (Lang::locale() === 'bn') ? 'পণ্যটির স্টক বর্তমানে শেষ।' : 'Product is currently out of stock.'
+                        ]);
+                        exit;
+                    }
                 }
             }
         }
@@ -963,7 +972,7 @@ class ShopController {
             $pid = $item['product_id'] ?? $key;
             $stmt = $this->db->query("SELECT availability_status, sell_price FROM products WHERE id = ?", [$pid]);
             $product = $stmt->fetch();
-            if (!$product || $product['availability_status'] !== 'in_stock') {
+            if (!$product || (($product['availability_status'] ?? '') === 'out_of_stock')) {
                 unset($_SESSION['cart'][$key]);
             }
         }
@@ -1222,7 +1231,7 @@ class ShopController {
             $sql = "SELECT p.*, c.name as category_name 
                     FROM products p 
                     LEFT JOIN categories c ON p.category_id = c.id
-                    WHERE p.availability_status = 'in_stock' 
+                    WHERE (p.availability_status IS NULL OR p.availability_status != 'out_of_stock') 
                       AND p.id NOT IN ($excludePlaceholders)
                       AND p.category_id IN ($catPlaceholders)
                     ORDER BY (p.regular_price - p.sell_price) DESC, p.id DESC
@@ -1238,7 +1247,7 @@ class ShopController {
             $sql = "SELECT p.*, c.name as category_name 
                     FROM products p 
                     LEFT JOIN categories c ON p.category_id = c.id
-                    WHERE p.availability_status = 'in_stock' 
+                    WHERE (p.availability_status IS NULL OR p.availability_status != 'out_of_stock') 
                       AND p.id NOT IN ($existingPlaceholders)
                     ORDER BY 
                       (CASE WHEN p.regular_price IS NOT NULL AND p.regular_price > p.sell_price THEN 0 ELSE 1 END),

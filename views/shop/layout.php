@@ -1140,6 +1140,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         function renderCardActionButton(card) {
             const container = card.querySelector('.card-action-container');
             if (!container) return;
+            if (card.dataset.outOfStock === '1') return;
 
             const productId = card.dataset.productId;
             const selectedVariant = card.dataset.selectedVariantTitle || '';

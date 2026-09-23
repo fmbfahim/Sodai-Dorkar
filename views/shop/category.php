@@ -636,10 +636,12 @@ if (!empty($search)) $activeFilterCount++;
                                 $stockClean = (floor($stockQtyNum) == $stockQtyNum) 
                                     ? intval($stockQtyNum) 
                                     : rtrim(rtrim(number_format($stockQtyNum, 3), '0'), '.');
+                                $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
                             ?>
 
                             <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-lg transition-all duration-300 group flex flex-col h-full overflow-hidden relative"
                                  data-product-id="<?= $product['id'] ?>"
+                                 data-out-of-stock="<?= $isOutOfStock ? '1' : '0' ?>"
                                  data-base-unit="<?= htmlspecialchars($product['base_unit'] ?? 'pcs') ?>"
                                  data-selected-variant-title="<?= htmlspecialchars($initialTitle) ?>"
                                  data-selected-variant-price="<?= $initialPrice ?>"
@@ -659,7 +661,11 @@ if (!empty($search)) $activeFilterCount++;
                                         <?php endif; ?>
                                     </div>
 
-                                    <?php if ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
+                                    <?php if ($isOutOfStock): ?>
+                                        <span class="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs whitespace-nowrap">
+                                            <?= $locale === 'bn' ? 'স্টক শেষ' : 'Out of Stock' ?>
+                                        </span>
+                                    <?php elseif ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
                                         <span class="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs whitespace-nowrap">
                                             <?= $__('products_only_left', ['count' => $stockClean]) ?>
                                         </span>
@@ -732,14 +738,20 @@ if (!empty($search)) $activeFilterCount++;
 
                                     <!-- Bottom Dynamic Add to Bag / Interactive Quantity Controller -->
                                     <div class="mt-auto pt-3 card-action-container" data-product-id="<?= $product['id'] ?>">
-                                        <button type="button" 
-                                                onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
-                                                class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-[#14532d] text-emerald-800 hover:text-white border border-emerald-200 hover:border-[#14532d] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                            </svg>
-                                            <span><?= $__('add_to_bag') ?></span>
-                                        </button>
+                                        <?php if ($isOutOfStock): ?>
+                                            <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                                <span><?= $locale === 'bn' ? 'স্টক শেষ' : 'Out of Stock' ?></span>
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" 
+                                                    onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
+                                                    class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-[#14532d] text-emerald-800 hover:text-white border border-emerald-200 hover:border-[#14532d] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                </svg>
+                                                <span><?= $__('add_to_bag') ?></span>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
 
                                 </div>

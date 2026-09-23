@@ -12,7 +12,9 @@ $hasDiscount = ($regularPrice && $regularPrice > $sellPrice);
 $discountAmount = $hasDiscount ? ($regularPrice - $sellPrice) : 0;
 $discountPercent = $hasDiscount ? round(($discountAmount / $regularPrice) * 100) : 0;
 $stockQty = intval($product['stock_qty'] ?? 0);
-$isInStock = ($product['availability_status'] === 'in_stock' && $stockQty > 0);
+$isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
+$isInStock = !$isOutOfStock;
+$maxOrderQty = ($stockQty > 0) ? $stockQty : 99;
 
 // Default image
 $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
@@ -178,7 +180,7 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                                            id="detail-qty" 
                                            value="1" 
                                            min="1" 
-                                           max="<?= max(1, $stockQty) ?>" 
+                                           max="<?= $maxOrderQty ?>" 
                                            class="w-14 text-center font-black text-gray-900 text-base focus:outline-none bg-transparent"
                                            readonly>
                                     <button type="button" 
@@ -370,7 +372,7 @@ window.DETAIL_STATE = {
     selectedVariantTitle: <?= json_encode($initialTitle) ?>,
     selectedVariantPrice: <?= floatval($initialPrice) ?>,
     selectedVariantQty: <?= floatval($initialQty) ?>,
-    maxStock: <?= max(1, $stockQty) ?>
+    maxStock: <?= $maxOrderQty ?>
 };
 
 function selectDetailVariant(btn, title, price, qty) {
