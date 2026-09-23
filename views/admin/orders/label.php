@@ -72,7 +72,13 @@
                 Items: 
                 <?php 
                 $items = $order['items'] ?? [];
-                $names = array_map(function($i) { return $i['product_name'] . ' (' . $i['quantity'] . ')'; }, $items);
+                $names = array_map(function($i) { 
+                    $desc = $i['product_name'];
+                    if (!empty($i['unit_title'])) {
+                        $desc .= ' [' . $i['unit_title'] . ']';
+                    }
+                    return $desc . ' (' . $i['quantity'] . ')'; 
+                }, $items);
                 echo implode(', ', $names);
                 ?>
             </div>

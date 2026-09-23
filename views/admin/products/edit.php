@@ -517,6 +517,72 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <ion-icon name="layers-outline" class="text-3xl text-secondary-300 mb-1"></ion-icon>
                             <p class="text-xs font-medium">No custom size variants added. Product will sell in single base units.</p>
                         </div>
+                <!-- 5. Processing, Cutting & Dressing Add-ons -->
+                <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/80 p-6">
+                    <div class="flex items-center justify-between border-b border-secondary-100 pb-3 mb-4 flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="p-1.5 bg-amber-500/10 text-amber-600 rounded-lg flex items-center justify-center text-base">
+                                <ion-icon name="cut-outline"></ion-icon>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-secondary-900">ড্রেসিং ও কাটিং অপশন (Custom Processing / Add-ons)</h3>
+                                <p class="text-xs text-secondary-500">মুরগির চামড়া ছাড়ানো, মাছ কেটে পরিষ্কার বা অন্যান্য কাস্টম সার্ভিস ও অতিরিক্ত চার্জ নির্ধারণ করুন</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button type="button" onclick="applyAddonPreset('chicken')" class="px-2.5 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors flex items-center gap-1 shadow-2xs">
+                                <span>🍗 মুরগি ড্রেসিং</span>
+                            </button>
+                            <button type="button" onclick="applyAddonPreset('fish')" class="px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center gap-1 shadow-2xs">
+                                <span>🐟 মাছ কাটিং</span>
+                            </button>
+                            <button type="button" onclick="addAddonRow()" class="px-3 py-1 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors flex items-center gap-1 shadow-2xs">
+                                <ion-icon name="add-outline"></ion-icon>
+                                <span>অপশন যোগ করুন</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-secondary-50 text-secondary-600 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-3 py-2.5">সার্ভিস / অপশনের নাম (যেমন: চামড়া ছাড়া ড্রেসিং)</th>
+                                    <th class="px-3 py-2.5 w-36">অতিরিক্ত চার্জ (৳)</th>
+                                    <th class="px-3 py-2.5 w-24 text-center">ডিফল্ট</th>
+                                    <th class="px-3 py-2.5 w-16 text-center">অ্যাকশন</th>
+                                </tr>
+                            </thead>
+                            <tbody id="addons-tbody" class="divide-y divide-secondary-100">
+                                <?php if (!empty($addons)): ?>
+                                    <?php foreach ($addons as $aIdx => $a): ?>
+                                        <tr class="addon-row hover:bg-secondary-50/60 transition-colors">
+                                            <td class="px-3 py-2">
+                                                <input type="text" name="addons[<?= $aIdx ?>][name]" value="<?= htmlspecialchars($a['name'] ?? '') ?>" placeholder="যেমন: চামড়া ছাড়ানো ড্রেসিং" class="w-full px-2.5 py-1.5 border border-secondary-300 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-primary-500">
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <div class="relative">
+                                                    <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-secondary-400 font-bold text-xs pointer-events-none">৳</span>
+                                                    <input type="number" step="0.01" min="0" name="addons[<?= $aIdx ?>][price]" value="<?= floatval($a['price'] ?? 0) ?>" class="w-full pl-6 pr-2 py-1.5 border border-secondary-300 rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary-500">
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <input type="checkbox" name="addons[<?= $aIdx ?>][is_default]" value="1" <?= !empty($a['is_default']) ? 'checked' : '' ?> class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4">
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <button type="button" onclick="deleteAddonRow(this)" class="text-secondary-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors" title="মুছে ফেলুন">
+                                                    <ion-icon name="trash-outline" class="text-base"></ion-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                        <div id="addons-empty-state" class="<?= empty($addons) ? '' : 'hidden' ?> py-6 text-center text-secondary-400">
+                            <ion-icon name="options-outline" class="text-2xl text-secondary-300 mb-1"></ion-icon>
+                            <p class="text-xs font-medium">কোনো কাটিং বা ড্রেসিং অপশন যোগ করা নেই। এটি সাধারণ পণ্য হিসেবে বিক্রি হবে।</p>
+                        </div>
                     </div>
                 </div>
 
@@ -579,6 +645,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <span class="text-sm font-semibold text-secondary-900">Price Verified</span>
                         </label>
                         <p class="text-[10px] text-secondary-500 mt-1 pl-7">Unverified products show up in the verification list.</p>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-secondary-200">
+                        <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider mb-2" for="special_badge">
+                            🎁 স্পেশাল অফার / প্রমোশন ব্যাজ
+                        </label>
+                        <select name="special_badge" id="special_badge" class="w-full px-4 py-2.5 border border-secondary-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary-500 bg-white">
+                            <option value="none" <?= ($product['special_badge'] ?? 'none') === 'none' ? 'selected' : '' ?>>সাধারণ (কোনো অফার ব্যাজ নেই)</option>
+                            <option value="bogo" <?= ($product['special_badge'] ?? '') === 'bogo' ? 'selected' : '' ?>>🎁 Buy 1 Get 1 (১টি কিনলে ১টি ফ্রি)</option>
+                            <option value="hot_deal" <?= ($product['special_badge'] ?? '') === 'hot_deal' ? 'selected' : '' ?>>🔥 হট ডিল (Hot Deal)</option>
+                            <option value="fresh_catch" <?= ($product['special_badge'] ?? '') === 'fresh_catch' ? 'selected' : '' ?>>🐟 তাজা মাছ (Fresh Catch)</option>
+                            <option value="halal_meat" <?= ($product['special_badge'] ?? '') === 'halal_meat' ? 'selected' : '' ?>>🥩 তাজা মাংস (Fresh Meat)</option>
+                        </select>
+                        <p class="text-[10px] text-secondary-500 mt-1">কাস্টমার শপের প্রোডাক্ট কার্ড ও ডিটেইল পেজে এই আকর্ষণীয় ব্যাজটি দেখাবে।</p>
                     </div>
                 </div>
 
@@ -1223,6 +1303,64 @@ function deleteVariantRow(btn) {
     const emptyState = document.getElementById('variants-empty-state');
     if (tbody && tbody.querySelectorAll('tr').length === 0 && emptyState) {
         emptyState.classList.remove('hidden');
+    }
+}
+
+// Add-ons & Processing Options JS
+let addonCount = <?= count($addons ?? []) ?>;
+
+function addAddonRow(name = '', price = 0, isDefault = false) {
+    const tbody = document.getElementById('addons-tbody');
+    const emptyState = document.getElementById('addons-empty-state');
+    if (emptyState) emptyState.classList.add('hidden');
+
+    const tr = document.createElement('tr');
+    tr.className = 'addon-row hover:bg-secondary-50/60 transition-colors';
+    tr.innerHTML = `
+        <td class="px-3 py-2">
+            <input type="text" name="addons[${addonCount}][name]" value="${name}" placeholder="যেমন: চামড়া ছাড়ানো ড্রেসিং" class="w-full px-2.5 py-1.5 border border-secondary-300 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-primary-500">
+        </td>
+        <td class="px-3 py-2">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-secondary-400 font-bold text-xs pointer-events-none">৳</span>
+                <input type="number" step="0.01" min="0" name="addons[${addonCount}][price]" value="${price}" class="w-full pl-6 pr-2 py-1.5 border border-secondary-300 rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary-500">
+            </div>
+        </td>
+        <td class="px-3 py-2 text-center">
+            <input type="checkbox" name="addons[${addonCount}][is_default]" value="1" ${isDefault ? 'checked' : ''} class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4">
+        </td>
+        <td class="px-3 py-2 text-center">
+            <button type="button" onclick="deleteAddonRow(this)" class="text-secondary-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors" title="মুছে ফেলুন">
+                <ion-icon name="trash-outline" class="text-base"></ion-icon>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    addonCount++;
+}
+
+function deleteAddonRow(btn) {
+    const row = btn.closest('tr');
+    row.remove();
+    const tbody = document.getElementById('addons-tbody');
+    const emptyState = document.getElementById('addons-empty-state');
+    if (tbody && tbody.querySelectorAll('tr').length === 0 && emptyState) {
+        emptyState.classList.remove('hidden');
+    }
+}
+
+function applyAddonPreset(type) {
+    const tbody = document.getElementById('addons-tbody');
+    tbody.innerHTML = '';
+    addonCount = 0;
+    if (type === 'chicken') {
+        addAddonRow('আস্ত মুরগি (কোনো কাটিং ছাড়া)', 0, true);
+        addAddonRow('চামড়া সহ ড্রেসিং করা', 15, false);
+        addAddonRow('চামড়া ছাড়া ড্রেসিং করা', 20, false);
+    } else if (type === 'fish') {
+        addAddonRow('আস্ত মাছ (কোনো কাটিং ছাড়া)', 0, true);
+        addAddonRow('আঁশ ও নাড়িভুঁড়ি পরিষ্কার করা', 20, false);
+        addAddonRow('তরকারি কাট / মাঝারি পিস', 30, false);
     }
 }
 

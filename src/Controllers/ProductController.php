@@ -148,6 +148,31 @@ class ProductController extends Controller {
         return null;
     }
 
+    private function processAddons($addonsInput) {
+        if (empty($addonsInput)) return null;
+        if (is_string($addonsInput)) {
+            $decoded = json_decode($addonsInput, true);
+            if (!is_array($decoded)) return null;
+            $addonsInput = $decoded;
+        }
+        if (is_array($addonsInput)) {
+            $cleaned = [];
+            foreach ($addonsInput as $a) {
+                $name = trim($a['name'] ?? $a['title'] ?? '');
+                $price = floatval($a['price'] ?? $a['charge'] ?? 0);
+                if (!empty($name) && $price >= 0) {
+                    $cleaned[] = [
+                        'name' => $name,
+                        'price' => $price,
+                        'is_default' => !empty($a['is_default']) ? 1 : 0
+                    ];
+                }
+            }
+            return !empty($cleaned) ? json_encode($cleaned, JSON_UNESCAPED_UNICODE) : null;
+        }
+        return null;
+    }
+
     public function store() {
         $name = trim($_POST['name'] ?? '');
         $sku = trim($_POST['sku'] ?? '');
@@ -186,6 +211,8 @@ class ProductController extends Controller {
         $purchase_unit_qty = floatval($_POST['purchase_unit_qty'] ?? 1.000);
         $selling_unit = trim($_POST['selling_unit'] ?? $base_unit);
         $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null));
+        $addons_json = $this->processAddons($_POST['addons'] ?? ($_POST['addons_json'] ?? null));
+        $special_badge = trim($_POST['special_badge'] ?? 'none');
 
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $image_path = null;
@@ -246,7 +273,9 @@ class ProductController extends Controller {
                     'purchase_unit_qty' => $purchase_unit_qty > 0 ? $purchase_unit_qty : 1.000,
                     'selling_unit' => $selling_unit ?: $base_unit,
                     'unit_variants_json' => $unit_variants_json,
+                    'addons_json' => $addons_json,
                     'availability_status' => $availability_status,
+                    'special_badge' => $special_badge,
                     'is_verified' => $is_verified
                 ]);
                 $_SESSION['success'] = "নতুন পণ্য সফলভাবে তৈরি করা হয়েছে!";
@@ -294,6 +323,12 @@ class ProductController extends Controller {
             $variants = json_decode($product['unit_variants_json'], true) ?: [];
         }
 
+        // Decode addons if present
+        $addons = [];
+        if (!empty($product['addons_json'])) {
+            $addons = json_decode($product['addons_json'], true) ?: [];
+        }
+
         $packagingUnits = (new \Models\PackagingUnit())->all();
 
         return $this->view('admin/products/edit', [
@@ -303,6 +338,7 @@ class ProductController extends Controller {
             'categories' => $categories,
             'brands' => $brands,
             'variants' => $variants,
+            'addons' => $addons,
             'packagingUnits' => $packagingUnits
         ]);
     }
@@ -341,6 +377,8 @@ class ProductController extends Controller {
         $purchase_unit_qty = floatval($_POST['purchase_unit_qty'] ?? 1.000);
         $selling_unit = trim($_POST['selling_unit'] ?? $base_unit);
         $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null));
+        $addons_json = $this->processAddons($_POST['addons'] ?? ($_POST['addons_json'] ?? null));
+        $special_badge = trim($_POST['special_badge'] ?? 'none');
 
         $data = [
             'name' => $name,
@@ -362,7 +400,9 @@ class ProductController extends Controller {
             'purchase_unit_qty' => $purchase_unit_qty > 0 ? $purchase_unit_qty : 1.000,
             'selling_unit' => $selling_unit ?: $base_unit,
             'unit_variants_json' => $unit_variants_json,
+            'addons_json' => $addons_json,
             'availability_status' => $availability_status,
+            'special_badge' => $special_badge,
             'is_verified' => $is_verified
         ];
 

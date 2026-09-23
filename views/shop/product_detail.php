@@ -25,6 +25,26 @@ $hasVariants = !empty($variants) && is_array($variants);
 $initialTitle = $hasVariants ? ($variants[0]['title'] ?? '') : ($product['selling_unit'] ?? $product['base_unit'] ?? '1 Unit');
 $initialPrice = $hasVariants ? floatval($variants[0]['price'] ?? $sellPrice) : $sellPrice;
 $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
+
+// Check addons / processing options
+$addons = !empty($product['addons_json']) ? (json_decode($product['addons_json'], true) ?: []) : [];
+$hasAddons = !empty($addons) && is_array($addons);
+$defaultAddonIndex = -1;
+if ($hasAddons) {
+    foreach ($addons as $idx => $a) {
+        if (!empty($a['is_default'])) {
+            $defaultAddonIndex = $idx;
+            break;
+        }
+    }
+    if ($defaultAddonIndex === -1 && count($addons) > 0) {
+        $defaultAddonIndex = 0;
+    }
+}
+$initialAddon = ($hasAddons && $defaultAddonIndex >= 0) ? ($addons[$defaultAddonIndex]['name'] ?? '') : '';
+$initialAddonPrice = ($hasAddons && $defaultAddonIndex >= 0) ? floatval($addons[$defaultAddonIndex]['price'] ?? 0) : 0;
+$initialTotalPrice = $initialPrice + $initialAddonPrice;
+$specialBadge = $product['special_badge'] ?? 'none';
 ?>
 
 <div class="bg-gray-50/70 py-6 sm:py-10">
@@ -66,6 +86,23 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                         
                         <!-- Badges -->
                         <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                            <?php if ($specialBadge === 'bogo'): ?>
+                                <span class="bg-gradient-to-r from-amber-500 to-rose-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md animate-pulse flex items-center gap-1">
+                                    <span>🎁</span> <?= $locale === 'bn' ? '১টি কিনলে ১টি ফ্রি!' : 'Buy 1 Get 1 Free!' ?>
+                                </span>
+                            <?php elseif ($specialBadge === 'hot_deal'): ?>
+                                <span class="bg-gradient-to-r from-red-600 to-orange-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                                    <span>🔥</span> <?= $locale === 'bn' ? 'হট ডিল' : 'Hot Deal' ?>
+                                </span>
+                            <?php elseif ($specialBadge === 'fresh_catch'): ?>
+                                <span class="bg-blue-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                                    <span>🐟</span> <?= $locale === 'bn' ? 'তাজা মাছ' : 'Fresh Catch' ?>
+                                </span>
+                            <?php elseif ($specialBadge === 'halal_meat'): ?>
+                                <span class="bg-emerald-700 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                                    <span>🥩</span> <?= $locale === 'bn' ? 'তাজা মাংস' : 'Fresh Meat' ?>
+                                </span>
+                            <?php endif; ?>
                             <?php if ($hasDiscount): ?>
                                 <span class="bg-rose-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-sm">
                                     -<?= $discountPercent ?>% <?= $locale === 'bn' ? 'ছাড়' : 'OFF' ?>
@@ -130,7 +167,7 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                             <div class="flex items-baseline gap-1 text-emerald-700">
                                 <span class="text-xl sm:text-2xl font-bold">৳</span>
                                 <span id="detail-current-price" class="text-3xl sm:text-4xl font-black">
-                                    <?= number_format($initialPrice) ?>
+                                    <?= number_format($initialTotalPrice) ?>
                                 </span>
                             </div>
 
@@ -161,6 +198,34 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                                             <span><?= htmlspecialchars($v['title']) ?></span>
                                             <span class="ml-1 text-emerald-600">৳<?= number_format($v['price']) ?></span>
                                         </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Custom Processing / Cutting / Dressing Add-ons -->
+                        <?php if ($hasAddons): ?>
+                            <div class="my-5 pt-3 border-t border-gray-100" id="detail-addons-container">
+                                <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <span class="text-base">🔪</span>
+                                    <span><?= $locale === 'bn' ? 'কাটিং ও ড্রেসিং পছন্দ করুন:' : 'Select Cutting & Dressing Option:' ?></span>
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <?php foreach ($addons as $aIdx => $a): ?>
+                                        <?php 
+                                            $isAddonSelected = ($aIdx === $defaultAddonIndex); 
+                                            $aPrice = floatval($a['price'] ?? 0);
+                                        ?>
+                                        <label class="detail-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all <?= $isAddonSelected ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 shadow-2xs' : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300' ?>"
+                                               onclick="selectDetailAddon(this, '<?= htmlspecialchars(addslashes($a['name'])) ?>', <?= $aPrice ?>)">
+                                            <div class="flex items-center gap-2.5">
+                                                <input type="radio" name="detail_addon_choice" value="<?= htmlspecialchars($a['name']) ?>" <?= $isAddonSelected ? 'checked' : '' ?> class="text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                                <span class="text-xs sm:text-[13px] font-bold"><?= htmlspecialchars($a['name']) ?></span>
+                                            </div>
+                                            <span class="text-xs font-black <?= $aPrice > 0 ? 'text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md' : 'text-gray-400' ?>">
+                                                <?= $aPrice > 0 ? '+৳' . number_format($aPrice) : ($locale === 'bn' ? 'ফ্রি' : 'Free') ?>
+                                            </span>
+                                        </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
@@ -372,8 +437,36 @@ window.DETAIL_STATE = {
     selectedVariantTitle: <?= json_encode($initialTitle) ?>,
     selectedVariantPrice: <?= floatval($initialPrice) ?>,
     selectedVariantQty: <?= floatval($initialQty) ?>,
+    selectedAddonTitle: <?= json_encode($initialAddon) ?>,
+    selectedAddonPrice: <?= floatval($initialAddonPrice) ?>,
     maxStock: <?= $maxOrderQty ?>
 };
+
+function selectDetailAddon(card, name, price) {
+    document.querySelectorAll('.detail-addon-card').forEach(el => {
+        el.className = 'detail-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
+        const radio = el.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+    });
+    card.className = 'detail-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 shadow-2xs';
+    const radio = card.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+
+    window.DETAIL_STATE.selectedAddonTitle = name;
+    window.DETAIL_STATE.selectedAddonPrice = price;
+
+    updateDetailPriceDisplay();
+}
+
+function updateDetailPriceDisplay() {
+    const baseP = parseFloat(window.DETAIL_STATE.selectedVariantPrice) || 0;
+    const addonP = parseFloat(window.DETAIL_STATE.selectedAddonPrice) || 0;
+    const totalP = baseP + addonP;
+    const priceEl = document.getElementById('detail-current-price');
+    if (priceEl) {
+        priceEl.textContent = totalP.toLocaleString();
+    }
+}
 
 function selectDetailVariant(btn, title, price, qty) {
     // Update pills active state
@@ -386,11 +479,7 @@ function selectDetailVariant(btn, title, price, qty) {
     window.DETAIL_STATE.selectedVariantPrice = price;
     window.DETAIL_STATE.selectedVariantQty = qty;
 
-    // Update display price
-    const priceEl = document.getElementById('detail-current-price');
-    if (priceEl) {
-        priceEl.textContent = Number(price).toLocaleString();
-    }
+    updateDetailPriceDisplay();
 }
 
 function changeDetailQty(delta) {
@@ -423,6 +512,12 @@ function submitDetailAddToCart(productId, btn) {
     }
     if (window.DETAIL_STATE.selectedVariantQty) {
         formData.append('variant_qty', window.DETAIL_STATE.selectedVariantQty);
+    }
+    if (window.DETAIL_STATE.selectedAddonTitle) {
+        formData.append('addon_title', window.DETAIL_STATE.selectedAddonTitle);
+    }
+    if (window.DETAIL_STATE.selectedAddonPrice) {
+        formData.append('addon_price', window.DETAIL_STATE.selectedAddonPrice);
     }
 
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');

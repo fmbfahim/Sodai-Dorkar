@@ -212,19 +212,42 @@ if (!empty($search)) $activeFilterCount++;
                         $pImg = \Models\Product::getImageUrl($prod['image_path'] ?? '', $base);
                         $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
                         $unitDisplay = $prod['selling_unit'] ?? $prod['base_unit'] ?? '1 Unit';
+                        $prodAddons = !empty($prod['addons_json']) ? json_decode($prod['addons_json'], true) : [];
+                        $prodHasAddons = !empty($prodAddons) && is_array($prodAddons);
+                        $prodBadge = $prod['special_badge'] ?? 'none';
                     ?>
                     <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
                         
                         <!-- Product Image -->
                         <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden">
-                            <?php if ($pHasDisc): ?>
-                                <span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs z-10">
-                                    -<?= $pDiscPercent ?>%
-                                </span>
-                            <?php endif; ?>
+                            <div class="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+                                <?php if ($prodBadge === 'bogo'): ?>
+                                    <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs animate-pulse">
+                                        🎁 <?= (Lang::locale() === 'bn') ? '১+১ ফ্রি' : 'BOGO' ?>
+                                    </span>
+                                <?php elseif ($prodBadge === 'hot_deal'): ?>
+                                    <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                                        ⚡ <?= (Lang::locale() === 'bn') ? 'হট ডিল' : 'Hot Deal' ?>
+                                    </span>
+                                <?php elseif ($prodBadge === 'fresh_catch'): ?>
+                                    <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                                        🐟 <?= (Lang::locale() === 'bn') ? 'তাজা মাছ' : 'Fresh Catch' ?>
+                                    </span>
+                                <?php elseif ($prodBadge === 'halal_meat'): ?>
+                                    <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                                        🥩 <?= (Lang::locale() === 'bn') ? 'হালাল মাংস' : 'Halal Meat' ?>
+                                    </span>
+                                <?php endif; ?>
+
+                                <?php if ($pHasDisc): ?>
+                                    <span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs">
+                                        -<?= $pDiscPercent ?>%
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <img src="<?= htmlspecialchars($pImg) ?>" 
                                  alt="<?= htmlspecialchars($prod['name']) ?>" 
-                                 class="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                                 class="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" 
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                         </a>
@@ -258,6 +281,12 @@ if (!empty($search)) $activeFilterCount++;
                                 <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
                                     <span><?= (Lang::locale() === 'bn') ? 'স্টক শেষ' : 'Out of Stock' ?></span>
                                 </button>
+                            <?php elseif ($prodHasAddons): ?>
+                                <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" 
+                                   class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
+                                    <span>🔪 <?= (Lang::locale() === 'bn') ? 'কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing' ?></span>
+                                    <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                </a>
                             <?php else: ?>
                                 <button type="button" 
                                         onclick="addToCartAjax(<?= $prod['id'] ?>, this)"

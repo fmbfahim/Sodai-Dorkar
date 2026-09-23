@@ -182,6 +182,16 @@ usort($categoriesWithPaths, function($a, $b) {
                             <option value="out_of_stock">❌ Out of Stock</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="block text-secondary-700 text-[11px] font-bold uppercase tracking-wider mb-1.5" for="special_badge">🎁 অফার / স্পেশাল ব্যাজ</label>
+                        <select name="special_badge" id="special_badge" class="w-full px-2.5 py-1.5 border border-secondary-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-primary-500 bg-white">
+                            <option value="none">কোনো ব্যাজ নেই (Normal)</option>
+                            <option value="bogo">🎁 Buy 1 Get 1 (১টি কিনলে ১টি ফ্রি)</option>
+                            <option value="hot_deal">⚡ Hot Deal (হট ডিল)</option>
+                            <option value="fresh_catch">🐟 Fresh Catch (তাজা মাছ)</option>
+                            <option value="halal_meat">🥩 Halal Meat (তাজা হালাল মাংস)</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="is_verified" value="1" class="w-4 h-4 text-primary-600 rounded border-secondary-300 focus:ring-primary-500 transition-colors">
@@ -390,7 +400,7 @@ usort($categoriesWithPaths, function($a, $b) {
                                                 <div class="font-bold text-secondary-900 text-sm group-hover:text-primary-600 transition-colors">
                                                     <?php echo htmlspecialchars($p['name']); ?>
                                                 </div>
-                                                <div class="flex items-center gap-2 mt-0.5">
+                                                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                                                     <span class="text-[11px] font-semibold text-secondary-400">
                                                         <?php echo htmlspecialchars($p['vendor_name'] ?? 'No Vendor'); ?>
                                                     </span>
@@ -398,6 +408,33 @@ usort($categoriesWithPaths, function($a, $b) {
                                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-secondary-100 text-secondary-600 border border-secondary-200">
                                                         <?php echo htmlspecialchars($p['base_unit'] ?? 'pcs'); ?>
                                                     </span>
+                                                    <!-- Special Badge -->
+                                                    <?php if (!empty($p['special_badge']) && $p['special_badge'] === 'bogo'): ?>
+                                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">
+                                                            🎁 BOGO (১+১)
+                                                        </span>
+                                                    <?php elseif (!empty($p['special_badge']) && $p['special_badge'] === 'hot_deal'): ?>
+                                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
+                                                            ⚡ Hot Deal
+                                                        </span>
+                                                    <?php elseif (!empty($p['special_badge']) && $p['special_badge'] === 'fresh_catch'): ?>
+                                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 border border-cyan-200">
+                                                            🐟 Fresh
+                                                        </span>
+                                                    <?php elseif (!empty($p['special_badge']) && $p['special_badge'] === 'halal_meat'): ?>
+                                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                            🥩 Halal
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <!-- Addons Indicator -->
+                                                    <?php 
+                                                    $pAddons = !empty($p['addons_json']) ? json_decode($p['addons_json'], true) : [];
+                                                    if (!empty($pAddons) && is_array($pAddons)): 
+                                                    ?>
+                                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200" title="কাটিং/ড্রেসিং অপশন কনফিগার করা আছে">
+                                                            🔪 <?= count($pAddons) ?>টি অপশন
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>

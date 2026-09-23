@@ -535,6 +535,9 @@ if (empty($bannerSubtitle)) {
                             $demandPct = intval($product['demand_percentage'] ?? 0);
                             $totalSold = intval($product['total_sold'] ?? 0);
                             $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
+                            $productAddons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
+                            $hasAddons = !empty($productAddons) && is_array($productAddons);
+                            $specialBadge = $product['special_badge'] ?? 'none';
                         ?>
 
                         <!-- Product Card -->
@@ -546,9 +549,27 @@ if (empty($bannerSubtitle)) {
                              data-selected-variant-price="<?= $initialPrice ?>"
                              data-selected-variant-qty="<?= $initialQty ?>">
                             
-                            <!-- Badges (Popularity, Discount & Stock) -->
+                            <!-- Badges (Special, Popularity, Discount & Stock) -->
                             <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
                                 <div class="flex flex-col gap-1 items-start">
+                                    <?php if ($specialBadge === 'bogo'): ?>
+                                        <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🎁 ১+১ ফ্রি
+                                        </span>
+                                    <?php elseif ($specialBadge === 'hot_deal'): ?>
+                                        <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            ⚡ হট ডিল
+                                        </span>
+                                    <?php elseif ($specialBadge === 'fresh_catch'): ?>
+                                        <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🐟 তাজা সংগ্রহ
+                                        </span>
+                                    <?php elseif ($specialBadge === 'halal_meat'): ?>
+                                        <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🥩 হালাল মাংস
+                                        </span>
+                                    <?php endif; ?>
+
                                     <?php if ($isTopOne): ?>
                                         <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
                                             👑 #১ মোস্ট পপুলার
@@ -650,6 +671,12 @@ if (empty($bannerSubtitle)) {
                                         <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
                                             <span>স্টক শেষ</span>
                                         </button>
+                                    <?php elseif ($hasAddons): ?>
+                                        <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" 
+                                           class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
+                                            <span>🔪 কাটিং/ড্রেসিং পছন্দ করুন</span>
+                                            <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                        </a>
                                     <?php else: ?>
                                         <button type="button" 
                                                 onclick="cardAddToCart(<?= $product['id'] ?>, this)" 

@@ -637,6 +637,9 @@ if (!empty($search)) $activeFilterCount++;
                                     ? intval($stockQtyNum) 
                                     : rtrim(rtrim(number_format($stockQtyNum, 3), '0'), '.');
                                 $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
+                                $productAddons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
+                                $hasAddons = !empty($productAddons) && is_array($productAddons);
+                                $specialBadge = $product['special_badge'] ?? 'none';
                             ?>
 
                             <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-lg transition-all duration-300 group flex flex-col h-full overflow-hidden relative"
@@ -650,6 +653,24 @@ if (!empty($search)) $activeFilterCount++;
                                 <!-- Top Category & Discount Badges -->
                                 <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between pointer-events-none gap-1">
                                     <div class="flex items-center gap-1 flex-wrap min-w-0">
+                                        <?php if ($specialBadge === 'bogo'): ?>
+                                            <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap animate-pulse">
+                                                🎁 <?= $locale === 'bn' ? '১+১ ফ্রি' : 'BOGO' ?>
+                                            </span>
+                                        <?php elseif ($specialBadge === 'hot_deal'): ?>
+                                            <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap">
+                                                ⚡ <?= $locale === 'bn' ? 'হট ডিল' : 'Hot Deal' ?>
+                                            </span>
+                                        <?php elseif ($specialBadge === 'fresh_catch'): ?>
+                                            <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap">
+                                                🐟 <?= $locale === 'bn' ? 'তাজা মাছ' : 'Fresh Catch' ?>
+                                            </span>
+                                        <?php elseif ($specialBadge === 'halal_meat'): ?>
+                                            <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap">
+                                                🥩 <?= $locale === 'bn' ? 'হালাল মাংস' : 'Halal Meat' ?>
+                                            </span>
+                                        <?php endif; ?>
+
                                         <?php if ($hasDiscount): ?>
                                             <span class="bg-[#14532d] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-md shadow-xs whitespace-nowrap">
                                                 <?= $__('products_off', ['percent' => $discountPercent]) ?>
@@ -742,6 +763,12 @@ if (!empty($search)) $activeFilterCount++;
                                             <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-not-allowed">
                                                 <span><?= $locale === 'bn' ? 'স্টক শেষ' : 'Out of Stock' ?></span>
                                             </button>
+                                        <?php elseif ($hasAddons): ?>
+                                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" 
+                                               class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                                                <span>🔪 <?= $locale === 'bn' ? 'কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing' ?></span>
+                                                <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                            </a>
                                         <?php else: ?>
                                             <button type="button" 
                                                     onclick="cardAddToCart(<?= $product['id'] ?>, this)" 

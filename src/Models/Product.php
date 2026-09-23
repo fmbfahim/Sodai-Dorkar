@@ -44,9 +44,11 @@ class Product {
                 'purchase_unit_qty'   => "ALTER TABLE products ADD COLUMN purchase_unit_qty DECIMAL(10,3) DEFAULT 1.000",
                 'selling_unit'        => "ALTER TABLE products ADD COLUMN selling_unit VARCHAR(50) NULL",
                 'unit_variants_json'  => "ALTER TABLE products ADD COLUMN unit_variants_json LONGTEXT NULL",
+                'addons_json'         => "ALTER TABLE products ADD COLUMN addons_json LONGTEXT NULL AFTER unit_variants_json",
                 'image_path'          => "ALTER TABLE products ADD COLUMN image_path VARCHAR(255) NULL",
                 'is_verified'         => "ALTER TABLE products ADD COLUMN is_verified TINYINT(1) DEFAULT 0",
                 'availability_status' => "ALTER TABLE products ADD COLUMN availability_status VARCHAR(30) DEFAULT 'pending'",
+                'special_badge'       => "ALTER TABLE products ADD COLUMN special_badge VARCHAR(50) DEFAULT 'none' AFTER availability_status",
                 'demand_percentage'   => "ALTER TABLE products ADD COLUMN demand_percentage INT DEFAULT 0",
             ];
 
@@ -285,8 +287,10 @@ class Product {
             'purchase_unit_qty'   => !empty($data['purchase_unit_qty']) ? $data['purchase_unit_qty'] : 1.000,
             'selling_unit'        => $data['selling_unit'] ?? null,
             'unit_variants_json'  => !empty($data['unit_variants_json']) ? $data['unit_variants_json'] : null,
+            'addons_json'         => !empty($data['addons_json']) ? $data['addons_json'] : null,
             'is_verified'         => $data['is_verified'] ?? 0,
             'availability_status' => $data['availability_status'] ?? 'pending',
+            'special_badge'       => !empty($data['special_badge']) ? $data['special_badge'] : 'none',
             'demand_percentage'   => $data['demand_percentage'] ?? 0
         ];
 
@@ -361,6 +365,12 @@ class Product {
         }
         if (isset($data['demand_percentage'])) {
             $fields['demand_percentage'] = $data['demand_percentage'];
+        }
+        if (isset($data['addons_json'])) {
+            $fields['addons_json'] = !empty($data['addons_json']) ? $data['addons_json'] : null;
+        }
+        if (isset($data['special_badge'])) {
+            $fields['special_badge'] = $data['special_badge'];
         }
 
         $setParts = [];
