@@ -115,10 +115,15 @@ class ShopController {
             return strcmp($a['name'], $b['name']);
         });
 
-        // Determine active category and parent category
+        // Determine if any filter is active
+        $isFiltered = !empty($categoryId) || !empty($subId) || (isset($_GET['search']) && trim($_GET['search']) !== '') || $isDeals;
+
+        // Determine active category, parent category and subcategories
         $activeCategory = null;
         $parentCategory = null;
         $subCategories = [];
+        $targetCatId = null;
+        $bannerTitle = null;
 
         if ($categoryId && isset($catById[$categoryId])) {
             $selectedCat = $catById[$categoryId];
@@ -146,35 +151,41 @@ class ShopController {
             } else {
                 $activeCategory = $selectedCat;
             }
-        } else {
-            // Default home category
-            foreach ($mainCategories as $mc) {
-                if (mb_strpos($mc['name'], 'রান্না') !== false || mb_strpos($mc['name'], 'খাদ্য') !== false) {
-                    $activeCategory = $mc;
-                    break;
+            $targetCatId = $subId ?: $categoryId;
+            $bannerTitle = $activeCategory['name'] ?? null;
+        } elseif ($subId && isset($catById[$subId])) {
+            $selectedSub = $catById[$subId];
+            if (!empty($selectedSub['parent_id']) && isset($catById[$selectedSub['parent_id']])) {
+                $activeCategory = $catById[$selectedSub['parent_id']];
+                if (!empty($activeCategory['parent_id']) && isset($catById[$activeCategory['parent_id']])) {
+                    $parentCategory = $catById[$activeCategory['parent_id']];
                 }
-            }
-            if (!$activeCategory) {
-                foreach ($mainCategories as $mc) {
-                    if (!empty($childrenMap[$mc['id']])) {
-                        $activeCategory = $mc;
-                        break;
+                if (!empty($childrenMap[$activeCategory['id']])) {
+                    foreach ($childrenMap[$activeCategory['id']] as $sId) {
+                        if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
                     }
                 }
+            } else {
+                $activeCategory = $selectedSub;
             }
-            if (!$activeCategory && !empty($mainCategories)) {
-                $activeCategory = $mainCategories[0];
-            }
-            if ($activeCategory && !empty($childrenMap[$activeCategory['id']])) {
-                foreach ($childrenMap[$activeCategory['id']] as $sId) {
-                    if (isset($catById[$sId])) $subCategories[] = $catById[$sId];
-                }
-            }
+            $targetCatId = $subId;
+            $bannerTitle = $selectedSub['name'] ?? null;
+        } elseif (!empty($search)) {
+            $bannerTitle = 'অনুসন্ধান ফলাফল: "' . htmlspecialchars($search) . '"';
+        } elseif ($isDeals) {
+            $bannerTitle = 'বিশেষ অফার ও ডিলসমূহ';
+        } else {
+            // Home visit (no filters applied) - showcase top popular products storewide!
+            $targetCatId = null;
+            $activeCategory = null;
+            $parentCategory = null;
+            $subCategories = [];
+            $bannerTitle = 'সবচেয়ে জনপ্রিয় পণ্যসমূহ';
         }
 
-        // Build product query based on targetCatId ($subId ?: activeCategory['id'])
-        $targetCatId = $subId ?: ($activeCategory['id'] ?? null);
-        $sql = "SELECT products.*, categories.name as category_name 
+        // Build product query with sales volume calculation
+        $sql = "SELECT products.*, categories.name as category_name,
+                       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.product_id = products.id), 0) AS total_sold
                 FROM products 
                 LEFT JOIN categories ON products.category_id = categories.id
                 WHERE products.availability_status = 'in_stock'";
@@ -205,9 +216,15 @@ class ShopController {
             $sql .= " AND products.regular_price IS NOT NULL AND products.regular_price > products.sell_price";
         }
 
-        $sql .= " ORDER BY products.created_at DESC";
+        // Sorting: Most popular products on top!
+        // 1. Demand percentage (0-100)
+        // 2. Real sales volume (total_sold)
+        // 3. Discount priority (deals first)
+        // 4. Recency (created_at DESC)
+        $sql .= " ORDER BY products.demand_percentage DESC, total_sold DESC, (CASE WHEN products.regular_price > products.sell_price THEN 1 ELSE 0 END) DESC, products.created_at DESC";
         $stmt = $this->db->query($sql, $params);
         $products = $stmt->fetchAll();
+        $topPopularProduct = !empty($products) ? $products[0] : null;
 
         // Fetch categories with in-stock products for filter tabs
         $stmtCat = $this->db->query("SELECT categories.*, COUNT(products.id) as product_count 
@@ -233,8 +250,16 @@ class ShopController {
         }
 
         // Subcategory list subtitle for the hero banner
-        $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
-        $bannerSubtitle = !empty($subNames) ? implode(', ', array_slice($subNames, 0, 7)) : 'চাল, ডাল, মশলা, রেডি মিক্স, লবণ এবং চিনি, সেমাই ও সুজি';
+        if ($isFiltered && !empty($subCategories)) {
+            $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
+            $bannerSubtitle = implode(', ', array_slice($subNames, 0, 7));
+        } elseif (!empty($search)) {
+            $bannerSubtitle = count($products) . ' টি পণ্য পাওয়া গেছে';
+        } elseif ($isDeals) {
+            $bannerSubtitle = 'সেরা ছাড়ে আকর্ষণীয় নিত্যপ্রয়োজনীয় পণ্য';
+        } else {
+            $bannerSubtitle = 'সেরা মানের নিত্যপ্রয়োজনীয় পণ্য ও দ্রুত ডেলিভারি - আপনার দৈনন্দিন প্রয়োজনের সবকিছু এক জায়গায়';
+        }
 
         $parentBackUrl = '';
         if ($parentCategory) {
@@ -243,6 +268,9 @@ class ShopController {
 
         return View::render('shop/index', [
             'products' => $products,
+            'topPopularProduct' => $topPopularProduct,
+            'isFiltered' => $isFiltered,
+            'bannerTitle' => $bannerTitle,
             'categories' => $categories,
             'allCategories' => $allCategories,
             'catById' => $catById,

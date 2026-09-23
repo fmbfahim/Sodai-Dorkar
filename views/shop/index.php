@@ -215,44 +215,36 @@ if (empty($catLookup) && !empty($allCategories)) {
     }
 }
 
-// 2. Active Category Determination
-$activeCat = $activeCategory ?? (!empty($railCategories) ? $railCategories[0] : null);
+// 2. Filter Status & Active Category Determination
+$isFiltered = isset($isFiltered) ? $isFiltered : (!empty($_GET['category']) || !empty($_GET['sub']) || (isset($_GET['search']) && trim($_GET['search']) !== '') || !empty($_GET['deals']));
+$activeCat = $isFiltered ? ($activeCategory ?? null) : null;
 
-// 3. Subcategories for Active Category
+// 3. Subcategories or Filter Pills for Active State
 $subs = $subCategories ?? [];
-if (empty($subs) && !empty($activeCat['id']) && !empty($childrenMap[$activeCat['id']])) {
-    foreach ($childrenMap[$activeCat['id']] as $cid) {
-        if (isset($catLookup[$cid])) {
-            $subs[] = $catLookup[$cid];
+if ($isFiltered) {
+    if (empty($subs) && !empty($activeCat['id']) && !empty($childrenMap[$activeCat['id']])) {
+        foreach ($childrenMap[$activeCat['id']] as $cid) {
+            if (isset($catLookup[$cid])) {
+                $subs[] = $catLookup[$cid];
+            }
         }
     }
-}
-if (empty($subs) && !empty($activeCat) && mb_strpos($activeCat['name'], 'রান্না') !== false) {
-    // Default subcategories if database hasn't populated children yet
-    $sampleSubs = [
-        ['name' => 'চাল ও শস্য', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678696_rice.webp'],
-        ['name' => 'ভোজ্য তেল ও ঘি', 'image_path' => '/sodai-dorkar/public/uploads/categories/oil.webp'],
-        ['name' => 'মসলা', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768677548_spices.webp'],
-        ['name' => 'ডাল ও ডালজাতীয়', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678718_dal-or-lentil.webp'],
-        ['name' => 'লবণ ও চিনি', 'image_path' => '/sodai-dorkar/public/uploads/categories/1768678670_salt-sugar.webp'],
-        ['name' => 'রেডি মিক্স', 'image_path' => '/sodai-dorkar/public/uploads/categories/1779792323_ready-mix.webp'],
-        ['name' => 'সেমাই ও সুজি', 'image_path' => '/sodai-dorkar/public/uploads/categories/1779792371_shemai-suji.webp'],
-    ];
-    $subDummyId = 16;
-    foreach ($sampleSubs as $sData) {
-        $subs[] = [
-            'id' => $subDummyId++,
-            'name' => $sData['name'],
-            'image_path' => $sData['image_path'],
-            'total_product_count' => null
-        ];
-    }
+} else {
+    // When on Home (unfiltered), the horizontal filter pills display the main categories!
+    $subs = !empty($mainCategories) ? $mainCategories : $railCategories;
 }
 
-// 4. Hero Banner Subtitle
+// 4. Hero Banner Title & Subtitle
+if (empty($bannerTitle)) {
+    $bannerTitle = $isFiltered ? ($activeCat['name'] ?? 'পণ্যসমূহ') : 'সবচেয়ে জনপ্রিয় পণ্যসমূহ';
+}
 if (empty($bannerSubtitle)) {
-    $subNames = array_map(function($s) { return $s['name']; }, $subs);
-    $bannerSubtitle = !empty($subNames) ? implode(', ', array_slice($subNames, 0, 7)) : 'চাল, ডাল, মশলা, রেডি মিক্স, লবণ এবং চিনি, সেমাই ও সুজি';
+    if ($isFiltered && !empty($subs)) {
+        $subNames = array_map(function($s) { return $s['name']; }, $subs);
+        $bannerSubtitle = implode(', ', array_slice($subNames, 0, 7));
+    } else {
+        $bannerSubtitle = 'সেরা মানের নিত্যপ্রয়োজনীয় পণ্য ও দ্রুত ডেলিভারি - আপনার দৈনন্দিন প্রয়োজনের সবকিছু এক জায়গায়';
+    }
 }
 ?>
 
@@ -272,9 +264,9 @@ if (empty($bannerSubtitle)) {
             <div class="bg-[#dcfce7]/75 sm:bg-[#dcfce7]/90 border border-emerald-200/80 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
                 
                 <!-- Rail Header: "All Category" -->
-                <div class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none">
+                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none block transition-colors" title="হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য">
                     All Category
-                </div>
+                </a>
 
                 <!-- Vertical Category List with Circular Badges -->
                 <div class="flex flex-col items-center gap-3 sm:gap-4 w-full py-1">
@@ -344,7 +336,7 @@ if (empty($bannerSubtitle)) {
 
                 <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6">
                     
-                    <!-- Left: 3D Grocery Cart + Category Title & Bengali Subtitle -->
+                    <!-- Left: 3D Grocery Cart / Badge + Title & Bengali Subtitle -->
                     <div class="flex items-center gap-3 sm:gap-5 w-full sm:w-auto">
                         <!-- 3D Grocery Shopping Cart Illustration -->
                         <div class="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex-shrink-0 relative">
@@ -355,14 +347,19 @@ if (empty($bannerSubtitle)) {
 
                         <!-- Text Information -->
                         <div class="min-w-0 flex-1">
-                            <?php if (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
+                            <?php if (!$isFiltered): ?>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] sm:text-xs font-black mb-1.5 border border-amber-400/30">
+                                    <span>🔥</span>
+                                    <span>শীর্ষ চাহিদাসম্পন্ন ও ট্রেন্ডিং পণ্য</span>
+                                </div>
+                            <?php elseif (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
                                 <a href="<?= $base ?>/?category=<?= $parentCategory['id'] ?>" class="inline-flex items-center gap-1.5 text-xs text-emerald-200 hover:text-white mb-1.5 transition-colors group font-semibold">
                                     <svg class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                                     <span><?= htmlspecialchars($parentCategory['name']) ?></span>
                                 </a>
                             <?php endif; ?>
                             <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                <?= htmlspecialchars($activeCat['name'] ?? 'রান্নাবান্না') ?>
+                                <?= htmlspecialchars($bannerTitle ?? ($activeCat['name'] ?? 'সবচেয়ে জনপ্রিয় পণ্যসমূহ')) ?>
                             </h1>
                             <p class="text-[11px] sm:text-xs md:text-sm lg:text-base text-emerald-100 font-medium mt-1 leading-snug line-clamp-2 max-w-xl">
                                 <?= htmlspecialchars($bannerSubtitle) ?>
@@ -370,18 +367,48 @@ if (empty($bannerSubtitle)) {
                         </div>
                     </div>
 
-                    <!-- Right Accent Block (Matching the dark green accent in Desktop - 1 wireframe) -->
-                    <div class="hidden md:flex flex-col items-end justify-center text-right flex-shrink-0">
-                        <div class="bg-emerald-900/80 border border-emerald-600/40 rounded-2xl p-3 px-4 shadow-inner flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl text-emerald-200">
-                                🛒
+                    <!-- Right Accent Block: Top #1 Popular Product Spotlight OR Direct Online Market -->
+                    <?php if (!$isFiltered && !empty($topPopularProduct)): ?>
+                        <div class="hidden lg:flex items-center gap-3 bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2.5 pr-4 shadow-xl backdrop-blur-xs flex-shrink-0 group hover:border-amber-400/60 transition-all">
+                            <div class="relative w-14 h-14 bg-white rounded-xl p-1 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
+                                <span class="absolute top-0 left-0 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg shadow-2xs z-10">👑 #১</span>
+                                <img src="<?= htmlspecialchars(\Models\Product::getImageUrl($topPopularProduct['image_path'] ?? '', $base)) ?>" 
+                                     alt="<?= htmlspecialchars($topPopularProduct['name']) ?>" 
+                                     class="w-full h-full object-contain group-hover:scale-110 transition-transform"
+                                     onerror="this.onerror=null; this.src='<?= $base ?>/images/default-product.svg';">
                             </div>
-                            <div class="text-left">
-                                <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block">সরাসরি অনলাইন বাজার</span>
-                                <span class="text-xs sm:text-sm font-black text-white block">সেরা দামে সেরা মান</span>
+                            <div class="text-left max-w-[200px]">
+                                <span class="text-[10px] uppercase font-black tracking-wider text-amber-300 block flex items-center gap-1">
+                                    ⭐ এক নম্বর সেরা পণ্য
+                                </span>
+                                <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="text-xs font-bold text-white hover:text-amber-200 block truncate transition-colors" title="<?= htmlspecialchars($topPopularProduct['name']) ?>">
+                                    <?= htmlspecialchars($topPopularProduct['name']) ?>
+                                </a>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="text-xs font-black text-emerald-200">
+                                        ৳<?= number_format($topPopularProduct['sell_price']) ?>
+                                    </span>
+                                    <?php if (\Models\Product::hasDiscount($topPopularProduct)): ?>
+                                        <span class="text-[10px] text-emerald-300/70 line-through">
+                                            ৳<?= number_format($topPopularProduct['regular_price']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php else: ?>
+                        <div class="hidden md:flex flex-col items-end justify-center text-right flex-shrink-0">
+                            <div class="bg-emerald-900/80 border border-emerald-600/40 rounded-2xl p-3 px-4 shadow-inner flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl text-emerald-200">
+                                    🛒
+                                </div>
+                                <div class="text-left">
+                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block">সরাসরি অনলাইন বাজার</span>
+                                    <span class="text-xs sm:text-sm font-black text-white block">সেরা দামে সেরা মান</span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                 </div>
             </div>
@@ -390,6 +417,18 @@ if (empty($bannerSubtitle)) {
             <div class="mb-3 sm:mb-4">
                 <div class="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-1">
                     
+                    <!-- If filtered, Back to All Products / Home Button -->
+                    <?php if ($isFiltered): ?>
+                        <a href="<?= $base ?>/" 
+                           class="flex-shrink-0 pl-2 pr-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-100 hover:text-white border border-emerald-700/60 shadow-xs group"
+                           title="হোম পেজে ফিরুন (সবচেয়ে জনপ্রিয় পণ্যসমূহ)">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                            </svg>
+                            <span class="whitespace-nowrap">হোম</span>
+                        </a>
+                    <?php endif; ?>
+
                     <!-- Back Pill if drilled down to a child category -->
                     <?php if (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
                         <a href="<?= $base ?>/?category=<?= $parentCategory['id'] ?>" 
@@ -404,7 +443,7 @@ if (empty($bannerSubtitle)) {
 
                     <!-- Pill 1: "সবগুলো" (All) -->
                     <?php 
-                        $isAllActive = empty($activeSubId);
+                        $isAllActive = empty($activeSubId) && (!$isFiltered || empty($activeCat));
                         $allPillUrl = !empty($activeCat) ? $base . '/?category=' . $activeCat['id'] : $base . '/';
                     ?>
                     <a href="<?= $allPillUrl ?>" 
@@ -415,19 +454,22 @@ if (empty($bannerSubtitle)) {
                         <span class="whitespace-nowrap">সবগুলো</span>
                     </a>
 
-                    <!-- Subcategory Pills -->
+                    <!-- Subcategory / Main Category Filter Pills -->
                     <?php foreach ($subs as $sc): ?>
                         <?php 
                             $hasChildCats = !empty($childrenMap[$sc['id']]);
-                            $isScActive = ($activeSubId && (int)$activeSubId === (int)$sc['id']);
-                            $scVis = getCategoryVisual($sc, $base);
-                            // If this subcategory has children of its own, clicking drills down into it!
-                            // Otherwise, filter products by this leaf subcategory.
-                            if ($hasChildCats) {
+                            if (!$isFiltered) {
+                                $isScActive = false;
                                 $scUrl = $base . '/?category=' . $sc['id'];
                             } else {
-                                $scUrl = $base . '/?category=' . ($activeCat['id'] ?? '') . '&sub=' . $sc['id'];
+                                $isScActive = ($activeSubId && (int)$activeSubId === (int)$sc['id']);
+                                if ($hasChildCats) {
+                                    $scUrl = $base . '/?category=' . $sc['id'];
+                                } else {
+                                    $scUrl = $base . '/?category=' . ($activeCat['id'] ?? '') . '&sub=' . $sc['id'];
+                                }
                             }
+                            $scVis = getCategoryVisual($sc, $base);
                         ?>
                         <a href="<?= $scUrl ?>" 
                            class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm transition-all flex items-center gap-2 <?= $isScActive ? 'bg-emerald-800 text-white font-bold shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
@@ -474,7 +516,7 @@ if (empty($bannerSubtitle)) {
             <?php else: ?>
                 <!-- RESPONSIVE GRID: 6 columns on wide desktop matching Desktop - 1, 2 columns on mobile matching iPhone 17 - 1 -->
                 <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-3.5">
-                    <?php foreach ($products as $product): ?>
+                    <?php foreach ($products as $pIdx => $product): ?>
                         <?php 
                             $uInfo = getProductUnits($product); 
                             $hasCustom = !empty($uInfo['has_custom']);
@@ -488,6 +530,10 @@ if (empty($bannerSubtitle)) {
                             $stockClean = (floor($stockQtyNum) == $stockQtyNum) 
                                 ? intval($stockQtyNum) 
                                 : rtrim(rtrim(number_format($stockQtyNum, 3), '0'), '.');
+
+                            $isTopOne = ($pIdx === 0 && !$isFiltered);
+                            $demandPct = intval($product['demand_percentage'] ?? 0);
+                            $totalSold = intval($product['total_sold'] ?? 0);
                         ?>
 
                         <!-- Product Card -->
@@ -498,15 +544,29 @@ if (empty($bannerSubtitle)) {
                              data-selected-variant-price="<?= $initialPrice ?>"
                              data-selected-variant-qty="<?= $initialQty ?>">
                             
-                            <!-- Badges (Discount & Stock) -->
-                            <div class="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none gap-1">
-                                <?php if ($hasDiscount): ?>
-                                    <span class="bg-emerald-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-2xs">
-                                        <?= $discountPercent ?>% ছাড়
-                                    </span>
-                                <?php else: ?>
-                                    <span></span>
-                                <?php endif; ?>
+                            <!-- Badges (Popularity, Discount & Stock) -->
+                            <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
+                                <div class="flex flex-col gap-1 items-start">
+                                    <?php if ($isTopOne): ?>
+                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            👑 #১ মোস্ট পপুলার
+                                        </span>
+                                    <?php elseif ($demandPct > 0): ?>
+                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🔥 <?= $demandPct ?>% জনপ্রিয়
+                                        </span>
+                                    <?php elseif ($totalSold > 0): ?>
+                                        <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🔥 সেরা বিক্রিত
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if ($hasDiscount): ?>
+                                        <span class="bg-emerald-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-2xs">
+                                            <?= $discountPercent ?>% ছাড়
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
 
                                 <?php if ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
                                     <span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
