@@ -19,6 +19,9 @@ class ProductController extends Controller {
         $vendorModel = new Vendor();
         $categoryModel = new \Models\Category();
 
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $perPage = 50;
+
         $filters = [
             'search' => trim($_GET['search'] ?? ''),
             'category_id' => $_GET['category_id'] ?? '',
@@ -28,7 +31,14 @@ class ProductController extends Controller {
             'is_verified' => $_GET['is_verified'] ?? ''
         ];
 
-        $products = $productModel->all($filters);
+        $totalProducts = $productModel->count($filters);
+        $totalPages = max(1, (int)ceil($totalProducts / $perPage));
+        if ($page > $totalPages && $totalProducts > 0) {
+            $page = $totalPages;
+        }
+        $offset = max(0, ($page - 1) * $perPage);
+
+        $products = $productModel->all($filters, $perPage, $offset);
         $vendors = $vendorModel->all();
         $categories = $categoryModel->all();
         $packagingUnits = (new \Models\PackagingUnit())->all();
@@ -39,7 +49,11 @@ class ProductController extends Controller {
             'vendors' => $vendors,
             'categories' => $categories,
             'packagingUnits' => $packagingUnits,
-            'filters' => $filters
+            'filters' => $filters,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalProducts' => $totalProducts,
+            'perPage' => $perPage
         ]);
     }
 

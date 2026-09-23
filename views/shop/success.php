@@ -131,15 +131,15 @@ $locale = Lang::locale();
                 <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
                     
                     <!-- Product Image -->
-                    <a href="<?= $base ?>/product?id=<?= $crossProd['id'] ?>" class="relative block pt-5 pb-3 px-3 bg-white flex items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                    <a href="<?= $base ?>/product?id=<?= $crossProd['id'] ?>" class="relative block bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden">
                         <?php if ($pHasDisc): ?>
-                            <span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs">
+                            <span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs z-10">
                                 -<?= $pDiscPercent ?>%
                             </span>
                         <?php endif; ?>
                         <img src="<?= $pImg ?>" 
                              alt="<?= htmlspecialchars($crossProd['name']) ?>" 
-                             class="max-h-28 sm:max-h-32 w-auto max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-300"
+                             class="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
                              loading="lazy"
                              onerror="this.src='<?= $base ?>/images/default-product.svg'">
                     </a>

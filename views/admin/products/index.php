@@ -329,8 +329,8 @@ usort($categoriesWithPaths, function($a, $b) {
             </form>
 
             <div class="flex items-center justify-between text-[11px] text-secondary-400 mt-2.5 pt-2 border-t border-secondary-100">
-                <span id="productCounterText">মোট পণ্য প্রদর্শিত: <strong class="text-secondary-700 font-bold"><?= count($products) ?></strong> টি</span>
-                <span class="text-[10px] text-secondary-400">চেকবক্স সিলেক্ট করে একসাথে সব পণ্যের স্ট্যাটাস আপডেট করুন</span>
+                <span id="productCounterText">মোট <strong class="text-secondary-700 font-bold"><?= number_format($totalProducts ?? count($products)) ?></strong> টি পণ্যের মধ্যে এই পৃষ্ঠায় <strong class="text-secondary-700 font-bold"><?= count($products) ?></strong> টি প্রদর্শিত (পৃষ্ঠা <?= $currentPage ?? 1 ?> / <?= $totalPages ?? 1 ?>)</span>
+                <span class="text-[10px] text-secondary-400">প্রতি পৃষ্ঠায় ৫০টি পণ্য • চেকবক্স সিলেক্ট করে একসাথে স্ট্যাটাস আপডেট করুন</span>
             </div>
         </div>
 
@@ -375,13 +375,13 @@ usort($categoriesWithPaths, function($a, $b) {
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-11 h-11 rounded-xl bg-secondary-100 border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                                            <div class="w-11 h-11 rounded-xl bg-white border border-secondary-200 flex-shrink-0 flex items-center justify-center overflow-hidden relative group cursor-pointer"
                                                  onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')"
                                                  title="ক্লিক করে ওয়েব/গুগল থেকে ছবি খুঁজুন">
                                                 <?php 
                                                 $prodImg = !empty($p['image_path']) ? \Models\Product::getImageUrl($p['image_path'], $base) : "{$base}/images/default-product.svg";
                                                 ?>
-                                                <img id="prod-thumb-<?= $p['id'] ?>" src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain p-0.5 transition-transform group-hover:scale-105" onerror="this.src='<?= $base ?>/images/default-product.svg'">
+                                                <img id="prod-thumb-<?= $p['id'] ?>" src="<?php echo $prodImg; ?>" alt="" class="w-full h-full object-contain mix-blend-multiply p-0.5 transition-transform group-hover:scale-105" onerror="this.src='<?= $base ?>/images/default-product.svg'">
                                                 <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                     <ion-icon name="sparkles" class="text-xs text-amber-400"></ion-icon>
                                                 </div>
@@ -485,6 +485,91 @@ usort($categoriesWithPaths, function($a, $b) {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Bar (50 items per page) -->
+            <?php if (!empty($totalPages) && $totalPages > 1): ?>
+                <?php
+                    $queryParams = $_GET;
+                    $makePageUrl = function($pNum) use ($queryParams, $base) {
+                        $qp = $queryParams;
+                        $qp['page'] = $pNum;
+                        return $base . '/admin/products?' . http_build_query($qp);
+                    };
+
+                    $startPage = max(1, $currentPage - 2);
+                    $endPage = min($totalPages, $currentPage + 2);
+                ?>
+                <div class="px-5 py-3.5 border-t border-secondary-100 bg-secondary-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="text-secondary-500 font-medium text-[11px] sm:text-xs">
+                        মোট <strong class="text-secondary-800 font-bold"><?= number_format($totalProducts) ?></strong> টি পণ্যের মধ্যে 
+                        <strong class="text-secondary-800 font-bold"><?= number_format(($currentPage - 1) * $perPage + 1) ?> - <?= number_format(min($totalProducts, $currentPage * $perPage)) ?></strong> টি দেখানো হচ্ছে 
+                        (পৃষ্ঠা <strong class="text-secondary-800"><?= $currentPage ?></strong> / <strong class="text-secondary-800"><?= $totalPages ?></strong>)
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- First Page -->
+                        <?php if ($currentPage > 1): ?>
+                            <a href="<?= $makePageUrl(1) ?>" class="p-1.5 rounded-lg bg-white border border-secondary-200 text-secondary-600 hover:bg-secondary-100 hover:text-secondary-900 transition-colors" title="প্রথম পৃষ্ঠা">
+                                <ion-icon name="play-back-outline" class="text-xs"></ion-icon>
+                            </a>
+                            <!-- Prev Page -->
+                            <a href="<?= $makePageUrl($currentPage - 1) ?>" class="px-2.5 py-1.5 rounded-lg bg-white border border-secondary-200 text-secondary-700 font-semibold hover:bg-secondary-100 hover:text-secondary-900 transition-colors flex items-center gap-1">
+                                <ion-icon name="chevron-back-outline"></ion-icon>
+                                <span class="hidden sm:inline">আগের পৃষ্ঠা</span>
+                            </a>
+                        <?php else: ?>
+                            <span class="px-2.5 py-1.5 rounded-lg bg-secondary-100 text-secondary-300 font-semibold cursor-not-allowed flex items-center gap-1">
+                                <ion-icon name="chevron-back-outline"></ion-icon>
+                                <span class="hidden sm:inline">আগের পৃষ্ঠা</span>
+                            </span>
+                        <?php endif; ?>
+
+                        <!-- Numbered Pages -->
+                        <?php if ($startPage > 1): ?>
+                            <a href="<?= $makePageUrl(1) ?>" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-secondary-200 text-secondary-700 font-bold hover:bg-secondary-100 flex items-center justify-center transition-colors">1</a>
+                            <?php if ($startPage > 2): ?>
+                                <span class="text-secondary-400 px-0.5">...</span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                            <?php if ($i == $currentPage): ?>
+                                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-600 text-white font-black flex items-center justify-center shadow-xs">
+                                    <?= $i ?>
+                                </span>
+                            <?php else: ?>
+                                <a href="<?= $makePageUrl($i) ?>" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-secondary-200 text-secondary-700 font-bold hover:bg-secondary-100 flex items-center justify-center transition-colors">
+                                    <?= $i ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+
+                        <?php if ($endPage < $totalPages): ?>
+                            <?php if ($endPage < $totalPages - 1): ?>
+                                <span class="text-secondary-400 px-0.5">...</span>
+                            <?php endif; ?>
+                            <a href="<?= $makePageUrl($totalPages) ?>" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-secondary-200 text-secondary-700 font-bold hover:bg-secondary-100 flex items-center justify-center transition-colors"><?= $totalPages ?></a>
+                        <?php endif; ?>
+
+                        <!-- Next Page -->
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="<?= $makePageUrl($currentPage + 1) ?>" class="px-2.5 py-1.5 rounded-lg bg-white border border-secondary-200 text-secondary-700 font-semibold hover:bg-secondary-100 hover:text-secondary-900 transition-colors flex items-center gap-1">
+                                <span class="hidden sm:inline">পরের পৃষ্ঠা</span>
+                                <ion-icon name="chevron-forward-outline"></ion-icon>
+                            </a>
+                            <!-- Last Page -->
+                            <a href="<?= $makePageUrl($totalPages) ?>" class="p-1.5 rounded-lg bg-white border border-secondary-200 text-secondary-600 hover:bg-secondary-100 hover:text-secondary-900 transition-colors" title="শেষ পৃষ্ঠা">
+                                <ion-icon name="play-forward-outline" class="text-xs"></ion-icon>
+                            </a>
+                        <?php else: ?>
+                            <span class="px-2.5 py-1.5 rounded-lg bg-secondary-100 text-secondary-300 font-semibold cursor-not-allowed flex items-center gap-1">
+                                <span class="hidden sm:inline">পরের পৃষ্ঠা</span>
+                                <ion-icon name="chevron-forward-outline"></ion-icon>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- FLOATING BULK STATUS UPDATE BAR -->

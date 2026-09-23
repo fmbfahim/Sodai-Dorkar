@@ -39,11 +39,11 @@ $__ = function($key, $r = []) { return Lang::get($key, $r); };
                                 $subtotal += $itemTotal;
                             ?>
                                 <li class="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6" id="cart-item-<?= $productId ?>">
-                                    <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 relative flex items-center justify-center">
+                                    <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-white rounded-xl overflow-hidden border border-gray-100 relative flex items-center justify-center">
                                         <?php 
                                         $cartImg = !empty($item['image']) ? htmlspecialchars($item['image']) : '/sodai-dorkar/public/images/default-product.svg';
                                         ?>
-                                        <img src="<?= $cartImg ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="w-full h-full object-contain p-1" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                                        <img src="<?= $cartImg ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="w-full h-full object-contain mix-blend-multiply p-1" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
                                     </div>
                                     
                                     <div class="flex-grow text-center sm:text-left">

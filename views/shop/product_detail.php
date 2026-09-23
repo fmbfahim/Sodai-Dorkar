@@ -62,7 +62,7 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                 
                 <!-- Left: Product Image Gallery / View -->
                 <div class="lg:col-span-5 flex flex-col items-center justify-center">
-                    <div class="relative w-full aspect-square max-w-[420px] bg-gradient-to-b from-gray-50/80 to-white rounded-2xl border border-gray-100 flex items-center justify-center p-8 group">
+                    <div class="relative w-full h-[380px] sm:h-[460px] max-w-[500px] bg-white rounded-3xl border border-gray-100/90 flex items-center justify-center p-4 sm:p-6 group overflow-hidden shadow-2xs">
                         
                         <!-- Badges -->
                         <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -84,7 +84,7 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
 
                         <!-- Brand / Origin Pill -->
                         <div class="absolute top-4 right-4 z-10">
-                            <span class="inline-flex items-center gap-1 bg-white/90 backdrop-blur-xs border border-gray-200 text-gray-700 text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-2xs">
+                            <span class="inline-flex items-center gap-1 bg-white/95 backdrop-blur-xs border border-gray-200 text-gray-700 text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-2xs">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                                 <?= $locale === 'bn' ? '১০০% অরিজিনাল' : '100% Authentic' ?>
                             </span>
@@ -93,7 +93,7 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                         <img id="main-product-img" 
                              src="<?= htmlspecialchars($productImg) ?>" 
                              alt="<?= htmlspecialchars($product['name']) ?>" 
-                             class="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                             class="w-full h-full max-h-[340px] sm:max-h-[420px] object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                              onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                     </div>
                 </div>
@@ -316,15 +316,15 @@ $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
                         <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group">
                             
                             <!-- Image Link -->
-                            <a href="<?= $base ?>/product?id=<?= $relProduct['id'] ?>" class="relative block pt-6 pb-2 px-3 bg-white flex items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                            <a href="<?= $base ?>/product?id=<?= $relProduct['id'] ?>" class="relative block bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden">
                                 <?php if ($relHasDisc): ?>
-                                    <span class="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">
+                                    <span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md z-10 shadow-2xs">
                                         -<?= $relDiscPercent ?>%
                                     </span>
                                 <?php endif; ?>
                                 <img src="<?= $relImg ?>" 
                                      alt="<?= htmlspecialchars($relProduct['name']) ?>" 
-                                     class="max-h-28 sm:max-h-32 w-auto max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-300"
+                                     class="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
                                      loading="lazy"
                                      onerror="this.src='<?= $base ?>/images/default-product.svg'">
                             </a>

@@ -883,8 +883,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
                 html += `
                     <div class="py-3.5 flex items-center gap-3 sm:gap-4" id="drawer-item-${key}">
-                        <div class="w-16 h-16 flex-shrink-0 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden relative flex items-center justify-center">
-                            <img src="${imgSrc}" alt="${item.name}" class="w-full h-full object-contain p-1" onerror="this.src='${defaultImg}'">
+                        <div class="w-16 h-16 flex-shrink-0 bg-white border border-gray-100 rounded-xl overflow-hidden relative flex items-center justify-center">
+                            <img src="${imgSrc}" alt="${item.name}" class="w-full h-full object-contain mix-blend-multiply p-1" onerror="this.src='${defaultImg}'">
                         </div>
                         <div class="flex-grow min-w-0">
                             <h4 class="text-sm font-semibold text-gray-800 truncate" title="${item.name}">${item.name}</h4>

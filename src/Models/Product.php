@@ -65,13 +65,8 @@ class Product {
         }
     }
 
-    public function all($filters = []) {
-        $sql = "SELECT products.*, vendors.name as vendor_name, categories.name as category_name, brands.name as brand_name 
-                FROM products 
-                LEFT JOIN vendors ON products.vendor_id = vendors.id 
-                LEFT JOIN categories ON products.category_id = categories.id
-                LEFT JOIN brands ON products.brand_id = brands.id
-                WHERE 1=1";
+    private function buildFilterConditions($filters = []) {
+        $sql = "";
         $params = [];
 
         if (!empty($filters['search'])) {
@@ -165,7 +160,36 @@ class Product {
             $params[] = intval($filters['is_verified']);
         }
 
-        $sql .= " ORDER BY products.id DESC";
+        return [$sql, $params];
+    }
+
+    public function count($filters = []) {
+        list($whereSql, $params) = $this->buildFilterConditions($filters);
+        $sql = "SELECT COUNT(*) as total 
+                FROM products 
+                LEFT JOIN vendors ON products.vendor_id = vendors.id 
+                LEFT JOIN categories ON products.category_id = categories.id 
+                LEFT JOIN brands ON products.brand_id = brands.id 
+                WHERE 1=1" . $whereSql;
+        $row = $this->db->query($sql, $params)->fetch();
+        return (int)($row['total'] ?? 0);
+    }
+
+    public function all($filters = [], $limit = null, $offset = null) {
+        list($whereSql, $params) = $this->buildFilterConditions($filters);
+        $sql = "SELECT products.*, vendors.name as vendor_name, categories.name as category_name, brands.name as brand_name 
+                FROM products 
+                LEFT JOIN vendors ON products.vendor_id = vendors.id 
+                LEFT JOIN categories ON products.category_id = categories.id
+                LEFT JOIN brands ON products.brand_id = brands.id
+                WHERE 1=1" . $whereSql . " ORDER BY products.id DESC";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT " . intval($limit);
+            if ($offset !== null) {
+                $sql .= " OFFSET " . intval($offset);
+            }
+        }
         return $this->db->query($sql, $params)->fetchAll();
     }
 

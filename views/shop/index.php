@@ -582,14 +582,14 @@ if (empty($bannerSubtitle)) {
                             </div>
 
                             <!-- Centered Image Container -->
-                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white pt-6 pb-2 px-2 flex items-center justify-center min-h-[125px] sm:min-h-[150px] cursor-pointer">
+                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden cursor-pointer">
                                 <?php 
                                 $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                                 $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
                                 ?>
                                 <img src="<?= htmlspecialchars($productImg) ?>" 
                                      alt="<?= htmlspecialchars($product['name']) ?>" 
-                                     class="max-h-24 sm:max-h-32 w-auto max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105" 
+                                     class="h-full w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105" 
                                      loading="lazy"
                                      onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                             </a>
