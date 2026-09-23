@@ -32,8 +32,13 @@ class CategoryController extends Controller {
             'title' => 'Product Categories', 
             'categories' => $categories,
             'allCategories' => $allCategories,
-            'selectedParentId' => $selectedParentId
+            'selectedParentId' => $selectedParentId,
+            'base' => $this->getBaseUrl()
         ]);
+    }
+
+    private function getBaseUrl() {
+        return (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
     }
 
     private function buildTree(array $elements, $parentId = null) {
@@ -74,7 +79,7 @@ class CategoryController extends Controller {
         $selectedImageUrl = trim($_POST['selected_image_url'] ?? '');
 
         if (empty($rawName)) {
-            header('Location: /sodai-dorkar/public/admin/categories?error=empty_name');
+            header('Location: ' . $this->getBaseUrl() . '/admin/categories?error=empty_name');
             exit;
         }
 
@@ -119,7 +124,7 @@ class CategoryController extends Controller {
         // REMEMBER PARENT CATEGORY: Store in session so it never resets on reload!
         $_SESSION['last_category_parent_id'] = $parentId ?: '';
 
-        $redirectUrl = '/sodai-dorkar/public/admin/categories';
+        $redirectUrl = $this->getBaseUrl() . '/admin/categories';
         if ($parentId) {
             $redirectUrl .= '?parent_id=' . urlencode($parentId);
         }
@@ -133,14 +138,14 @@ class CategoryController extends Controller {
 
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header('Location: /sodai-dorkar/public/admin/categories');
+            header('Location: ' . $this->getBaseUrl() . '/admin/categories');
             exit;
         }
 
         $categoryModel = new Category();
         $category = $categoryModel->find($id);
         if (!$category) {
-            header('Location: /sodai-dorkar/public/admin/categories');
+            header('Location: ' . $this->getBaseUrl() . '/admin/categories');
             exit;
         }
 
@@ -149,7 +154,8 @@ class CategoryController extends Controller {
         return $this->view('admin/categories/edit', [
             'title' => 'Edit Category', 
             'category' => $category,
-            'categories' => $categories
+            'categories' => $categories,
+            'base' => $this->getBaseUrl()
         ]);
     }
 
@@ -162,9 +168,10 @@ class CategoryController extends Controller {
         $description = trim($_POST['description'] ?? '');
         $parentId = !empty($_POST['parent_id']) ? intval($_POST['parent_id']) : null;
         $selectedImageUrl = trim($_POST['selected_image_url'] ?? '');
+        $removeImage = !empty($_POST['remove_image']);
 
         if (!$id || empty($rawName)) {
-            header('Location: /sodai-dorkar/public/admin/categories');
+            header('Location: ' . $this->getBaseUrl() . '/admin/categories');
             exit;
         }
 
@@ -182,26 +189,30 @@ class CategoryController extends Controller {
             'description' => $description
         ];
 
-        $newImagePath = null;
+        if ($removeImage) {
+            $data['image_path'] = null;
+        } else {
+            $newImagePath = null;
 
-        // 1. Check file upload
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            $newImagePath = $this->handleUploadedImage($_FILES['image']);
-        }
-        // 2. Check selected image URL
-        elseif (!empty($selectedImageUrl) && filter_var($selectedImageUrl, FILTER_VALIDATE_URL)) {
-            $newImagePath = $this->downloadAndSaveImage($selectedImageUrl, $slug ?: $name);
-        }
-        // 3. If existing category has no image, auto-fetch
-        elseif (empty($existing['image_path'])) {
-            $autoUrl = $this->findCategoryImageCandidate($name, $slug);
-            if ($autoUrl) {
-                $newImagePath = $this->downloadAndSaveImage($autoUrl, $slug ?: $name);
+            // 1. Check file upload
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $newImagePath = $this->handleUploadedImage($_FILES['image']);
             }
-        }
+            // 2. Check selected image URL
+            elseif (!empty($selectedImageUrl) && filter_var($selectedImageUrl, FILTER_VALIDATE_URL)) {
+                $newImagePath = $this->downloadAndSaveImage($selectedImageUrl, $slug ?: $name);
+            }
+            // 3. If existing category has no image, auto-fetch
+            elseif (empty($existing['image_path'])) {
+                $autoUrl = $this->findCategoryImageCandidate($name, $slug);
+                if ($autoUrl) {
+                    $newImagePath = $this->downloadAndSaveImage($autoUrl, $slug ?: $name);
+                }
+            }
 
-        if ($newImagePath) {
-            $data['image_path'] = $newImagePath;
+            if ($newImagePath) {
+                $data['image_path'] = $newImagePath;
+            }
         }
 
         $categoryModel->update($id, $data);
@@ -211,7 +222,7 @@ class CategoryController extends Controller {
             $_SESSION['last_category_parent_id'] = $parentId;
         }
 
-        header('Location: /sodai-dorkar/public/admin/categories');
+        header('Location: ' . $this->getBaseUrl() . '/admin/categories');
         exit;
     }
 
@@ -222,11 +233,11 @@ class CategoryController extends Controller {
                 $categoryModel = new Category();
                 $categoryModel->delete($id);
             } catch (\PDOException $e) {
-                header('Location: /sodai-dorkar/public/admin/categories?error=cannot_delete');
+                header('Location: ' . $this->getBaseUrl() . '/admin/categories?error=cannot_delete');
                 exit;
             }
         }
-        header('Location: /sodai-dorkar/public/admin/categories');
+        header('Location: ' . $this->getBaseUrl() . '/admin/categories');
         exit;
     }
 
@@ -287,7 +298,7 @@ class CategoryController extends Controller {
             'success' => true,
             'id' => $id,
             'name' => $cat['name'],
-            'image_path' => $savedPath,
+            'image_path' => Category::getImageUrl($savedPath, $this->getBaseUrl()),
             'message' => 'ক্যাটাগরিতে ছবি সফলভাবে যুক্ত হয়েছে!'
         ], JSON_UNESCAPED_UNICODE);
         exit;
@@ -367,7 +378,7 @@ class CategoryController extends Controller {
         $targetPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-            return '/sodai-dorkar/public/uploads/categories/' . $fileName;
+            return '/uploads/categories/' . $fileName;
         }
 
         return null;
@@ -484,7 +495,7 @@ class CategoryController extends Controller {
         $targetFile = $uploadDir . $fileName;
 
         if (file_put_contents($targetFile, $imageData) !== false) {
-            return '/sodai-dorkar/public/uploads/categories/' . $fileName;
+            return '/uploads/categories/' . $fileName;
         }
 
         return null;

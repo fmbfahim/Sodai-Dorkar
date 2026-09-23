@@ -10,11 +10,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 if (!function_exists('getCategoryVisual')) {
 function getCategoryVisual($cat, $base = '') {
     if (!empty($cat['image_path'])) {
-        $img = $cat['image_path'];
-        if (strpos($img, 'http') !== 0 && strpos($img, $base) !== 0 && strpos($img, '/') === 0) {
-            $img = $base . $img;
-        }
-        return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
+        $finalUrl = \Models\Category::getImageUrl($cat['image_path'], $base);
+        return ['type' => 'image', 'val' => $finalUrl, 'bg' => 'bg-white border border-gray-100'];
     }
     $n = mb_strtolower($cat['name'] ?? '');
     if (strpos($n, 'মাছ ও মাংস') !== false) return ['type' => 'image', 'val' => $base . '/uploads/categories/1788452780_Screenshot 2026-09-03 222555.png', 'bg' => 'bg-white border border-gray-100'];
@@ -40,7 +37,7 @@ function getCategoryVisual($cat, $base = '') {
     if (strpos($n, 'হিমায়িত') !== false || strpos($n, 'টিনজাত') !== false || strpos($n, 'frozen') !== false || strpos($n, 'canned') !== false) return ['type' => 'emoji', 'val' => '🥫', 'bg' => 'bg-blue-50 text-blue-600'];
     if (strpos($n, 'ডায়বেটিক') !== false || strpos($n, 'diabetic') !== false) return ['type' => 'emoji', 'val' => '🥗', 'bg' => 'bg-emerald-50 text-emerald-700'];
     if (strpos($n, 'সস') !== false || strpos($n, 'আচার') !== false || strpos($n, 'pickle') !== false || strpos($n, 'sauce') !== false) return ['type' => 'emoji', 'val' => '🫙', 'bg' => 'bg-red-50 text-red-700'];
-    return ['type' => 'emoji', 'val' => '🛒', 'bg' => 'bg-emerald-50 text-emerald-600'];
+    return ['type' => 'image', 'val' => (!empty($base) ? rtrim($base, '/') : '') . '/images/default-category.svg', 'bg' => 'bg-white border border-gray-100'];
 }
 }
 
@@ -125,7 +122,7 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                     <a href="<?= $base ?>/category?id=<?= $cat['id'] ?>" 
                        class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl <?= $vis['type'] === 'image' ? 'bg-white border border-gray-100 p-1.5' : $vis['bg'] ?> flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 transition-transform duration-300 overflow-hidden">
                         <?php if ($vis['type'] === 'image'): ?>
-                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($cat['name']) ?>" class="w-full h-full object-contain" onerror="this.parentElement.innerHTML='🛒'">
+                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($cat['name']) ?>" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                         <?php else: ?>
                             <span class="text-3xl sm:text-4xl select-none"><?= $vis['val'] ?></span>
                         <?php endif; ?>

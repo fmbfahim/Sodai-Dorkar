@@ -84,11 +84,7 @@ if (!function_exists('getCategoryVisual')) {
 function getCategoryVisual($cat, $base = '') {
     $img = $cat['image_path'] ?? '';
     if (!empty($img) && $img !== 'none') {
-        if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
-            return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
-        }
-        $clean = preg_replace('#^/?(sodai-dorkar/public/|public/)#', '', ltrim($img, '/'));
-        $finalUrl = !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
+        $finalUrl = \Models\Category::getImageUrl($img, $base);
         return ['type' => 'image', 'val' => $finalUrl, 'bg' => 'bg-white border border-gray-100'];
     }
     
@@ -191,7 +187,7 @@ function getCategoryVisual($cat, $base = '') {
         }
     }
     
-    $defaultImg = (!empty($base) ? rtrim($base, '/') : '') . '/uploads/categories/1768677504_cooking.webp';
+    $defaultImg = (!empty($base) ? rtrim($base, '/') : '') . '/images/default-category.svg';
     return ['type' => 'image', 'val' => $defaultImg, 'bg' => 'bg-white border border-gray-100'];
 }
 }
@@ -272,8 +268,8 @@ if (empty($bannerSubtitle)) {
              LEFT VERTICAL CATEGORY RAIL ("All Category")
              Sticky vertical rail matching wireframe
              ============================================== -->
-        <aside class="w-16 sm:w-20 md:w-24 lg:w-28 flex-shrink-0 sticky top-16 md:top-20 z-20 self-start">
-            <div class="bg-[#dcfce7]/75 sm:bg-[#dcfce7]/90 border border-emerald-200/80 rounded-2xl sm:rounded-3xl p-1 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
+        <aside class="w-20 sm:w-24 md:w-26 lg:w-28 flex-shrink-0 sticky top-16 md:top-20 z-20 self-start">
+            <div class="bg-[#dcfce7]/75 sm:bg-[#dcfce7]/90 border border-emerald-200/80 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
                 
                 <!-- Rail Header: "All Category" -->
                 <div class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none">
@@ -281,7 +277,7 @@ if (empty($bannerSubtitle)) {
                 </div>
 
                 <!-- Vertical Category List with Circular Badges -->
-                <div class="flex flex-col items-center gap-2.5 sm:gap-3.5 w-full py-1">
+                <div class="flex flex-col items-center gap-3 sm:gap-4 w-full py-1">
                     <?php foreach ($railCategories as $rc): ?>
                         <?php
                             $isRcActive = false;
@@ -307,22 +303,26 @@ if (empty($bannerSubtitle)) {
                            class="flex flex-col items-center group text-center w-full transition-transform active:scale-95 cursor-pointer"
                            title="<?= htmlspecialchars($rc['name']) ?>">
                             
-                            <!-- Circular Badge (Green circle matching wireframe) -->
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xs relative overflow-hidden <?= $isRcActive ? 'bg-emerald-700 text-white ring-3 ring-emerald-500 ring-offset-2 scale-105 shadow-md' : 'bg-emerald-700/90 sm:bg-emerald-700 text-white hover:bg-emerald-800 hover:scale-105' ?>">
+                            <!-- Circular Badge (White background so category images appear large and crisp) -->
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full flex items-center justify-center transition-all duration-200 shadow-xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/25 scale-105 shadow-md' : 'border-emerald-200 hover:border-emerald-500 hover:shadow-xs hover:scale-105' ?>">
                                 <?php if ($vis['type'] === 'image'): ?>
-                                    <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($rc['name']) ?>" class="w-full h-full object-contain p-1 sm:p-1.5 transition-transform duration-200 group-hover:scale-110" loading="lazy">
+                                    <img src="<?= htmlspecialchars($vis['val']) ?>" 
+                                         alt="<?= htmlspecialchars($rc['name']) ?>" 
+                                         class="w-full h-full object-contain p-1.5 sm:p-2 transition-transform duration-200 group-hover:scale-110" 
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                                 <?php else: ?>
-                                    <span class="text-base sm:text-xl md:text-2xl select-none leading-none"><?= $vis['val'] ?></span>
+                                    <span class="text-2xl sm:text-3xl md:text-3xl select-none leading-none"><?= $vis['val'] ?></span>
                                 <?php endif; ?>
                             </div>
 
                             <!-- Underline Bar / Bengali Category Label (as in Desktop-1 and iPhone 17-1 wireframes) -->
-                            <div class="w-full mt-1 px-0.5 flex flex-col items-center">
-                                <span class="text-[8px] sm:text-[10px] md:text-[11px] font-bold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-emerald-900/90 group-hover:text-emerald-950' ?>">
+                            <div class="w-full mt-1.5 px-0.5 flex flex-col items-center">
+                                <span class="text-[9px] sm:text-[11px] md:text-xs font-bold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-emerald-900/90 group-hover:text-emerald-950' ?>">
                                     <?= htmlspecialchars($rc['name']) ?>
                                 </span>
                                 <!-- Green horizontal bar indicator beneath each circle -->
-                                <div class="w-5 sm:w-7 h-1 rounded-full mt-0.5 transition-all <?= $isRcActive ? 'bg-emerald-700 h-1.5' : 'bg-emerald-600/70 group-hover:bg-emerald-700' ?>"></div>
+                                <div class="w-5 sm:w-7 h-1 rounded-full mt-1 transition-all <?= $isRcActive ? 'bg-emerald-700 h-1.5' : 'bg-emerald-600/60 group-hover:bg-emerald-700' ?>"></div>
                             </div>
                         </a>
                     <?php endforeach; ?>
@@ -409,7 +409,7 @@ if (empty($bannerSubtitle)) {
                     ?>
                     <a href="<?= $allPillUrl ?>" 
                        class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 <?= $isAllActive ? 'bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
-                        <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
                             <span class="text-xs sm:text-sm leading-none select-none">🛒</span>
                         </div>
                         <span class="whitespace-nowrap">সবগুলো</span>
@@ -433,12 +433,13 @@ if (empty($bannerSubtitle)) {
                            class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm transition-all flex items-center gap-2 <?= $isScActive ? 'bg-emerald-800 text-white font-bold shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
                             
                             <!-- Subcategory Visual Image / Icon Container -->
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-2xs shrink-0 <?= $isScActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-2xs shrink-0 <?= $isScActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
                                 <?php if ($scVis['type'] === 'image'): ?>
                                     <img src="<?= htmlspecialchars($scVis['val']) ?>" 
                                          alt="<?= htmlspecialchars($sc['name']) ?>" 
                                          class="w-full h-full object-contain p-0.5" 
-                                         loading="lazy">
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                                 <?php else: ?>
                                     <span class="text-xs sm:text-sm leading-none select-none"><?= $scVis['val'] ?></span>
                                 <?php endif; ?>

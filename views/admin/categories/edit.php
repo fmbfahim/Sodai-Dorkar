@@ -1,3 +1,6 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="max-w-2xl mx-auto">
     <div class="bg-white rounded-2xl shadow-xs border border-secondary-200 p-6 sm:p-8">
         <div class="flex items-center justify-between mb-6 border-b border-secondary-100 pb-4">
@@ -8,12 +11,12 @@
                 </h3>
                 <p class="text-xs text-secondary-500 mt-0.5">ক্যাটাগরির বাংলা নাম, ইংরেজি স্ল্যাগ ও ছবি আপডেট করুন।</p>
             </div>
-            <a href="/sodai-dorkar/public/admin/categories" class="p-2 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-500 hover:text-secondary-800 transition-colors">
+            <a href="<?= $base ?>/admin/categories" class="p-2 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-500 hover:text-secondary-800 transition-colors">
                 <ion-icon name="close-outline" class="text-xl"></ion-icon>
             </a>
         </div>
         
-        <form action="/sodai-dorkar/public/admin/categories/update" method="POST" enctype="multipart/form-data" class="space-y-5">
+        <form action="<?= $base ?>/admin/categories/update" method="POST" enctype="multipart/form-data" class="space-y-5">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="id" value="<?= $category['id'] ?>">
             <input type="hidden" id="selected_image_url" name="selected_image_url" value="">
@@ -67,15 +70,12 @@
                 </div>
 
                 <div class="flex items-center gap-4 mb-3">
-                    <?php if (!empty($category['image_path'])): ?>
-                        <div class="w-16 h-16 rounded-xl bg-white border border-secondary-200 overflow-hidden flex-shrink-0 shadow-2xs">
-                            <img src="<?= htmlspecialchars($category['image_path']) ?>" alt="Current Image" class="w-full h-full object-cover">
-                        </div>
-                    <?php else: ?>
-                        <div class="w-16 h-16 rounded-xl bg-secondary-100 flex items-center justify-center text-secondary-400 flex-shrink-0">
-                            <ion-icon name="image-outline" class="text-2xl"></ion-icon>
-                        </div>
-                    <?php endif; ?>
+                    <div class="w-16 h-16 rounded-xl bg-white border border-secondary-200 overflow-hidden flex-shrink-0 shadow-2xs p-1">
+                        <img src="<?= \Models\Category::getImageUrl($category['image_path'] ?? '', $base) ?>" 
+                             alt="Current Image" 
+                             class="w-full h-full object-contain"
+                             onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
+                    </div>
 
                     <div class="flex-1">
                         <input type="file" 
@@ -83,7 +83,15 @@
                                name="image" 
                                accept="image/*" 
                                class="w-full text-xs text-secondary-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-secondary-200 rounded-xl p-1 bg-secondary-50/50">
-                        <div class="text-[10px] text-secondary-400 mt-1">নতুন ছবি আপলোড করতে ব্রাউজ করুন অথবা উপরের 'অনলাইনে ছবি খুঁজুন' চাপুন।</div>
+                        <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1">
+                            <span class="text-[10px] text-secondary-400">নতুন ছবি আপলোড করতে ব্রাউজ করুন অথবা উপরের 'অনলাইনে ছবি খুঁজুন' চাপুন।</span>
+                            <?php if (!empty($category['image_path'])): ?>
+                                <label class="inline-flex items-center gap-1.5 text-[11px] text-rose-600 font-bold cursor-pointer">
+                                    <input type="checkbox" name="remove_image" value="1" class="rounded text-rose-600 focus:ring-rose-500 border-secondary-300">
+                                    <span>ছবি মুছুন (Remove)</span>
+                                </label>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -145,7 +153,7 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <a href="/sodai-dorkar/public/admin/categories" class="px-5 py-2.5 border border-secondary-300 rounded-xl text-secondary-600 font-bold text-xs hover:bg-secondary-50 transition-colors">
+                <a href="<?= $base ?>/admin/categories" class="px-5 py-2.5 border border-secondary-300 rounded-xl text-secondary-600 font-bold text-xs hover:bg-secondary-50 transition-colors">
                     বাতিল
                 </a>
                 <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
@@ -158,7 +166,7 @@
 </div>
 
 <script>
-const BASE_URI = '/sodai-dorkar/public';
+const BASE_URI = '<?= $base ?>';
 
 async function triggerAutoImageCandidates() {
     const nameVal = document.getElementById('name').value.trim();

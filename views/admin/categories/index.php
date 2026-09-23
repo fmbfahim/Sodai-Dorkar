@@ -1,5 +1,6 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?? '');
 ?>
 
@@ -19,11 +20,11 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
         </div>
 
         <div class="flex items-center gap-2.5">
-            <a href="/sodai-dorkar/public/admin/products/shwapno" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+            <a href="<?= $base ?>/admin/products/shwapno" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
                 <ion-icon name="cloud-download-outline" class="text-sm"></ion-icon>
                 <span>Shwapno পণ্য স্ক্র্যাপার</span>
             </a>
-            <a href="/sodai-dorkar/public/admin/products" class="px-4 py-2 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-all flex items-center gap-1.5">
+            <a href="<?= $base ?>/admin/products" class="px-4 py-2 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 text-xs font-bold transition-all flex items-center gap-1.5">
                 <ion-icon name="cube-outline" class="text-sm"></ion-icon>
                 <span>পণ্য তালিকা</span>
             </a>
@@ -58,7 +59,7 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
                     </span>
                 </div>
 
-                <form action="/sodai-dorkar/public/admin/categories/store" method="POST" enctype="multipart/form-data" id="addCategoryForm" class="space-y-4">
+                <form action="<?= $base ?>/admin/categories/store" method="POST" enctype="multipart/form-data" id="addCategoryForm" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                     <input type="hidden" id="selected_image_url" name="selected_image_url" value="">
 
@@ -315,21 +316,25 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
 
                                         <!-- Image Column with 1-Click Auto Image if missing -->
                                         <td class="px-4 py-3 text-center" id="cat-img-td-<?= $cat['id'] ?>">
-                                            <?php if ($hasImg): ?>
-                                                <div class="w-10 h-10 rounded-xl bg-white border border-secondary-200 overflow-hidden mx-auto shadow-2xs flex items-center justify-center">
-                                                    <img src="<?= htmlspecialchars($cat['image_path']) ?>" 
+                                            <?php 
+                                                $catImgUrl = \Models\Category::getImageUrl($cat['image_path'] ?? '', $base);
+                                            ?>
+                                            <div class="inline-flex items-center justify-center gap-1.5">
+                                                <div class="w-10 h-10 rounded-xl bg-white border border-secondary-200 overflow-hidden shadow-2xs flex items-center justify-center p-0.5 shrink-0">
+                                                    <img src="<?= $catImgUrl ?>" 
                                                          alt="<?= htmlspecialchars($cat['name']) ?>" 
-                                                         class="w-full h-full object-cover">
+                                                         class="w-full h-full object-contain"
+                                                         onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                                                 </div>
-                                            <?php else: ?>
-                                                <button type="button" 
-                                                        onclick="oneClickAutoImage(<?= $cat['id'] ?>, '<?= addslashes($cat['name']) ?>')" 
-                                                        class="w-10 h-10 rounded-xl bg-amber-50 hover:bg-emerald-100 text-amber-700 hover:text-emerald-700 border border-amber-200 hover:border-emerald-300 flex flex-col items-center justify-center mx-auto transition-all shadow-2xs group cursor-pointer"
-                                                        title="১-ক্লিকে অটো ছবি যুক্ত করুন">
-                                                    <ion-icon name="sparkles" class="text-sm group-hover:scale-110 transition-transform"></ion-icon>
-                                                    <span class="text-[8px] font-bold mt-0.5">+ছবি</span>
-                                                </button>
-                                            <?php endif; ?>
+                                                <?php if (!$hasImg): ?>
+                                                    <button type="button" 
+                                                            onclick="oneClickAutoImage(<?= $cat['id'] ?>, '<?= addslashes($cat['name']) ?>')" 
+                                                            class="p-1 rounded-lg bg-amber-50 hover:bg-emerald-100 text-amber-700 hover:text-emerald-700 border border-amber-200 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
+                                                            title="১-ক্লিকে অটো ছবি যুক্ত করুন">
+                                                        <ion-icon name="sparkles" class="text-xs"></ion-icon>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
 
                                         <!-- Name & Slug Column -->
@@ -426,7 +431,7 @@ $selected_parent = $_GET['parent_id'] ?? ($_SESSION['last_category_parent_id'] ?
 <!-- ============================================================ -->
 <script>
 const CSRF_TOKEN = '<?= \Core\CSRF::token() ?>';
-const BASE_URI = '/sodai-dorkar/public';
+const BASE_URI = '<?= $base ?>';
 
 // ==========================================
 // 1. PARENT CATEGORY PERSISTENCE LOGIC
@@ -634,8 +639,8 @@ async function oneClickAutoImage(catId, catName) {
         const data = await res.json();
         if (data.success && data.image_path) {
             td.innerHTML = `
-                <div class="w-10 h-10 rounded-xl bg-white border border-secondary-200 overflow-hidden mx-auto shadow-2xs flex items-center justify-center animate-fade-in">
-                    <img src="${data.image_path}" alt="${catName}" class="w-full h-full object-cover">
+                <div class="w-10 h-10 rounded-xl bg-white border border-secondary-200 overflow-hidden mx-auto shadow-2xs flex items-center justify-center animate-fade-in p-0.5">
+                    <img src="${data.image_path}" alt="${catName}" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                 </div>
             `;
             // Update row dataset

@@ -103,4 +103,20 @@ class Category {
         // For now, constraint set nulls, so safe to delete.
         $this->db->query("DELETE FROM categories WHERE id = :id", ['id' => $id]);
     }
+
+    public static function getImageUrl($imagePath, $base = null) {
+        if ($base === null) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        }
+        $img = trim($imagePath ?? '');
+        if (empty($img)) {
+            return !empty($base) ? rtrim($base, '/') . '/images/default-category.svg' : '/images/default-category.svg';
+        }
+        if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+            return $img;
+        }
+        $clean = preg_replace('#^/?(sodai-dorkar/public/|public/)#', '', ltrim($img, '/'));
+        return !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
+    }
 }
+

@@ -94,13 +94,11 @@ function getProductUnits($product) {
 
 // Category visual helper
 if (!function_exists('getCategoryVisual')) {
-function getCategoryVisual($cat) {
-    if (!empty($cat['image_path'])) {
-        $img = $cat['image_path'];
-        if (strpos($img, 'http') !== 0 && strpos($img, '/sodai-dorkar') !== 0) {
-            $img = '/sodai-dorkar/' . ltrim($img, '/');
-        }
-        return ['type' => 'image', 'val' => $img, 'bg' => 'bg-white border border-gray-100'];
+function getCategoryVisual($cat, $base = '') {
+    $img = $cat['image_path'] ?? '';
+    if (!empty($img) && $img !== 'none') {
+        $finalUrl = \Models\Category::getImageUrl($img, $base);
+        return ['type' => 'image', 'val' => $finalUrl, 'bg' => 'bg-white border border-gray-100'];
     }
     $n = mb_strtolower($cat['name'] ?? '');
     
@@ -158,13 +156,13 @@ function getCategoryVisual($cat) {
     if (strpos($n, 'হিমায়িত') !== false || strpos($n, 'টিনজাত') !== false || strpos($n, 'frozen') !== false || strpos($n, 'canned') !== false) return ['type' => 'emoji', 'val' => '🥫', 'bg' => 'bg-blue-50 text-blue-600'];
     if (strpos($n, 'ডায়বেটিক') !== false || strpos($n, 'diabetic') !== false) return ['type' => 'emoji', 'val' => '🥗', 'bg' => 'bg-emerald-50 text-emerald-700'];
     if (strpos($n, 'সস') !== false || strpos($n, 'আচার') !== false || strpos($n, 'pickle') !== false || strpos($n, 'sauce') !== false) return ['type' => 'emoji', 'val' => '🫙', 'bg' => 'bg-red-50 text-red-700'];
-    return ['type' => 'emoji', 'val' => '🛒', 'bg' => 'bg-emerald-50 text-emerald-600'];
+    return ['type' => 'image', 'val' => (!empty($base) ? rtrim($base, '/') : '') . '/images/default-category.svg', 'bg' => 'bg-white border border-gray-100'];
 }
 }
 
 // Active displayed category title
 $displayCategoryTitle = $activeSubCategory ? $activeSubCategory['name'] : ($parentCategory ? $parentCategory['name'] : $currentCategory['name']);
-$bannerBg = !empty($currentCategory['image_path']) ? $currentCategory['image_path'] : '/sodai-dorkar/public/images/fresh_veggies_banner.jpg';
+$bannerBg = !empty($currentCategory['image_path']) ? \Models\Category::getImageUrl($currentCategory['image_path'], $base) : $base . '/images/fresh_veggies_banner.jpg';
 
 // Calculate active filter count
 $activeFilterCount = 0;
@@ -291,15 +289,15 @@ if (!empty($search)) $activeFilterCount++;
             <!-- Subcategory Item Cards -->
             <?php foreach ($subCategories as $sub): ?>
                 <?php 
-                    $vis = getCategoryVisual($sub);
+                    $vis = getCategoryVisual($sub, $base);
                     $isActiveSub = ($activeSubId == $sub['id']);
                 ?>
-                <a href="/sodai-dorkar/public/category?id=<?= $parentCategory['id'] ?? $currentCategory['id'] ?>&sub=<?= $sub['id'] ?>"
+                <a href="<?= $base ?>/category?id=<?= $parentCategory['id'] ?? $currentCategory['id'] ?>&sub=<?= $sub['id'] ?>"
                    class="flex-shrink-0 w-36 sm:w-40 md:w-44 bg-white rounded-2xl border p-3 sm:p-4 flex flex-col items-center justify-between text-center transition-all duration-200 group hover:-translate-y-1 hover:shadow-lg <?= $isActiveSub ? 'border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/50 shadow-md font-bold' : 'border-gray-200/80 hover:border-emerald-300' ?>">
                     
                     <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center mb-3 overflow-hidden shadow-2xs group-hover:scale-105 transition-all duration-300 <?= $vis['type'] === 'image' ? 'bg-gray-50 border border-gray-100 p-2' : $vis['bg'] ?>">
                         <?php if ($vis['type'] === 'image'): ?>
-                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($sub['name']) ?>" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-xs" onerror="this.parentElement.innerHTML='🛒'">
+                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($sub['name']) ?>" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-xs" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                         <?php else: ?>
                             <span class="text-4xl sm:text-5xl select-none leading-none filter drop-shadow-sm transition-transform duration-300 group-hover:scale-110"><?= $vis['val'] ?></span>
                         <?php endif; ?>
