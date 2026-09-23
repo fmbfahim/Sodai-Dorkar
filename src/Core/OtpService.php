@@ -24,6 +24,7 @@ class OtpService
     {
         $config   = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        (new \Models\Customer())->ensureSchema();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -36,10 +37,14 @@ class OtpService
         $expiry = date('Y-m-d H:i:s', time() + self::EXPIRY_MINS * 60);
 
         // Persist to DB (keyed by phone)
-        $this->db->query(
-            "UPDATE customers SET otp_code = ?, otp_expiry = ?, otp_verified = 0 WHERE phone = ?",
-            [$code, $expiry, $phone]
-        );
+        try {
+            $this->db->query(
+                "UPDATE customers SET otp_code = ?, otp_expiry = ?, otp_verified = 0 WHERE phone = ?",
+                [$code, $expiry, $phone]
+            );
+        } catch (\Throwable $e) {
+            // DB column may not exist; session fallback below is sufficient
+        }
 
         // Also store in session for fallback
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -111,10 +116,14 @@ class OtpService
         }
 
         // Mark as verified in DB
-        $this->db->query(
-            "UPDATE customers SET otp_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE phone = ?",
-            [$phone]
-        );
+        try {
+            $this->db->query(
+                "UPDATE customers SET otp_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE phone = ?",
+                [$phone]
+            );
+        } catch (\Throwable $e) {
+            // DB column may not exist; verified in session
+        }
 
         return true;
     }

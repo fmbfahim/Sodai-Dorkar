@@ -22,6 +22,7 @@ class FirebaseAuthController
     {
         $config   = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        (new \Models\Customer())->ensureSchema();
     }
 
     private function base(): string
@@ -159,11 +160,57 @@ class FirebaseAuthController
 
         if ($pointId === 'other') $pointId = null;
 
-        $this->db->query(
-            "INSERT INTO customers (unique_code, name, phone, email, password, area_id, zone_id, point_id, address_details, otp_verified)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
-            [$uniqueCode, $name, $phone, $email, $hashedPassword, $areaId, $zoneId, $pointId, $address]
-        );
+        (new \Models\Customer())->ensureSchema();
+
+        try {
+            $colsStmt = $this->db->query("SHOW COLUMNS FROM customers");
+            $cols = $colsStmt ? $colsStmt->fetchAll(\PDO::FETCH_COLUMN) : [];
+        } catch (\Throwable $e) {
+            $cols = [];
+        }
+
+        $fields = ['unique_code', 'name', 'phone'];
+        $placeholders = ['?', '?', '?'];
+        $values = [$uniqueCode, $name, $phone];
+
+        if (empty($cols) || in_array('email', $cols)) {
+            $fields[] = 'email';
+            $placeholders[] = '?';
+            $values[] = $email ?: null;
+        }
+        if (empty($cols) || in_array('password', $cols)) {
+            $fields[] = 'password';
+            $placeholders[] = '?';
+            $values[] = $hashedPassword;
+        }
+        if (empty($cols) || in_array('area_id', $cols)) {
+            $fields[] = 'area_id';
+            $placeholders[] = '?';
+            $values[] = $areaId;
+        }
+        if (empty($cols) || in_array('zone_id', $cols)) {
+            $fields[] = 'zone_id';
+            $placeholders[] = '?';
+            $values[] = $zoneId;
+        }
+        if (empty($cols) || in_array('point_id', $cols)) {
+            $fields[] = 'point_id';
+            $placeholders[] = '?';
+            $values[] = $pointId;
+        }
+        if (empty($cols) || in_array('address_details', $cols)) {
+            $fields[] = 'address_details';
+            $placeholders[] = '?';
+            $values[] = $address;
+        }
+        if (!empty($cols) && in_array('otp_verified', $cols)) {
+            $fields[] = 'otp_verified';
+            $placeholders[] = '?';
+            $values[] = 1;
+        }
+
+        $sql = "INSERT INTO customers (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
+        $this->db->query($sql, $values);
 
         $customerId = $this->db->getConnection()->lastInsertId();
 

@@ -10,6 +10,44 @@ class Customer {
     public function __construct() {
         $config = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        $this->ensureSchema();
+    }
+
+    /**
+     * Automatically ensure all required columns exist in customers table
+     */
+    public function ensureSchema() {
+        static $ensured = false;
+        if ($ensured) return;
+        $ensured = true;
+
+        try {
+            $stmt = $this->db->query("SHOW COLUMNS FROM customers");
+            $existingCols = $stmt ? $stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
+
+            $columnsToAdd = [
+                'email'            => "ALTER TABLE customers ADD COLUMN email VARCHAR(191) NULL AFTER phone",
+                'password'         => "ALTER TABLE customers ADD COLUMN password VARCHAR(255) NULL AFTER email",
+                'otp_code'         => "ALTER TABLE customers ADD COLUMN otp_code VARCHAR(10) NULL AFTER address_details",
+                'otp_expiry'       => "ALTER TABLE customers ADD COLUMN otp_expiry DATETIME NULL AFTER otp_code",
+                'otp_verified'     => "ALTER TABLE customers ADD COLUMN otp_verified TINYINT(1) DEFAULT 0 AFTER otp_expiry",
+                'reset_code'       => "ALTER TABLE customers ADD COLUMN reset_code VARCHAR(50) NULL AFTER otp_verified",
+                'status'           => "ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'active' AFTER reset_code",
+            ];
+
+            foreach ($columnsToAdd as $col => $alterSql) {
+                if (!in_array($col, $existingCols)) {
+                    try {
+                        $this->db->query($alterSql);
+                        $existingCols[] = $col;
+                    } catch (\Throwable $e) {
+                        // ignore if already added or restricted
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore if table doesn't exist yet
+        }
     }
 
     public function all($filters = []) {
