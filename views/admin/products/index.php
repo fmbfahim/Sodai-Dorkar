@@ -247,75 +247,84 @@ usort($categoriesWithPaths, function($a, $b) {
 
         <!-- Search & Filter Toolbar -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-100 p-4 mb-5">
-            <form method="GET" action="<?= $base ?>/admin/products" id="productFilterForm" class="flex flex-col lg:flex-row items-center gap-3">
-                <!-- Search Input -->
-                <div class="relative flex-1 w-full">
-                    <ion-icon name="search-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
-                    <input type="text" 
-                           name="search" 
-                           id="productSearchInput" 
-                           value="<?= htmlspecialchars($filters['search'] ?? '') ?>" 
-                           placeholder="পণ্য, SKU বা ভেন্ডর দিয়ে খুঁজুন (Search by name, SKU, vendor)..." 
-                           class="w-full pl-10 pr-4 py-2.5 border border-secondary-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 bg-secondary-50/50 focus:bg-white transition-colors">
-                </div>
+            <form method="GET" action="<?= $base ?>/admin/products" id="productFilterForm" class="space-y-3">
+                <!-- Top Row: Search Input + Submit + Reset -->
+                <div class="flex flex-col sm:flex-row items-center gap-2.5">
+                    <!-- Search Input Box -->
+                    <div class="relative flex-1 w-full">
+                        <ion-icon name="search-outline" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary-400 text-base"></ion-icon>
+                        <input type="text" 
+                               name="search" 
+                               id="productSearchInput" 
+                               value="<?= htmlspecialchars($filters['search'] ?? '') ?>" 
+                               placeholder="পণ্য, SKU বা ভেন্ডর দিয়ে খুঁজুন (Search by name, SKU, vendor)..." 
+                               class="w-full pl-10 pr-4 py-2.5 border border-secondary-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 bg-secondary-50/50 focus:bg-white transition-colors">
+                    </div>
 
-                <!-- Category Filter -->
-                <div class="w-full lg:w-48">
-                    <select name="category_id" id="categoryFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
-                        <option value="">সব ক্যাটাগরি</option>
-                        <?php foreach ($categoriesWithPaths as $cat): ?>
-                            <option value="<?= $cat['id'] ?>" <?= (!empty($filters['category_id']) && $filters['category_id'] == $cat['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($cat['path']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <!-- Vendor Filter -->
-                <div class="w-full lg:w-40">
-                    <select name="vendor_id" id="vendorFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
-                        <option value="">সব ভেন্ডর</option>
-                        <option value="none" <?= (isset($filters['vendor_id']) && $filters['vendor_id'] === 'none') ? 'selected' : '' ?>>ভেন্ডর ছাড়া</option>
-                        <?php foreach ($vendors as $v): ?>
-                            <option value="<?= $v['id'] ?>" <?= (!empty($filters['vendor_id']) && $filters['vendor_id'] == $v['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($v['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <!-- Stock Status Filter -->
-                <div class="w-full lg:w-36">
-                    <select name="stock_status" id="stockStatusFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
-                        <option value="">সকল স্টক</option>
-                        <option value="in_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'in_stock') ? 'selected' : '' ?>>স্টক আছে (&ge;10)</option>
-                        <option value="low_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'low_stock') ? 'selected' : '' ?>>কম স্টক (&lt;10)</option>
-                        <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (&le;0)</option>
-                    </select>
-                </div>
-
-                <!-- Availability Status Filter -->
-                <div class="w-full lg:w-36">
-                    <select name="availability_status" id="availabilityStatusFilter" onchange="this.form.submit()" class="w-full px-3 py-2.5 border border-secondary-200 rounded-xl text-xs bg-secondary-50/50 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium">
-                        <option value="">সকল প্রাপ্যতা</option>
-                        <option value="in_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'in_stock') ? 'selected' : '' ?>>🟢 ইন স্টক</option>
-                        <option value="out_of_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'out_of_stock') ? 'selected' : '' ?>>🔴 স্টক শেষ</option>
-                        <option value="pending" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'pending') ? 'selected' : '' ?>>⏳ পেন্ডিং</option>
-                    </select>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2 w-full lg:w-auto shrink-0">
-                    <button type="submit" class="w-full lg:w-auto px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
-                        <ion-icon name="funnel-outline" class="text-sm"></ion-icon>
-                        ফিল্টার
+                    <!-- Search Button -->
+                    <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+                        <ion-icon name="search-outline" class="text-sm"></ion-icon>
+                        <span>সার্চ করুন</span>
                     </button>
+
                     <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['vendor_id']) || !empty($filters['stock_status']) || !empty($filters['availability_status']) || (!empty($filters['is_verified']) && $filters['is_verified'] !== '')): ?>
-                        <a href="<?= $base ?>/admin/products" class="w-full lg:w-auto px-3.5 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer" title="ফিল্টার রিসেট করুন">
+                        <a href="<?= $base ?>/admin/products" class="w-full sm:w-auto px-4 py-2.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shrink-0 cursor-pointer" title="ফিল্টার রিসেট করুন">
                             <ion-icon name="close-circle-outline" class="text-sm"></ion-icon>
-                            রিসেট
+                            <span>রিসেট</span>
                         </a>
                     <?php endif; ?>
+                </div>
+
+                <!-- Bottom Row: 4 Filter Dropdowns in a Responsive Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2.5 border-t border-secondary-100/80">
+                    <!-- Category Filter -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-secondary-500 uppercase tracking-wider mb-1">ক্যাটাগরি</label>
+                        <select name="category_id" id="categoryFilter" onchange="this.form.submit()" class="w-full px-2.5 py-2 border border-secondary-200 rounded-xl text-xs bg-secondary-50/60 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium truncate">
+                            <option value="">সব ক্যাটাগরি</option>
+                            <?php foreach ($categoriesWithPaths as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" <?= (!empty($filters['category_id']) && $filters['category_id'] == $cat['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($cat['path']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Vendor Filter -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-secondary-500 uppercase tracking-wider mb-1">ভেন্ডর</label>
+                        <select name="vendor_id" id="vendorFilter" onchange="this.form.submit()" class="w-full px-2.5 py-2 border border-secondary-200 rounded-xl text-xs bg-secondary-50/60 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium truncate">
+                            <option value="">সব ভেন্ডর</option>
+                            <option value="none" <?= (isset($filters['vendor_id']) && $filters['vendor_id'] === 'none') ? 'selected' : '' ?>>ভেন্ডর ছাড়া</option>
+                            <?php foreach ($vendors as $v): ?>
+                                <option value="<?= $v['id'] ?>" <?= (!empty($filters['vendor_id']) && $filters['vendor_id'] == $v['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($v['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Stock Status Filter -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-secondary-500 uppercase tracking-wider mb-1">স্টক ফিল্টার</label>
+                        <select name="stock_status" id="stockStatusFilter" onchange="this.form.submit()" class="w-full px-2.5 py-2 border border-secondary-200 rounded-xl text-xs bg-secondary-50/60 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium truncate">
+                            <option value="">সকল স্টক</option>
+                            <option value="in_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'in_stock') ? 'selected' : '' ?>>স্টক আছে (&ge;10)</option>
+                            <option value="low_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'low_stock') ? 'selected' : '' ?>>কম স্টক (&lt;10)</option>
+                            <option value="out_of_stock" <?= (!empty($filters['stock_status']) && $filters['stock_status'] === 'out_of_stock') ? 'selected' : '' ?>>স্টক শেষ (&le;0)</option>
+                        </select>
+                    </div>
+
+                    <!-- Availability Status Filter -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-secondary-500 uppercase tracking-wider mb-1">প্রাপ্যতা</label>
+                        <select name="availability_status" id="availabilityStatusFilter" onchange="this.form.submit()" class="w-full px-2.5 py-2 border border-secondary-200 rounded-xl text-xs bg-secondary-50/60 focus:bg-white focus:ring-2 focus:ring-primary-500 font-medium truncate">
+                            <option value="">সকল প্রাপ্যতা</option>
+                            <option value="in_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'in_stock') ? 'selected' : '' ?>>🟢 ইন স্টক</option>
+                            <option value="out_of_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'out_of_stock') ? 'selected' : '' ?>>🔴 স্টক শেষ</option>
+                            <option value="pending" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'pending') ? 'selected' : '' ?>>⏳ পেন্ডিং</option>
+                        </select>
+                    </div>
                 </div>
             </form>
 
