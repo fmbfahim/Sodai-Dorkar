@@ -199,13 +199,18 @@
         cursor: pointer;
         user-select: none;
         flex-shrink: 0;
+        width: 48px;
+        height: 26px;
     }
     .custom-toggle input[type="checkbox"] {
         position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         opacity: 0;
-        width: 0;
-        height: 0;
-        pointer-events: none;
+        cursor: pointer;
+        z-index: 10;
+        margin: 0;
     }
     .custom-toggle .toggle-track {
         position: relative;
@@ -216,6 +221,7 @@
         border-radius: 9999px;
         transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+        pointer-events: none;
     }
     .custom-toggle .toggle-thumb {
         position: absolute;
@@ -227,20 +233,27 @@
         border-radius: 9999px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
         transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
     }
-    .custom-toggle input[type="checkbox"]:checked + .toggle-track {
-        background-color: #059669;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 1px #047857;
-    }
-    .custom-toggle input[type="checkbox"]:checked + .toggle-track .toggle-thumb {
-        transform: translateX(22px);
-    }
-    .custom-toggle .toggle-track.is-checked {
+    /* When checked: green background and slide right */
+    .custom-toggle input[type="checkbox"]:checked + .toggle-track,
+    .custom-toggle input[type="checkbox"]:checked ~ .toggle-track {
         background-color: #059669 !important;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 1px #047857 !important;
     }
-    .custom-toggle .toggle-track.is-checked .toggle-thumb {
+    .custom-toggle input[type="checkbox"]:checked + .toggle-track .toggle-thumb,
+    .custom-toggle input[type="checkbox"]:checked ~ .toggle-track .toggle-thumb {
         transform: translateX(22px) !important;
+    }
+    /* When unchecked: gray background and slide left (guaranteed override) */
+    .custom-toggle input[type="checkbox"]:not(:checked) + .toggle-track,
+    .custom-toggle input[type="checkbox"]:not(:checked) ~ .toggle-track {
+        background-color: #cbd5e1 !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+    }
+    .custom-toggle input[type="checkbox"]:not(:checked) + .toggle-track .toggle-thumb,
+    .custom-toggle input[type="checkbox"]:not(:checked) ~ .toggle-track .toggle-thumb {
+        transform: translateX(0) !important;
     }
     .custom-toggle:hover .toggle-track {
         filter: brightness(0.96);
@@ -2013,9 +2026,28 @@
         }
 
         // Live Toggle Switch Handler
-        const toggleLabels = document.querySelectorAll('.custom-toggle');
-        toggleLabels.forEach(label => {
-            const checkbox = label.querySelector('input[type="che    // Dynamic Spend-More Offers Tier Management
+        const toggleCheckboxes = document.querySelectorAll('.custom-toggle input[type="checkbox"]');
+        toggleCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const track = this.closest('.custom-toggle')?.querySelector('.toggle-track');
+                if (track) {
+                    track.classList.toggle('is-checked', this.checked);
+                }
+            });
+        });
+    });
+
+    // Global Document Delegation for Toggle Switches
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.matches('.custom-toggle input[type="checkbox"]')) {
+            const track = e.target.closest('.custom-toggle')?.querySelector('.toggle-track');
+            if (track) {
+                track.classList.toggle('is-checked', e.target.checked);
+            }
+        }
+    });
+
+    // Dynamic Spend-More Offers Tier Management
     function updateTierRewardTypeUI(selectEl) {
         const row = selectEl.closest('.tier-row');
         if (!row) return;
