@@ -1189,8 +1189,8 @@
                 <!-- Bad Weather Surcharge -->
                 <div class="flex items-start justify-between gap-4">
                     <div class="space-y-1">
-                        <label class="font-bold text-xs sm:text-sm text-secondary-800">Bad Weather / Heavy Rain Surcharge</label>
-                        <p class="text-[11px] text-secondary-500">Temporarily adds an emergency hazard fee during typhoons or waterlogging.</p>
+                        <label class="font-bold text-xs sm:text-sm text-secondary-800">Logistics Notice &amp; Weather Surcharge (খারাপ আবহাওয়া / বৃষ্টি নোটিশ)</label>
+                        <p class="text-[11px] text-secondary-500">বৃষ্টি বা দুর্যোগের সময় চেকআউট পেজে নোটিশ প্রদর্শন ও জরুরি ফি (Emergency Hazard Fee) অন/অফ করার সুইচ।</p>
                     </div>
                     <label class="custom-toggle">
                         <input type="checkbox" name="delivery_bad_weather_surcharge_enabled" value="1" 
@@ -1203,16 +1203,17 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                     <div>
-                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Weather Surcharge Fee (৳)</label>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Emergency Weather Fee / অতিরিক্ত ফি (৳)</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-secondary-500 font-bold">৳</span>
                             <input type="number" name="delivery_bad_weather_fee" 
-                                   value="<?= htmlspecialchars($settings['delivery_bad_weather_fee'] ?? '20') ?>" 
+                                    step="0.01"
+                                   value="<?= htmlspecialchars($settings['delivery_bad_weather_fee'] ?? '15') ?>" 
                                    class="w-full pl-9 pr-4 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Customer Alert Notice Text</label>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Logistics Notice Text (নোটিশের লেখা ইডিট করুন)</label>
                         <input type="text" name="delivery_bad_weather_notice" 
                                value="<?= htmlspecialchars($settings['delivery_bad_weather_notice'] ?? 'Due to heavy monsoon rainfall, a small emergency rider hazard surcharge is temporarily applied.') ?>" 
                                class="w-full px-3.5 py-2 text-xs sm:text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
