@@ -651,6 +651,7 @@ usort($categoriesWithPaths, function($a, $b) {
 
             <!-- Action Selectors & Submit -->
             <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+                <input type="hidden" id="bulkActionCsrfToken" value="<?= \Core\CSRF::token() ?>">
                 <!-- Status Dropdown -->
                 <div class="flex items-center gap-1.5">
                     <label class="text-[11px] text-secondary-300 font-bold uppercase hidden sm:inline">স্ট্যাটাস:</label>
@@ -658,6 +659,7 @@ usort($categoriesWithPaths, function($a, $b) {
                         <option value="in_stock">🟢 ইন স্টক (In Stock)</option>
                         <option value="out_of_stock">🔴 স্টক শেষ (Out of Stock)</option>
                         <option value="pending">⏳ পেন্ডিং (Pending)</option>
+                        <option value="archived">📦 আর্কাইভড (Archived)</option>
                     </select>
                 </div>
 
@@ -1709,7 +1711,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const productIds = selectedCbs.map(cb => cb.value);
         const availStatus = document.getElementById('bulkAvailabilitySelect').value;
         const verifyStatus = document.getElementById('bulkVerificationSelect').value;
-        const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+        const csrfInput = document.getElementById('bulkActionCsrfToken') || document.querySelector('input[name="csrf_token"]');
+        const csrfToken = csrfInput ? csrfInput.value : '';
         const btn = document.getElementById('btnSubmitBulkStatus');
         const btnText = document.getElementById('bulkSubmitBtnText');
 
@@ -1748,6 +1751,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 ইন স্টক</span>';
                         } else if (availStatus === 'out_of_stock') {
                             availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">🔴 স্টক শেষ</span>';
+                        } else if (availStatus === 'archived') {
+                            availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-300">📦 আর্কাইভড</span>';
                         } else {
                             availBadgeHtml = '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ পেন্ডিং</span>';
                         }

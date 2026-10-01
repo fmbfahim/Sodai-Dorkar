@@ -1173,14 +1173,15 @@ class ProductController extends Controller {
     }
 
     public function bulkStatusUpdate() {
-        if (!\Core\CSRF::validate($_POST['csrf_token'] ?? '')) {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        if (!\Core\CSRF::verify($_POST['csrf_token'] ?? '')) {
             if ($this->isAjaxRequest()) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'CSRF security token invalid!']);
                 exit;
             }
             $_SESSION['error'] = 'নিরাপত্তা ত্রুটি! আবার চেষ্টা করুন।';
-            header('Location: /sodai-dorkar/public/admin/products');
+            header("Location: {$base}/admin/products");
             exit;
         }
 
@@ -1197,7 +1198,7 @@ class ProductController extends Controller {
                 exit;
             }
             $_SESSION['error'] = 'কোনো পণ্য সিলেক্ট করা হয়নি!';
-            header('Location: /sodai-dorkar/public/admin/products');
+            header("Location: {$base}/admin/products");
             exit;
         }
 
@@ -1207,10 +1208,18 @@ class ProductController extends Controller {
         $updates = [];
         $params = [];
 
-        $validStatuses = ['in_stock', 'out_of_stock', 'pending'];
+        $validStatuses = ['in_stock', 'out_of_stock', 'pending', 'archived'];
         if (in_array($availabilityStatus, $validStatuses)) {
             $updates[] = "availability_status = :avail_status";
             $params['avail_status'] = $availabilityStatus;
+            if ($availabilityStatus === 'archived') {
+                $updates[] = "is_deleted = 1";
+                $updates[] = "deleted_at = NOW()";
+                $updates[] = "stock_qty = 0";
+            } else {
+                $updates[] = "is_deleted = 0";
+                $updates[] = "deleted_at = NULL";
+            }
         }
 
         if ($isVerified !== null && in_array($isVerified, [0, 1])) {
@@ -1221,11 +1230,11 @@ class ProductController extends Controller {
         if (empty($updates)) {
             if ($this->isAjaxRequest()) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'কোনো স্ট্যাটাস নির্বাচন করা হয়নি!']);
+                echo json_encode(['success' => false, 'message' => 'কোনো স্ট্যাটাস পরিবর্তন নির্বাচন করা হয়নি!']);
                 exit;
             }
             $_SESSION['error'] = 'কোনো স্ট্যাটাস পরিবর্তন নির্বাচন করা হয়নি!';
-            header('Location: /sodai-dorkar/public/admin/products');
+            header("Location: {$base}/admin/products");
             exit;
         }
 
@@ -1238,7 +1247,8 @@ class ProductController extends Controller {
         $statusLabels = [
             'in_stock' => 'ইন স্টক (In Stock)',
             'out_of_stock' => 'স্টক শেষ (Out of Stock)',
-            'pending' => 'পেন্ডিং (Pending)'
+            'pending' => 'পেন্ডিং (Pending)',
+            'archived' => 'আর্কাইভড (Archived)'
         ];
         $updatedText = isset($statusLabels[$availabilityStatus]) ? $statusLabels[$availabilityStatus] : 'স্ট্যাটাস';
         $msg = "সফলভাবে {$count} টি পণ্যের স্ট্যাটাস [{$updatedText}] এ আপডেট করা হয়েছে!";
@@ -1257,7 +1267,7 @@ class ProductController extends Controller {
         }
 
         $_SESSION['success'] = $msg;
-        header('Location: /sodai-dorkar/public/admin/products');
+        header("Location: {$base}/admin/products");
         exit;
     }
 

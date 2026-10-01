@@ -18,4 +18,8 @@ class CSRF {
         }
         return hash_equals($_SESSION['csrf_token'], $token);
     }
+
+    public static function validate($token) {
+        return self::verify($token);
+    }
 }
