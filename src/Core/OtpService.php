@@ -207,11 +207,12 @@ class OtpService
                     @file_put_contents(__DIR__ . '/../../otp_log.txt', date('Y-m-d H:i:s') . " | Automas SMS to $msisdn | Code: $httpCode | Resp: $resp\n", FILE_APPEND);
 
                     $json = json_decode($resp, true);
-                    if (!empty($json['response'][0]['status'])) {
-                        $st = (string)$json['response'][0]['status'];
-                        return in_array($st, ['100', 'success', 'OK']);
+                    if (isset($json['response'][0]['status'])) {
+                        $st = (int)$json['response'][0]['status'];
+                        // Automas returns status 0 for Success
+                        return ($st === 0 || $st === 100);
                     }
-                    return $httpCode >= 200 && $httpCode < 300 && (strpos($resp, '100') !== false || stripos($resp, 'success') !== false);
+                    return $httpCode >= 200 && $httpCode < 300 && (strpos($resp, '"status":0') !== false || strpos($resp, '"status":"0"') !== false);
 
                 // ── GreenWeb SMS ─────────────────────────────────
                 case 'greenweb':
@@ -342,28 +343,39 @@ class OtpService
             @file_put_contents(__DIR__ . '/../../otp_log.txt', date('Y-m-d H:i:s') . " | Automas Test SMS to $msisdn | Code: $httpCode | Resp: $resp\n", FILE_APPEND);
 
             $json = json_decode($resp, true);
-            $st = !empty($json['response'][0]['status']) ? (string)$json['response'][0]['status'] : '';
+            $hasStatus = isset($json['response'][0]['status']);
+            $st = $hasStatus ? (int)$json['response'][0]['status'] : null;
 
+            // Automas Status Code Mapping (From Automas Documentation)
             $statusTextMap = [
-                '100' => 'মেসেজ সফলভাবে পাঠানো হয়েছে (Success)',
-                '101' => 'ভুল API Key (Invalid API Key)',
-                '102' => 'ভুল Sender ID (Invalid Sender ID)',
-                '103' => 'পর্যাপ্ত ব্যালেন্স নেই (Insufficient Balance)',
-                '104' => 'ভুল মোবাইল নম্বর (Invalid Mobile Number)',
-                '105' => 'প্রয়োজনীয় প্যারামিটার বাদ পড়েছে (Missing Parameter)',
-                '106' => 'অননুমোদিত API Key বা IP এক্সেস নেই (Invalid API Key or IP)',
-                '107' => 'মেসেজ খালি (Empty Message)',
+                0    => 'মেসেজ সফলভাবে পাঠানো হয়েছে (Success)',
+                100  => 'মেসেজ সফলভাবে পাঠানো হয়েছে (Success)',
+                101  => 'মেসেজের দৈর্ঘ্য সঠিক নয় (Invalid Message Length)',
+                102  => 'ভুল বা অননুমোদিত Sender ID (Sender Not Valid)',
+                103  => 'অথেনটিকেশন ব্যর্থ হয়েছে (Authentication Failed)',
+                104  => 'ভুল ব্যবহারকারী (Invalid User)',
+                105  => 'ভুল মোবাইল নম্বর (Invalid MSISDN)',
+                106  => 'ভুল API Key (Incorrect API Key)',
+                107  => 'অ্যাকাউন্ট স্থগিত রয়েছে (User Account Suspended)',
+                108  => 'অননুমোদিত IP অ্যাড্রেস (IP Address Not Allowed)',
+                109  => 'API অ্যাক্সেসের অনুমতি নেই (API Access Not Allowed)',
+                110  => 'গ্রাহকের DND অন রয়েছে (Do Not Disturb)',
+                111  => 'মেসেজে স্প্যাম শব্দ সনাক্ত হয়েছে (Spam Word Detected in Message)',
+                1000 => 'পর্যাপ্ত ব্যালেন্স নেই (Insufficient Balance)',
+                2300 => 'রুট সমস্যা (Destination Route Issue)',
+                2400 => 'রুট অনুমোদিত নয় (Destination Route Not Permitted)',
+                3300 => 'সিস্টেম এরর (System Error)',
             ];
 
-            if ($st === '100' || $st === 'success') {
+            if ($st === 0 || $st === 100) {
                 return [
                     'success'  => true,
-                    'message'  => '✅ টেস্ট SMS সফলভাবে পাঠানো হয়েছে!',
+                    'message'  => '✅ টেস্ট SMS সফলভাবে পাঠানো হয়েছে! (Status: 0 - Success)',
                     'raw'      => $resp,
                     'provider' => 'Automas SMS (asms.automas.com.bd)'
                 ];
             } else {
-                $errDesc = $statusTextMap[$st] ?? "স্ট্যাটাস কোড: $st";
+                $errDesc = ($st !== null && isset($statusTextMap[$st])) ? $statusTextMap[$st] : ($st !== null ? "স্ট্যাটাস কোড: $st" : "অজানা গেটওয়ে প্রতিক্রিয়া");
                 return [
                     'success'  => false,
                     'message'  => "❌ SMS পাঠাতে ব্যর্থ: $errDesc",
