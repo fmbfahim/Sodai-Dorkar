@@ -535,10 +535,15 @@ if (empty($bannerSubtitle)) {
                             $demandPct = intval($product['demand_percentage'] ?? 0);
                             $totalSold = intval($product['total_sold'] ?? 0);
                             $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
-                            $productAddons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
-                            $hasAddons = !empty($productAddons) && is_array($productAddons);
-                            $specialBadge = $product['special_badge'] ?? 'none';
-                            $isBogo = ($specialBadge === 'bogo');
+                            $criteria = \Models\Product::getCriteriaData($product, 'bn');
+                            $productAddons = $criteria['addons'];
+                            $hasAddons = $criteria['has_addons'];
+                            $isBogo = $criteria['is_bogo'];
+                            $hasCriteria = $criteria['has_criteria'];
+                            $criteriaType = $criteria['criteria_type'];
+                            $badgeLabel = $criteria['badge_label'];
+                            $buttonLabel = $criteria['button_label'];
+                            $specialBadge = $product['special_badge'] ?? ($isBogo ? 'bogo' : 'none');
                             $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                         ?>
 
@@ -551,6 +556,10 @@ if (empty($bannerSubtitle)) {
                              data-product-reg-price="<?= floatval($product['regular_price'] ?? 0) ?>"
                              data-has-addons="<?= $hasAddons ? '1' : '0' ?>"
                              data-is-bogo="<?= $isBogo ? '1' : '0' ?>"
+                             data-has-criteria="<?= $hasCriteria ? '1' : '0' ?>"
+                             data-criteria-type="<?= htmlspecialchars($criteriaType, ENT_QUOTES) ?>"
+                             data-badge-label="<?= htmlspecialchars($badgeLabel, ENT_QUOTES) ?>"
+                             data-button-label="<?= htmlspecialchars($buttonLabel, ENT_QUOTES) ?>"
                              data-special-badge="<?= htmlspecialchars($specialBadge, ENT_QUOTES) ?>"
                              data-addons='<?= htmlspecialchars(json_encode($productAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
                              data-variants='<?= htmlspecialchars(json_encode($uInfo['variants'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
@@ -563,25 +572,21 @@ if (empty($bannerSubtitle)) {
                             <!-- Badges (Special, Popularity, Discount & Stock) -->
                             <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
                                 <div class="flex flex-col gap-1 items-start">
-                                    <?php if ($hasAddons): ?>
-                                        <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            🔪 কাটিং/ড্রেসিং সুবিধা
+                                    <?php if (!empty($badgeLabel)): ?>
+                                        <span class="bg-gradient-to-r from-amber-600 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                            <?= htmlspecialchars($badgeLabel) ?>
                                         </span>
                                     <?php endif; ?>
 
-                                    <?php if ($specialBadge === 'bogo'): ?>
-                                        <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 animate-pulse">
-                                            🎁 ১+১ ফ্রি
-                                        </span>
-                                    <?php elseif ($specialBadge === 'hot_deal'): ?>
+                                    <?php if ($specialBadge === 'hot_deal'): ?>
                                         <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
                                             ⚡ হট ডিল
                                         </span>
-                                    <?php elseif ($specialBadge === 'fresh_catch'): ?>
+                                    <?php elseif ($specialBadge === 'fresh_catch' && empty($badgeLabel)): ?>
                                         <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
                                             🐟 তাজা সংগ্রহ
                                         </span>
-                                    <?php elseif ($specialBadge === 'halal_meat'): ?>
+                                    <?php elseif ($specialBadge === 'halal_meat' && empty($badgeLabel)): ?>
                                         <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
                                             🥩 হালাল মাংস
                                         </span>
@@ -669,30 +674,11 @@ if (empty($bannerSubtitle)) {
                                         <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
                                             <span>স্টক শেষ</span>
                                         </button>
-                                    <?php elseif ($hasAddons || $isBogo): ?>
-                                        <?php
-                                            $btnText = 'ব্যাগে যোগ করুন';
-                                            $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
-                                            $iconEmoji = '';
-                                            if ($hasAddons && $isBogo) {
-                                                $btnText = '🎁 ১+১ ও কাটিং পছন্দ করুন';
-                                                $btnCls = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold';
-                                                $iconEmoji = '🎁';
-                                            } elseif ($hasAddons) {
-                                                $btnText = '🔪 কাটিং/ড্রেসিং পছন্দ করুন';
-                                                $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 font-extrabold';
-                                                $iconEmoji = '🔪';
-                                            } elseif ($isBogo) {
-                                                $btnText = '🎁 ১+১ অফার সহ নিন';
-                                                $btnCls = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold animate-pulse';
-                                                $iconEmoji = '🎁';
-                                            }
-                                        ?>
+                                    <?php elseif ($hasCriteria): ?>
                                         <button type="button" 
                                                 onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
-                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl <?= $btnCls ?> border text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
-                                            <?php if ($iconEmoji): ?><span><?= $iconEmoji ?></span><?php endif; ?>
-                                            <span><?= $btnText ?></span>
+                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                            <span><?= htmlspecialchars($buttonLabel) ?></span>
                                         </button>
                                     <?php else: ?>
                                         <button type="button" 

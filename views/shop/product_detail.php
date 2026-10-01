@@ -26,9 +26,16 @@ $initialTitle = $hasVariants ? ($variants[0]['title'] ?? '') : ($product['sellin
 $initialPrice = $hasVariants ? floatval($variants[0]['price'] ?? $sellPrice) : $sellPrice;
 $initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
 
-// Check addons / processing options
-$addons = !empty($product['addons_json']) ? (json_decode($product['addons_json'], true) ?: []) : [];
-$hasAddons = !empty($addons) && is_array($addons);
+// Check criteria (cutting, dressing, bogo, variants)
+$criteria = \Models\Product::getCriteriaData($product, $locale);
+$addons = $criteria['addons'];
+$hasAddons = $criteria['has_addons'];
+$isBogo = $criteria['is_bogo'];
+$specialBadge = $product['special_badge'] ?? ($isBogo ? 'bogo' : 'none');
+if ($isBogo && $specialBadge === 'none') {
+    $specialBadge = 'bogo';
+}
+
 $defaultAddonIndex = -1;
 if ($hasAddons) {
     foreach ($addons as $idx => $a) {
@@ -44,7 +51,6 @@ if ($hasAddons) {
 $initialAddon = ($hasAddons && $defaultAddonIndex >= 0) ? ($addons[$defaultAddonIndex]['name'] ?? '') : '';
 $initialAddonPrice = ($hasAddons && $defaultAddonIndex >= 0) ? floatval($addons[$defaultAddonIndex]['price'] ?? 0) : 0;
 $initialTotalPrice = $initialPrice + $initialAddonPrice;
-$specialBadge = $product['special_badge'] ?? 'none';
 ?>
 
 <div class="bg-gray-50/70 py-6 sm:py-10">

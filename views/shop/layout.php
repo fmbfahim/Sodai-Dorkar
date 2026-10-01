@@ -623,8 +623,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
     </div>
 
     <!-- Quick Criteria & Options Modal (For Cutting/Dressing & BOGO Offers) -->
-    <div id="quick-criteria-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs hidden transition-all duration-300 opacity-0" onclick="handleQuickCriteriaBackdropClick(event)">
-        <div class="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden transform transition-all duration-300 translate-y-full sm:translate-y-0 sm:scale-95" id="quick-criteria-dialog">
+    <div id="quick-criteria-modal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs hidden opacity-0 transition-opacity duration-300" onclick="handleQuickCriteriaBackdropClick(event)">
+        <div class="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden transform transition-all duration-300 ease-out translate-y-full sm:translate-y-4 sm:scale-95" id="quick-criteria-dialog">
             
             <!-- Header -->
             <div class="p-4 sm:p-5 border-b border-gray-100 flex items-start justify-between gap-3 bg-gray-50/70">
@@ -676,7 +676,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     <div class="mb-2">
                         <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
                             <span class="text-base">🔪</span>
-                            <span><?= ($locale === 'bn') ? 'কাটিং ও ড্রেসিং পছন্দ করুন:' : 'Select Cutting & Dressing Option:' ?></span>
+                            <span id="qc-addons-label"><?= ($locale === 'bn') ? 'কাটিং ও ড্রেসিং পছন্দ করুন:' : 'Select Cutting & Dressing Option:' ?></span>
                         </label>
                         <p class="text-[11px] text-gray-500 font-medium mt-0.5">
                             <?= ($locale === 'bn') ? 'আপনার পছন্দ অনুযায়ী তাজা কেটে বা ড্রেসিং করে দেওয়া হবে' : 'We will cut/dress freshly as per your requirement' ?>
@@ -1230,13 +1230,22 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const selectedVariant = card.dataset.selectedVariantTitle || '';
             const cart = window.SODAI_STATE?.cart || {};
 
-            for (const key in cart) {
-                const item = cart[key];
-                if (String(item.product_id) === String(productId)) {
-                    if (selectedVariant) {
-                        if (item.variant_title === selectedVariant) return item;
-                    } else {
-                        if (!item.variant_title) return item;
+            // 1. If card has a specific unit variant selected, match by variant title
+            if (selectedVariant) {
+                for (const key in cart) {
+                    const item = cart[key];
+                    if (String(item.product_id) === String(productId)) {
+                        if (item.variant_title && item.variant_title.includes(selectedVariant)) {
+                            return item;
+                        }
+                    }
+                }
+            } else {
+                // 2. If no specific variant on card, match any item with this productId
+                for (const key in cart) {
+                    const item = cart[key];
+                    if (String(item.product_id) === String(productId)) {
+                        return item;
                     }
                 }
             }
@@ -1263,12 +1272,19 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             quantity: 1,
             isBogo: false,
             hasAddons: false,
+            criteriaType: 'none',
             variants: [],
             addons: []
         };
 
         function openQuickCriteriaModal(productId, triggerBtn = null) {
-            const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+            let card = null;
+            if (triggerBtn && triggerBtn.closest) {
+                card = triggerBtn.closest('.product-card');
+            }
+            if (!card) {
+                card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+            }
             if (!card) {
                 window.location.href = (window.APP_BASE || '') + '/product?id=' + productId;
                 return;
@@ -1287,6 +1303,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
             const isBogo = (card.dataset.isBogo === '1' || card.dataset.specialBadge === 'bogo');
             const hasAddons = (card.dataset.hasAddons === '1' || (Array.isArray(addons) && addons.length > 0));
+            const criteriaType = card.dataset.criteriaType || (isBogo && hasAddons ? 'both' : (isBogo ? 'bogo' : (hasAddons ? 'custom_addons' : 'none')));
             const baseSellPrice = parseFloat(card.dataset.productPrice || 0);
             const regPrice = parseFloat(card.dataset.productRegPrice || 0);
             const initialVarTitle = card.dataset.selectedVariantTitle || '';
@@ -1308,6 +1325,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 quantity: 1,
                 isBogo: isBogo,
                 hasAddons: hasAddons,
+                criteriaType: criteriaType,
                 variants: variants,
                 addons: addons
             };
@@ -1329,6 +1347,14 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 } else if (isBogo) {
                     tagEl.textContent = isBn ? '🎁 ১টি কিনলে ১টি ফ্রি অফার' : '🎁 Buy 1 Get 1 Free Offer';
                     tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 mb-1';
+                    tagEl.classList.remove('hidden');
+                } else if (criteriaType === 'fish_cutting') {
+                    tagEl.textContent = isBn ? '🐟 মাছ কাটিং সুবিধা' : '🐟 Fish Cut Option';
+                    tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 mb-1';
+                    tagEl.classList.remove('hidden');
+                } else if (criteriaType === 'dressing') {
+                    tagEl.textContent = isBn ? '🔪 ড্রেসিং ও কাটিং সুবিধা' : '🔪 Dressing & Cut Option';
+                    tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 mb-1';
                     tagEl.classList.remove('hidden');
                 } else if (hasAddons) {
                     tagEl.textContent = isBn ? '🔪 কাটিং ও ড্রেসিং সুবিধা' : '🔪 Custom Cut & Dressing';
@@ -1391,6 +1417,17 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             // Addons (Cutting & Dressing) Section
             const addSec = document.getElementById('qc-addons-section');
             const addCont = document.getElementById('qc-addons-container');
+            const addLabel = document.getElementById('qc-addons-label');
+            if (addLabel) {
+                if (criteriaType === 'fish_cutting') {
+                    addLabel.textContent = isBn ? 'মাছ কাটিং পছন্দ করুন:' : 'Select Fish Cutting Option:';
+                } else if (criteriaType === 'dressing') {
+                    addLabel.textContent = isBn ? 'ড্রেসিং ও কাটিং পছন্দ করুন:' : 'Select Dressing & Cutting Option:';
+                } else {
+                    addLabel.textContent = isBn ? 'কাটিং ও ড্রেসিং পছন্দ করুন:' : 'Select Cutting & Dressing Option:';
+                }
+            }
+
             if (addons && addons.length > 0) {
                 addSec?.classList.remove('hidden');
                 // Find default addon
@@ -1402,22 +1439,26 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     const isChecked = (a.name === window.QC_STATE.selectedAddonTitle);
                     const aPrice = parseFloat(a.price || 0);
                     const priceBadge = aPrice > 0 ? `+৳${Number(aPrice).toLocaleString()}` : (isBn ? 'ফ্রি' : 'Free');
-                    const badgeCls = aPrice > 0 ? 'text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md' : 'text-gray-400 font-bold';
+                    const badgeCls = aPrice > 0 ? 'text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md font-bold' : 'text-gray-400 font-bold';
                     const cardCls = isChecked 
                         ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-2xs' 
                         : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
 
                     return `
-                        <label class="qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${cardCls}"
-                               onclick="selectQuickCriteriaAddon('${escapeHtml(a.name)}', ${aPrice}, this)">
-                            <div class="flex items-center gap-2.5">
-                                <input type="radio" name="qc_addon_choice" value="${escapeHtml(a.name)}" ${isChecked ? 'checked' : ''} class="text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                        <div class="qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none ${cardCls}"
+                             data-addon-name="${escapeHtml(a.name)}"
+                             data-addon-price="${aPrice}"
+                             onclick="selectQuickCriteriaAddon('${escapeHtml(a.name)}', ${aPrice}, this)">
+                            <div class="flex items-center gap-2.5 pointer-events-none">
+                                <div class="qc-radio-dot w-4 h-4 rounded-full border flex items-center justify-center ${isChecked ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-300 bg-white'}">
+                                    ${isChecked ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : ''}
+                                </div>
                                 <span class="text-xs sm:text-[13px] font-bold">${escapeHtml(a.name)}</span>
                             </div>
                             <span class="text-xs font-black ${badgeCls}">
                                 ${priceBadge}
                             </span>
-                        </label>
+                        </div>
                     `;
                 }).join('');
             } else {
@@ -1432,18 +1473,17 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
             updateQuickCriteriaPriceDisplay();
 
-            // Open Modal
+            // Open Modal with smooth transition
             const modal = document.getElementById('quick-criteria-modal');
             const dialog = document.getElementById('quick-criteria-dialog');
             if (modal && dialog) {
                 modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
-                requestAnimationFrame(() => {
-                    modal.classList.remove('opacity-0');
-                    modal.classList.add('opacity-100');
-                    dialog.classList.remove('translate-y-full', 'sm:scale-95');
-                    dialog.classList.add('translate-y-0', 'sm:scale-100');
-                });
+                void modal.offsetWidth; // Force layout repaint
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+                dialog.classList.remove('translate-y-full', 'sm:translate-y-4', 'sm:scale-95');
+                dialog.classList.add('translate-y-0', 'sm:translate-y-0', 'sm:scale-100');
             }
         }
 
@@ -1454,8 +1494,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
             modal.classList.remove('opacity-100');
             modal.classList.add('opacity-0');
-            dialog.classList.remove('translate-y-0', 'sm:scale-100');
-            dialog.classList.add('translate-y-full', 'sm:scale-95');
+            dialog.classList.remove('translate-y-0', 'sm:translate-y-0', 'sm:scale-100');
+            dialog.classList.add('translate-y-full', 'sm:translate-y-4', 'sm:scale-95');
 
             setTimeout(() => {
                 modal.classList.add('hidden');
@@ -1502,13 +1542,19 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
         function selectQuickCriteriaAddon(name, price, cardEl) {
             document.querySelectorAll('.qc-addon-card').forEach(el => {
-                el.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
-                const radio = el.querySelector('input[type="radio"]');
-                if (radio) radio.checked = false;
+                el.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
+                const dot = el.querySelector('.qc-radio-dot');
+                if (dot) {
+                    dot.className = 'qc-radio-dot w-4 h-4 rounded-full border flex items-center justify-center border-gray-300 bg-white';
+                    dot.innerHTML = '';
+                }
             });
-            cardEl.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-2xs';
-            const radio = cardEl.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
+            cardEl.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-2xs';
+            const activeDot = cardEl.querySelector('.qc-radio-dot');
+            if (activeDot) {
+                activeDot.className = 'qc-radio-dot w-4 h-4 rounded-full border flex items-center justify-center border-emerald-600 bg-emerald-600 text-white';
+                activeDot.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>';
+            }
 
             window.QC_STATE.selectedAddonTitle = name;
             window.QC_STATE.selectedAddonPrice = price;
@@ -1604,10 +1650,14 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const cartItem = findCartItemForCard(card);
             const quantity = cartItem ? parseInt(cartItem.quantity) : 0;
             const isBn = (window.SODAI_STATE?.locale === 'bn');
-            const addToBagText = window.SODAI_STATE?.addToBagText || (isBn ? 'ব্যাগ এ যোগ করুন' : 'Add to Bag');
+            const addToBagText = window.SODAI_STATE?.addToBagText || (isBn ? 'ব্যাগে যোগ করুন' : 'Add to Bag');
             const inBagSuffix = window.SODAI_STATE?.inBagText || (isBn ? 'টি ব্যাগে' : 'in bag');
+            
             const hasAddons = (card.dataset.hasAddons === '1');
             const isBogo = (card.dataset.isBogo === '1' || card.dataset.specialBadge === 'bogo');
+            const hasCriteria = (card.dataset.hasCriteria === '1' || hasAddons || isBogo);
+            const criteriaType = card.dataset.criteriaType || '';
+            const buttonLabel = card.dataset.buttonLabel || '';
 
             if (quantity > 0) {
                 const displayQty = isBn ? convertToBanglaNumber(quantity) : quantity;
@@ -1632,38 +1682,42 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                                 +
                             </button>
                         </div>
-                        ${(hasAddons || isBogo) ? `
-                            <button type="button" onclick="openQuickCriteriaModal(${productId})" class="text-[10px] text-amber-800 hover:text-amber-900 font-extrabold text-center underline cursor-pointer py-0.5">
+                        ${hasCriteria ? `
+                            <button type="button" onclick="openQuickCriteriaModal(${productId}, this)" class="text-[10px] text-amber-800 hover:text-amber-900 font-extrabold text-center underline cursor-pointer py-0.5">
                                 ${hasAddons ? (isBn ? '🔪 অপশন/কাটিং পরিবর্তন' : 'Change Cut/Dressing') : (isBn ? '🎁 অফার বিস্তারিত' : 'Offer Details')}
                             </button>
                         ` : ''}
                     </div>
                 `;
             } else {
-                if (hasAddons || isBogo) {
-                    let btnText = addToBagText;
-                    let btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
-                    let iconEmoji = '';
+                if (hasCriteria) {
+                    let btnText = buttonLabel;
+                    let btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border-amber-300 hover:border-amber-600';
+                    let pulseClass = isBogo ? 'animate-pulse' : '';
 
-                    if (hasAddons && isBogo) {
-                        btnText = isBn ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
-                        iconEmoji = '🎁';
-                        btnClass = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 shadow-2xs font-extrabold';
-                    } else if (hasAddons) {
-                        btnText = isBn ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
-                        iconEmoji = '🔪';
-                        btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 shadow-2xs font-extrabold';
-                    } else if (isBogo) {
-                        btnText = isBn ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
-                        iconEmoji = '🎁';
-                        btnClass = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 shadow-2xs font-extrabold animate-pulse';
+                    if (!btnText) {
+                        if (hasAddons && isBogo) {
+                            btnText = isBn ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
+                            btnClass = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600';
+                        } else if (isBogo) {
+                            btnText = isBn ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
+                            btnClass = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600';
+                        } else if (criteriaType === 'fish_cutting') {
+                            btnText = isBn ? '🔪 কাটিং পছন্দ করুন' : '🔪 Choose Cut';
+                            btnClass = 'bg-sky-50 hover:bg-sky-600 text-sky-950 hover:text-white border-sky-300 hover:border-sky-600';
+                        } else if (criteriaType === 'dressing') {
+                            btnText = isBn ? '🔪 ড্রেসিং পছন্দ করুন' : '🔪 Choose Dressing';
+                            btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border-amber-300 hover:border-amber-600';
+                        } else {
+                            btnText = isBn ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
+                            btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                        }
                     }
 
                     container.innerHTML = `
                         <button type="button" 
-                                onclick="openQuickCriteriaModal(${productId})" 
-                                class="w-full py-2 px-3 rounded-xl ${btnClass} border text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                            ${iconEmoji ? `<span class="text-sm">${iconEmoji}</span>` : ''}
+                                onclick="openQuickCriteriaModal(${productId}, this)" 
+                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl ${btnClass} border text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn ${pulseClass}">
                             <span>${btnText}</span>
                         </button>
                     `;
@@ -1671,8 +1725,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     container.innerHTML = `
                         <button type="button" 
                                 onclick="cardAddToCart(${productId}, this)" 
-                                class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 sm:h-4 w-3.5 sm:w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
                             <span>${addToBagText}</span>
@@ -1691,12 +1745,11 @@ if (!isset($mainCategories) || empty($mainCategories)) {
 
         // Card Add to Bag
         function cardAddToCart(productId, btn) {
-            const card = btn.closest('.product-card');
-            const hasAddons = (card?.dataset?.hasAddons === '1');
-            const isBogo = (card?.dataset?.isBogo === '1' || card?.dataset?.specialBadge === 'bogo');
+            const card = (btn && btn.closest) ? btn.closest('.product-card') : document.querySelector(`.product-card[data-product-id="${productId}"]`);
+            const hasCriteria = card && (card.dataset.hasCriteria === '1' || card.dataset.hasAddons === '1' || card.dataset.isBogo === '1' || card.dataset.specialBadge === 'bogo');
 
             // Safety intercept: If product has criteria (addons or BOGO), open quick selection modal!
-            if (hasAddons || isBogo) {
+            if (hasCriteria) {
                 openQuickCriteriaModal(productId, btn);
                 return;
             }
@@ -1728,9 +1781,15 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 if (data.status === 'success') {
                     updateCartUI(data);
                     showToast(data.message || (window.SODAI_STATE?.locale === 'bn' ? 'কার্টে যোগ করা হয়েছে' : 'Added to cart'));
+                } else {
+                    showToast(data.message || 'স্টক সীমিত বা পণ্যটি উপলব্ধ নেই', 'error');
                 }
             })
-            .catch(() => showToast('ত্রুটি ঘটেছে', 'error'));
+            .catch(() => showToast('ত্রুটি ঘটেছে', 'error'))
+            .finally(() => {
+                btn.disabled = false;
+                if (card) renderCardActionButton(card);
+            });
         }
 
         // Card Change Quantity (+/-)

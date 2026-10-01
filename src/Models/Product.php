@@ -498,4 +498,142 @@ class Product {
         $clean = preg_replace('#^/?(sodai-dorkar/public/|public/)#', '', ltrim($img, '/'));
         return !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
     }
+
+    /**
+     * Resolves product criteria:
+     * - Chicken / Poultry Dressing (ড্রেসিং)
+     * - Fish Cutting (মাছ কাটিং)
+     * - Meat Cutting (মাংস কাটিং)
+     * - Explicit Addons (Database addons_json)
+     * - BOGO Offers (Buy 1 Get 1)
+     */
+    public static function getCriteriaData($product, $locale = 'bn') {
+        if (!is_array($product)) {
+            return [
+                'has_criteria' => false,
+                'has_addons' => false,
+                'is_bogo' => false,
+                'is_fish' => false,
+                'is_meat' => false,
+                'criteria_type' => 'none',
+                'badge_label' => '',
+                'button_label' => '',
+                'addons' => []
+            ];
+        }
+
+        // 1. Explicit addons in database
+        $addons = [];
+        if (!empty($product['addons_json'])) {
+            $decoded = is_string($product['addons_json']) ? json_decode($product['addons_json'], true) : $product['addons_json'];
+            if (is_array($decoded)) {
+                $addons = $decoded;
+            }
+        }
+
+        // 2. Check if product is BOGO (Buy 1 Get 1)
+        $specialBadge = $product['special_badge'] ?? 'none';
+        $nameLower = mb_strtolower($product['name'] ?? '', 'UTF-8');
+        $tagsLower = mb_strtolower($product['tags'] ?? '', 'UTF-8');
+
+        $isBogo = ($specialBadge === 'bogo')
+            || (strpos($tagsLower, 'bogo') !== false)
+            || (strpos($tagsLower, '১+১') !== false)
+            || (strpos($nameLower, 'bogo') !== false)
+            || (strpos($nameLower, '১+১') !== false)
+            || (strpos($nameLower, 'buy 1 get 1') !== false);
+
+        // 3. Category Name and Slug if available
+        $catName = mb_strtolower($product['category_name'] ?? '', 'UTF-8');
+        $catSlug = mb_strtolower($product['category_slug'] ?? $product['slug'] ?? '', 'UTF-8');
+
+        // 4. Check if product is Fish (মাছ)
+        $fishRegex = '/(মাছ|ইলিশ|রুই|কাতলা|পাঙ্গাশ|পাঙ্গাস|তেলাপিয়া|তেলাপিয়া|চিংড়ি|চিংড়ি|বোয়াল|বোয়াল|ট্যাংরা|টেংরা|মাগুর|শিং|কৈ|পাবদা|কোরাল|রূপচাঁদা|রূপচাদা|আইড়|আইড়|বাইলা|বেলে|মলা|কাচকি|বাটা|শোল|টাকি|বাইম|ফলি|মেনি|চিতল|পোয়া|পোয়া|লইট্টা|শুঁটকি|শুটকি|fish|seafood|prawn|shrimp|hilsa|salmon)/iu';
+        $isFish = ($specialBadge === 'fresh_catch')
+            || preg_match($fishRegex, $nameLower)
+            || (!empty($catName) && preg_match('/(মাছ|fish|seafood)/iu', $catName))
+            || (!empty($catSlug) && preg_match('/(fish|seafood)/iu', $catSlug));
+
+        // 5. Check if product is Poultry / Meat (মুরগি / মাংস)
+        $meatRegex = '/(মুরগি|মুরগী|চিকেন|ব্রয়লার|ব্রয়লার|সোনালী|সোনালি|কক|লেয়ার|লেয়ার|হাঁস|গরু|খাসি|ছাগল|বিফ|মাটন|রোস্ট|কলিজা|গিলা|মাথা|chicken|poultry|beef|mutton|meat)/iu';
+        $isMeat = ($specialBadge === 'halal_meat')
+            || preg_match($meatRegex, $nameLower)
+            || (!empty($catName) && preg_match('/(মাংস|মুরগি|chicken|meat|beef|mutton)/iu', $catName))
+            || (!empty($catSlug) && preg_match('/(meat|chicken|beef|mutton)/iu', $catSlug));
+
+        // 6. If no explicit addons configured in database, provide smart default cutting/dressing criteria!
+        if (empty($addons) || !is_array($addons) || count($addons) === 0) {
+            if ($isFish) {
+                $addons = [
+                    ['name' => ($locale === 'bn' ? 'আস্ত নাড়ি-ভুঁড়ি ও আঁশ পরিষ্কার' : 'Whole Cleaned (Scales & Guts Removed)'), 'price' => 0, 'is_default' => 1],
+                    ['name' => ($locale === 'bn' ? 'কারি কাট / টুকরো পিস' : 'Curry Cut / Medium Slices'), 'price' => 0, 'is_default' => 0],
+                    ['name' => ($locale === 'bn' ? 'মাথা আলাদা ও পিস কাট' : 'Head Separate & Slices'), 'price' => 0, 'is_default' => 0],
+                    ['name' => ($locale === 'bn' ? 'আস্ত মাছ দিন (না কেটে)' : 'Intact Whole Fish (Uncut)'), 'price' => 0, 'is_default' => 0],
+                ];
+            } elseif ($isMeat) {
+                $isChicken = preg_match('/(মুরগি|মুরগী|চিকেন|ব্রয়লার|ব্রয়লার|সোনালী|সোনালি|কক|লেয়ার|লেয়ার|হাঁস|chicken)/iu', $nameLower)
+                             || preg_match('/(chicken|মুরগি)/iu', $catName);
+                if ($isChicken) {
+                    $addons = [
+                        ['name' => ($locale === 'bn' ? 'চামড়া সহ কারি কাট' : 'Curry Cut with Skin'), 'price' => 0, 'is_default' => 1],
+                        ['name' => ($locale === 'bn' ? 'চামড়া ছাড়া কারি কাট' : 'Skinless Curry Cut'), 'price' => 0, 'is_default' => 0],
+                        ['name' => ($locale === 'bn' ? 'রোস্ট সাইজ (৪ টুকরা)' : 'Roast Cut (4 Pcs)'), 'price' => 0, 'is_default' => 0],
+                        ['name' => ($locale === 'bn' ? 'চামড়া সহ আস্ত ড্রেসিং' : 'Whole Dressing with Skin'), 'price' => 0, 'is_default' => 0],
+                        ['name' => ($locale === 'bn' ? 'চামড়া ছাড়া আস্ত ড্রেসিং' : 'Skinless Whole Dressing'), 'price' => 0, 'is_default' => 0],
+                    ];
+                } else {
+                    $addons = [
+                        ['name' => ($locale === 'bn' ? 'নিয়মিত কারি কাট (হাড় সহ)' : 'Regular Curry Cut (Bone-in)'), 'price' => 0, 'is_default' => 1],
+                        ['name' => ($locale === 'bn' ? 'ছোট পিস / বিরিয়ানি কাট' : 'Small Cut / Biryani Cut'), 'price' => 0, 'is_default' => 0],
+                        ['name' => ($locale === 'bn' ? 'চর্বি ছাড়িয়ে মাঝারি পিস' : 'Fat Trimmed Medium Cut'), 'price' => 0, 'is_default' => 0],
+                        ['name' => ($locale === 'bn' ? 'আস্ত মাংস (না কেটে)' : 'Whole Meat Piece (Uncut)'), 'price' => 0, 'is_default' => 0],
+                    ];
+                }
+            }
+        }
+
+        $hasAddons = !empty($addons) && is_array($addons) && count($addons) > 0;
+        $hasCriteria = $hasAddons || $isBogo;
+
+        // Visual labels
+        $badgeLabel = '';
+        $buttonLabel = ($locale === 'bn' ? 'ব্যাগে যোগ করুন' : 'Add to Bag');
+        $criteriaType = 'none';
+
+        if ($isBogo && $hasAddons) {
+            $criteriaType = 'both';
+            $badgeLabel = ($locale === 'bn' ? '🎁 ১+১ ফ্রি ও কাটিং সুবিধা' : '🎁 BOGO & Cut Option');
+            $buttonLabel = ($locale === 'bn' ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut');
+        } elseif ($isBogo) {
+            $criteriaType = 'bogo';
+            $badgeLabel = ($locale === 'bn' ? '🎁 ১+১ ফ্রি' : '🎁 Buy 1 Get 1 Free');
+            $buttonLabel = ($locale === 'bn' ? '🎁 ১+১ অফার সহ নিন' : '🎁 Get BOGO Offer');
+        } elseif ($hasAddons) {
+            if ($isFish) {
+                $criteriaType = 'fish_cutting';
+                $badgeLabel = ($locale === 'bn' ? '🔪 মাছ কাটিং সুবিধা' : '🔪 Fish Cut Option');
+                $buttonLabel = ($locale === 'bn' ? '🔪 কাটিং পছন্দ করুন' : '🔪 Choose Cut');
+            } elseif ($isMeat) {
+                $criteriaType = 'dressing';
+                $badgeLabel = ($locale === 'bn' ? '🔪 ড্রেসিং সুবিধা' : '🔪 Dressing Option');
+                $buttonLabel = ($locale === 'bn' ? '🔪 ড্রেসিং পছন্দ করুন' : '🔪 Choose Dressing');
+            } else {
+                $criteriaType = 'custom_addons';
+                $badgeLabel = ($locale === 'bn' ? '🔪 কাটিং/ড্রেসিং সুবিধা' : '🔪 Options Available');
+                $buttonLabel = ($locale === 'bn' ? '🔪 অপশন পছন্দ করুন' : '🔪 Choose Options');
+            }
+        }
+
+        return [
+            'has_criteria' => $hasCriteria,
+            'has_addons' => $hasAddons,
+            'is_bogo' => $isBogo,
+            'is_fish' => $isFish,
+            'is_meat' => $isMeat,
+            'criteria_type' => $criteriaType,
+            'badge_label' => $badgeLabel,
+            'button_label' => $buttonLabel,
+            'addons' => $addons
+        ];
+    }
 }

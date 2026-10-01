@@ -796,8 +796,23 @@ class ShopController {
                         $_SESSION['cart'] = [];
                     }
 
-                    $isBogo = (($product['special_badge'] ?? '') === 'bogo');
+                    $criteria = \Models\Product::getCriteriaData($product, Lang::locale());
+                    $isBogo = !empty($criteria['is_bogo']) || (($product['special_badge'] ?? '') === 'bogo');
                     $bogoTag = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি' : '🎁 BOGO Free';
+
+                    if (empty($addonTitle) && !empty($criteria['addons'])) {
+                        foreach ($criteria['addons'] as $a) {
+                            if (!empty($a['is_default'])) {
+                                $addonTitle = $a['name'];
+                                $addonPrice = floatval($a['price'] ?? 0);
+                                break;
+                            }
+                        }
+                        if (empty($addonTitle) && isset($criteria['addons'][0])) {
+                            $addonTitle = $criteria['addons'][0]['name'];
+                            $addonPrice = floatval($criteria['addons'][0]['price'] ?? 0);
+                        }
+                    }
 
                     $unitDesc = '';
                     if ($variantTitle && $addonTitle) {
