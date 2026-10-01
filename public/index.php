@@ -118,6 +118,8 @@ $router->get('/admin/products', 'ProductController@index');
 $router->post('/admin/products/store', 'ProductController@store');
 $router->post('/admin/products/delete', 'ProductController@destroy');
 $router->post('/admin/products/restore', 'ProductController@restore');
+$router->post('/admin/products/duplicate', 'ProductController@duplicate');
+$router->get('/admin/products/get', 'ProductController@getJson');
 $router->get('/admin/products/edit', 'ProductController@edit');
 $router->post('/admin/products/update', 'ProductController@update');
 $router->get('/admin/products/bulk-import', 'ProductController@bulkImportIndex');

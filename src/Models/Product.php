@@ -328,6 +328,62 @@ class Product {
         return $stmt->fetch();
     }
 
+    public function duplicate($id) {
+        $id = intval($id);
+        $product = $this->find($id);
+        if (!$product) {
+            return false;
+        }
+
+        // Generate clean unique SKU for the duplicate
+        $originalSku = trim($product['sku'] ?? '');
+        $newSku = null;
+        if (!empty($originalSku)) {
+            $baseSku = preg_replace('/-copy(-\d+)?$/i', '', $originalSku);
+            $candidateSku = $baseSku . '-copy-' . rand(100, 999);
+            while ($this->findBySku($candidateSku)) {
+                $candidateSku = $baseSku . '-copy-' . rand(1000, 9999);
+            }
+            $newSku = $candidateSku;
+        } else {
+            $candidateSku = 'SKU-' . date('ymd') . '-' . rand(100, 999);
+            while ($this->findBySku($candidateSku)) {
+                $candidateSku = 'SKU-' . date('ymd') . '-' . rand(1000, 9999);
+            }
+            $newSku = $candidateSku;
+        }
+
+        $cloneData = [
+            'name'                => $product['name'] . ' (কপি)',
+            'sku'                 => $newSku,
+            'description'         => $product['description'] ?? '',
+            'tags'                => $product['tags'] ?? null,
+            'buy_price'           => $product['buy_price'] ?? 0,
+            'regular_price'       => !empty($product['regular_price']) ? floatval($product['regular_price']) : null,
+            'discount_type'       => $product['discount_type'] ?? 'none',
+            'discount_value'      => floatval($product['discount_value'] ?? 0),
+            'sell_price'          => $product['sell_price'] ?? 0,
+            'stock_qty'           => 0,
+            'vendor_id'           => !empty($product['vendor_id']) ? $product['vendor_id'] : null,
+            'category_id'         => !empty($product['category_id']) ? $product['category_id'] : null,
+            'brand_id'            => !empty($product['brand_id']) ? $product['brand_id'] : null,
+            'image_path'          => $product['image_path'] ?? null,
+            'unit_type'           => $product['unit_type'] ?? 'piece',
+            'base_unit'           => $product['base_unit'] ?? 'pcs',
+            'purchase_unit'       => $product['purchase_unit'] ?? null,
+            'purchase_unit_qty'   => !empty($product['purchase_unit_qty']) ? $product['purchase_unit_qty'] : 1.000,
+            'selling_unit'        => $product['selling_unit'] ?? null,
+            'unit_variants_json'  => !empty($product['unit_variants_json']) ? $product['unit_variants_json'] : null,
+            'addons_json'         => !empty($product['addons_json']) ? $product['addons_json'] : null,
+            'is_verified'         => 0,
+            'availability_status' => 'pending',
+            'special_badge'       => $product['special_badge'] ?? 'none',
+            'demand_percentage'   => 0
+        ];
+
+        return $this->create($cloneData);
+    }
+
     public function update($id, $data) {
         $this->ensureSchema();
 

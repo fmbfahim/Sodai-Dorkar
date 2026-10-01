@@ -695,7 +695,9 @@ class ShopController {
         }
         $product = $stmt->fetch();
 
-        if (!$product || !in_array($product['availability_status'] ?? '', ['in_stock', 'available'])) {
+        $isAdmin = (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'super_admin'])) || (isset($_GET['preview']) && $_GET['preview'] == '1');
+
+        if (!$product || (!$isAdmin && !in_array($product['availability_status'] ?? '', ['in_stock', 'available']))) {
             header("Location: {$base}/");
             exit;
         }

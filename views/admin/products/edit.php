@@ -3,15 +3,30 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 ?>
 <div class="max-w-5xl mx-auto mb-16">
     <!-- Header -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-secondary-900">Edit Product</h2>
             <p class="text-secondary-500 text-xs mt-1">Manage product specifications, unit conversions, pricing strategies, and size variants.</p>
         </div>
-        <a href="<?= $base ?>/admin/products" class="text-secondary-600 hover:text-primary-600 flex items-center font-medium transition-colors">
-            <ion-icon name="arrow-back-outline" class="mr-2 text-xl"></ion-icon>
-            Back to Products
-        </a>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>&preview=1" target="_blank" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 transition-colors flex items-center gap-1.5 shadow-2xs" title="ওয়েবসাইটে সরাসরি দেখুন">
+                <ion-icon name="globe-outline" class="text-base"></ion-icon>
+                <span>লাইভ প্রিভিউ</span>
+                <ion-icon name="open-outline" class="text-xs"></ion-icon>
+            </a>
+            <form action="<?= $base ?>/admin/products/duplicate" method="POST" onsubmit="return confirm('এই পণ্যটির একটি ডুপ্লিকেট কপি তৈরি করতে চান?');" class="inline">
+                <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                <input type="hidden" name="id" value="<?= $product['id'] ?>">
+                <button type="submit" class="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-xl border border-purple-200 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                    <ion-icon name="copy-outline" class="text-base"></ion-icon>
+                    <span>ডুপ্লিকেট করুন</span>
+                </button>
+            </form>
+            <a href="<?= $base ?>/admin/products" class="text-secondary-600 hover:text-primary-600 flex items-center font-medium text-xs sm:text-sm transition-colors border border-secondary-200 px-3.5 py-2 rounded-xl bg-white hover:bg-secondary-50 shadow-2xs">
+                <ion-icon name="arrow-back-outline" class="mr-1.5 text-base"></ion-icon>
+                Back to Products
+            </a>
+        </div>
     </div>
 
     <!-- 1-Click Quick Preset Selector -->

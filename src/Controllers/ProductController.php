@@ -503,6 +503,90 @@ class ProductController extends Controller {
         exit;
     }
 
+    public function duplicate() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $id = $_POST['id'] ?? null;
+        if (!\Core\CSRF::verify($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'নিরাপত্তা ত্রুটি! আবার চেষ্টা করুন।';
+            header("Location: {$base}/admin/products");
+            exit;
+        }
+
+        if ($id) {
+            try {
+                $productModel = new Product();
+                $newId = $productModel->duplicate($id);
+                if ($newId) {
+                    $_SESSION['success'] = "পণ্যটির একটি কপি সফলভাবে তৈরি করা হয়েছে! আইডি: #{$newId} (প্রয়োজনীয় তথ্য পরিবর্তন করে সেভ করুন)";
+                    header("Location: {$base}/admin/products/edit?id={$newId}");
+                    exit;
+                } else {
+                    $_SESSION['error'] = "পণ্য ডুপ্লিকেট করা সম্ভব হয়নি!";
+                }
+            } catch (\Throwable $e) {
+                $_SESSION['error'] = "ডুপ্লিকেট করতে সমস্যা হয়েছে: " . $e->getMessage();
+            }
+        }
+        header("Location: {$base}/admin/products");
+        exit;
+    }
+
+    public function getJson() {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+            exit;
+        }
+
+        try {
+            $productModel = new Product();
+            $product = $productModel->find($id);
+            if (!$product) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'পণ্যটি পাওয়া যায়নি']);
+                exit;
+            }
+
+            $config = require __DIR__ . '/../../config/database.php';
+            $db = new \Core\Database($config);
+            $vendor = !empty($product['vendor_id']) ? $db->query("SELECT name FROM vendors WHERE id = ?", [$product['vendor_id']])->fetchColumn() : null;
+            $category = !empty($product['category_id']) ? $db->query("SELECT name FROM categories WHERE id = ?", [$product['category_id']])->fetchColumn() : null;
+            $brand = !empty($product['brand_id']) ? $db->query("SELECT name FROM brands WHERE id = ?", [$product['brand_id']])->fetchColumn() : null;
+
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            $imageUrl = Product::getImageUrl($product['image_path'], $base);
+            $stockFormatted = Product::formatStockDisplay($product);
+            $hasDiscount = Product::hasDiscount($product);
+            $discountPercent = Product::getDiscountPercent($product);
+
+            $variants = !empty($product['unit_variants_json']) ? json_decode($product['unit_variants_json'], true) : [];
+            $addons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'product' => array_merge($product, [
+                    'vendor_name' => $vendor ?: 'কোনো ভেন্ডর নেই',
+                    'category_name' => $category ?: 'ক্যাটাগরি নির্ধারণ করা হয়নি',
+                    'brand_name' => $brand ?: 'ব্র্যান্ড নেই',
+                    'image_url' => $imageUrl,
+                    'stock_formatted' => $stockFormatted,
+                    'has_discount' => $hasDiscount,
+                    'discount_percent' => $discountPercent,
+                    'variants' => is_array($variants) ? $variants : [],
+                    'addons' => is_array($addons) ? $addons : [],
+                    'shop_url' => $base . '/product?id=' . $product['id'] . '&preview=1'
+                ])
+            ]);
+            exit;
+        } catch (\Throwable $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
     public function bulkImportIndex() {
         return $this->view('admin/products/bulk_import', ['title' => 'Bulk Import Products']);
     }

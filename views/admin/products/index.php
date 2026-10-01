@@ -398,8 +398,11 @@ usort($categoriesWithPaths, function($a, $b) {
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="font-bold text-secondary-900 text-sm group-hover:text-primary-600 transition-colors">
-                                                    <?php echo htmlspecialchars($p['name']); ?>
+                                                <div class="font-bold text-secondary-900 text-sm group-hover:text-primary-600 transition-colors cursor-pointer flex items-center gap-1.5" 
+                                                     onclick="openProductPreviewModal(<?= $p['id'] ?>)" 
+                                                     title="বিস্তারিত প্রিভিউ দেখতে ক্লিক করুন">
+                                                    <span><?php echo htmlspecialchars($p['name']); ?></span>
+                                                    <ion-icon name="eye-outline" class="text-xs text-secondary-400 group-hover:text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity"></ion-icon>
                                                 </div>
                                                 <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                                                     <span class="text-[11px] font-semibold text-secondary-400">
@@ -500,7 +503,15 @@ usort($categoriesWithPaths, function($a, $b) {
                                         </span>
                                     </td>
                                     <td class="px-4 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <!-- Quick Preview Button -->
+                                            <button type="button" 
+                                                onclick="openProductPreviewModal(<?= $p['id'] ?>)" 
+                                                class="p-1.5 rounded-lg text-teal-600 hover:bg-teal-50 transition-colors" 
+                                                title="প্রোডাক্ট প্রিভিউ (Quick Preview)">
+                                                <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                                            </button>
+
                                             <?php if (!empty($p['is_deleted']) || ($p['availability_status'] ?? '') === 'archived'): ?>
                                                 <form action="<?= $base ?>/admin/products/restore" method="POST" onsubmit="return confirm('পণ্যটি পুনরায় সক্রিয় (Restore) করতে চান?');" class="inline">
                                                     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
@@ -517,16 +528,27 @@ usort($categoriesWithPaths, function($a, $b) {
                                                     </button>
                                                 </form>
                                             <?php else: ?>
+                                                <!-- Duplicate Button -->
+                                                <form action="<?= $base ?>/admin/products/duplicate" method="POST" onsubmit="return confirm('এই পণ্যটির একটি হুবহু কপি (Duplicate) তৈরি করতে চান?');" class="inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                                    <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                                    <button type="submit" class="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors" title="ডুপ্লিকেট করুন (Duplicate)">
+                                                        <ion-icon name="copy-outline" class="text-lg"></ion-icon>
+                                                    </button>
+                                                </form>
+                                                <!-- Auto Image Finder -->
                                                 <button type="button" 
                                                     onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')" 
                                                     class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" 
                                                     title="ওয়েব ও গুগল থেকে ছবি খুঁজুন (Auto Image Finder)">
                                                     <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
                                                 </button>
+                                                <!-- Edit -->
                                                 <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
                                                     class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
                                                     <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                                 </a>
+                                                <!-- Delete -->
                                                 <form action="<?= $base ?>/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
                                                     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                                     <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
@@ -1824,3 +1846,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php require __DIR__ . '/image_finder_modal.php'; ?>
+<?php require __DIR__ . '/product_preview_modal.php'; ?>
