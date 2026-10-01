@@ -64,8 +64,15 @@ $router->get('/api/points', 'ShopController@getPoints');
 
 // Customer Auth Routes
 $router->get('/checkout/auth', 'CustomerAuthController@showAuth');
+$router->get('/customer/login', 'CustomerAuthController@showAuth');
+$router->get('/customer/register', 'CustomerAuthController@showAuth');
+$router->get('/register', 'CustomerAuthController@showAuth');
 $router->post('/checkout/login', 'CustomerAuthController@login');
 $router->post('/checkout/signup', 'CustomerAuthController@signup');
+$router->post('/checkout/check-phone', 'CustomerAuthController@checkPhone');
+$router->post('/checkout/send-signup-otp', 'CustomerAuthController@sendSignupOtp');
+$router->post('/checkout/verify-signup-otp', 'CustomerAuthController@verifySignupOtp');
+$router->post('/checkout/resend-signup-otp', 'CustomerAuthController@resendSignupOtp');
 $router->get('/checkout/reset-password', 'CustomerAuthController@showResetPassword');
 $router->post('/checkout/reset-password', 'CustomerAuthController@updatePassword');
 $router->post('/checkout/firebase-login', 'CustomerAuthController@firebaseLogin');

@@ -79,11 +79,14 @@ class CustomerAuthController
             $settings[$s['key_name']] = $s['value'];
         }
 
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $defaultTab = (strpos($uri, 'register') !== false) ? 'signup' : 'login';
+
         return View::render('shop/checkout_auth', [
             'areas'    => $areas,
             'settings' => $settings,
             'error'    => $_GET['error'] ?? null,
-            'tab'      => $_GET['tab'] ?? 'login',
+            'tab'      => $_GET['tab'] ?? $defaultTab,
         ]);
     }
 
@@ -127,54 +130,205 @@ class CustomerAuthController
     }
 
     // ─────────────────────────────────────────────
-    // SIGNUP – Step 1: Send OTP (if OTP enabled)
+    // ─────────────────────────────────────────────
+    // AJAX: Check if phone already registered
+    // ─────────────────────────────────────────────
+
+    public function checkPhone()
+    {
+        $phone = trim($_POST['phone'] ?? '');
+        header('Content-Type: application/json');
+        if (empty($phone)) {
+            echo json_encode(['success' => false, 'message' => 'ফোন নম্বর আবশ্যক']);
+            exit;
+        }
+
+        $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
+        $exists = (bool)$stmt->fetch();
+
+        echo json_encode([
+            'success' => true,
+            'exists'  => $exists,
+            'phone'   => $phone,
+            'message' => $exists ? 'এই নম্বরে ইতিমধ্যে অ্যাকাউন্ট রয়েছে।' : 'নম্বরটি ব্যবহারযোগ্য।'
+        ]);
+        exit;
+    }
+
+    // ─────────────────────────────────────────────
+    // AJAX: Send OTP for Step-by-Step Signup
+    // ─────────────────────────────────────────────
+
+    public function sendSignupOtp()
+    {
+        $this->startSession();
+        $phone = trim($_POST['phone'] ?? '');
+        header('Content-Type: application/json');
+
+        if (empty($phone)) {
+            echo json_encode(['success' => false, 'message' => 'সঠিক মোবাইল নম্বর লিখুন']);
+            exit;
+        }
+
+        // Check duplicate phone
+        $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'exists' => true, 'message' => 'এই নম্বরে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা আছে। অনুগ্রহ করে লগইন করুন।']);
+            exit;
+        }
+
+        try {
+            $res = $this->otpService->generateForPending($phone);
+            $_SESSION['pending_signup_phone'] = $phone;
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'আপনার মোবাইল নম্বরে ৬-ডিজিটের ওটিপি কোড পাঠানো হয়েছে।',
+                'phone'   => $phone
+            ]);
+            exit;
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'ওটিপি পাঠাতে সমস্যা হয়েছে: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // AJAX: Verify OTP for Step-by-Step Signup
+    // ─────────────────────────────────────────────
+
+    public function verifySignupOtp()
+    {
+        $this->startSession();
+        $phone = trim($_POST['phone'] ?? '');
+        $code  = trim($_POST['otp_code'] ?? '');
+        header('Content-Type: application/json');
+
+        if (empty($phone) || empty($code)) {
+            echo json_encode(['success' => false, 'message' => 'ফোন নম্বর এবং ওটিপি কোড আবশ্যক']);
+            exit;
+        }
+
+        $valid = $this->otpService->verify($phone, $code, true);
+        if ($valid) {
+            $_SESSION['otp_phone_verified'] = $phone;
+            echo json_encode([
+                'success' => true,
+                'message' => 'ওটিপি সফলভাবে যাচাইকৃত হয়েছে।'
+            ]);
+            exit;
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'ভুল ওটিপি কোড অথবা কোডের মেয়াদ শেষ হয়ে গেছে!'
+            ]);
+            exit;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // AJAX: Resend OTP for Step-by-Step Signup
+    // ─────────────────────────────────────────────
+
+    public function resendSignupOtp()
+    {
+        $this->startSession();
+        $phone = trim($_POST['phone'] ?? ($_SESSION['pending_signup_phone'] ?? ''));
+        header('Content-Type: application/json');
+
+        if (empty($phone)) {
+            echo json_encode(['success' => false, 'message' => 'নম্বর পাওয়া যায়নি']);
+            exit;
+        }
+
+        try {
+            $this->otpService->generateForPending($phone);
+            echo json_encode([
+                'success' => true,
+                'message' => 'নতুন ওটিপি কোড পুনরায় পাঠানো হয়েছে।'
+            ]);
+            exit;
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'পুনরায় ওটিপি পাঠাতে ব্যর্থ হয়েছে']);
+            exit;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // SIGNUP – Step 1 & Wizard Submission
     // ─────────────────────────────────────────────
 
     public function signup()
     {
+        $this->startSession();
         $base = $this->base();
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_POST['is_ajax']) && $_POST['is_ajax'] == '1');
 
         $name           = trim($_POST['name'] ?? '');
         $phone          = trim($_POST['phone'] ?? '');
         $email          = trim($_POST['email'] ?? '') ?: null;
         $password       = $_POST['password'] ?? '';
-        $areaId         = $_POST['area_id'] ?? null;
-        $zoneId         = $_POST['zone_id'] ?? null;
-        $pointId        = $_POST['point_id'] ?? null;
+        $areaId         = !empty($_POST['area_id']) ? intval($_POST['area_id']) : null;
+        $zoneId         = !empty($_POST['zone_id']) ? intval($_POST['zone_id']) : null;
+        $pointId        = !empty($_POST['point_id']) ? intval($_POST['point_id']) : null;
         $addressDetails = trim($_POST['address'] ?? '');
+        $otpCode        = trim($_POST['otp_code'] ?? '');
 
         // Validate required fields
-        if (empty($name) || empty($phone) || empty($password) || empty($areaId) || empty($zoneId) || empty($pointId)) {
+        if (empty($name) || empty($phone) || empty($password)) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'নাম, মোবাইল নম্বর এবং পাসওয়ার্ড পূরণ করা আবশ্যক!']);
+                exit;
+            }
             $this->redirect("$base/checkout/auth?error=missing_fields&tab=signup");
         }
 
         // Check duplicate phone
         $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
         if ($stmt->fetch()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'এই নম্বরে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা আছে।']);
+                exit;
+            }
             $this->redirect("$base/checkout/auth?error=phone_exists&tab=signup");
         }
 
-        // If OTP required: save form data in session, send OTP, redirect to OTP page
+        // If OTP required: ensure OTP verification happened
         if ($this->isOtpEnabled()) {
-            $this->startSession();
-            $_SESSION['signup_pending'] = [
-                'name'            => $name,
-                'phone'           => $phone,
-                'email'           => $email,
-                'password'        => $password,
-                'area_id'         => $areaId,
-                'zone_id'         => $zoneId,
-                'point_id'        => $pointId,
-                'address_details' => $addressDetails,
-            ];
+            $isVerified = (isset($_SESSION['otp_phone_verified']) && $_SESSION['otp_phone_verified'] === $phone);
+            if (!$isVerified && !empty($otpCode)) {
+                $isVerified = $this->otpService->verify($phone, $otpCode, true);
+            }
 
-            $result = $this->otpService->generateForPending($phone);
-            $this->redirect("$base/checkout/otp-verify?purpose=signup&phone=" . urlencode($phone));
+            if (!$isVerified) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'ওটিপি ভেরিফিকেশন সম্পন্ন হয়নি বা কোডটি সঠিক নয়!']);
+                    exit;
+                }
+                $this->redirect("$base/checkout/auth?error=otp_required&tab=signup");
+            }
         }
 
-        // No OTP required – create account directly
+        // Create customer directly
         $this->createCustomer($name, $phone, $email, $password, $areaId, $zoneId, $pointId, $addressDetails);
+        unset($_SESSION['otp_phone_verified'], $_SESSION['pending_signup_phone'], $_SESSION['signup_pending']);
+
         $redirect = $_POST['redirect'] ?? $_GET['redirect'] ?? "$base/checkout";
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'  => true,
+                'message'  => 'অভিনন্দন! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।',
+                'redirect' => $redirect
+            ]);
+            exit;
+        }
+
         $this->redirect($redirect);
     }
 

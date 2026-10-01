@@ -10,12 +10,16 @@ $fbEnabled  = ($settings['auth_firebase_otp_enabled'] ?? '0') === '1';
 $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 ?>
 
+<!-- Ionicons for Modern Icons -->
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
 <style>
 /* ── Auth Page Premium Styles ───────────────────────────────────── */
 .auth-wrap {
   min-height: calc(100vh - 160px);
   display: flex; align-items: center; justify-content: center;
-  padding: 2rem 1rem;
+  padding: 2.5rem 1rem;
   background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #ecfdf5 100%);
 }
 
@@ -27,7 +31,7 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   border: 1px solid rgba(16,185,129,.12);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 280px 1fr;
 }
 @media (max-width:768px) {
   .auth-card { grid-template-columns: 1fr; }
@@ -36,7 +40,7 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 /* Sidebar */
 .auth-sidebar {
   background: linear-gradient(160deg, #064e3b 0%, #065f46 50%, #047857 100%);
-  padding: 2.5rem 1.5rem;
+  padding: 2.5rem 1.75rem;
   display: flex; flex-direction: column; justify-content: space-between;
   position: relative; overflow: hidden;
 }
@@ -56,35 +60,36 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 .auth-tab-btn {
   display: flex; align-items: center; gap: 12px;
   width: 100%; padding: 14px 18px;
-  border-radius: 14px; font-weight: 700; font-size: .92rem;
+  border-radius: 16px; font-weight: 700; font-size: .92rem;
   transition: all .25s; cursor: pointer; border: none;
-  background: transparent; color: rgba(255,255,255,.6);
+  background: transparent; color: rgba(255,255,255,.7);
   text-align: left; position: relative; z-index: 1;
 }
 .auth-tab-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
 .auth-tab-btn.active {
-  background: rgba(255,255,255,.18); color: #fff;
+  background: rgba(255,255,255,.2); color: #fff;
   box-shadow: 0 4px 16px rgba(0,0,0,.15);
 }
 .auth-tab-btn .tab-icon {
-  width: 40px; height: 40px; border-radius: 10px;
+  width: 42px; height: 42px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,.15); font-size: 1.25rem; flex-shrink: 0;
+  transition: all .2s;
 }
-.auth-tab-btn.active .tab-icon { background: #10b981; }
+.auth-tab-btn.active .tab-icon { background: #10b981; color: #fff; }
 
 /* Form Panel */
-.auth-panel { padding: 2.5rem 2.5rem; }
-@media (max-width:640px) { .auth-panel { padding: 1.5rem; } }
+.auth-panel { padding: 2.5rem 2.5rem; position: relative; }
+@media (max-width:640px) { .auth-panel { padding: 1.75rem 1.25rem; } }
 
 .form-section { display: none; }
 .form-section.active { display: block; animation: slideIn .3s ease; }
-@keyframes slideIn { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
 
 .auth-input {
-  width: 100%; padding: 11px 16px;
-  border: 2px solid #e5e7eb; border-radius: 12px;
-  font-size: .9rem; font-family: inherit;
+  width: 100%; padding: 12px 16px;
+  border: 2px solid #e5e7eb; border-radius: 14px;
+  font-size: .95rem; font-family: inherit;
   transition: all .2s; background: #fafafa; color: #111827;
   outline: none;
 }
@@ -93,45 +98,55 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 
 .auth-input-icon-wrap { position: relative; }
 .auth-input-icon-wrap ion-icon {
-  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-  color: #9ca3af; font-size: 1rem; pointer-events: none;
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: #9ca3af; font-size: 1.15rem; pointer-events: none;
 }
-.auth-input-icon-wrap .auth-input { padding-left: 40px; }
+.auth-input-icon-wrap .auth-input { padding-left: 44px; }
 
 .auth-btn-primary {
-  width: 100%; padding: 14px 20px;
+  width: 100%; padding: 13px 22px;
   background: linear-gradient(135deg, #059669, #10b981);
   color: #fff; font-weight: 800; font-size: .95rem;
   border: none; border-radius: 14px; cursor: pointer;
   transition: all .25s; letter-spacing: .01em;
-  box-shadow: 0 6px 20px rgba(5,150,105,.3);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 6px 20px rgba(5,150,105,.28);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
 .auth-btn-primary:hover {
   background: linear-gradient(135deg, #047857, #059669);
   transform: translateY(-1px); box-shadow: 0 10px 28px rgba(5,150,105,.35);
 }
 .auth-btn-primary:active { transform: translateY(0); }
-.auth-btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none !important; }
+.auth-btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none !important; }
 
-.auth-btn-firebase {
-  width: 100%; padding: 13px 20px;
-  background: #fff;
-  border: 2px solid #e5e7eb; border-radius: 14px;
-  color: #374151; font-weight: 700; font-size: .9rem;
-  cursor: pointer; transition: all .25s;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
+.auth-btn-secondary {
+  padding: 12px 20px;
+  background: #f3f4f6;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  color: #4b5563;
+  font-weight: 700;
+  font-size: .9rem;
+  cursor: pointer;
+  transition: all .2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-.auth-btn-firebase:hover { border-color: #f59e0b; color: #b45309; background: #fffbeb; }
+.auth-btn-secondary:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
 
 .form-label {
-  display: block; font-size: .78rem; font-weight: 700;
-  color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+  display: block; font-size: .82rem; font-weight: 700;
+  color: #374151; margin-bottom: 7px; letter-spacing: .02em;
 }
 
 .divider {
-  display: flex; align-items: center; gap: 12px; margin: 16px 0;
-  color: #9ca3af; font-size: .78rem;
+  display: flex; align-items: center; gap: 12px; margin: 18px 0;
+  color: #9ca3af; font-size: .78rem; font-weight: 600;
 }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 
@@ -139,18 +154,24 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   background: #fef2f2; border: 1px solid #fecaca;
   border-radius: 12px; padding: 12px 16px;
   display: flex; align-items: center; gap: 10px;
-  font-size: .83rem; font-weight: 600; color: #dc2626; margin-bottom: 18px;
+  font-size: .85rem; font-weight: 600; color: #dc2626; margin-bottom: 18px;
+}
+.success-box {
+  background: #ecfdf5; border: 1px solid #a7f3d0;
+  border-radius: 12px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: .85rem; font-weight: 600; color: #047857; margin-bottom: 18px;
 }
 
 .select-styled {
-  width: 100%; padding: 11px 16px;
-  border: 2px solid #e5e7eb; border-radius: 12px;
+  width: 100%; padding: 12px 16px;
+  border: 2px solid #e5e7eb; border-radius: 14px;
   font-size: .9rem; font-family: inherit;
   background: #fafafa; color: #111827;
   outline: none; transition: all .2s; appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center; background-size: 18px;
-  padding-right: 40px;
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 18px;
+  padding-right: 42px;
 }
 .select-styled:focus { border-color: #10b981; background-color: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.12); }
 .select-styled:disabled { background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
@@ -161,68 +182,127 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   padding: 3px 10px; border-radius: 999px; border: 1px solid #a7f3d0;
 }
 
-/* ── Firebase OTP Modal ─────────────────────────────── */
-#fb-otp-modal {
+/* ── Wizard Stepper Header ─────────────────────────── */
+.wizard-header {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.wizard-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+.wizard-steps-indicators {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-top: 14px;
+}
+.wizard-step-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #9ca3af;
+  transition: all .2s;
+}
+.wizard-step-node .step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 800;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  transition: all .2s;
+}
+.wizard-step-node.active {
+  color: #065f46;
+}
+.wizard-step-node.active .step-num {
+  background: #10b981;
+  color: #fff;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.2);
+}
+.wizard-step-node.completed {
+  color: #059669;
+}
+.wizard-step-node.completed .step-num {
+  background: #d1fae5;
+  color: #047857;
+  border-color: #6ee7b7;
+}
+@media (max-width: 580px) {
+  .wizard-step-node .step-name { display: none; }
+}
+
+/* Wizard Step Cards */
+.wizard-step-card {
   display: none;
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
-  align-items: center; justify-content: center; padding: 1rem;
+  animation: stepFadeIn .3s ease-out forwards;
 }
-#fb-otp-modal.open { display: flex; }
-.fb-modal-card {
-  background: #fff; border-radius: 24px;
-  box-shadow: 0 32px 80px rgba(0,0,0,.22);
-  padding: 2.5rem 2rem; width: 100%; max-width: 400px;
-  text-align: center; position: relative;
+.wizard-step-card.active {
+  display: block;
 }
-.fb-otp-digits {
-  display: flex; gap: 10px; justify-content: center; margin: 1.5rem 0;
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.fb-otp-digit {
-  width: 50px; height: 58px; border: 2px solid #d1fae5;
-  border-radius: 14px; font-size: 1.6rem; font-weight: 700;
-  text-align: center; background: #f0fdf4; color: #064e3b;
-  outline: none; transition: all .2s;
+
+.step-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1.5px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  color: #059669;
 }
-.fb-otp-digit:focus { border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
+
+/* OTP Digits */
+.otp-box-digit {
+  width: 48px;
+  height: 56px;
+  border: 2px solid #d1fae5;
+  border-radius: 14px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: center;
+  background: #f0fdf4;
+  color: #064e3b;
+  outline: none;
+  transition: all .2s;
+}
+@media (max-width: 420px) {
+  .otp-box-digit { width: 42px; height: 50px; font-size: 1.35rem; }
+}
+.otp-box-digit:focus {
+  border-color: #10b981;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.18);
+}
 </style>
-
-<!-- ───────────────────────────────────── -->
-<!--  Firebase OTP Modal (shared)         -->
-<!-- ───────────────────────────────────── -->
-<div id="fb-otp-modal" role="dialog" aria-modal="true" aria-label="Phone Verification">
-  <div class="fb-modal-card">
-    <div style="font-size:3rem;margin-bottom:.5rem;">📱</div>
-    <h2 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.35rem;">Verify Your Phone</h2>
-    <p style="font-size:.82rem;color:#6b7280;margin-bottom:.25rem;">A 6-digit code was sent to</p>
-    <p id="fb-modal-phone-display" style="font-weight:800;color:#059669;font-size:.95rem;margin-bottom:1rem;"></p>
-
-    <!-- OTP digit boxes -->
-    <div class="fb-otp-digits" id="fb-otp-digits">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="1">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="2">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="3">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="4">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="5">
-      <input class="fb-otp-digit" type="text" inputmode="numeric" maxlength="1" tabindex="6">
-    </div>
-
-    <div id="fb-otp-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:.82rem;font-weight:600;color:#dc2626;margin-bottom:1rem;"></div>
-    <div id="fb-otp-loading" style="display:none;font-size:.82rem;color:#6b7280;margin-bottom:.75rem;">⏳ Verifying…</div>
-
-    <button id="fb-verify-btn" onclick="fbConfirmOtp()"
-            style="width:100%;padding:13px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;border:none;border-radius:14px;cursor:pointer;font-size:.95rem;margin-bottom:.75rem;">
-      ✅ Verify & Continue
-    </button>
-    <button onclick="fbCloseModal()"
-            style="width:100%;padding:10px;background:transparent;border:1.5px solid #e5e7eb;border-radius:12px;font-size:.83rem;color:#6b7280;cursor:pointer;font-weight:600;">
-      ✕ Cancel
-    </button>
-
-    <!-- reCAPTCHA container (invisible) -->
-    <div id="recaptcha-container" style="margin-top:.75rem;"></div>
-  </div>
-</div>
 
 <div class="auth-wrap">
   <div class="w-full max-w-5xl px-2">
@@ -234,9 +314,10 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
       'phone_exists'         => 'এই ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট আছে। লগইন করুন।',
       'create_account_first' => 'নতুন অ্যাকাউন্ট তৈরি করতে নিচের ফর্ম ব্যবহার করুন।',
       'firebase_failed'      => 'OTP যাচাই ব্যর্থ হয়েছে। আবার চেষ্টা করুন।',
+      'otp_required'         => 'ওটিপি ভেরিফিকেশন সম্পন্ন করুন।',
     ]; ?>
     <div class="error-box mb-4 max-w-5xl mx-auto">
-      <ion-icon name="alert-circle" style="font-size:1.2rem;flex-shrink:0"></ion-icon>
+      <ion-icon name="alert-circle" style="font-size:1.3rem;flex-shrink:0"></ion-icon>
       <span><?= $errorMap[$error] ?? htmlspecialchars($error) ?></span>
     </div>
     <?php endif; ?>
@@ -248,22 +329,24 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
         <div>
           <!-- Logo -->
           <div class="mb-8" style="position:relative;z-index:1">
-            <div style="font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.02em;">
-              🛒 <?= htmlspecialchars($siteName) ?>
-            </div>
-            <div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:4px;">
-              Fresh Groceries Delivered
-            </div>
+            <a href="<?= $base ?>/" style="text-decoration:none;">
+              <div style="font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.02em;">
+                🛒 <?= htmlspecialchars($siteName) ?>
+              </div>
+              <div style="font-size:.78rem;color:rgba(255,255,255,.65);margin-top:4px;">
+                তাজা ও সেরা বাজার আপনার ঘরে
+              </div>
+            </a>
           </div>
 
           <!-- Tab Buttons -->
-          <div class="space-y-2.5" style="position:relative;z-index:1">
+          <div class="space-y-3" style="position:relative;z-index:1">
             <button onclick="switchTab('login')" id="tab-login"
                     class="auth-tab-btn <?= $activeTab === 'login' ? 'active' : '' ?>">
               <span class="tab-icon"><ion-icon name="log-in-outline"></ion-icon></span>
               <div>
-                <div>Login</div>
-                <div style="font-size:.72rem;font-weight:500;opacity:.7">Existing account</div>
+                <div style="font-size:.95rem;">লগইন করুন</div>
+                <div style="font-size:.72rem;font-weight:500;opacity:.75">আগের অ্যাকাউন্ট আছে</div>
               </div>
             </button>
 
@@ -271,11 +354,11 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
                     class="auth-tab-btn <?= $activeTab === 'signup' ? 'active' : '' ?>">
               <span class="tab-icon"><ion-icon name="person-add-outline"></ion-icon></span>
               <div>
-                <div>Create Account</div>
-                <div style="font-size:.72rem;font-weight:500;opacity:.7">
-                  New customer
-                  <?php if ($fbEnabled): ?>
-                  &nbsp;<span class="otp-badge">🔥 OTP</span>
+                <div style="font-size:.95rem;">রেজিস্ট্রেশন</div>
+                <div style="font-size:.72rem;font-weight:500;opacity:.75">
+                  নতুন অ্যাকাউন্ট খুলুন
+                  <?php if ($otpEnabled): ?>
+                  &nbsp;<span class="otp-badge">🔐 OTP</span>
                   <?php endif; ?>
                 </div>
               </div>
@@ -284,200 +367,362 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
         </div>
 
         <!-- Security note -->
-        <div style="position:relative;z-index:1;margin-top:2rem;">
-          <div style="display:flex;align-items:center;gap:8px;font-size:.75rem;color:rgba(255,255,255,.45);">
-            <ion-icon name="shield-checkmark-outline" style="font-size:1rem;"></ion-icon>
-            SSL secured · Your data is safe
+        <div style="position:relative;z-index:1;margin-top:2.5rem;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:.76rem;color:rgba(255,255,255,.65);">
+            <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;color:#6ee7b7;"></ion-icon>
+            SSL সুরক্ষিত · আপনার তথ্য সম্পূর্ণ নিরাপদ
           </div>
-          <?php if ($fbEnabled): ?>
-          <div style="display:flex;align-items:center;gap:8px;font-size:.72rem;color:rgba(255,255,255,.35);margin-top:6px;">
-            <ion-icon name="flame-outline" style="font-size:.9rem;"></ion-icon>
-            Powered by Firebase Auth
-          </div>
-          <?php endif; ?>
         </div>
       </div>
 
       <!-- ── Form Panel ─────────────────────────── -->
       <div class="auth-panel">
 
-        <!-- ╔══ LOGIN FORM ══╗ -->
+        <!-- ╔══════════════════════════════════════════╗ -->
+        <!-- ║               LOGIN FORM                 ║ -->
+        <!-- ╚══════════════════════════════════════════╝ -->
         <div class="form-section <?= $activeTab === 'login' ? 'active' : '' ?>" id="form-login">
-          <h2 style="font-size:1.5rem;font-weight:900;color:#111827;margin-bottom:.4rem;">Welcome Back! 👋</h2>
-          <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.75rem;">Enter your details to continue shopping.</p>
+          <div class="mb-6">
+            <h2 style="font-size:1.5rem;font-weight:900;color:#111827;margin-bottom:.35rem;">স্বাগতম! 👋</h2>
+            <p style="font-size:.88rem;color:#6b7280;">আপনার অ্যাকাউন্টে লগইন করে সহজে বাজার সম্পন্ন করুন।</p>
+          </div>
 
           <form action="<?= $base ?>/checkout/login" method="POST" id="normal-login-form">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-            <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
+            <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect'] ?? ($base . '/checkout')) ?>">
 
-            <div style="margin-bottom:16px;">
-              <label class="form-label">Phone Number</label>
+            <div style="margin-bottom:18px;">
+              <label class="form-label" for="login-phone">মোবাইল নম্বর *</label>
               <div class="auth-input-icon-wrap">
                 <ion-icon name="call-outline"></ion-icon>
-                <input type="tel" name="phone" id="login-phone" class="auth-input"
-                       placeholder="01700000000" required autocomplete="tel"
+                <input type="tel" name="phone" id="login-phone" class="auth-input font-mono text-base"
+                       placeholder="01XXXXXXXXX" required autocomplete="tel"
                        value="<?= $preFillPhone ?>">
               </div>
             </div>
 
-            <div style="margin-bottom:22px;">
-              <label class="form-label">
-                Password
-                <?php if (($settings['auth_manual_pin_enabled'] ?? '1') == '1'): ?>
-                <span style="text-transform:none;font-weight:500;color:#6b7280;letter-spacing:0"> or Support PIN</span>
-                <?php endif; ?>
-              </label>
-              <div class="auth-input-icon-wrap">
-                <ion-icon name="lock-closed-outline"></ion-icon>
-                <input type="password" name="password" id="loginPass" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+            <div style="margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+                <label class="form-label" for="loginPass" style="margin-bottom:0;">
+                  পাসওয়ার্ড *
+                  <?php if (($settings['auth_manual_pin_enabled'] ?? '1') == '1'): ?>
+                  <span style="font-weight:500;color:#6b7280;">(বা সাপোর্ট পিন)</span>
+                  <?php endif; ?>
+                </label>
               </div>
+              <div class="auth-input-icon-wrap" style="position:relative;">
+                <ion-icon name="lock-closed-outline"></ion-icon>
+                <input type="password" name="password" id="loginPass" class="auth-input" style="padding-right:44px;"
+                       placeholder="••••••••" required autocomplete="current-password">
+                <button type="button" onclick="togglePassVisibility('loginPass', this)"
+                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;"
+                        title="পাসওয়ার্ড দেখুন/লুকান">
+                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                </button>
+              </div>
+
               <?php if (($settings['auth_manual_pin_enabled'] ?? '1') == '1'): ?>
-              <div style="text-align:right;margin-top:6px;">
+              <div style="text-align:right;margin-top:8px;">
                 <a href="tel:01609448066" style="font-size:.78rem;color:#059669;font-weight:700;text-decoration:none;">
-                  Forgot password? Contact support →
+                  পাসওয়ার্ড ভুলে গেছেন? কাস্টমার সাপোর্টে কল করুন →
                 </a>
               </div>
               <?php endif; ?>
             </div>
 
             <button type="submit" class="auth-btn-primary">
-              <ion-icon name="log-in-outline" style="font-size:1.1rem;"></ion-icon>
-              Login &amp; Continue
+              <ion-icon name="log-in-outline" style="font-size:1.2rem;"></ion-icon>
+              লগইন করুন &amp; এগিয়ে যান
             </button>
           </form>
 
-          <!-- Firebase OTP Login -->
-          <?php if ($fbEnabled): ?>
-          <div class="divider">OR</div>
-          <!-- Hidden form submitted after Firebase verify -->
-          <form id="fb-login-form" action="<?= $base ?>/checkout/firebase-verify-login" method="POST" style="display:none;">
-            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-            <input type="hidden" name="firebase_token" id="fb-login-token">
-            <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
-          </form>
-          <button type="button" class="auth-btn-firebase" onclick="fbStartLoginOtp()">
-            🔥 Login with OTP (Free SMS)
-          </button>
-          <?php endif; ?>
+          <!-- Switch to Registration Option -->
+          <div style="margin-top:28px;padding-top:22px;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="font-size:.85rem;color:#6b7280;margin-bottom:12px;">এখনো কোনো অ্যাকাউন্ট নেই?</p>
+            <button type="button" onclick="switchTab('signup')" class="auth-btn-secondary" style="width:100%;background:#ecfdf5;color:#065f46;border-color:#a7f3d0;font-weight:800;padding:13px 20px;">
+              <ion-icon name="person-add-outline" style="font-size:1.2rem;color:#059669;"></ion-icon>
+              নতুন অ্যাকাউন্ট তৈরি করতে রেজিস্ট্রেশন করুন ➔
+            </button>
+          </div>
         </div>
 
-        <!-- ╔══ SIGNUP FORM ══╗ -->
+        <!-- ╔══════════════════════════════════════════╗ -->
+        <!-- ║     SIGNUP FORM (STEP-BY-STEP WIZARD)    ║ -->
+        <!-- ╚══════════════════════════════════════════╝ -->
         <div class="form-section <?= $activeTab === 'signup' ? 'active' : '' ?>" id="form-signup">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:.4rem;">
-            <h2 style="font-size:1.5rem;font-weight:900;color:#111827;">Create Account</h2>
-            <?php if ($fbEnabled): ?>
-            <span class="otp-badge">🔥 OTP Required</span>
-            <?php endif; ?>
+
+          <!-- Wizard Progress Stepper -->
+          <div class="wizard-header">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h2 style="font-size:1.35rem;font-weight:900;color:#111827;letter-spacing:-.01em;">নতুন অ্যাকাউন্ট তৈরি করুন</h2>
+              <span id="step-counter-badge" style="font-size:.75rem;font-weight:800;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 12px;border-radius:999px;">
+                ধাপ ১ / <?= $otpEnabled ? '৫' : '৪' ?>
+              </span>
+            </div>
+
+            <!-- Progress bar fill -->
+            <div class="wizard-progress-track">
+              <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: <?= $otpEnabled ? '20%' : '25%' ?>;"></div>
+            </div>
+
+            <!-- Steps Nodes -->
+            <div class="wizard-steps-indicators">
+              <div class="wizard-step-node active" id="node-step-1">
+                <span class="step-num">১</span>
+                <span class="step-name">নাম</span>
+              </div>
+              <div class="wizard-step-node" id="node-step-2">
+                <span class="step-num">২</span>
+                <span class="step-name">মোবাইল</span>
+              </div>
+              <?php if ($otpEnabled): ?>
+              <div class="wizard-step-node" id="node-step-3">
+                <span class="step-num">৩</span>
+                <span class="step-name">ওটিপি</span>
+              </div>
+              <?php endif; ?>
+              <div class="wizard-step-node" id="node-step-4">
+                <span class="step-num"><?= $otpEnabled ? '৪' : '৩' ?></span>
+                <span class="step-name">পাসওয়ার্ড</span>
+              </div>
+              <div class="wizard-step-node" id="node-step-5">
+                <span class="step-num"><?= $otpEnabled ? '৫' : '৪' ?></span>
+                <span class="step-name">ঠিকানা</span>
+              </div>
+            </div>
           </div>
-          <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.75rem;">
-            <?= $fbEnabled
-              ? 'Fill in your details. Your phone will be verified with a free OTP before account creation.'
-              : 'Join ' . htmlspecialchars($siteName) . ' and get fresh groceries delivered to your door.' ?>
-          </p>
 
-          <!-- Hidden form for Firebase signup: submitted programmatically after OTP verify -->
-          <?php if ($fbEnabled): ?>
-          <form id="fb-signup-form" action="<?= $base ?>/checkout/firebase-verify-signup" method="POST">
+          <!-- Alert message box for feedback -->
+          <div id="wizard-alert" style="display:none;margin-bottom:18px;"></div>
+
+          <!-- Wizard Form Container -->
+          <form id="wizard-form" autocomplete="off" onsubmit="return false;">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-            <input type="hidden" name="firebase_token" id="fb-signup-token">
-            <input type="hidden" name="name"     id="fb-signup-name">
-            <input type="hidden" name="email"    id="fb-signup-email">
-            <input type="hidden" name="password" id="fb-signup-password">
-            <input type="hidden" name="area_id"  id="fb-signup-area">
-            <input type="hidden" name="zone_id"  id="fb-signup-zone">
-            <input type="hidden" name="point_id" id="fb-signup-point">
-            <input type="hidden" name="address"  id="fb-signup-address">
-          </form>
-          <?php endif; ?>
+            <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect'] ?? ($base . '/checkout')) ?>">
 
-          <!-- Normal signup form (always shown as input UI) -->
-          <form action="<?= $base ?>/checkout/signup" method="POST" id="signup-form-ui">
-            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-            <input type="hidden" name="redirect" value="<?= $base ?>/checkout">
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 📌 STEP 1: নাম (শুধুমাত্র একটি ইনপুট)         -->
+            <!-- ══════════════════════════════════════════════ -->
+            <div class="wizard-step-card active" id="step-card-1">
+              <div class="step-icon-badge">👤</div>
+              <h3 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.3rem;">আপনার পুরো নাম লিখুন</h3>
+              <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">আপনার নাম দিন যাতে আপনার ডেলিভারি ও অ্যাকাউন্ট সহজেই চিহ্নিত করা যায়।</p>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-              <div>
-                <label class="form-label">Full Name *</label>
+              <div style="margin-bottom:1.75rem;">
+                <label class="form-label" for="reg-name">পুরো নাম *</label>
                 <div class="auth-input-icon-wrap">
                   <ion-icon name="person-outline"></ion-icon>
-                  <input type="text" name="name" id="su-name" class="auth-input" placeholder="Your name" required autocomplete="name">
+                  <input type="text" id="reg-name" name="name" class="auth-input" style="font-size:1.05rem;padding:14px 16px 14px 44px;"
+                         placeholder="যেমন: আব্দুর রহিম" autofocus required autocomplete="name">
+                </div>
+                <div id="step-1-error" style="display:none;color:#dc2626;font-size:.8rem;font-weight:600;margin-top:6px;"></div>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;">
+                <button type="button" onclick="switchTab('login')" style="background:none;border:none;color:#059669;font-weight:700;font-size:.86rem;cursor:pointer;padding:8px 0;">
+                  ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন ➔
+                </button>
+                <button type="button" id="btn-next-step-1" onclick="wizardNext(1)" class="auth-btn-primary" style="width:auto;min-width:140px;padding:12px 24px;">
+                  পরবর্তী ধাপ ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 📌 STEP 2: মোবাইল নম্বর (শুধুমাত্র একটি ইনপুট) -->
+            <!-- ══════════════════════════════════════════════ -->
+            <div class="wizard-step-card" id="step-card-2">
+              <div class="step-icon-badge">📱</div>
+              <h3 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.3rem;">আপনার মোবাইল নম্বর দিন</h3>
+              <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">অ্যাকাউন্টে লগইন ও প্রতিটি অর্ডারের আপডেট এই নম্বরে পাঠানো হবে।</p>
+
+              <div style="margin-bottom:1.75rem;">
+                <label class="form-label" for="reg-phone">১১-সংখ্যার মোবাইল নম্বর *</label>
+                <div style="position:relative;display:flex;align-items:center;">
+                  <span style="position:absolute;left:14px;font-weight:800;color:#059669;font-size:1rem;pointer-events:none;user-select:none;">+88</span>
+                  <input type="tel" id="reg-phone" name="phone" class="auth-input font-mono" style="font-size:1.15rem;font-weight:700;letter-spacing:1px;padding:14px 16px 14px 54px;"
+                         placeholder="01XXXXXXXXX" maxlength="11" required autocomplete="tel" value="<?= $preFillPhone ?>">
+                </div>
+                <div id="step-2-error" style="display:none;margin-top:10px;"></div>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;">
+                <button type="button" onclick="wizardBack(2)" class="auth-btn-secondary">
+                  ← পেছনে
+                </button>
+                <button type="button" id="btn-next-step-2" onclick="wizardNext(2)" class="auth-btn-primary" style="width:auto;min-width:140px;padding:12px 24px;">
+                  পরবর্তী ধাপ ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 📌 STEP 3: OTP ইনপুট (যদি OTP অন থাকে)       -->
+            <!-- ══════════════════════════════════════════════ -->
+            <?php if ($otpEnabled): ?>
+            <div class="wizard-step-card" id="step-card-3">
+              <div class="step-icon-badge" style="margin-left:auto;margin-right:auto;">🔐</div>
+              <div style="text-align:center;margin-bottom:1.5rem;">
+                <h3 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.3rem;">মোবাইল নম্বর যাচাই করুন (OTP)</h3>
+                <p style="font-size:.85rem;color:#6b7280;margin-bottom:.3rem;">
+                  একটি ৬-সংখ্যার ভেরিফিকেশন কোড পাঠানো হয়েছে:
+                </p>
+                <div style="display:inline-flex;align-items:center;gap:8px;">
+                  <span id="display-otp-phone" style="font-weight:900;color:#059669;font-family:monospace;font-size:1.1rem;">01XXXXXXXXX</span>
+                  <button type="button" onclick="wizardGoTo(2)" style="background:none;border:none;color:#2563eb;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:underline;">
+                    ✏️ নম্বর পরিবর্তন
+                  </button>
                 </div>
               </div>
-              <div>
-                <label class="form-label">Phone Number *</label>
-                <div class="auth-input-icon-wrap">
-                  <ion-icon name="call-outline"></ion-icon>
-                  <input type="tel" name="phone" id="su-phone" class="auth-input"
-                         placeholder="01700000000" required autocomplete="tel"
-                         value="<?= $preFillPhone ?>">
+
+              <div style="margin-bottom:1.75rem;text-align:center;">
+                <label class="form-label" style="text-align:center;margin-bottom:12px;">৬-সংখ্যার কোডটি প্রবেশ করান</label>
+                <div style="display:flex;justify-content:center;gap:8px;" id="otp-digit-boxes">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="0">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="1">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="2">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="3">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="4">
+                  <input type="text" inputmode="numeric" maxlength="1" class="otp-box-digit" data-idx="5">
+                </div>
+                <input type="hidden" id="reg-otp" name="otp_code">
+
+                <div id="step-3-error" style="display:none;color:#dc2626;font-size:.82rem;font-weight:600;margin-top:12px;"></div>
+
+                <!-- Resend countdown -->
+                <div style="margin-top:14px;font-size:.82rem;color:#6b7280;font-weight:600;">
+                  <span id="otp-timer-wrap">পুনরায় কোড পাঠানোর সময় বাকি: <span id="otp-countdown" style="font-weight:800;color:#059669;">60</span> সেকেন্ড</span>
+                  <button type="button" id="btn-resend-otp" onclick="wizardResendOtp()" style="display:none;background:none;border:none;color:#059669;font-weight:800;cursor:pointer;text-decoration:underline;">
+                    🔄 পুনরায় কোড পাঠান (Resend OTP)
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div style="margin-bottom:14px;">
-              <label class="form-label">Email <span style="font-weight:400;text-transform:none;color:#9ca3af;">(Optional)</span></label>
-              <div class="auth-input-icon-wrap">
-                <ion-icon name="mail-outline"></ion-icon>
-                <input type="email" name="email" id="su-email" class="auth-input" placeholder="you@example.com" autocomplete="email">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;">
+                <button type="button" onclick="wizardBack(3)" class="auth-btn-secondary">
+                  ← পেছনে
+                </button>
+                <button type="button" id="btn-next-step-3" onclick="wizardNext(3)" class="auth-btn-primary" style="width:auto;min-width:160px;padding:12px 24px;">
+                  যাচাই ও পরবর্তী ধাপ ➔
+                </button>
               </div>
             </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
-              <div>
-                <label class="form-label">Area *</label>
-                <select id="area_id" name="area_id" class="select-styled" required>
-                  <option value="" disabled selected>Select</option>
-                  <?php foreach ($areas as $area): ?>
-                  <option value="<?= $area['id'] ?>"><?= htmlspecialchars($area['name']) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Zone *</label>
-                <select id="zone_id" name="zone_id" class="select-styled" required disabled>
-                  <option value="" disabled selected>Area first</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Point *</label>
-                <select id="point_id" name="point_id" class="select-styled" required disabled>
-                  <option value="" disabled selected>Zone first</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="address_details_wrapper" style="display:none;margin-bottom:14px;">
-              <label class="form-label">Address Details</label>
-              <textarea id="address" name="address" rows="2" class="auth-input" style="resize:vertical;"
-                        placeholder="House/Road details..."></textarea>
-            </div>
-
-            <div style="margin-bottom:22px;">
-              <label class="form-label">Set Password *</label>
-              <div class="auth-input-icon-wrap">
-                <ion-icon name="lock-closed-outline"></ion-icon>
-                <input type="password" name="password" id="su-password" class="auth-input"
-                       placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
-              </div>
-            </div>
-
-            <?php if ($fbEnabled): ?>
-            <!-- Firebase OTP button intercepts the form -->
-            <button type="button" id="fb-signup-btn" class="auth-btn-primary" onclick="fbStartSignupOtp()">
-              <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;"></ion-icon>
-              Verify Phone &amp; Create Account
-            </button>
-            <?php else: ?>
-            <button type="submit" class="auth-btn-primary">
-              <?php if ($otpEnabled): ?>
-              <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;"></ion-icon>
-              Continue to OTP Verification
-              <?php else: ?>
-              <ion-icon name="person-add-outline" style="font-size:1.1rem;"></ion-icon>
-              Create Account &amp; Continue
-              <?php endif; ?>
-            </button>
             <?php endif; ?>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 📌 STEP 4: পাসওয়ার্ড ও নিশ্চিতকরণ (২ বারে দেবে) -->
+            <!-- ══════════════════════════════════════════════ -->
+            <div class="wizard-step-card" id="step-card-4">
+              <div class="step-icon-badge">🔒</div>
+              <h3 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.3rem;">একটি নতুন পাসওয়ার্ড নির্ধারণ করুন</h3>
+              <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">ভবিষ্যতে লগইন করার জন্য একটি গোপন পাসওয়ার্ড দুইবারে টাইপ করে নিশ্চিত করুন।</p>
+
+              <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:1.75rem;">
+                <div>
+                  <label class="form-label" for="reg-password">নতুন পাসওয়ার্ড (Password) *</label>
+                  <div class="auth-input-icon-wrap" style="position:relative;">
+                    <ion-icon name="lock-closed-outline"></ion-icon>
+                    <input type="password" id="reg-password" name="password" class="auth-input" style="padding-right:44px;"
+                           placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড" minlength="6" required autocomplete="new-password">
+                    <button type="button" onclick="togglePassVisibility('reg-password', this)"
+                            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px;"
+                            title="পাসওয়ার্ড দেখুন/লুকান">
+                      <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="form-label" for="reg-password-confirm">পাসওয়ার্ড নিশ্চিত করুন (Confirm Password) *</label>
+                  <div class="auth-input-icon-wrap" style="position:relative;">
+                    <ion-icon name="shield-checkmark-outline"></ion-icon>
+                    <input type="password" id="reg-password-confirm" class="auth-input" style="padding-right:44px;"
+                           placeholder="পাসওয়ার্ডটি পুনরায় লিখুন" minlength="6" required autocomplete="new-password">
+                    <button type="button" onclick="togglePassVisibility('reg-password-confirm', this)"
+                            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px;"
+                            title="পাসওয়ার্ড দেখুন/লুকান">
+                      <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                    </button>
+                  </div>
+                  <div id="password-match-status" style="margin-top:6px;font-size:.8rem;font-weight:700;"></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;">
+                <button type="button" onclick="wizardBack(4)" class="auth-btn-secondary">
+                  ← পেছনে
+                </button>
+                <button type="button" id="btn-next-step-4" onclick="wizardNext(4)" class="auth-btn-primary" style="width:auto;min-width:140px;padding:12px 24px;">
+                  পরবর্তী ধাপ ➔
+                </button>
+              </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 📌 STEP 5: এরিয়া ও ঠিকানা (শেষ ধাপ)            -->
+            <!-- ══════════════════════════════════════════════ -->
+            <div class="wizard-step-card" id="step-card-5">
+              <div class="step-icon-badge">📍</div>
+              <h3 style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.3rem;">ডেলিভারি এরিয়া ও ঠিকানা</h3>
+              <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">আপনার অর্ডার সঠিক স্থানে পৌঁছে দিতে এরিয়া ও ঠিকানা নির্বাচন করুন।</p>
+
+              <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:1.75rem;">
+
+                <!-- Cascading Area / Zone / Point -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                  <div>
+                    <label class="form-label" for="reg_area_id">এরিয়া (Area) *</label>
+                    <select id="reg_area_id" name="area_id" class="select-styled" required>
+                      <option value="" disabled selected>এলাকা নির্বাচন</option>
+                      <?php foreach ($areas as $area): ?>
+                      <option value="<?= $area['id'] ?>"><?= htmlspecialchars($area['name']) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label" for="reg_zone_id">জোন/থানা (Zone) *</label>
+                    <select id="reg_zone_id" name="zone_id" class="select-styled" required disabled>
+                      <option value="" disabled selected>আগে এরিয়া বেছে নিন</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label" for="reg_point_id">পয়েন্ট (Point) *</label>
+                    <select id="reg_point_id" name="point_id" class="select-styled" required disabled>
+                      <option value="" disabled selected>আগে জোন বেছে নিন</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Detailed Address -->
+                <div id="address_details_wrapper">
+                  <label class="form-label" for="reg_address">বিস্তারিত ঠিকানা (বাড়ি, রোড, ফ্ল্যাট) *</label>
+                  <textarea id="reg_address" name="address" rows="2" class="auth-input" style="resize:vertical;"
+                            placeholder="যেমন: বাড়ি নং ১২, রোড নং ৩, ব্লক বি..." required></textarea>
+                </div>
+
+                <!-- Optional Email -->
+                <div>
+                  <label class="form-label" for="reg_email">ইমেইল <span style="font-weight:400;color:#9ca3af;">(ঐচ্ছিক / Optional)</span></label>
+                  <div class="auth-input-icon-wrap">
+                    <ion-icon name="mail-outline"></ion-icon>
+                    <input type="email" id="reg_email" name="email" class="auth-input" placeholder="you@example.com" autocomplete="email">
+                  </div>
+                </div>
+
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;">
+                <button type="button" onclick="wizardBack(5)" class="auth-btn-secondary">
+                  ← পেছনে
+                </button>
+                <button type="button" id="btn-submit-registration" onclick="wizardSubmitRegistration()" class="auth-btn-primary" style="width:auto;min-width:180px;padding:13px 26px;">
+                  🎉 রেজিস্ট্রেশন সম্পন্ন করুন
+                </button>
+              </div>
+            </div>
+
           </form>
         </div>
 
@@ -486,182 +731,17 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   </div>
 </div>
 
-<!-- ─────────────────────────────────────── -->
-<!--  Firebase SDK + Auth Logic             -->
-<!-- ─────────────────────────────────────── -->
-<?php if ($fbEnabled): ?>
-<script type="module">
-  import { initializeApp }                     from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-  import { getAuth, RecaptchaVerifier,
-           signInWithPhoneNumber }             from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-
-  // Firebase config — DB থেকে Admin Settings-এ যা সেভ তাই ব্যবহার হবে
-  const firebaseConfig = {
-    apiKey:            <?= json_encode($settings['firebase_api_key']            ?? '') ?>,
-    authDomain:        <?= json_encode($settings['firebase_auth_domain']        ?? '') ?>,
-    projectId:         <?= json_encode($settings['firebase_project_id']         ?? '') ?>,
-    storageBucket:     <?= json_encode(($settings['firebase_project_id'] ?? '') . '.firebasestorage.app') ?>,
-    messagingSenderId: <?= json_encode($settings['firebase_messaging_sender_id'] ?? '') ?>,
-    appId:             <?= json_encode($settings['firebase_app_id']             ?? '') ?>,
-  };
-
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  // ── State ────────────────────────────────────
-  let confirmationResult = null;
-  let currentMode        = null; // 'login' | 'signup'
-  let recaptchaVerifier  = null;
-
-  // Expose globally for non-module buttons
-  window._fbAuth = { start, confirmOtp, closeModal };
-
-  // ── reCAPTCHA setup ───────────────────────────
-  function initRecaptcha() {
-    if (recaptchaVerifier) return;
-    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {},
-    });
-  }
-
-  // ── Send OTP ──────────────────────────────────
-  async function start(phone, mode) {
-    currentMode = mode;
-    initRecaptcha();
-
-    // Format phone → +880...
-    let formatted = phone.replace(/\D/g, '');
-    if (formatted.startsWith('0') && formatted.length === 11) {
-      formatted = '+88' + formatted;
-    } else if (!formatted.startsWith('+')) {
-      formatted = '+' + formatted;
-    }
-
-    try {
-      showModalLoading(formatted);
-      confirmationResult = await signInWithPhoneNumber(auth, formatted, recaptchaVerifier);
-      showModalOtp(formatted);
-    } catch (err) {
-      recaptchaVerifier.clear();
-      recaptchaVerifier = null;
-      showError(friendlyError(err));
-    }
-  }
-
-  // ── Confirm OTP ───────────────────────────────
-  async function confirmOtp(code) {
-    if (!confirmationResult) { showError('Please request OTP first.'); return; }
-    setLoading(true);
-    try {
-      const result    = await confirmationResult.confirm(code);
-      const idToken   = await result.user.getIdToken();
-
-      if (currentMode === 'signup') {
-        populateAndSubmitSignup(idToken);
-      } else {
-        populateAndSubmitLogin(idToken);
-      }
-    } catch (err) {
-      setLoading(false);
-      showError(friendlyError(err));
-    }
-  }
-
-  function populateAndSubmitSignup(idToken) {
-    document.getElementById('fb-signup-token').value   = idToken;
-    document.getElementById('fb-signup-name').value    = document.getElementById('su-name').value;
-    document.getElementById('fb-signup-email').value   = document.getElementById('su-email').value;
-    document.getElementById('fb-signup-password').value= document.getElementById('su-password').value;
-    document.getElementById('fb-signup-area').value    = document.getElementById('area_id').value;
-    document.getElementById('fb-signup-zone').value    = document.getElementById('zone_id').value;
-    document.getElementById('fb-signup-point').value   = document.getElementById('point_id').value;
-    document.getElementById('fb-signup-address').value = (document.getElementById('address') || {}).value || '';
-    document.getElementById('fb-signup-form').submit();
-  }
-
-  function populateAndSubmitLogin(idToken) {
-    document.getElementById('fb-login-token').value = idToken;
-    document.getElementById('fb-login-form').submit();
-  }
-
-  // ── Modal helpers ─────────────────────────────
-  function showModalLoading(phone) {
-    document.getElementById('fb-modal-phone-display').textContent = phone;
-    document.getElementById('fb-otp-error').style.display  = 'none';
-    document.getElementById('fb-otp-loading').style.display = 'block';
-    document.getElementById('fb-otp-loading').textContent   = '📤 Sending OTP…';
-    document.getElementById('fb-verify-btn').disabled        = true;
-    openModal();
-  }
-
-  function showModalOtp(phone) {
-    document.getElementById('fb-otp-loading').style.display = 'none';
-    document.getElementById('fb-verify-btn').disabled        = false;
-    // focus first digit
-    const firstDigit = document.querySelector('.fb-otp-digit');
-    if (firstDigit) setTimeout(() => firstDigit.focus(), 100);
-  }
-
-  function openModal()  { document.getElementById('fb-otp-modal').classList.add('open'); }
-  function closeModal() { document.getElementById('fb-otp-modal').classList.remove('open'); }
-
-  function showError(msg) {
-    const el = document.getElementById('fb-otp-error');
-    el.textContent    = msg;
-    el.style.display  = 'block';
-  }
-
-  function setLoading(on) {
-    document.getElementById('fb-otp-loading').style.display = on ? 'block' : 'none';
-    document.getElementById('fb-otp-loading').textContent   = '⏳ Verifying…';
-    document.getElementById('fb-verify-btn').disabled       = on;
-  }
-
-  function friendlyError(err) {
-    const map = {
-      'auth/invalid-phone-number'  : 'Invalid phone number. Use format: 01700000000',
-      'auth/too-many-requests'     : 'Too many attempts. Please wait a minute and try again.',
-      'auth/invalid-verification-code': 'Wrong OTP code. Please check and try again.',
-      'auth/code-expired'          : 'OTP expired. Please request a new one.',
-      'auth/missing-phone-number'  : 'Please enter your phone number.',
-    };
-    return map[err.code] || err.message || 'Something went wrong. Please try again.';
-  }
-
-  // Expose to window for onclick handlers
-  window.fbStartSignupOtp = function() {
-    const form = document.getElementById('signup-form-ui');
-    if (!form.checkValidity()) { form.reportValidity(); return; }
-    const phone = document.getElementById('su-phone').value.trim();
-    window._fbAuth.start(phone, 'signup');
-  };
-
-  window.fbStartLoginOtp = function() {
-    const phone = document.getElementById('login-phone').value.trim();
-    if (!phone || phone.length < 11) {
-      alert('আপনার ১১ সংখ্যার ফোন নম্বর লিখুন।');
-      return;
-    }
-    window._fbAuth.start(phone, 'login');
-  };
-
-  window.fbConfirmOtp = function() {
-    const digits = Array.from(document.querySelectorAll('.fb-otp-digit'));
-    const code   = digits.map(d => d.value).join('');
-    if (code.length < 6) {
-      showError('Please enter all 6 digits.');
-      return;
-    }
-    window._fbAuth.confirmOtp(code);
-  };
-
-  window.fbCloseModal = function() { window._fbAuth.closeModal(); };
-</script>
-<?php endif; ?>
-
 <script>
-// ── Tab switching ────────────────────────────────────────
+// ── Global Config & State ─────────────────────────────────
+const APP_BASE       = '<?= $base ?>';
+const OTP_REQUIRED   = <?= $otpEnabled ? 'true' : 'false' ?>;
+const TOTAL_STEPS    = OTP_REQUIRED ? 5 : 4;
+
+let currentStep = 1;
+let otpResendTimer = null;
+let otpSecondsLeft = 60;
+
+// ── Tab Switching (Login vs Registration) ─────────────────
 function switchTab(tab) {
   ['login','signup'].forEach(t => {
     document.getElementById('form-' + t).classList.remove('active');
@@ -669,87 +749,587 @@ function switchTab(tab) {
   });
   document.getElementById('form-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
+
+  if (tab === 'signup') {
+    wizardGoTo(1);
+  } else {
+    setTimeout(() => {
+      const phoneInput = document.getElementById('login-phone');
+      if (phoneInput && !phoneInput.value) phoneInput.focus();
+    }, 100);
+  }
 }
 
-if (window.location.search.includes('tab=signup')) switchTab('signup');
+// ── Stepper UI Synchronizer ──────────────────────────────
+function updateStepperUI(step) {
+  currentStep = step;
 
-// ── OTP digit navigation in modal ───────────────────────
+  // Step counter text
+  const badge = document.getElementById('step-counter-badge');
+  const banglaDigits = {'1':'১','2':'২','3':'৩','4':'৪','5':'৫'};
+  const totalBangla  = banglaDigits[TOTAL_STEPS] || TOTAL_STEPS;
+  let currentVisual  = step;
+  if (!OTP_REQUIRED && step >= 4) {
+    currentVisual = step - 1; // Step 4 becomes step 3 visually, Step 5 becomes step 4
+  }
+  badge.textContent = `ধাপ ${banglaDigits[currentVisual] || currentVisual} / ${totalBangla}`;
+
+  // Progress Bar Fill
+  const fillPct = Math.round((currentVisual / TOTAL_STEPS) * 100);
+  document.getElementById('wizard-progress-fill').style.width = fillPct + '%';
+
+  // Step Node Indicators
+  const nodes = [1, 2, 3, 4, 5];
+  nodes.forEach(n => {
+    const el = document.getElementById('node-step-' + n);
+    if (!el) return;
+    el.classList.remove('active', 'completed');
+    if (n === step) {
+      el.classList.add('active');
+    } else if (n < step) {
+      el.classList.add('completed');
+    }
+  });
+
+  // Switch Active Card
+  document.querySelectorAll('.wizard-step-card').forEach(card => card.classList.remove('active'));
+  const activeCard = document.getElementById('step-card-' + step);
+  if (activeCard) {
+    activeCard.classList.add('active');
+  }
+
+  // Auto-focus primary input of active step
+  setTimeout(() => {
+    if (step === 1) {
+      const el = document.getElementById('reg-name');
+      if (el) el.focus();
+    } else if (step === 2) {
+      const el = document.getElementById('reg-phone');
+      if (el) el.focus();
+    } else if (step === 3) {
+      const firstOtp = document.querySelector('.otp-box-digit[data-idx="0"]');
+      if (firstOtp) firstOtp.focus();
+    } else if (step === 4) {
+      const el = document.getElementById('reg-password');
+      if (el) el.focus();
+    } else if (step === 5) {
+      const el = document.getElementById('reg_area_id');
+      if (el) el.focus();
+    }
+  }, 100);
+}
+
+// ── Wizard Navigation Helpers ─────────────────────────────
+function wizardGoTo(step) {
+  if (step === 3 && !OTP_REQUIRED) {
+    step = 4;
+  }
+  updateStepperUI(step);
+}
+
+function wizardBack(fromStep) {
+  let prevStep = fromStep - 1;
+  if (fromStep === 4 && !OTP_REQUIRED) {
+    prevStep = 2; // Skip step 3 (OTP) when going backward
+  }
+  wizardGoTo(prevStep);
+}
+
+// ── Step 1: নাম Validation & Next ─────────────────────────
+function validateStep1() {
+  const nameInput = document.getElementById('reg-name');
+  const err = document.getElementById('step-1-error');
+  const val = nameInput.value.trim();
+
+  if (!val || val.length < 2) {
+    err.textContent = 'অনুগ্রহ করে আপনার সঠিক পুরো নাম লিখুন (ন্যূনতম ২ অক্ষর)।';
+    err.style.display = 'block';
+    nameInput.focus();
+    return false;
+  }
+  err.style.display = 'none';
+  return true;
+}
+
+// ── Step 2: মোবাইল নম্বর Validation & Duplicate Check ─────
+async function handleStep2Next() {
+  const phoneInput = document.getElementById('reg-phone');
+  const errDiv     = document.getElementById('step-2-error');
+  const btn        = document.getElementById('btn-next-step-2');
+  let phone        = phoneInput.value.trim().replace(/\D/g, '');
+
+  if (phone.startsWith('880')) {
+    phone = '0' + phone.substring(3);
+  }
+
+  // Validate format (Bangladeshi 11-digit mobile: 013-019)
+  const phoneRegex = /^01[3-9]\d{8}$/;
+  if (!phoneRegex.test(phone)) {
+    errDiv.innerHTML = '<span style="color:#dc2626;font-size:.82rem;font-weight:700;">⚠️ সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)</span>';
+    errDiv.style.display = 'block';
+    phoneInput.focus();
+    return;
+  }
+
+  phoneInput.value = phone;
+  errDiv.style.display = 'none';
+
+  // Check phone existence via AJAX
+  btn.disabled = true;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ নম্বর যাচাই হচ্ছে...';
+
+  try {
+    const formData = new FormData();
+    formData.append('phone', phone);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    const res = await fetch(`${APP_BASE}/checkout/check-phone`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+
+    if (data.exists) {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      errDiv.innerHTML = `
+        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px 14px;color:#92400e;font-size:.85rem;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-weight:700;">⚠️ এই নম্বরে ইতিমধ্যে একটি একাউন্ট খোলা রয়েছে!</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button type="button" onclick="goToLoginWithPhone('${phone}')" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:.8rem;font-weight:800;cursor:pointer;">
+              🔑 এই নম্বরে লগইন করুন ➔
+            </button>
+          </div>
+        </div>
+      `;
+      errDiv.style.display = 'block';
+      return;
+    }
+
+    // Phone is available!
+    if (OTP_REQUIRED) {
+      btn.innerHTML = '📤 ওটিপি পাঠানো হচ্ছে...';
+      const otpRes = await fetch(`${APP_BASE}/checkout/send-signup-otp`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const otpData = await otpRes.json();
+
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+
+      if (!otpData.success) {
+        errDiv.innerHTML = `<span style="color:#dc2626;font-size:.82rem;font-weight:700;">${otpData.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।'}</span>`;
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      // Update OTP Target Phone Display
+      document.getElementById('display-otp-phone').textContent = phone;
+      startOtpCountdown();
+      wizardGoTo(3);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      wizardGoTo(4); // Straight to password!
+    }
+
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    errDiv.innerHTML = '<span style="color:#dc2626;font-size:.82rem;font-weight:700;">নেটওয়ার্ক সমস্যা। পুনরায় চেষ্টা করুন।</span>';
+    errDiv.style.display = 'block';
+  }
+}
+
+function goToLoginWithPhone(phone) {
+  switchTab('login');
+  document.getElementById('login-phone').value = phone;
+  const passEl = document.getElementById('loginPass');
+  if (passEl) passEl.focus();
+}
+
+// ── Step 3: OTP Verification & Resend ─────────────────────
+function startOtpCountdown() {
+  clearInterval(otpResendTimer);
+  otpSecondsLeft = 60;
+  document.getElementById('otp-timer-wrap').style.display = 'inline';
+  document.getElementById('btn-resend-otp').style.display = 'none';
+  document.getElementById('otp-countdown').textContent    = otpSecondsLeft;
+
+  otpResendTimer = setInterval(() => {
+    otpSecondsLeft--;
+    document.getElementById('otp-countdown').textContent = otpSecondsLeft;
+    if (otpSecondsLeft <= 0) {
+      clearInterval(otpResendTimer);
+      document.getElementById('otp-timer-wrap').style.display = 'none';
+      document.getElementById('btn-resend-otp').style.display = 'inline';
+    }
+  }, 1000);
+}
+
+async function wizardResendOtp() {
+  const phone = document.getElementById('reg-phone').value.trim();
+  const btn   = document.getElementById('btn-resend-otp');
+  btn.textContent = 'পাঠানো হচ্ছে...';
+  btn.disabled    = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('phone', phone);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    const res = await fetch(`${APP_BASE}/checkout/resend-signup-otp`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = '🔄 পুনরায় কোড পাঠান (Resend OTP)';
+
+    if (data.success) {
+      startOtpCountdown();
+      showToast('নতুন ওটিপি কোড পাঠানো হয়েছে।', 'success');
+    } else {
+      showToast(data.message || 'কোড পুনরায় পাঠানো যায়নি।', 'error');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '🔄 পুনরায় কোড পাঠান (Resend OTP)';
+    showToast('নেটওয়ার্ক সমস্যা!', 'error');
+  }
+}
+
+async function handleStep3Next() {
+  const digits = Array.from(document.querySelectorAll('.otp-box-digit')).map(d => d.value).join('');
+  const errDiv = document.getElementById('step-3-error');
+  const btn    = document.getElementById('btn-next-step-3');
+  const phone  = document.getElementById('reg-phone').value.trim();
+
+  if (digits.length < 6) {
+    errDiv.textContent   = 'অনুগ্রহ করে সম্পূর্ণ ৬-ডিজিটের কোড লিখুন।';
+    errDiv.style.display = 'block';
+    return;
+  }
+  errDiv.style.display = 'none';
+  document.getElementById('reg-otp').value = digits;
+
+  btn.disabled = true;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ যাচাই করা হচ্ছে...';
+
+  try {
+    const formData = new FormData();
+    formData.append('phone', phone);
+    formData.append('otp_code', digits);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    const res = await fetch(`${APP_BASE}/checkout/verify-signup-otp`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+
+    if (data.success) {
+      wizardGoTo(4); // Advance to Password Setup!
+    } else {
+      errDiv.textContent   = data.message || 'ভুল ওটিপি কোড! অনুগ্রহ করে পুনরায় চেষ্টা করুন।';
+      errDiv.style.display = 'block';
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    errDiv.textContent   = 'যাচাই করতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।';
+    errDiv.style.display = 'block';
+  }
+}
+
+// ── Step 4: পাসওয়ার্ড ও নিশ্চিতকরণ (২ বারে দেবে) ─────────────
+function validateStep4() {
+  const p1 = document.getElementById('reg-password').value;
+  const p2 = document.getElementById('reg-password-confirm').value;
+  const statusDiv = document.getElementById('password-match-status');
+
+  if (!p1 || p1.length < 6) {
+    statusDiv.style.color = '#dc2626';
+    statusDiv.textContent = 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!';
+    document.getElementById('reg-password').focus();
+    return false;
+  }
+
+  if (p1 !== p2) {
+    statusDiv.style.color = '#dc2626';
+    statusDiv.textContent = 'দুটি পাসওয়ার্ড মিলছে না! পুনরায় চেক করুন।';
+    document.getElementById('reg-password-confirm').focus();
+    return false;
+  }
+
+  statusDiv.style.color = '#059669';
+  statusDiv.textContent = '✓ পাসওয়ার্ড মিলেছে!';
+  return true;
+}
+
+// Live Password Match Checker
 document.addEventListener('DOMContentLoaded', function() {
-  const digits = Array.from(document.querySelectorAll('.fb-otp-digit'));
-  digits.forEach((input, i) => {
+  const p1 = document.getElementById('reg-password');
+  const p2 = document.getElementById('reg-password-confirm');
+  const statusDiv = document.getElementById('password-match-status');
+
+  function checkMatch() {
+    if (!p2.value) { statusDiv.textContent = ''; return; }
+    if (p1.value === p2.value) {
+      statusDiv.style.color = '#059669';
+      statusDiv.textContent = '✓ পাসওয়ার্ড মিলেছে';
+    } else {
+      statusDiv.style.color = '#dc2626';
+      statusDiv.textContent = '✕ পাসওয়ার্ড দুটি মিলছে না';
+    }
+  }
+
+  if (p1 && p2) {
+    p1.addEventListener('input', checkMatch);
+    p2.addEventListener('input', checkMatch);
+  }
+});
+
+// ── Step 5: এরিয়া ও ঠিকানা & Final Registration Submit ──────
+async function wizardSubmitRegistration() {
+  const areaSel  = document.getElementById('reg_area_id');
+  const zoneSel  = document.getElementById('reg_zone_id');
+  const pointSel = document.getElementById('reg_point_id');
+  const addrText = document.getElementById('reg_address');
+  const alertBox = document.getElementById('wizard-alert');
+  const submitBtn= document.getElementById('btn-submit-registration');
+
+  if (!areaSel.value) {
+    showToast('অনুগ্রহ করে এরিয়া নির্বাচন করুন।', 'error');
+    areaSel.focus();
+    return;
+  }
+  if (!zoneSel.value) {
+    showToast('অনুগ্রহ করে জোন/থানা নির্বাচন করুন।', 'error');
+    zoneSel.focus();
+    return;
+  }
+  if (!pointSel.value) {
+    showToast('অনুগ্রহ করে পয়েন্ট নির্বাচন করুন।', 'error');
+    pointSel.focus();
+    return;
+  }
+  if (!addrText.value.trim()) {
+    showToast('অনুগ্রহ করে আপনার বিস্তারিত ঠিকানা লিখুন।', 'error');
+    addrText.focus();
+    return;
+  }
+
+  submitBtn.disabled = true;
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '⏳ অ্যাকাউন্ট তৈরি হচ্ছে...';
+
+  // Gather complete form payload
+  const formData = new FormData();
+  formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+  formData.append('redirect', document.querySelector('input[name="redirect"]').value);
+  formData.append('is_ajax', '1');
+  formData.append('name', document.getElementById('reg-name').value.trim());
+  formData.append('phone', document.getElementById('reg-phone').value.trim());
+  formData.append('password', document.getElementById('reg-password').value);
+  formData.append('area_id', areaSel.value);
+  formData.append('zone_id', zoneSel.value);
+  formData.append('point_id', pointSel.value);
+  formData.append('address', addrText.value.trim());
+  formData.append('email', document.getElementById('reg_email').value.trim());
+
+  if (OTP_REQUIRED) {
+    formData.append('otp_code', document.getElementById('reg-otp').value.trim());
+  }
+
+  try {
+    const res = await fetch(`${APP_BASE}/checkout/signup`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      submitBtn.innerHTML = '✅ রেজিস্ট্রেশন সফল!';
+      alertBox.className = 'success-box';
+      alertBox.innerHTML = `
+        <ion-icon name="checkmark-circle" style="font-size:1.5rem;color:#059669;"></ion-icon>
+        <div>
+          <div style="font-weight:900;font-size:1rem;color:#064e3b;">অভিনন্দন! রেজিস্ট্রেশন সম্পন্ন হয়েছে।</div>
+          <div style="font-size:.82rem;color:#065f46;">আপনাকে সরাসরি কেনাকাটায় নিয়ে যাওয়া হচ্ছে...</div>
+        </div>
+      `;
+      alertBox.style.display = 'flex';
+
+      setTimeout(() => {
+        window.location.href = data.redirect || `${APP_BASE}/checkout`;
+      }, 1000);
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+      alertBox.className = 'error-box';
+      alertBox.innerHTML = `
+        <ion-icon name="alert-circle" style="font-size:1.4rem;color:#dc2626;"></ion-icon>
+        <span>${data.message || 'রেজিস্ট্রেশন করতে সমস্যা হয়েছে।'}</span>
+      `;
+      alertBox.style.display = 'flex';
+      window.scrollTo({ top: alertBox.offsetTop - 40, behavior: 'smooth' });
+    }
+  } catch (e) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+    alertBox.className = 'error-box';
+    alertBox.innerHTML = `
+      <ion-icon name="alert-circle" style="font-size:1.4rem;color:#dc2626;"></ion-icon>
+      <span>নেটওয়ার্ক ত্রুটি! অনুগ্রহ করে পুনরায় চেষ্টা করুন।</span>
+    `;
+    alertBox.style.display = 'flex';
+  }
+}
+
+// ── Master Wizard Next Step Controller ────────────────────
+function wizardNext(fromStep) {
+  if (fromStep === 1) {
+    if (validateStep1()) wizardGoTo(2);
+  } else if (fromStep === 2) {
+    handleStep2Next();
+  } else if (fromStep === 3) {
+    handleStep3Next();
+  } else if (fromStep === 4) {
+    if (validateStep4()) wizardGoTo(5);
+  }
+}
+
+// ── Keyboard Enter Key Triggers ───────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('reg-name').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); wizardNext(1); }
+  });
+  document.getElementById('reg-phone').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); wizardNext(2); }
+  });
+  document.getElementById('reg-password-confirm').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); wizardNext(4); }
+  });
+
+  // OTP digit navigation (auto advance, backspace, paste)
+  const otpInputs = Array.from(document.querySelectorAll('.otp-box-digit'));
+  otpInputs.forEach((input, i) => {
     input.addEventListener('input', e => {
       const v = e.data || input.value;
       if (!/^\d$/.test(v)) { input.value = ''; return; }
       input.value = v;
-      if (i < digits.length - 1) digits[i + 1].focus();
+      if (i < otpInputs.length - 1) otpInputs[i + 1].focus();
+      else if (i === otpInputs.length - 1) {
+        // All 6 filled: auto trigger verify
+        setTimeout(() => handleStep3Next(), 150);
+      }
     });
     input.addEventListener('keydown', e => {
       if (e.key === 'Backspace') {
         input.value = '';
-        if (i > 0) digits[i - 1].focus();
+        if (i > 0) otpInputs[i - 1].focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleStep3Next();
       }
     });
     input.addEventListener('paste', e => {
       e.preventDefault();
       const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
-      txt.split('').forEach((c, j) => { if (digits[j]) digits[j].value = c; });
-      const next = Math.min(txt.length, digits.length - 1);
-      digits[next].focus();
+      txt.split('').forEach((c, j) => { if (otpInputs[j]) otpInputs[j].value = c; });
+      const next = Math.min(txt.length, otpInputs.length - 1);
+      otpInputs[next].focus();
+      if (txt.length >= 6) {
+        setTimeout(() => handleStep3Next(), 150);
+      }
     });
   });
-
-  // Close modal on backdrop click
-  document.getElementById('fb-otp-modal').addEventListener('click', function(e) {
-    if (e.target === this) window.fbCloseModal && window.fbCloseModal();
-  });
 });
 
-// ── Cascading Dropdowns ─────────────────────────────────
-document.getElementById('area_id').addEventListener('change', function() {
-  const areaId = this.value;
-  const zSel   = document.getElementById('zone_id');
-  const pSel   = document.getElementById('point_id');
-  zSel.innerHTML = '<option value="" disabled selected>Loading...</option>';
-  zSel.disabled  = true;
-  pSel.innerHTML = '<option value="" disabled selected>Zone first</option>';
-  pSel.disabled  = true;
+// ── Cascading Dropdowns for Area / Zone / Point ───────────
+document.addEventListener('DOMContentLoaded', function() {
+  const areaSel  = document.getElementById('reg_area_id');
+  const zoneSel  = document.getElementById('reg_zone_id');
+  const pointSel = document.getElementById('reg_point_id');
 
-  fetch(`${window.APP_BASE || ''}/api/zones?area_id=${areaId}`)
-    .then(r => r.json())
-    .then(data => {
-      zSel.innerHTML = '<option value="" disabled selected>Select Zone</option>';
-      data.forEach(z => zSel.innerHTML += `<option value="${z.id}">${z.name}</option>`);
-      zSel.disabled = false;
+  if (areaSel) {
+    areaSel.addEventListener('change', function() {
+      const areaId = this.value;
+      zoneSel.innerHTML = '<option value="" disabled selected>লোড হচ্ছে...</option>';
+      zoneSel.disabled  = true;
+      pointSel.innerHTML = '<option value="" disabled selected>আগে জোন বেছে নিন</option>';
+      pointSel.disabled  = true;
+
+      fetch(`${APP_BASE}/api/zones?area_id=${areaId}`)
+        .then(r => r.json())
+        .then(data => {
+          zoneSel.innerHTML = '<option value="" disabled selected>জোন/থানা নির্বাচন করুন</option>';
+          data.forEach(z => zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`);
+          zoneSel.disabled = false;
+        });
     });
-});
+  }
 
-document.getElementById('zone_id').addEventListener('change', function() {
-  const zoneId = this.value;
-  const pSel   = document.getElementById('point_id');
-  pSel.innerHTML = '<option value="" disabled selected>Loading...</option>';
-  pSel.disabled  = true;
+  if (zoneSel) {
+    zoneSel.addEventListener('change', function() {
+      const zoneId = this.value;
+      pointSel.innerHTML = '<option value="" disabled selected>লোড হচ্ছে...</option>';
+      pointSel.disabled  = true;
 
-  fetch(`${window.APP_BASE || ''}/api/points?zone_id=${zoneId}`)
-    .then(r => r.json())
-    .then(data => {
-      pSel.innerHTML = '<option value="" disabled selected>Select Point</option>';
-      data.forEach(p => pSel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
-      pSel.innerHTML += `<option value="other" style="font-weight:700;color:#059669;">Other (আর্দাস)</option>`;
-      pSel.disabled = false;
+      fetch(`${APP_BASE}/api/points?zone_id=${zoneId}`)
+        .then(r => r.json())
+        .then(data => {
+          pointSel.innerHTML = '<option value="" disabled selected>পয়েন্ট নির্বাচন করুন</option>';
+          data.forEach(p => pointSel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
+          pointSel.innerHTML += `<option value="other" style="font-weight:700;color:#059669;">Other (অন্যান্য/আর্দাস)</option>`;
+          pointSel.disabled = false;
+        });
     });
-});
-
-document.getElementById('point_id').addEventListener('change', function() {
-  const wrapper = document.getElementById('address_details_wrapper');
-  const addr    = document.getElementById('address');
-  if (this.value === 'other') {
-    wrapper.style.display = 'block';
-    addr.required = true;
-  } else {
-    wrapper.style.display = 'none';
-    addr.required = false;
   }
 });
+
+// ── Password Visibility Toggle Helper ─────────────────────
+function togglePassVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  const icon = btn.querySelector('ion-icon');
+  if (icon) {
+    icon.setAttribute('name', isPass ? 'eye-off-outline' : 'eye-outline');
+  }
+}
+
+// ── Toast Notification Helper ─────────────────────────────
+function showToast(msg, type = 'info') {
+  const alertBox = document.getElementById('wizard-alert');
+  if (!alertBox) return;
+  alertBox.className = type === 'success' ? 'success-box' : 'error-box';
+  alertBox.innerHTML = `
+    <ion-icon name="${type === 'success' ? 'checkmark-circle' : 'alert-circle'}" style="font-size:1.3rem;"></ion-icon>
+    <span>${msg}</span>
+  `;
+  alertBox.style.display = 'flex';
+  setTimeout(() => {
+    alertBox.style.display = 'none';
+  }, 4500);
+}
+
+// ── Initial State Setup ───────────────────────────────────
+if (window.location.search.includes('tab=signup')) {
+  switchTab('signup');
+}
 </script>
 
 <?php
