@@ -42,6 +42,64 @@ class OrderController extends Controller {
         ]);
     }
 
+    public function incompleteOrders() {
+        $incModel = new \Models\IncompleteOrder();
+        $status = $_GET['status'] ?? 'all';
+        $incompletes = $incModel->all($status);
+        $stats = $incModel->getStats();
+
+        return $this->view('admin/orders/incomplete', [
+            'title' => 'Incomplete Orders & Abandoned Carts',
+            'incompletes' => $incompletes,
+            'currentStatus' => $status,
+            'stats' => $stats
+        ]);
+    }
+
+    public function showIncomplete() {
+        $id = (int)($_GET['id'] ?? 0);
+        $incModel = new \Models\IncompleteOrder();
+        $inc = $incModel->find($id);
+        header('Content-Type: application/json');
+        if (!$inc) {
+            echo json_encode(['status' => 'error', 'message' => 'Order not found']);
+            exit;
+        }
+        echo json_encode(['status' => 'success', 'data' => $inc]);
+        exit;
+    }
+
+    public function convertIncomplete() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = (int)($_POST['id'] ?? 0);
+            try {
+                $incModel = new \Models\IncompleteOrder();
+                $adminId = $_SESSION['user_id'] ?? null;
+                $orderId = $incModel->convertToRealOrder($id, $adminId);
+                $_SESSION['flash_success'] = "ইনকমপ্লিট অর্ডারটি সফলভাবে অর্ডার #{$orderId}-এ রূপান্তরিত হয়েছে!";
+                header('Location: /sodai-dorkar/public/admin/orders/show?id=' . $orderId);
+                exit;
+            } catch (\Exception $e) {
+                $_SESSION['flash_error'] = "অর্ডার রূপান্তর ব্যর্থ হয়েছে: " . $e->getMessage();
+                header('Location: /sodai-dorkar/public/admin/orders/incomplete');
+                exit;
+            }
+        }
+        header('Location: /sodai-dorkar/public/admin/orders/incomplete');
+        exit;
+    }
+
+    public function deleteIncomplete() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = (int)($_POST['id'] ?? 0);
+            $incModel = new \Models\IncompleteOrder();
+            $incModel->delete($id);
+            $_SESSION['flash_success'] = "ইনকমপ্লিট অর্ডার মুছে ফেলা হয়েছে।";
+        }
+        header('Location: /sodai-dorkar/public/admin/orders/incomplete');
+        exit;
+    }
+
     public function packagingList() {
         $orderModel = new Order();
         $orders = $orderModel->all();

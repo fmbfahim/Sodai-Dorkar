@@ -216,6 +216,15 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                             </a>
                         </li>
                         <li>
+                            <a href="<?= $base ?>/admin/orders/incomplete" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-amber-700 hover:bg-amber-50 hover:text-amber-800 transition-colors group pl-8 font-semibold">
+                                <div class="flex items-center">
+                                    <ion-icon name="alert-circle-outline" class="text-base mr-3 text-amber-500"></ion-icon>
+                                    <span>Incomplete Orders</span>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">Live</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="<?= $base ?>/admin/orders/packaging" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
                                 <ion-icon name="cube-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Packaging List</span>
@@ -241,7 +250,16 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                 <!-- Reports Section -->
                 <?php if (\Core\Auth::can('reports')): ?>
-                    <li class="px-4 pt-4 pb-2 text-[11px] font-bold text-secondary-400 uppercase tracking-wider">Reports</li>
+                    <li class="px-4 pt-4 pb-2 text-[11px] font-bold text-secondary-400 uppercase tracking-wider">Reports & Analytics</li>
+                    <li>
+                        <a href="<?= $base ?>/admin/reports/visitors" class="flex items-center justify-between px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <div class="flex items-center">
+                                <ion-icon name="analytics-outline" class="text-lg mr-3 text-emerald-600"></ion-icon>
+                                <span class="font-medium">Visitor Report</span>
+                            </div>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Real-time Tracking"></span>
+                        </a>
+                    </li>
                     <li>
                         <a href="<?= $base ?>/admin/reports/sales" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
                             <ion-icon name="bar-chart-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>

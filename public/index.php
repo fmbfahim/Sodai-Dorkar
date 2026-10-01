@@ -28,6 +28,7 @@ spl_autoload_register(function ($class) {
 use Core\Router;
 use Core\Database;
 use Core\Lang;
+use Core\Tracker;
 
 // Load Config
 $config = require __DIR__ . '/../config/database.php';
@@ -38,6 +39,9 @@ $db = new Database($config);
 
 // Initialize Language
 Lang::init();
+
+// Track Public Page Visitors & Activities
+Tracker::trackPageView();
 
 // Initialize Router
 $router = new Router();
@@ -219,6 +223,10 @@ $router->post('/admin/customers/generate-pin', 'CustomerController@generatePin')
 
 // Order Routes
 $router->get('/admin/orders', 'OrderController@index');
+$router->get('/admin/orders/incomplete', 'OrderController@incompleteOrders');
+$router->get('/admin/orders/incomplete/show', 'OrderController@showIncomplete');
+$router->post('/admin/orders/incomplete/convert', 'OrderController@convertIncomplete');
+$router->post('/admin/orders/incomplete/delete', 'OrderController@deleteIncomplete');
 $router->get('/admin/orders/packaging', 'OrderController@packagingList');
 $router->get('/admin/orders/create', 'OrderController@create');
 $router->get('/admin/orders/show', 'OrderController@show');
@@ -267,6 +275,9 @@ $router->get('/delivery/parcel-search', 'DeliveryController@parcelSearch');
 // Reports
 $router->get('/admin/reports/stock', 'ReportController@stock');
 $router->get('/admin/reports/sales', 'ReportController@sales');
+$router->get('/admin/reports/visitors', 'ReportController@visitors');
+$router->get('/admin/api/visitors', 'AdminController@apiVisitors');
+$router->get('/admin/api/visitor-activity', 'AdminController@apiVisitorActivity');
 $router->get('/admin/accounts', 'AccountController@index');
 
 // Settings

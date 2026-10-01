@@ -1,13 +1,29 @@
-<div class="mb-6 flex justify-between items-center">
-    <h3 class="text-lg font-bold text-secondary-800">Order Management</h3>
-    <a href="/sodai-dorkar/public/admin/orders/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
-        <ion-icon name="cart-outline" class="mr-2"></ion-icon>
-        New Order
-    </a>
+<?php
+$incCount = (class_exists('\Models\IncompleteOrder')) ? (new \Models\IncompleteOrder())->count('incomplete') : 0;
+?>
+
+<div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div>
+        <h3 class="text-xl font-black text-secondary-800">Order Management</h3>
+        <p class="text-xs text-secondary-500">Monitor and fulfill live customer consignments</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <a href="/sodai-dorkar/public/admin/orders/incomplete" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
+            <ion-icon name="alert-circle-outline" class="mr-2 text-lg"></ion-icon>
+            <span>Incomplete Orders</span>
+            <?php if ($incCount > 0): ?>
+                <span class="ml-2 px-1.5 py-0.5 rounded-full bg-white text-amber-700 text-xs font-black"><?= $incCount ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="/sodai-dorkar/public/admin/orders/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
+            <ion-icon name="cart-outline" class="mr-2 text-lg"></ion-icon>
+            <span>New Order</span>
+        </a>
+    </div>
 </div>
 
 <!-- Status Filters -->
-<div class="mb-6 flex flex-wrap gap-2">
+<div class="mb-6 flex flex-wrap gap-2 items-center">
     <?php
     $statuses = [
         'all' => 'All Orders',
@@ -30,6 +46,11 @@
             <?= $label ?>
         </a>
     <?php endforeach; ?>
+
+    <a href="/sodai-dorkar/public/admin/orders/incomplete" class="px-4 py-2 text-sm rounded-lg transition-colors bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 font-bold flex items-center gap-1.5 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        <span>Incomplete Orders (<?= $incCount ?>)</span>
+    </a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden">

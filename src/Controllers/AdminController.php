@@ -168,6 +168,25 @@ class AdminController extends Controller {
             LIMIT 10
         ")->fetchAll();
 
+        // 10. Incomplete Orders & Visitor Tracking
+        $incompleteStats = [
+            'today_count' => 0,
+            'total_incomplete' => 0,
+            'total_amount' => 0,
+            'converted_count' => 0
+        ];
+        try {
+            $incModel = new \Models\IncompleteOrder();
+            $incompleteStats = $incModel->getStats();
+        } catch (\Exception $e) {}
+
+        $activeVisitorsNow = 0;
+        $visitorStats = [];
+        try {
+            $activeVisitorsNow = \Core\Tracker::getActiveVisitorsCount(5);
+            $visitorStats = \Core\Tracker::getVisitorStats('24h');
+        } catch (\Exception $e) {}
+
         return $this->view('admin/dashboard', [
             'title' => 'Executive Dashboard - Operations & Business Analytics',
             'todayData' => $todayData,
@@ -190,7 +209,32 @@ class AdminController extends Controller {
             'chartOrders' => $chartOrders,
             'topProducts' => $topProducts,
             'lowStockItems' => $lowStockItems,
-            'recentOrders' => $recentOrders
+            'recentOrders' => $recentOrders,
+            'incompleteStats' => $incompleteStats,
+            'activeVisitorsNow' => $activeVisitorsNow,
+            'visitorStats' => $visitorStats
         ]);
+    }
+
+    public function apiVisitors() {
+        $range = $_GET['range'] ?? '24h';
+        $from = $_GET['from'] ?? null;
+        $to = $_GET['to'] ?? null;
+        $data = \Core\Tracker::getVisitorStats($range, $from, $to);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+
+    public function apiVisitorActivity() {
+        $ipOrSession = trim($_GET['ip'] ?? ($_GET['session_id'] ?? ''));
+        $activities = \Core\Tracker::getActivityTimeline($ipOrSession);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'status' => 'success',
+            'ip' => $ipOrSession,
+            'activities' => $activities
+        ]);
+        exit;
     }
 }

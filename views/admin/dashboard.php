@@ -139,6 +139,57 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
         </div>
     </div>
 
+    <!-- Live Intelligence KPI Cards: Online Visitors & Incomplete Orders -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <!-- Live Active Visitors Card -->
+        <div class="rounded-2xl p-5 border text-white shadow-sm flex items-center justify-between transition-all" style="background: linear-gradient(135deg, #090d16 0%, #172554 100%); border-color: rgba(59, 130, 246, 0.25);">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Live Active Visitors (অনলাইন ভিজিটর)</span>
+                </div>
+                <div class="text-3xl font-black text-white flex items-baseline gap-2">
+                    <span id="dashLiveVisitorsCount"><?= $activeVisitorsNow ?? 0 ?></span>
+                    <span class="text-xs text-slate-300 font-normal">Active Browsing Now</span>
+                </div>
+                <p class="text-xs text-slate-400">Real-time visitor tracking & activity audit trail</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl text-emerald-400" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <ion-icon name="radio-outline" class="animate-pulse"></ion-icon>
+                </div>
+                <a href="#visitor-analytics-section" class="text-xs text-indigo-300 hover:text-white font-bold underline flex items-center gap-1">
+                    <span>View Visitor Log</span>
+                    <ion-icon name="arrow-down-outline"></ion-icon>
+                </a>
+            </div>
+        </div>
+
+        <!-- Incomplete Orders Card -->
+        <div class="rounded-2xl p-5 border text-white shadow-sm flex items-center justify-between transition-all" style="background: linear-gradient(135deg, #451a03 0%, #78350f 100%); border-color: rgba(245, 158, 11, 0.3);">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span class="text-xs font-bold text-amber-200 uppercase tracking-wider">Incomplete Orders (ইনকমপ্লিট কার্ট)</span>
+                </div>
+                <div class="text-3xl font-black text-amber-300 flex items-baseline gap-2">
+                    <span><?= number_format($incompleteStats['total_incomplete'] ?? 0) ?></span>
+                    <span class="text-xs text-amber-100 font-normal">Carts (৳<?= number_format($incompleteStats['total_amount'] ?? 0) ?>)</span>
+                </div>
+                <p class="text-xs text-amber-200/80">Added to cart without checkout completion</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl text-amber-300" style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.35);">
+                    <ion-icon name="cart-outline"></ion-icon>
+                </div>
+                <a href="<?= $base ?>/admin/orders/incomplete" class="text-xs text-amber-200 hover:text-white font-bold underline flex items-center gap-1">
+                    <span>Recover Orders</span>
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Secondary Operational Highlights Strip -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-xs">
         <div class="border-r border-slate-100 pr-2">
@@ -523,6 +574,116 @@ $activeOrders = ($statusCounts['pending'] ?? 0) + ($statusCounts['processing'] ?
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Live Visitor Reports & Activity Tracker Section -->
+    <div id="visitor-analytics-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 mb-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Live Visitor Intelligence</span>
+                </div>
+                <h3 class="font-black text-slate-900 text-lg sm:text-xl flex items-center gap-2">
+                    <ion-icon name="analytics-outline" class="text-indigo-600"></ion-icon>
+                    Visitor Reports & Activity Audit (ভিজিটর রিপোর্ট ও কার্যকলাপ)
+                </h3>
+                <p class="text-xs text-slate-500">Real-time tracking of visitors, browsing habits, and action logs by IP address.</p>
+            </div>
+
+            <!-- Timeframe Filter Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="loadDashboardVisitors('1h')" id="vbtn-1h" class="v-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    ⚡ 1 Hour
+                </button>
+                <button type="button" onclick="loadDashboardVisitors('24h')" id="vbtn-24h" class="v-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-xs">
+                    📅 24 Hours
+                </button>
+                <button type="button" onclick="loadDashboardVisitors('7d')" id="vbtn-7d" class="v-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    📆 7 Days
+                </button>
+                <button type="button" onclick="loadDashboardVisitors('30d')" id="vbtn-30d" class="v-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    🗓️ 30 Days
+                </button>
+                <a href="<?= $base ?>/admin/reports/visitors" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 transition-colors flex items-center gap-1">
+                    <span>Full Report &rarr;</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Custom Date Range Sub-Bar -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-600">Custom Date:</span>
+                <input type="date" id="dashVisitorFrom" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs bg-white">
+                <span class="text-slate-400">to</span>
+                <input type="date" id="dashVisitorTo" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs bg-white">
+                <button type="button" onclick="applyCustomVisitorFilter()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-indigo-700">Apply</button>
+            </div>
+            <div class="flex items-center gap-4 text-slate-600">
+                <span>Unique: <strong class="text-slate-900" id="dashVStatUnique">-</strong></span>
+                <span>Pageviews: <strong class="text-slate-900" id="dashVStatViews">-</strong></span>
+                <span>Cart Adds: <strong class="text-amber-600" id="dashVStatCarts">-</strong></span>
+                <span>Orders: <strong class="text-emerald-700" id="dashVStatOrders">-</strong></span>
+            </div>
+        </div>
+
+        <!-- Visitor IP Logs Table -->
+        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="px-5 py-3">IP Address</th>
+                            <th class="px-5 py-3">Device / Browser</th>
+                            <th class="px-5 py-3">Customer Info</th>
+                            <th class="px-5 py-3">Current Page</th>
+                            <th class="px-5 py-3">Cart Status</th>
+                            <th class="px-5 py-3">Last Active</th>
+                            <th class="px-5 py-3 text-right">Audit Trail</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashVisitorTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                                <ion-icon name="sync-outline" class="animate-spin text-2xl mx-auto block mb-1"></ion-icon>
+                                <span>Loading live visitor data...</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Timeline Audit ("কি কি করেছে") -->
+    <div id="dashActModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
+                        <ion-icon name="footsteps-outline"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-base">Visitor Activity Audit Trail (কি কি করেছে)</h3>
+                        <p class="text-xs text-slate-300 font-mono" id="dashActModalIp">IP: -</p>
+                    </div>
+                </div>
+                <button onclick="closeDashActModal()" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center text-slate-300">
+                    <ion-icon name="close" class="text-xl"></ion-icon>
+                </button>
+            </div>
+
+            <div class="p-6 max-h-[70vh] overflow-y-auto" id="dashActModalBody">
+                <!-- Dynamically loaded -->
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+                <button onclick="closeDashActModal()" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-white hover:bg-slate-900">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 

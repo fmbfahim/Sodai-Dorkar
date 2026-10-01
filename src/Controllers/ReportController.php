@@ -48,4 +48,19 @@ class ReportController extends Controller {
             'end' => $end
         ]);
     }
+
+    public function visitors() {
+        $range = $_GET['range'] ?? '24h';
+        $from = $_GET['from'] ?? null;
+        $to = $_GET['to'] ?? null;
+        $stats = \Core\Tracker::getVisitorStats($range, $from, $to);
+
+        return $this->view('admin/reports/visitors', [
+            'title' => 'Live Visitor Analytics & Activity Report',
+            'stats' => $stats,
+            'currentRange' => $range,
+            'from' => $from,
+            'to' => $to
+        ]);
+    }
 }

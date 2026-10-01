@@ -751,6 +751,14 @@ class ShopController {
         // Locale
         $locale = Lang::locale();
 
+        try {
+            \Core\Tracker::trackAction('view_product', "পণ্য দেখেছেন: {$product['name']} (৳" . number_format($product['sell_price']) . ")", [
+                'product_id' => $product['id'],
+                'product_name' => $product['name'],
+                'price' => $product['sell_price']
+            ]);
+        } catch (\Exception $ex) {}
+
         return View::render('shop/product_detail', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
@@ -870,6 +878,18 @@ class ShopController {
                         ];
                     }
                     
+                    // Synchronize to Incomplete Orders & Track Action
+                    try {
+                        $incOrderModel = new \Models\IncompleteOrder();
+                        $incOrderModel->syncCart($_SESSION['cart']);
+                        \Core\Tracker::trackAction('add_to_cart', "কার্টে যোগ করেছেন: {$displayName} (পরিমাণ: {$quantity})", [
+                            'product_id' => $product['id'],
+                            'name' => $displayName,
+                            'price' => $price,
+                            'quantity' => $quantity
+                        ]);
+                    } catch (\Exception $ex) {}
+
                     // AJAX response
                     if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                         header('Content-Type: application/json');
@@ -922,7 +942,13 @@ class ShopController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $key = $_POST['product_id'] ?? ($_POST['cart_key'] ?? null);
             if ($key && isset($_SESSION['cart'][$key])) {
+                $remItemName = $_SESSION['cart'][$key]['name'] ?? 'Item';
                 unset($_SESSION['cart'][$key]);
+                try {
+                    $incOrderModel = new \Models\IncompleteOrder();
+                    $incOrderModel->syncCart($_SESSION['cart'] ?? []);
+                    \Core\Tracker::trackAction('remove_from_cart', "কার্ট থেকে সরিয়েছেন: {$remItemName}");
+                } catch (\Exception $ex) {}
             }
 
             // AJAX response
@@ -955,10 +981,21 @@ class ShopController {
             $key = $_POST['product_id'] ?? ($_POST['cart_key'] ?? null);
             $quantity = (int)($_POST['quantity'] ?? 1);
             if ($key && isset($_SESSION['cart'][$key])) {
+                $updItemName = $_SESSION['cart'][$key]['name'] ?? 'Item';
                 if ($quantity > 0) {
                     $_SESSION['cart'][$key]['quantity'] = $quantity;
+                    try {
+                        $incOrderModel = new \Models\IncompleteOrder();
+                        $incOrderModel->syncCart($_SESSION['cart'] ?? []);
+                        \Core\Tracker::trackAction('update_cart', "কার্ট আপডেট: {$updItemName} (পরিমাণ: {$quantity})");
+                    } catch (\Exception $ex) {}
                 } else {
                     unset($_SESSION['cart'][$key]);
+                    try {
+                        $incOrderModel = new \Models\IncompleteOrder();
+                        $incOrderModel->syncCart($_SESSION['cart'] ?? []);
+                        \Core\Tracker::trackAction('remove_from_cart', "কার্ট থেকে সরিয়েছেন: {$updItemName}");
+                    } catch (\Exception $ex) {}
                 }
             }
 
@@ -1034,6 +1071,20 @@ class ShopController {
             WHERE c.id = ?
         ", [$_SESSION['customer_id']]);
         $customer = $stmt->fetch();
+
+        // Synchronize customer info to incomplete order & track checkout page visit
+        try {
+            $incOrderModel = new \Models\IncompleteOrder();
+            $incOrderModel->syncCart($cart, [
+                'customer_id' => $customer['id'] ?? null,
+                'customer_name' => $customer['name'] ?? null,
+                'customer_phone' => $customer['phone'] ?? null,
+                'customer_address' => $customer['address_details'] ?? null
+            ]);
+            \Core\Tracker::trackAction('checkout_view', "চেকআউট পেজে অর্ডার প্রস্তুত করছেন", [
+                'customer_name' => $customer['name'] ?? 'Customer'
+            ]);
+        } catch (\Exception $ex) {}
 
         // Calculate subtotal & estimated weight
         $subtotal = 0;
@@ -1225,6 +1276,16 @@ class ShopController {
                 } catch (\Exception $ex) {
                     // Fail gracefully
                 }
+
+                // Mark incomplete order as converted & track placement
+                try {
+                    $incOrderModel = new \Models\IncompleteOrder();
+                    $incOrderModel->markConverted(session_id(), $orderId);
+                    \Core\Tracker::trackAction('place_order', "অর্ডার সম্পন্ন করেছেন: #{$orderId} (৳" . number_format($totalAmount, 2) . ")", [
+                        'order_id' => $orderId,
+                        'total_amount' => $totalAmount
+                    ]);
+                } catch (\Exception $ex) {}
 
                 // Clear cart
                 unset($_SESSION['cart']);
