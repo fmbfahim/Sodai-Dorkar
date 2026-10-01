@@ -50,6 +50,8 @@ class Product {
                 'availability_status' => "ALTER TABLE products ADD COLUMN availability_status VARCHAR(30) DEFAULT 'pending'",
                 'special_badge'       => "ALTER TABLE products ADD COLUMN special_badge VARCHAR(50) DEFAULT 'none' AFTER availability_status",
                 'demand_percentage'   => "ALTER TABLE products ADD COLUMN demand_percentage INT DEFAULT 0",
+                'is_deleted'          => "ALTER TABLE products ADD COLUMN is_deleted TINYINT(1) DEFAULT 0",
+                'deleted_at'          => "ALTER TABLE products ADD COLUMN deleted_at DATETIME NULL AFTER is_deleted",
             ];
 
             foreach ($columnsToAdd as $col => $alterSql) {
@@ -145,15 +147,21 @@ class Product {
         }
 
         if (!empty($filters['availability_status'])) {
-            if ($filters['availability_status'] === 'pending') {
-                $sql .= " AND (products.availability_status = 'pending' OR products.availability_status IS NULL OR products.availability_status = '')";
+            if ($filters['availability_status'] === 'archived') {
+                $sql .= " AND (products.is_deleted = 1 OR products.availability_status = 'archived')";
+            } elseif ($filters['availability_status'] === 'pending') {
+                $sql .= " AND (products.availability_status = 'pending' OR products.availability_status IS NULL OR products.availability_status = '') AND (products.is_deleted = 0 OR products.is_deleted IS NULL) AND (products.availability_status != 'archived' OR products.availability_status IS NULL)";
             } elseif ($filters['availability_status'] === 'in_stock') {
-                $sql .= " AND products.availability_status = 'in_stock'";
+                $sql .= " AND products.availability_status = 'in_stock' AND (products.is_deleted = 0 OR products.is_deleted IS NULL)";
             } elseif ($filters['availability_status'] === 'out_of_stock') {
-                $sql .= " AND products.availability_status = 'out_of_stock'";
+                $sql .= " AND products.availability_status = 'out_of_stock' AND (products.is_deleted = 0 OR products.is_deleted IS NULL)";
             } else {
-                $sql .= " AND products.availability_status = ?";
+                $sql .= " AND products.availability_status = ? AND (products.is_deleted = 0 OR products.is_deleted IS NULL)";
                 $params[] = $filters['availability_status'];
+            }
+        } else {
+            if (empty($filters['show_deleted'])) {
+                $sql .= " AND (products.is_deleted = 0 OR products.is_deleted IS NULL) AND (products.availability_status != 'archived' OR products.availability_status IS NULL)";
             }
         }
 
@@ -198,14 +206,14 @@ class Product {
     public function findBySku($sku) {
         $sku = trim($sku);
         if (empty($sku)) return false;
-        $stmt = $this->db->query("SELECT * FROM products WHERE sku = ? LIMIT 1", [$sku]);
+        $stmt = $this->db->query("SELECT * FROM products WHERE sku = ? AND (is_deleted = 0 OR is_deleted IS NULL) LIMIT 1", [$sku]);
         return $stmt->fetch();
     }
 
     public function findByName($name) {
         $name = trim($name);
         if (empty($name)) return false;
-        $stmt = $this->db->query("SELECT * FROM products WHERE LOWER(TRIM(name)) = LOWER(?) LIMIT 1", [$name]);
+        $stmt = $this->db->query("SELECT * FROM products WHERE LOWER(TRIM(name)) = LOWER(?) AND (is_deleted = 0 OR is_deleted IS NULL) LIMIT 1", [$name]);
         return $stmt->fetch();
     }
 
@@ -392,7 +400,106 @@ class Product {
     }
 
     public function delete($id) {
-        $this->db->query("DELETE FROM products WHERE id = :id", ['id' => $id]);
+        $id = intval($id);
+        $this->ensureSchema();
+
+        $stmt = $this->db->query("SELECT * FROM products WHERE id = ?", [$id]);
+        $product = $stmt->fetch();
+        if (!$product) {
+            return false;
+        }
+
+        // 1. Check if product is referenced in order_items
+        $hasReferences = false;
+        try {
+            $stmtOrder = $this->db->query("SELECT COUNT(*) FROM order_items WHERE product_id = ?", [$id]);
+            if (intval($stmtOrder->fetchColumn()) > 0) {
+                $hasReferences = true;
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. Check if product is referenced in purchase_items
+        if (!$hasReferences) {
+            try {
+                $stmtPurchase = $this->db->query("SELECT COUNT(*) FROM purchase_items WHERE product_id = ?", [$id]);
+                if (intval($stmtPurchase->fetchColumn()) > 0) {
+                    $hasReferences = true;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 3. If referenced in orders or purchases, safely soft-delete / archive
+        if ($hasReferences) {
+            return $this->softDelete($id, $product);
+        }
+
+        // 4. If no references, attempt hard delete. If foreign key constraint is encountered, fallback to softDelete
+        try {
+            $this->db->query("DELETE FROM products WHERE id = :id", ['id' => $id]);
+            return 'deleted';
+        } catch (\Throwable $e) {
+            return $this->softDelete($id, $product);
+        }
+    }
+
+    public function softDelete($id, $product = null) {
+        $id = intval($id);
+        $this->ensureSchema();
+        if (!$product) {
+            $stmt = $this->db->query("SELECT * FROM products WHERE id = ?", [$id]);
+            $product = $stmt->fetch();
+        }
+
+        // To prevent future SKU collision when creating a new product with the same SKU
+        $archivedSku = !empty($product['sku']) ? $product['sku'] . '_del_' . time() : null;
+
+        $this->db->query(
+            "UPDATE products 
+             SET is_deleted = 1, 
+                 deleted_at = NOW(), 
+                 availability_status = 'archived', 
+                 stock_qty = 0, 
+                 sku = :sku 
+             WHERE id = :id",
+            [
+                'sku' => $archivedSku,
+                'id'  => $id
+            ]
+        );
+
+        return 'archived';
+    }
+
+    public function restore($id) {
+        $id = intval($id);
+        $this->ensureSchema();
+        
+        $stmt = $this->db->query("SELECT * FROM products WHERE id = ?", [$id]);
+        $product = $stmt->fetch();
+        if (!$product) return false;
+
+        $cleanSku = $product['sku'];
+        if (!empty($cleanSku) && strpos($cleanSku, '_del_') !== false) {
+            $candidateSku = preg_replace('/_del_\d+$/', '', $cleanSku);
+            $skuCheck = $this->db->query("SELECT id FROM products WHERE sku = ? AND id != ?", [$candidateSku, $id])->fetch();
+            if (!$skuCheck) {
+                $cleanSku = $candidateSku;
+            }
+        }
+
+        $this->db->query(
+            "UPDATE products 
+             SET is_deleted = 0, 
+                 deleted_at = NULL, 
+                 availability_status = 'pending', 
+                 sku = :sku 
+             WHERE id = :id", 
+            [
+                'sku' => $cleanSku,
+                'id'  => $id
+            ]
+        );
+        return true;
     }
 
     /**

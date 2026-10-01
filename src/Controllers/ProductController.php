@@ -465,13 +465,41 @@ class ProductController extends Controller {
         if ($id) {
             try {
                 $productModel = new Product();
-                $productModel->delete($id);
-                $_SESSION['success'] = "পণ্যটি মুছে ফেলা হয়েছে!";
+                $result = $productModel->delete($id);
+                if ($result === 'archived') {
+                    $_SESSION['success'] = "পণ্যটির পূর্বের বিক্রয়/অর্ডার রেকর্ড সংরক্ষিত রেখে এটিকে সফলভাবে আর্কাইভ ও তালিকা থেকে অপসারণ করা হয়েছে।";
+                } elseif ($result === 'deleted') {
+                    $_SESSION['success'] = "পণ্যটি স্থায়ীভাবে মুছে ফেলা হয়েছে!";
+                } else {
+                    $_SESSION['error'] = "পণ্যটি পাওয়া যায়নি বা আগেই মুছে ফেলা হয়েছে।";
+                }
             } catch (\Throwable $e) {
-                $_SESSION['error'] = "মুছে ফেলতে সমস্যা হয়েছে: " . $e->getMessage();
+                try {
+                    $productModel = new Product();
+                    $productModel->softDelete($id);
+                    $_SESSION['success'] = "পণ্যটির বিক্রয় রেকর্ড সংরক্ষিত রেখে এটিকে সফলভাবে আর্কাইভ করা হয়েছে।";
+                } catch (\Throwable $ex) {
+                    $_SESSION['error'] = "মুছে ফেলতে সমস্যা হয়েছে: " . $e->getMessage();
+                }
             }
         }
         header("Location: {$base}/admin/products");
+        exit;
+    }
+
+    public function restore() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $id = $_POST['id'] ?? null;
+        if ($id) {
+            try {
+                $productModel = new Product();
+                $productModel->restore($id);
+                $_SESSION['success'] = "পণ্যটি সফলভাবে পুনরুদ্ধার (Restore) করা হয়েছে!";
+            } catch (\Throwable $e) {
+                $_SESSION['error'] = "পুনরুদ্ধার করতে সমস্যা হয়েছে: " . $e->getMessage();
+            }
+        }
+        header("Location: {$base}/admin/products?availability_status=archived");
         exit;
     }
 

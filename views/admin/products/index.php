@@ -333,6 +333,7 @@ usort($categoriesWithPaths, function($a, $b) {
                             <option value="in_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'in_stock') ? 'selected' : '' ?>>🟢 ইন স্টক</option>
                             <option value="out_of_stock" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'out_of_stock') ? 'selected' : '' ?>>🔴 স্টক শেষ</option>
                             <option value="pending" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'pending') ? 'selected' : '' ?>>⏳ পেন্ডিং</option>
+                            <option value="archived" <?= (!empty($filters['availability_status']) && $filters['availability_status'] === 'archived') ? 'selected' : '' ?>>📦 আর্কাইভ / অপসারিত</option>
                         </select>
                     </div>
                 </div>
@@ -451,7 +452,10 @@ usort($categoriesWithPaths, function($a, $b) {
                                         <div class="flex flex-col items-center gap-1">
                                             <?php
                                             $avail = $p['availability_status'] ?? 'pending';
-                                            if ($avail === 'in_stock') {
+                                            $isDel = !empty($p['is_deleted']);
+                                            if ($isDel || $avail === 'archived') {
+                                                echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-300">📦 আর্কাইভড</span>';
+                                            } elseif ($avail === 'in_stock') {
                                                 echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 ইন স্টক</span>';
                                             } elseif ($avail === 'out_of_stock') {
                                                 echo '<span class="status-badge-avail inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">🔴 স্টক শেষ</span>';
@@ -497,23 +501,40 @@ usort($categoriesWithPaths, function($a, $b) {
                                     </td>
                                     <td class="px-4 py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1.5">
-                                            <button type="button" 
-                                                onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')" 
-                                                class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" 
-                                                title="ওয়েব ও গুগল থেকে ছবি খুঁজুন (Auto Image Finder)">
-                                                <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
-                                            </button>
-                                            <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
-                                                class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
-                                                <ion-icon name="create-outline" class="text-lg"></ion-icon>
-                                            </a>
-                                            <form action="<?= $base ?>/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
-    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-                                                <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
-                                                <button type="submit" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete Product">
-                                                    <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                            <?php if (!empty($p['is_deleted']) || ($p['availability_status'] ?? '') === 'archived'): ?>
+                                                <form action="<?= $base ?>/admin/products/restore" method="POST" onsubmit="return confirm('পণ্যটি পুনরায় সক্রিয় (Restore) করতে চান?');" class="inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                                    <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                                    <button type="submit" class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="পুনরুদ্ধার করুন (Restore)">
+                                                        <ion-icon name="refresh-outline" class="text-lg"></ion-icon>
+                                                    </button>
+                                                </form>
+                                                <form action="<?= $base ?>/admin/products/delete" method="POST" onsubmit="return confirm('সতর্কতা: পণ্যটি স্থায়ীভাবে মুছে ফেলার চেষ্টা করতে চান?');" class="inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                                    <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
+                                                    <button type="submit" class="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors" title="মুছে ফেলুন">
+                                                        <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                                    </button>
+                                                </form>
+                                            <?php else: ?>
+                                                <button type="button" 
+                                                    onclick="openProductImageFinderModal(<?= $p['id'] ?>, '<?= htmlspecialchars(addslashes($p['name'])) ?>')" 
+                                                    class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" 
+                                                    title="ওয়েব ও গুগল থেকে ছবি খুঁজুন (Auto Image Finder)">
+                                                    <ion-icon name="sparkles" class="text-base text-amber-500"></ion-icon>
                                                 </button>
-                                            </form>
+                                                <a href="<?= $base ?>/admin/products/edit?id=<?php echo $p['id']; ?>" 
+                                                    class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Product">
+                                                    <ion-icon name="create-outline" class="text-lg"></ion-icon>
+                                                </a>
+                                                <form action="<?= $base ?>/admin/products/delete" method="POST" onsubmit="return confirm('পণ্যটি ডিলিট করতে চান?');" class="inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                                    <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
+                                                    <button type="submit" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete Product">
+                                                        <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>

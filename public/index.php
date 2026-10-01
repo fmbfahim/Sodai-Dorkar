@@ -117,6 +117,7 @@ $router->get('/admin/products/dashboard', 'ProductController@dashboard');
 $router->get('/admin/products', 'ProductController@index');
 $router->post('/admin/products/store', 'ProductController@store');
 $router->post('/admin/products/delete', 'ProductController@destroy');
+$router->post('/admin/products/restore', 'ProductController@restore');
 $router->get('/admin/products/edit', 'ProductController@edit');
 $router->post('/admin/products/update', 'ProductController@update');
 $router->get('/admin/products/bulk-import', 'ProductController@bulkImportIndex');
