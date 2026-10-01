@@ -403,4 +403,22 @@ class SettingsController extends Controller {
             exit;
         }
     }
+
+    public function sendTestSms() {
+        header('Content-Type: application/json');
+        $phone = trim($_POST['phone'] ?? '');
+
+        if (empty($phone)) {
+            echo json_encode(['success' => false, 'message' => 'সঠিক মোবাইল নম্বর প্রদান করুন']);
+            exit;
+        }
+
+        $otpService = new \Core\OtpService();
+        $testCode   = rand(100000, 999999);
+        $result     = $otpService->sendTestMessage($phone, "Fresh E-mart Test SMS. Code: $testCode");
+
+        echo json_encode($result);
+        exit;
+    }
 }
+

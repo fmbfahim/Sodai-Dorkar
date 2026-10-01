@@ -166,14 +166,52 @@ class OtpService
         $provider = $cfg['sms_provider'] ?? '';
         $message  = "Your verification code is: $code\nValid for " . self::EXPIRY_MINS . " minutes.\n- " . ($cfg['sms_sender_id'] ?? 'FreshMart');
 
-        // Normalize phone: ensure starts with 88 for BD
-        $msisdn = $phone;
+        // Normalize phone: ensure digits only and starts with 88 for BD
+        $msisdn = preg_replace('/\D/', '', $phone);
         if (strlen($msisdn) === 11 && substr($msisdn, 0, 2) === '01') {
             $msisdn = '88' . $msisdn;
         }
 
         try {
             switch ($provider) {
+
+                // ── Automas SMS (asms.automas.com.bd) ───────────
+                case 'automas':
+                case 'asms_automas':
+                    $apiKey = !empty($cfg['sms_api_key']) ? $cfg['sms_api_key'] : ($cfg['sms_api_token'] ?? '');
+                    $sender = $cfg['sms_sender_id'] ?? '';
+                    $params = [
+                        'apikey'  => $apiKey,
+                        'sender'  => $sender,
+                        'msisdn'  => $msisdn,
+                        'smstext' => $message,
+                    ];
+                    // If message contains Unicode/Bangla characters, set type=8 & smsformat=8
+                    if (preg_match('/[^\x20-\x7E\t\r\n]/', $message)) {
+                        $params['type']      = '8';
+                        $params['smsformat'] = '8';
+                    }
+                    $url = 'https://api.automas.com.bd/smsapiv3';
+                    $ch = curl_init($url);
+                    curl_setopt_array($ch, [
+                        CURLOPT_POST           => true,
+                        CURLOPT_POSTFIELDS     => http_build_query($params),
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_TIMEOUT        => 12,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                    ]);
+                    $resp = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+
+                    @file_put_contents(__DIR__ . '/../../otp_log.txt', date('Y-m-d H:i:s') . " | Automas SMS to $msisdn | Code: $httpCode | Resp: $resp\n", FILE_APPEND);
+
+                    $json = json_decode($resp, true);
+                    if (!empty($json['response'][0]['status'])) {
+                        $st = (string)$json['response'][0]['status'];
+                        return in_array($st, ['100', 'success', 'OK']);
+                    }
+                    return $httpCode >= 200 && $httpCode < 300 && (strpos($resp, '100') !== false || stripos($resp, 'success') !== false);
 
                 // ── GreenWeb SMS ─────────────────────────────────
                 case 'greenweb':
@@ -239,6 +277,108 @@ class OtpService
             @file_put_contents(__DIR__ . '/../../otp_log.txt', date('Y-m-d H:i:s') . " | SMS ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
             return false;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Public: Send a test SMS to check gateway connectivity
+    // ─────────────────────────────────────────────────────────────
+
+    public function sendTestMessage(string $phone, string $message): array
+    {
+        $cfg = $this->getSmsSettings();
+        if (($cfg['sms_enabled'] ?? '0') !== '1') {
+            return [
+                'success' => false,
+                'message' => 'SMS গেটওয়ে নিষ্ক্রিয় করা আছে (SMS is Disabled in Admin Settings)।'
+            ];
+        }
+
+        $provider = $cfg['sms_provider'] ?? '';
+        if (empty($provider)) {
+            return [
+                'success' => false,
+                'message' => 'কোনো SMS Provider নির্বাচন করা নেই।'
+            ];
+        }
+
+        $msisdn = preg_replace('/\D/', '', $phone);
+        if (strlen($msisdn) === 11 && substr($msisdn, 0, 2) === '01') {
+            $msisdn = '88' . $msisdn;
+        }
+
+        if ($provider === 'automas' || $provider === 'asms_automas') {
+            $apiKey = !empty($cfg['sms_api_key']) ? $cfg['sms_api_key'] : ($cfg['sms_api_token'] ?? '');
+            $sender = $cfg['sms_sender_id'] ?? '';
+            if (empty($apiKey) || empty($sender)) {
+                return [
+                    'success' => false,
+                    'message' => 'Automas API Key বা Sender ID পূরণ করা হয়নি।'
+                ];
+            }
+            $params = [
+                'apikey'  => $apiKey,
+                'sender'  => $sender,
+                'msisdn'  => $msisdn,
+                'smstext' => $message,
+            ];
+            if (preg_match('/[^\x20-\x7E\t\r\n]/', $message)) {
+                $params['type']      = '8';
+                $params['smsformat'] = '8';
+            }
+            $url = 'https://api.automas.com.bd/smsapiv3';
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => http_build_query($params),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 12,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $resp = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErr = curl_error($ch);
+            curl_close($ch);
+
+            @file_put_contents(__DIR__ . '/../../otp_log.txt', date('Y-m-d H:i:s') . " | Automas Test SMS to $msisdn | Code: $httpCode | Resp: $resp\n", FILE_APPEND);
+
+            $json = json_decode($resp, true);
+            $st = !empty($json['response'][0]['status']) ? (string)$json['response'][0]['status'] : '';
+
+            $statusTextMap = [
+                '100' => 'মেসেজ সফলভাবে পাঠানো হয়েছে (Success)',
+                '101' => 'ভুল API Key (Invalid API Key)',
+                '102' => 'ভুল Sender ID (Invalid Sender ID)',
+                '103' => 'পর্যাপ্ত ব্যালেন্স নেই (Insufficient Balance)',
+                '104' => 'ভুল মোবাইল নম্বর (Invalid Mobile Number)',
+                '105' => 'প্রয়োজনীয় প্যারামিটার বাদ পড়েছে (Missing Parameter)',
+                '106' => 'অননুমোদিত API Key বা IP এক্সেস নেই (Invalid API Key or IP)',
+                '107' => 'মেসেজ খালি (Empty Message)',
+            ];
+
+            if ($st === '100' || $st === 'success') {
+                return [
+                    'success'  => true,
+                    'message'  => '✅ টেস্ট SMS সফলভাবে পাঠানো হয়েছে!',
+                    'raw'      => $resp,
+                    'provider' => 'Automas SMS (asms.automas.com.bd)'
+                ];
+            } else {
+                $errDesc = $statusTextMap[$st] ?? "স্ট্যাটাস কোড: $st";
+                return [
+                    'success'  => false,
+                    'message'  => "❌ SMS পাঠাতে ব্যর্থ: $errDesc",
+                    'raw'      => $resp ?: $curlErr,
+                    'provider' => 'Automas SMS (asms.automas.com.bd)'
+                ];
+            }
+        }
+
+        $sent = $this->_send($msisdn, 'TEST00');
+        return [
+            'success'  => $sent,
+            'message'  => $sent ? 'টেস্ট SMS সফল হয়েছে' : 'টেস্ট SMS পাঠাতে ব্যর্থ হয়েছে। অনুগ্রহ করে সেটিংস ও লগ চেক করুন।',
+            'provider' => $provider
+        ];
     }
 
     private function _httpGet(string $url): bool

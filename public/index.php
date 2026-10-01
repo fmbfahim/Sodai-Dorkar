@@ -274,6 +274,7 @@ $router->get('/admin/settings', 'SettingsController@index');
 $router->post('/admin/settings/update', 'SettingsController@update');
 $router->get('/admin/ecommerce-settings', 'SettingsController@ecommerce');
 $router->post('/admin/ecommerce-settings/update', 'SettingsController@updateEcommerce');
+$router->post('/admin/settings/test-sms', 'SettingsController@sendTestSms');
 $router->get('/admin/settings/units', 'SettingsController@units');
 $router->post('/admin/settings/units/store', 'SettingsController@storeUnit');
 $router->post('/admin/settings/units/delete', 'SettingsController@deleteUnit');

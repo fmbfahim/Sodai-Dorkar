@@ -1678,6 +1678,7 @@
                             class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             onchange="toggleSmsFields()">
                         <option value=""           <?= ($settings['sms_provider'] ?? '') === ''             ? 'selected' : '' ?>>— Select Provider —</option>
+                        <option value="automas"    <?= ($settings['sms_provider'] ?? '') === 'automas'      ? 'selected' : '' ?>>Automas SMS (asms.automas.com.bd)</option>
                         <option value="greenweb"   <?= ($settings['sms_provider'] ?? '') === 'greenweb'     ? 'selected' : '' ?>>GreenWeb SMS (Bangladesh)</option>
                         <option value="ssl_wireless" <?= ($settings['sms_provider'] ?? '') === 'ssl_wireless' ? 'selected' : '' ?>>SSL Wireless (Bangladesh)</option>
                         <option value="bulksmsbd"  <?= ($settings['sms_provider'] ?? '') === 'bulksmsbd'   ? 'selected' : '' ?>>BulkSMSBD (Bangladesh)</option>
@@ -1685,20 +1686,20 @@
                     </select>
                 </div>
 
-                <!-- API Token (GreenWeb / SSL Wireless / BulkSMSBD) -->
+                <!-- API Token (Automas / GreenWeb / SSL Wireless / BulkSMSBD) -->
                 <div id="field_api_token" class="sms-field">
                     <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">API Token / API Key</label>
                     <input type="text" name="sms_api_token" value="<?= htmlspecialchars($settings['sms_api_token'] ?? '') ?>"
-                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           placeholder="Your API token from the provider dashboard">
+                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                           placeholder="asms.automas.com.bd থেকে প্রাপ্ত API Key দিন">
                 </div>
 
                 <!-- Sender ID -->
                 <div id="field_sender_id" class="sms-field">
                     <label class="block text-xs font-bold text-secondary-700 mb-1.5 uppercase tracking-wide">Sender ID / SID</label>
                     <input type="text" name="sms_sender_id" value="<?= htmlspecialchars($settings['sms_sender_id'] ?? '') ?>"
-                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           placeholder="e.g. FreshMart or your approved Sender ID">
+                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                           placeholder="e.g. Automas approved Sender ID (মাস্কিং বা নন-মাস্কিং আইডি)">
                 </div>
 
                 <!-- Twilio Account SID + Auth Token -->
@@ -1721,10 +1722,34 @@
 
                 <!-- Provider-specific help links -->
                 <div id="sms_help_links" class="text-xs text-secondary-500 space-y-1">
+                    <p id="help_automas"    class="sms-help hidden">🔗 Portal &amp; API Key: <a href="https://asms.automas.com.bd" target="_blank" class="text-emerald-600 hover:underline font-bold">asms.automas.com.bd</a> (API Endpoint: api.automas.com.bd/smsapiv3)</p>
                     <p id="help_greenweb"   class="sms-help hidden">🔗 Get API token: <a href="https://greenweb.com.bd" target="_blank" class="text-violet-600 hover:underline">greenweb.com.bd</a></p>
                     <p id="help_ssl"        class="sms-help hidden">🔗 Get API token: <a href="https://www.sslwireless.com" target="_blank" class="text-violet-600 hover:underline">sslwireless.com</a></p>
                     <p id="help_bulksmsbd"  class="sms-help hidden">🔗 Get API key: <a href="https://bulksmsbd.net" target="_blank" class="text-violet-600 hover:underline">bulksmsbd.net</a></p>
                     <p id="help_twilio"     class="sms-help hidden">🔗 Dashboard: <a href="https://console.twilio.com" target="_blank" class="text-violet-600 hover:underline">console.twilio.com</a></p>
+                </div>
+
+                <!-- Live Test SMS Box -->
+                <div class="mt-4 pt-4 border-t border-secondary-200/90 bg-secondary-50/70 p-3.5 rounded-xl border border-secondary-200">
+                    <label class="block text-xs font-bold text-secondary-800 mb-1 uppercase tracking-wide flex items-center gap-1.5">
+                        <ion-icon name="paper-plane" class="text-emerald-600 text-sm"></ion-icon>
+                        টেস্ট SMS পাঠান (Test SMS Gateway)
+                    </label>
+                    <p class="text-[11px] text-secondary-500 mb-2.5">
+                        সেটিংস সেভ করার পর গেটওয়ে সঠিক কাজ করছে কিনা পরীক্ষা করার জন্য একটি টেস্ট SMS পাঠান।
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex-1 min-w-[200px]">
+                            <input type="tel" id="test_sms_phone" placeholder="01XXXXXXXXX"
+                                   class="w-full px-3 py-1.5 text-xs border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono">
+                        </div>
+                        <button type="button" onclick="sendAdminTestSms()" id="btn_test_sms"
+                                class="px-4 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                            <ion-icon name="send-outline"></ion-icon>
+                            <span>SMS পাঠান</span>
+                        </button>
+                    </div>
+                    <div id="test_sms_result" class="mt-2 text-xs font-medium" style="display:none;"></div>
                 </div>
 
             </div>
@@ -2224,11 +2249,61 @@
 
         // Help links
         document.querySelectorAll('.sms-help').forEach(el => el.classList.add('hidden'));
-        const helpMap = { greenweb: 'help_greenweb', ssl_wireless: 'help_ssl', bulksmsbd: 'help_bulksmsbd', twilio: 'help_twilio' };
+        const helpMap = { automas: 'help_automas', greenweb: 'help_greenweb', ssl_wireless: 'help_ssl', bulksmsbd: 'help_bulksmsbd', twilio: 'help_twilio' };
         if (helpMap[provider]) document.getElementById(helpMap[provider]).classList.remove('hidden');
     }
     // Run on page load to reflect saved provider
     document.addEventListener('DOMContentLoaded', toggleSmsFields);
+
+    async function sendAdminTestSms() {
+        const phoneInput = document.getElementById('test_sms_phone');
+        const phone = phoneInput ? phoneInput.value.trim() : '';
+        const resDiv = document.getElementById('test_sms_result');
+        const btn = document.getElementById('btn_test_sms');
+
+        if (!phone || phone.length < 11) {
+            alert('অনুগ্রহ করে সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 01700000000)');
+            if (phoneInput) phoneInput.focus();
+            return;
+        }
+
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>পাঠানো হচ্ছে...</span>';
+        resDiv.style.display = 'block';
+        resDiv.className = 'mt-2 text-xs font-semibold text-secondary-600';
+        resDiv.textContent = '⏳ SMS গেটওয়েতে সংযোগ করা হচ্ছে...';
+
+        try {
+            const formData = new FormData();
+            formData.append('phone', phone);
+            const csrfEl = document.querySelector('input[name="csrf_token"]');
+            if (csrfEl) formData.append('csrf_token', csrfEl.value);
+
+            const base = (window.location.pathname.includes('/sodai-dorkar/public')) ? '/sodai-dorkar/public' : '';
+            const res = await fetch(`${base}/admin/settings/test-sms`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (data.success) {
+                resDiv.className = 'mt-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200';
+                resDiv.innerHTML = `${data.message} ${data.raw ? '<div class="text-[11px] font-mono mt-1 text-emerald-800 break-all bg-white/70 p-1.5 rounded">' + data.raw + '</div>' : ''}`;
+            } else {
+                resDiv.className = 'mt-2 text-xs font-bold text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200';
+                resDiv.innerHTML = `${data.message} ${data.raw ? '<div class="text-[11px] font-mono mt-1 text-red-800 break-all bg-white/70 p-1.5 rounded">' + data.raw + '</div>' : ''}`;
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            resDiv.className = 'mt-2 text-xs font-bold text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200';
+            resDiv.textContent = 'সার্ভার বা নেটওয়ার্ক ত্রুটি! পুনরায় চেষ্টা করুন।';
+        }
+    }
     </script>
 
 </div>
