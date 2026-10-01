@@ -185,15 +185,15 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                             <!-- Delivery Charge Tier Tag -->
                             <?php if (($deliveryCalc['charge_source'] ?? '') === 'point'): ?>
                                 <span class="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full bg-purple-100 text-purple-800">
-                                    📍 Point Rate
+                                    📍 <?= $__('rate_point') ?>
                                 </span>
                             <?php elseif (($deliveryCalc['charge_source'] ?? '') === 'area'): ?>
                                 <span class="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-800">
-                                    🏛️ Union Rate
+                                    🏛️ <?= $__('rate_union') ?>
                                 </span>
                             <?php else: ?>
                                 <span class="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                                    🚚 Standard Base
+                                    🚚 <?= $__('rate_standard') ?>
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -201,20 +201,20 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                         <div class="bg-gray-50/70 rounded-xl p-5 border border-gray-100">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p class="text-xs text-gray-400 font-medium mb-1">Customer Name</p>
+                                    <p class="text-xs text-gray-400 font-medium mb-1"><?= $__('customer_name') ?></p>
                                     <p class="font-bold text-gray-800"><?= htmlspecialchars($customer['name'] ?? '') ?></p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-400 font-medium mb-1">Contact Phone</p>
+                                    <p class="text-xs text-gray-400 font-medium mb-1"><?= $__('contact_phone') ?></p>
                                     <p class="font-bold text-gray-800"><?= htmlspecialchars($customer['phone'] ?? '') ?></p>
                                 </div>
                                 <div class="md:col-span-2 pt-2 border-t border-gray-200/60">
-                                    <p class="text-xs text-gray-400 font-medium mb-1">Delivery Destination</p>
+                                    <p class="text-xs text-gray-400 font-medium mb-1"><?= $__('delivery_destination') ?></p>
                                     <p class="font-semibold text-gray-800 leading-relaxed">
                                         <?= htmlspecialchars($customer['address_details'] ?? '') ?><br>
                                         <span class="text-xs text-gray-500">
                                             <?php if (!empty($customer['point_name'])): ?>
-                                                <span class="text-purple-700 font-bold">Drop-off: <?= htmlspecialchars($customer['point_name']) ?></span> •
+                                                <span class="text-purple-700 font-bold"><?= $__('drop_off_point') ?>: <?= htmlspecialchars($customer['point_name']) ?></span> •
                                             <?php endif; ?>
                                             <?php if (!empty($customer['zone_name'])): ?>
                                                 <span><?= htmlspecialchars($customer['zone_name']) ?></span> •
@@ -227,31 +227,35 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                         </div>
 
                         <!-- 2. Delivery Time Slots (If Enabled) -->
-                        <?php if (($ecommerceSettings['time_slots_enabled'] ?? '0') == '1'): ?>
+                        <?php 
+                        $slotsEnabled = (!empty($ecommerceSettings['delivery_slots_enabled']) && $ecommerceSettings['delivery_slots_enabled'] == '1');
+                        if ($slotsEnabled): 
+                            $rawSlots = trim($ecommerceSettings['delivery_available_slots'] ?? "");
+                            if (empty($rawSlots)) {
+                                $rawSlots = "Morning (08:00 AM - 11:00 AM)\nNoon (12:00 PM - 03:00 PM)\nEvening (04:00 PM - 07:00 PM)\nNight (07:30 PM - 10:00 PM)";
+                            }
+                            $slotLines = array_filter(array_map('trim', explode("\n", str_replace("\r", "", $rawSlots))));
+                        ?>
                         <div class="mt-6 pt-6 border-t border-gray-100">
                             <label class="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
                                 <span class="text-base">🕒</span>
-                                <span>Preferred Delivery Window</span>
+                                <span><?= $__('preferred_delivery_window') ?></span>
                             </label>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label class="relative flex flex-col p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50/20 transition-all has-[:checked]:border-green-600 has-[:checked]:bg-green-50/50 has-[:checked]:ring-1 has-[:checked]:ring-green-600">
-                                    <input type="radio" name="delivery_slot" value="Morning (08:00 AM - 12:00 PM)" checked class="sr-only">
-                                    <span class="text-xs font-bold text-gray-800">Morning</span>
-                                    <span class="text-[11px] text-gray-500 mt-0.5">08:00 AM - 12:00 PM</span>
-                                </label>
-
-                                <label class="relative flex flex-col p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50/20 transition-all has-[:checked]:border-green-600 has-[:checked]:bg-green-50/50 has-[:checked]:ring-1 has-[:checked]:ring-green-600">
-                                    <input type="radio" name="delivery_slot" value="Afternoon (12:00 PM - 04:00 PM)" class="sr-only">
-                                    <span class="text-xs font-bold text-gray-800">Afternoon</span>
-                                    <span class="text-[11px] text-gray-500 mt-0.5">12:00 PM - 04:00 PM</span>
-                                </label>
-
-                                <label class="relative flex flex-col p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50/20 transition-all has-[:checked]:border-green-600 has-[:checked]:bg-green-50/50 has-[:checked]:ring-1 has-[:checked]:ring-green-600">
-                                    <input type="radio" name="delivery_slot" value="Evening (04:00 PM - 08:00 PM)" class="sr-only">
-                                    <span class="text-xs font-bold text-gray-800">Evening</span>
-                                    <span class="text-[11px] text-gray-500 mt-0.5">04:00 PM - 08:00 PM</span>
-                                </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <?php foreach ($slotLines as $sIdx => $slotLine): 
+                                    $slotParts = explode('(', $slotLine, 2);
+                                    $sTitle = trim($slotParts[0]);
+                                    $sTime = isset($slotParts[1]) ? trim(rtrim($slotParts[1], ')')) : '';
+                                ?>
+                                    <label class="relative flex flex-col p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/20 transition-all has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/50 has-[:checked]:ring-1 has-[:checked]:ring-emerald-600">
+                                        <input type="radio" name="delivery_slot" value="<?= htmlspecialchars($slotLine) ?>" <?= $sIdx === 0 ? 'checked' : '' ?> class="sr-only">
+                                        <span class="text-xs font-bold text-gray-800"><?= htmlspecialchars($sTitle) ?></span>
+                                        <?php if (!empty($sTime)): ?>
+                                            <span class="text-[11px] text-gray-500 mt-0.5"><?= htmlspecialchars($sTime) ?></span>
+                                        <?php endif; ?>
+                                    </label>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -264,13 +268,13 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <span class="text-2xl">⚡</span>
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <span class="text-sm font-extrabold text-orange-900">Express 30-Minute Priority Delivery</span>
+                                            <span class="text-sm font-extrabold text-orange-900"><?= $__('express_delivery_title') ?></span>
                                             <span class="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                                                 +৳<?= number_format($expressCharge, 2) ?>
                                             </span>
                                         </div>
                                         <p class="text-xs text-orange-700/80 mt-0.5">
-                                            Instant prioritized picking & immediate dispatch to your doorstep. Daily cutoff: <?= htmlspecialchars($ecommerceSettings['express_delivery_cutoff'] ?? '08:00 PM') ?>
+                                            <?= $__('express_delivery_desc') ?> <?= htmlspecialchars($ecommerceSettings['express_delivery_cutoff'] ?? '08:00 PM') ?>
                                         </p>
                                     </div>
                                 </div>
@@ -302,7 +306,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <span class="block text-xs text-green-700 font-normal mt-0.5">
                                         <?= $__('checkout_cod_desc') ?>
                                         <?php if (!empty($deliveryCalc['cod_fee'])): ?>
-                                            (Includes ৳<?= number_format($deliveryCalc['cod_fee'], 2) ?> handling fee)
+                                            (<?= Lang::locale() === 'bn' ? 'ফি অন্তর্ভুক্ত: ৳' : 'Includes ৳' ?><?= number_format($deliveryCalc['cod_fee'], 2) ?>)
                                         <?php endif; ?>
                                     </span>
                                 </label>
@@ -318,7 +322,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                     <h2 class="text-lg font-extrabold text-gray-800 mb-5 flex items-center justify-between">
                         <span><?= $__('checkout_your_order') ?></span>
                         <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-bold">
-                            <?= count($cart) ?> items
+                            <?= count($cart) ?> <?= $__('cart_items') ?>
                         </span>
                     </h2>
                     
@@ -346,7 +350,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <?php endif; ?>
                                     <?php if (!empty($item['is_bogo'])): ?>
                                         <span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded w-fit mt-0.5 border border-rose-200">
-                                            🎁 ১+১ ফ্রি (মোট <?= $item['quantity'] * 2 ?>টি ডেলিভারি)
+                                            🎁 <?= Lang::locale() === 'bn' ? '১+১ ফ্রি (মোট ' . ($item['quantity'] * 2) . 'টি ডেলিভারি)' : '1+1 Free (Total ' . ($item['quantity'] * 2) . ' items)' ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
@@ -374,9 +378,9 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <?php elseif ($uTier['type'] === 'custom' && !empty($uTier['custom_perk'])): ?>
                                         <span class="bg-emerald-700/80 px-1.5 py-0.5 rounded text-[10px]">(<?= htmlspecialchars($uTier['custom_perk']) ?>)</span>
                                     <?php elseif ($uTier['type'] === 'discount_flat' && !empty($uTier['discount_val'])): ?>
-                                        <span class="bg-emerald-700/80 px-1.5 py-0.5 rounded text-[10px]">(৳<?= number_format($uTier['discount_val'], 0) ?> ছাড়)</span>
+                                        <span class="bg-emerald-700/80 px-1.5 py-0.5 rounded text-[10px]">(৳<?= number_format($uTier['discount_val'], 0) ?> <?= Lang::locale() === 'bn' ? 'ছাড়' : 'off' ?>)</span>
                                     <?php elseif ($uTier['type'] === 'discount_percent' && !empty($uTier['discount_val'])): ?>
-                                        <span class="bg-emerald-700/80 px-1.5 py-0.5 rounded text-[10px]">(<?= number_format($uTier['discount_val'], 0) ?>% ছাড়)</span>
+                                        <span class="bg-emerald-700/80 px-1.5 py-0.5 rounded text-[10px]">(<?= number_format($uTier['discount_val'], 0) ?>% <?= Lang::locale() === 'bn' ? 'ছাড়' : 'off' ?>)</span>
                                     <?php endif; ?>
                                 </span>
                             <?php endforeach; ?>
@@ -430,7 +434,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                         <!-- Heavy Weight Surcharge (If Any) -->
                         <?php if (!empty($deliveryCalc['weight_fee'])): ?>
                         <div class="flex justify-between items-center text-amber-700 bg-amber-50/60 px-2 py-1 rounded-lg">
-                            <span>⚖️ Heavy Order Surcharge</span>
+                            <span>⚖️ <?= $__('heavy_weight_surcharge') ?></span>
                             <span class="font-bold">+<?= $__('currency') ?><?= number_format($deliveryCalc['weight_fee'], 2) ?></span>
                         </div>
                         <?php endif; ?>
@@ -438,7 +442,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                         <!-- Weather Emergency Fee (If Any) -->
                         <?php if (!empty($deliveryCalc['weather_fee'])): ?>
                         <div class="flex justify-between items-center text-amber-800 bg-amber-50/60 px-2 py-1 rounded-lg">
-                            <span>⛈️ Bad Weather Fee</span>
+                            <span>⛈️ <?= $__('bad_weather_surcharge') ?></span>
                             <span class="font-bold">+<?= $__('currency') ?><?= number_format($deliveryCalc['weather_fee'], 2) ?></span>
                         </div>
                         <?php endif; ?>
@@ -446,14 +450,14 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                         <!-- COD Handling Fee (If Any) -->
                         <?php if (!empty($deliveryCalc['cod_fee'])): ?>
                         <div class="flex justify-between items-center text-gray-600">
-                            <span>💵 COD Handling</span>
+                            <span>💵 <?= $__('cod_handling_fee') ?></span>
                             <span class="font-semibold">+<?= $__('currency') ?><?= number_format($deliveryCalc['cod_fee'], 2) ?></span>
                         </div>
                         <?php endif; ?>
 
                         <!-- Express Delivery Fee Dynamic Row -->
                         <div id="express-fee-row" class="hidden justify-between items-center text-orange-700 bg-orange-50/60 px-2 py-1 rounded-lg">
-                            <span>⚡ Express 30-Min Surcharge</span>
+                            <span>⚡ <?= $__('express_delivery_surcharge') ?></span>
                             <span class="font-bold">+<?= $__('currency') ?><?= number_format($expressCharge, 2) ?></span>
                         </div>
                     </div>
@@ -462,7 +466,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                     <div class="flex justify-between items-baseline mb-6 border-t border-gray-100 pt-5">
                         <div>
                             <span class="text-base sm:text-lg font-black text-gray-800"><?= $__('checkout_total') ?></span>
-                            <span class="block text-[11px] text-gray-400">Includes all taxes & delivery fees</span>
+                            <span class="block text-[11px] text-gray-400"><?= $__('checkout_tax_inclusive') ?></span>
                         </div>
                         <span class="text-2xl sm:text-3xl font-black text-green-600" id="display-grand-total">
                             <?= $__('currency') ?><?= number_format($initialTotal, 2) ?>

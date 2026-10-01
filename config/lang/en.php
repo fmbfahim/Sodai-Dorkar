@@ -205,4 +205,48 @@ return [
     'footer_shipping' => 'Shipping Policy',
     'footer_privacy' => 'Privacy Policy',
     'footer_we_accept' => 'WE ACCEPT',
+
+    // Mobile Navigation & Extras
+    'nav_category' => 'Categories',
+    'nav_shop' => 'Shop',
+    'nav_profile' => 'Profile',
+    'all_category' => 'All Categories',
+
+    // Customer Info in Checkout
+    'customer_name' => 'Customer Name',
+    'contact_phone' => 'Contact Phone',
+    'delivery_destination' => 'Delivery Destination',
+    'drop_off_point' => 'Drop-off Point',
+    'rate_point' => 'Point Rate',
+    'rate_union' => 'Union Rate',
+    'rate_standard' => 'Standard Rate',
+
+    // Delivery Slots
+    'preferred_delivery_window' => 'Preferred Delivery Window',
+    'delivery_slot_morning' => 'Morning (08:00 AM - 11:00 AM)',
+    'delivery_slot_noon' => 'Noon (12:00 PM - 03:00 PM)',
+    'delivery_slot_evening' => 'Evening (04:00 PM - 07:00 PM)',
+    'delivery_slot_night' => 'Night (07:30 PM - 10:00 PM)',
+
+    // Express Delivery
+    'express_delivery_title' => 'Express 30-Minute Priority Delivery',
+    'express_delivery_desc' => 'Instant prioritized picking & immediate dispatch to your doorstep. Daily cutoff:',
+    'express_delivery_surcharge' => 'Express 30-Min Surcharge',
+
+    // Surcharges & Fees
+    'heavy_weight_surcharge' => 'Heavy Order Surcharge',
+    'bad_weather_surcharge' => 'Bad Weather Fee',
+    'cod_handling_fee' => 'COD Handling Fee',
+    'checkout_tax_inclusive' => 'Includes all taxes & delivery fees',
+
+    // Order Success
+    'order_confirmed' => 'Order Confirmed!',
+    'order_placed_subtitle' => 'Thank you for your order. We have received your request and our delivery team is preparing your fresh items!',
+    'order_reference' => 'Order Reference:',
+    'payment_mode' => 'Payment Mode:',
+    'track_my_order' => 'Track My Order',
+    'frequently_bought_together' => 'Frequently Bought Together',
+    'you_may_also_like' => 'You May Also Like',
+    'cross_selling_subtitle' => 'Customers who ordered these items also bought these daily kitchen favorites',
+    'explore_full_catalog' => 'Explore Full Catalog',
 ];

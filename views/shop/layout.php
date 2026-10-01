@@ -244,7 +244,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 </span>
 
                 <!-- Language Switcher Pill -->
-                <a href="/sodai-dorkar/public/set-language?lang=<?= $otherLocale ?>" 
+                <a href="<?= $base ?>/set-language?lang=<?= $otherLocale ?>" 
                    class="font-semibold text-emerald-800 bg-white hover:bg-emerald-50 px-2.5 py-0.5 rounded-full border border-gray-200 transition-all flex items-center gap-1 shadow-2xs"
                    title="Switch Language">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,8 +254,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 </a>
 
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="/sodai-dorkar/public/<?= $_SESSION['role'] === 'admin' ? 'admin' : 'delivery' ?>/dashboard" class="text-xs font-semibold text-emerald-700 hover:underline"><?= $__('nav_dashboard') ?></a>
-                    <a href="/sodai-dorkar/public/logout" class="text-xs font-medium text-red-500 hover:underline"><?= $__('nav_logout') ?></a>
+                    <a href="<?= $base ?>/<?= $_SESSION['role'] === 'admin' ? 'admin' : 'delivery' ?>/dashboard" class="text-xs font-semibold text-emerald-700 hover:underline"><?= $__('nav_dashboard') ?></a>
+                    <a href="<?= $base ?>/logout" class="text-xs font-medium text-red-500 hover:underline"><?= $__('nav_logout') ?></a>
                 <?php endif; ?>
             </div>
         </div>
@@ -517,7 +517,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                 </div>
-                <span class="text-[10px] leading-tight tracking-tight">হোম</span>
+                <span class="text-[10px] leading-tight tracking-tight"><?= $__('nav_home') ?></span>
             </a>
 
             <!-- Category Tab -->
@@ -527,7 +527,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                 </div>
-                <span class="text-[10px] leading-tight tracking-tight">ক্যাটাগরি</span>
+                <span class="text-[10px] leading-tight tracking-tight"><?= $__('nav_category') ?></span>
             </a>
 
             <!-- ELEVATED FLOATING CIRCULAR CENTER CART BUTTON (Matching iPhone 17 - 1) -->
@@ -554,7 +554,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                 </div>
-                <span class="text-[10px] leading-tight tracking-tight">শপ</span>
+                <span class="text-[10px] leading-tight tracking-tight"><?= $__('nav_shop') ?></span>
             </a>
 
             <!-- Profile Tab -->
@@ -564,7 +564,7 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </div>
-                <span class="text-[10px] leading-tight tracking-tight">প্রোফাইল</span>
+                <span class="text-[10px] leading-tight tracking-tight"><?= $__('nav_profile') ?></span>
             </a>
 
         </div>
@@ -760,8 +760,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 <div>
                     <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-4"><?= $__('footer_quick_links') ?></h4>
                     <ul class="space-y-2.5 text-xs text-emerald-100/70">
-                        <li><a href="/sodai-dorkar/public/" class="hover:text-emerald-400 transition-colors"><?= $__('nav_home') ?></a></li>
-                        <li><a href="/sodai-dorkar/public/?deals=1" class="hover:text-emerald-400 transition-colors"><?= $__('nav_deals') ?></a></li>
+                        <li><a href="<?= $base ?>/" class="hover:text-emerald-400 transition-colors"><?= $__('nav_home') ?></a></li>
+                        <li><a href="<?= $base ?>/?deals=1" class="hover:text-emerald-400 transition-colors"><?= $__('nav_deals') ?></a></li>
                         <li><a href="#products" class="hover:text-emerald-400 transition-colors"><?= $__('nav_new_arrivals') ?></a></li>
                         <li><a href="#why-choose" class="hover:text-emerald-400 transition-colors"><?= $__('nav_about') ?></a></li>
                         <li><a href="#footer" class="hover:text-emerald-400 transition-colors"><?= $__('nav_contact') ?></a></li>
@@ -772,9 +772,9 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 <div>
                     <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-4"><?= $__('footer_customer_service') ?></h4>
                     <ul class="space-y-2.5 text-xs text-emerald-100/70">
-                        <li><a href="/sodai-dorkar/public/account" class="hover:text-emerald-400 transition-colors"><?= $__('header_account_sub') ?></a></li>
-                        <li><a href="/sodai-dorkar/public/account/orders" class="hover:text-emerald-400 transition-colors"><?= $__('footer_order_tracking') ?></a></li>
-                        <li><a href="/sodai-dorkar/public/cart" class="hover:text-emerald-400 transition-colors"><?= $__('nav_cart') ?></a></li>
+                        <li><a href="<?= $base ?>/account" class="hover:text-emerald-400 transition-colors"><?= $__('header_account_sub') ?></a></li>
+                        <li><a href="<?= $base ?>/account/orders" class="hover:text-emerald-400 transition-colors"><?= $__('footer_order_tracking') ?></a></li>
+                        <li><a href="<?= $base ?>/cart" class="hover:text-emerald-400 transition-colors"><?= $__('nav_cart') ?></a></li>
                         <li><a href="#" class="hover:text-emerald-400 transition-colors"><?= $__('footer_returns') ?></a></li>
                         <li><a href="#" class="hover:text-emerald-400 transition-colors"><?= $__('footer_privacy') ?></a></li>
                     </ul>

@@ -264,8 +264,8 @@ if (empty($bannerSubtitle)) {
             <div class="bg-[#dcfce7]/75 sm:bg-[#dcfce7]/90 border border-emerald-200/80 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
                 
                 <!-- Rail Header: "All Category" -->
-                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none block transition-colors" title="হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য">
-                    All Category
+                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none block transition-colors" title="<?= $locale === 'bn' ? 'হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য' : 'Home & Most Popular' ?>">
+                    <?= $locale === 'bn' ? 'সকল ক্যাটাগরি' : 'All Categories' ?>
                 </a>
 
                 <!-- Vertical Category List with Circular Badges -->
@@ -350,7 +350,7 @@ if (empty($bannerSubtitle)) {
                             <?php if (!$isFiltered): ?>
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] sm:text-xs font-black mb-1.5 border border-amber-400/30">
                                     <span>🔥</span>
-                                    <span>শীর্ষ চাহিদাসম্পন্ন ও ট্রেন্ডিং পণ্য</span>
+                                    <span><?= $locale === 'bn' ? 'শীর্ষ চাহিদাসম্পন্ন ও ট্রেন্ডিং পণ্য' : 'Top In-Demand & Trending' ?></span>
                                 </div>
                             <?php elseif (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
                                 <a href="<?= $base ?>/?category=<?= $parentCategory['id'] ?>" class="inline-flex items-center gap-1.5 text-xs text-emerald-200 hover:text-white mb-1.5 transition-colors group font-semibold">
@@ -359,7 +359,7 @@ if (empty($bannerSubtitle)) {
                                 </a>
                             <?php endif; ?>
                             <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                <?= htmlspecialchars($bannerTitle ?? ($activeCat['name'] ?? 'সবচেয়ে জনপ্রিয় পণ্যসমূহ')) ?>
+                                <?= htmlspecialchars($bannerTitle ?? ($activeCat['name'] ?? ($locale === 'bn' ? 'সবচেয়ে জনপ্রিয় পণ্যসমূহ' : 'Most Popular Products'))) ?>
                             </h1>
                             <p class="text-[11px] sm:text-xs md:text-sm lg:text-base text-emerald-100 font-medium mt-1 leading-snug line-clamp-2 max-w-xl">
                                 <?= htmlspecialchars($bannerSubtitle) ?>
@@ -379,7 +379,7 @@ if (empty($bannerSubtitle)) {
                             </div>
                             <div class="text-left max-w-[200px]">
                                 <span class="text-[10px] uppercase font-black tracking-wider text-amber-300 block flex items-center gap-1">
-                                    ⭐ এক নম্বর সেরা পণ্য
+                                    <?= $locale === 'bn' ? '⭐ এক নম্বর সেরা পণ্য' : '⭐ #1 Top Product' ?>
                                 </span>
                                 <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="text-xs font-bold text-white hover:text-amber-200 block truncate transition-colors" title="<?= htmlspecialchars($topPopularProduct['name']) ?>">
                                     <?= htmlspecialchars($topPopularProduct['name']) ?>
@@ -403,8 +403,8 @@ if (empty($bannerSubtitle)) {
                                     🛒
                                 </div>
                                 <div class="text-left">
-                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block">সরাসরি অনলাইন বাজার</span>
-                                    <span class="text-xs sm:text-sm font-black text-white block">সেরা দামে সেরা মান</span>
+                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block"><?= $locale === 'bn' ? 'সরাসরি অনলাইন বাজার' : 'Direct Online Market' ?></span>
+                                    <span class="text-xs sm:text-sm font-black text-white block"><?= $locale === 'bn' ? 'সেরা দামে সেরা মান' : 'Best Quality & Best Price' ?></span>
                                 </div>
                             </div>
                         </div>
@@ -421,11 +421,11 @@ if (empty($bannerSubtitle)) {
                     <?php if ($isFiltered): ?>
                         <a href="<?= $base ?>/" 
                            class="flex-shrink-0 pl-2 pr-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-100 hover:text-white border border-emerald-700/60 shadow-xs group"
-                           title="হোম পেজে ফিরুন (সবচেয়ে জনপ্রিয় পণ্যসমূহ)">
+                           title="<?= $locale === 'bn' ? 'হোম পেজে ফিরুন (সবচেয়ে জনপ্রিয় পণ্যসমূহ)' : 'Back to Home (Most Popular Products)' ?>">
                             <svg class="w-3.5 h-3.5 shrink-0 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                             </svg>
-                            <span class="whitespace-nowrap">হোম</span>
+                            <span class="whitespace-nowrap"><?= $__('nav_home') ?></span>
                         </a>
                     <?php endif; ?>
 
@@ -451,7 +451,7 @@ if (empty($bannerSubtitle)) {
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
                             <span class="text-xs sm:text-sm leading-none select-none">🛒</span>
                         </div>
-                        <span class="whitespace-nowrap">সবগুলো</span>
+                        <span class="whitespace-nowrap"><?= $locale === 'bn' ? 'সবগুলো' : 'All' ?></span>
                     </a>
 
                     <!-- Subcategory / Main Category Filter Pills -->
@@ -507,10 +507,10 @@ if (empty($bannerSubtitle)) {
                     <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3 text-3xl">
                         🛒
                     </div>
-                    <h3 class="text-base font-bold text-gray-800">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি</h3>
-                    <p class="text-xs text-gray-400 mt-1">অনুগ্রহ করে অন্য ক্যাটাগরি বা সবগুলো পণ্য দেখুন।</p>
+                    <h3 class="text-base font-bold text-gray-800"><?= $__('products_empty_title') ?></h3>
+                    <p class="text-xs text-gray-400 mt-1"><?= $__('products_empty_subtitle') ?></p>
                     <a href="<?= $base ?>/" class="inline-block mt-4 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors">
-                        সব পণ্য দেখুন
+                        <?= $locale === 'bn' ? 'সব পণ্য দেখুন' : 'View All Products' ?>
                     </a>
                 </div>
             <?php else: ?>
@@ -535,7 +535,7 @@ if (empty($bannerSubtitle)) {
                             $demandPct = intval($product['demand_percentage'] ?? 0);
                             $totalSold = intval($product['total_sold'] ?? 0);
                             $isOutOfStock = (($product['availability_status'] ?? '') === 'out_of_stock');
-                            $criteria = \Models\Product::getCriteriaData($product, 'bn');
+                            $criteria = \Models\Product::getCriteriaData($product, $locale);
                             $productAddons = $criteria['addons'];
                             $hasAddons = $criteria['has_addons'];
                             $isBogo = $criteria['is_bogo'];
@@ -580,46 +580,46 @@ if (empty($bannerSubtitle)) {
 
                                     <?php if ($specialBadge === 'hot_deal'): ?>
                                         <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            ⚡ হট ডিল
+                                            ⚡ <?= $locale === 'bn' ? 'হট ডিল' : 'Hot Deal' ?>
                                         </span>
                                     <?php elseif ($specialBadge === 'fresh_catch' && empty($badgeLabel)): ?>
                                         <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            🐟 তাজা সংগ্রহ
+                                            🐟 <?= $locale === 'bn' ? 'তাজা সংগ্রহ' : 'Fresh Catch' ?>
                                         </span>
                                     <?php elseif ($specialBadge === 'halal_meat' && empty($badgeLabel)): ?>
                                         <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            🥩 হালাল মাংস
+                                            🥩 <?= $locale === 'bn' ? 'হালাল মাংস' : 'Halal Meat' ?>
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if ($isTopOne): ?>
                                         <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            👑 #১ মোস্ট পপুলার
+                                            👑 <?= $locale === 'bn' ? '#১ মোস্ট পপুলার' : '#1 Most Popular' ?>
                                         </span>
                                     <?php elseif ($demandPct > 0): ?>
                                         <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            🔥 <?= $demandPct ?>% জনপ্রিয়
+                                            🔥 <?= $demandPct ?>% <?= $locale === 'bn' ? 'জনপ্রিয়' : 'Popular' ?>
                                         </span>
                                     <?php elseif ($totalSold > 0): ?>
                                         <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            🔥 সেরা বিক্রিত
+                                            🔥 <?= $locale === 'bn' ? 'সেরা বিক্রিত' : 'Best Seller' ?>
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if ($hasDiscount): ?>
                                         <span class="bg-emerald-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-2xs">
-                                            <?= $discountPercent ?>% ছাড়
+                                            <?= $discountPercent ?>% <?= $locale === 'bn' ? 'ছাড়' : 'OFF' ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
 
                                 <?php if ($isOutOfStock): ?>
                                     <span class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
-                                        স্টক শেষ
+                                        <?= $__('products_out_of_stock') ?>
                                     </span>
                                 <?php elseif ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
                                     <span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
-                                        বাকি: <?= $stockClean ?>
+                                        <?= $locale === 'bn' ? 'বাকি: ' : 'Left: ' ?><?= $stockClean ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -672,7 +672,7 @@ if (empty($bannerSubtitle)) {
                                 <div class="mt-auto pt-2 card-action-container" data-product-id="<?= $product['id'] ?>">
                                     <?php if ($isOutOfStock): ?>
                                         <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
-                                            <span>স্টক শেষ</span>
+                                            <span><?= $__('products_out_of_stock') ?></span>
                                         </button>
                                     <?php elseif ($hasCriteria): ?>
                                         <button type="button" 
@@ -687,7 +687,7 @@ if (empty($bannerSubtitle)) {
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-700 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                             </svg>
-                                            <span>ব্যাগে যোগ করুন</span>
+                                            <span><?= $__('add_to_bag') ?></span>
                                         </button>
                                     <?php endif; ?>
                                 </div>

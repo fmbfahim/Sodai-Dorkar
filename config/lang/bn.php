@@ -205,4 +205,48 @@ return [
     'footer_shipping' => 'ডেলিভারি পলিসি',
     'footer_privacy' => 'প্রাইভেসি পলিসি',
     'footer_we_accept' => 'পেমেন্ট পার্টনারস',
+
+    // Mobile Navigation & Extras
+    'nav_category' => 'ক্যাটাগরি',
+    'nav_shop' => 'শপ',
+    'nav_profile' => 'প্রোফাইল',
+    'all_category' => 'সকল ক্যাটাগরি',
+
+    // Customer Info in Checkout
+    'customer_name' => 'গ্রাহকের নাম',
+    'contact_phone' => 'যোগাযোগের মোবাইল',
+    'delivery_destination' => 'ডেলিভারির ঠিকানা',
+    'drop_off_point' => 'ড্রপ-অফ পয়েন্ট',
+    'rate_point' => 'পয়েন্ট রেট',
+    'rate_union' => 'ইউনিয়ন রেট',
+    'rate_standard' => 'স্ট্যান্ডার্ড রেট',
+
+    // Delivery Slots
+    'preferred_delivery_window' => 'পছন্দের ডেলিভারি সময় (Slot)',
+    'delivery_slot_morning' => 'সকাল (০৮:০০ AM - ১১:০০ AM)',
+    'delivery_slot_noon' => 'দুপুর (১২:০০ PM - ০৩:০০ PM)',
+    'delivery_slot_evening' => 'বিকাল/সন্ধ্যা (০৪:০০ PM - ০৭:০০ PM)',
+    'delivery_slot_night' => 'রাত (০৭:৩০ PM - ১০:০০ PM)',
+
+    // Express Delivery
+    'express_delivery_title' => 'এক্সপ্রেস ৩০-মিনিট সুপার ফাস্ট ডেলিভারি',
+    'express_delivery_desc' => 'অগ্রাধিকার ভিত্তিতে তাৎক্ষণিক প্যাকেটজাতকরণ ও দ্রুততম সময়ে ডেলিভারি। দৈনিক শেষ সময়:',
+    'express_delivery_surcharge' => 'এক্সপ্রেস ৩০-মি. অতিরিক্ত ফি',
+
+    // Surcharges & Fees
+    'heavy_weight_surcharge' => 'অতিরিক্ত ওজন ফি',
+    'bad_weather_surcharge' => 'দুর্যোগপূর্ণ আবহাওয়া ফি',
+    'cod_handling_fee' => 'সিওডি হ্যান্ডলিং ফি',
+    'checkout_tax_inclusive' => 'সকল চার্জ ও করসহ সর্বমোট',
+
+    // Order Success
+    'order_confirmed' => 'অর্ডার নিশ্চিত হয়েছে!',
+    'order_placed_subtitle' => 'আপনার অর্ডারের জন্য ধন্যবাদ। আমরা অর্ডারটি গ্রহণ করেছি এবং আমাদের টিম আপনার তাজা পণ্য প্রস্তুত করছে!',
+    'order_reference' => 'অর্ডার নম্বর:',
+    'payment_mode' => 'পেমেন্ট পদ্ধতি:',
+    'track_my_order' => 'অর্ডার ট্র্যাক করুন',
+    'frequently_bought_together' => 'একসাথে ক্রয়কৃত জনপ্রিয় পণ্য',
+    'you_may_also_like' => 'আপনার আরও পছন্দ হতে পারে',
+    'cross_selling_subtitle' => 'যেসব গ্রাহক এই পণ্যগুলো নিয়েছেন, তারা নিচের নিত্যপ্রয়োজনীয় পণ্যগুলোও সাথে নিয়েছেন',
+    'explore_full_catalog' => 'সম্পূর্ণ ক্যাটালগ দেখুন',
 ];

@@ -14,17 +14,17 @@ $locale = Lang::locale();
             <div class="flex items-center justify-between text-xs font-semibold text-gray-400">
                 <span class="flex items-center gap-1.5 text-emerald-600 font-bold">
                     <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[11px]">✓</span>
-                    Cart
+                    <?= $__('nav_cart') ?>
                 </span>
                 <span class="h-0.5 w-12 bg-emerald-200"></span>
                 <span class="flex items-center gap-1.5 text-emerald-600 font-bold">
                     <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[11px]">✓</span>
-                    Checkout
+                    <?= $__('checkout_title') ?>
                 </span>
                 <span class="h-0.5 w-12 bg-emerald-500"></span>
                 <span class="flex items-center gap-1.5 text-emerald-600 font-black">
                     <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">3</span>
-                    Order Placed
+                    <?= $locale === 'bn' ? 'অর্ডার গ্রহণ সম্পন্ন' : 'Order Placed' ?>
                 </span>
             </div>
         </div>
@@ -43,31 +43,31 @@ $locale = Lang::locale();
                 </div>
             </div>
             
-            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Order Confirmed!</h1>
+            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 mb-2"><?= $__('order_confirmed') ?></h1>
             <p class="text-gray-500 text-sm sm:text-base mb-6 max-w-md mx-auto">
-                Thank you for your order. We have received your request and our delivery team is preparing your fresh items!
+                <?= $__('order_placed_subtitle') ?>
             </p>
             
             <?php if (!empty($orderId)): ?>
             <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 mb-6 max-w-md mx-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-emerald-100 text-xs sm:text-sm">
-                    <span class="text-gray-500 font-medium">Order Reference:</span>
+                    <span class="text-gray-500 font-medium"><?= $__('order_reference') ?></span>
                     <span class="font-black text-emerald-800 tracking-wider text-base">#<?= str_pad($orderId, 6, '0', STR_PAD_LEFT) ?></span>
                 </div>
                 <?php if (!empty($order)): ?>
                     <div class="flex items-center justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
-                        <span class="text-gray-500 font-medium">Total Amount:</span>
+                        <span class="text-gray-500 font-medium"><?= $__('cart_estimated_total') ?>:</span>
                         <span class="font-black text-gray-900 text-base">৳<?= number_format($order['total_amount'] ?? 0, 2) ?></span>
                     </div>
                     <div class="flex items-center justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
-                        <span class="text-gray-500 font-medium">Payment Mode:</span>
+                        <span class="text-gray-500 font-medium"><?= $__('payment_mode') ?></span>
                         <span class="font-bold text-gray-800 uppercase text-xs px-2 py-0.5 bg-white rounded-md border border-gray-200">
                             <?= htmlspecialchars(str_replace('_', ' ', $order['payment_method'] ?? 'COD')) ?>
                         </span>
                     </div>
                     <?php if (!empty($order['delivery_address'])): ?>
                     <div class="pt-2 text-left text-xs text-gray-600">
-                        <span class="font-semibold text-gray-700">Delivery Address: </span>
+                        <span class="font-semibold text-gray-700"><?= $__('checkout_address') ?>: </span>
                         <?= htmlspecialchars($order['delivery_address']) ?>
                     </div>
                     <?php endif; ?>
@@ -83,7 +83,7 @@ $locale = Lang::locale();
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    Track My Order
+                    <?= $__('track_my_order') ?>
                 </a>
                 <?php endif; ?>
                 <a href="<?= $base ?>/" 
@@ -91,7 +91,7 @@ $locale = Lang::locale();
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
-                    Continue Shopping
+                    <?= $__('cart_continue_shopping') ?>
                 </a>
             </div>
         </div>
@@ -103,13 +103,13 @@ $locale = Lang::locale();
                 <div>
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold mb-1.5">
                         <span>⚡</span>
-                        <span>Frequently Bought Together</span>
+                        <span><?= $__('frequently_bought_together') ?></span>
                     </div>
-                    <h2 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">You May Also Like</h2>
-                    <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Customers who ordered these items also bought these daily kitchen favorites</p>
+                    <h2 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight"><?= $__('you_may_also_like') ?></h2>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-0.5"><?= $__('cross_selling_subtitle') ?></p>
                 </div>
                 <a href="<?= $base ?>/" class="text-xs sm:text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start sm:self-auto group">
-                    <span>Explore Full Catalog</span>
+                    <span><?= $__('explore_full_catalog') ?></span>
                     <span class="group-hover:translate-x-0.5 transition-transform">→</span>
                 </a>
             </div>
@@ -174,7 +174,7 @@ $locale = Lang::locale();
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
-                            <span>Add to Cart</span>
+                            <span><?= $__('products_add_to_cart') ?></span>
                         </button>
                     </div>
                 </div>

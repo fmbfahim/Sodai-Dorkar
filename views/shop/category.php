@@ -271,7 +271,7 @@ if (!empty($search)) $activeFilterCount++;
                 $isAllActive = empty($activeSubId) || ($parentCategory && $activeSubId == $parentCategory['id']);
                 $parentTotal = $parentCategory['total_product_count'] ?? 0;
             ?>
-            <a href="/sodai-dorkar/public/category?id=<?= $parentCategory['id'] ?? $currentCategory['id'] ?>"
+            <a href="<?= $base ?>/category?id=<?= $parentCategory['id'] ?? $currentCategory['id'] ?>"
                class="flex-shrink-0 w-36 sm:w-40 md:w-44 bg-white rounded-2xl border p-3 sm:p-4 flex flex-col items-center justify-between text-center transition-all duration-200 group hover:-translate-y-1 hover:shadow-lg <?= $isAllActive ? 'border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/50 shadow-md font-bold' : 'border-gray-200/80 hover:border-emerald-300' ?>">
                 <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center mb-3 text-4xl sm:text-5xl shadow-2xs group-hover:scale-105 transition-transform duration-300">
                     🛒

@@ -171,16 +171,16 @@ class ShopController {
             $targetCatId = $subId;
             $bannerTitle = $selectedSub['name'] ?? null;
         } elseif (!empty($search)) {
-            $bannerTitle = 'অনুসন্ধান ফলাফল: "' . htmlspecialchars($search) . '"';
+            $bannerTitle = (Lang::locale() === 'bn') ? 'অনুসন্ধান ফলাফল: "' . htmlspecialchars($search) . '"' : 'Search Results: "' . htmlspecialchars($search) . '"';
         } elseif ($isDeals) {
-            $bannerTitle = 'বিশেষ অফার ও ডিলসমূহ';
+            $bannerTitle = (Lang::locale() === 'bn') ? 'বিশেষ অফার ও ডিলসমূহ' : 'Special Offers & Deals';
         } else {
             // Home visit (no filters applied) - showcase top popular products storewide!
             $targetCatId = null;
             $activeCategory = null;
             $parentCategory = null;
             $subCategories = [];
-            $bannerTitle = 'সবচেয়ে জনপ্রিয় পণ্যসমূহ';
+            $bannerTitle = (Lang::locale() === 'bn') ? 'সবচেয়ে জনপ্রিয় পণ্যসমূহ' : 'Most Popular Products';
         }
 
         // Build product query with sales volume calculation
@@ -254,11 +254,11 @@ class ShopController {
             $subNames = array_map(function($s) { return $s['name']; }, $subCategories);
             $bannerSubtitle = implode(', ', array_slice($subNames, 0, 7));
         } elseif (!empty($search)) {
-            $bannerSubtitle = count($products) . ' টি পণ্য পাওয়া গেছে';
+            $bannerSubtitle = (Lang::locale() === 'bn') ? count($products) . ' টি পণ্য পাওয়া গেছে' : count($products) . ' items found';
         } elseif ($isDeals) {
-            $bannerSubtitle = 'সেরা ছাড়ে আকর্ষণীয় নিত্যপ্রয়োজনীয় পণ্য';
+            $bannerSubtitle = (Lang::locale() === 'bn') ? 'সেরা ছাড়ে আকর্ষণীয় নিত্যপ্রয়োজনীয় পণ্য' : 'Top discounted daily essentials';
         } else {
-            $bannerSubtitle = 'সেরা মানের নিত্যপ্রয়োজনীয় পণ্য ও দ্রুত ডেলিভারি - আপনার দৈনন্দিন প্রয়োজনের সবকিছু এক জায়গায়';
+            $bannerSubtitle = (Lang::locale() === 'bn') ? 'সেরা মানের নিত্যপ্রয়োজনীয় পণ্য ও দ্রুত ডেলিভারি - আপনার দৈনন্দিন প্রয়োজনের সবকিছু এক জায়গায়' : 'Premium quality fresh groceries delivered fast to your doorstep';
         }
 
         $parentBackUrl = '';
@@ -1060,6 +1060,9 @@ class ShopController {
             'express_delivery_enabled',
             'express_delivery_charge',
             'express_delivery_cutoff',
+            'delivery_slots_enabled',
+            'delivery_available_slots',
+            'delivery_slot_peak_surcharge',
             'time_slots_enabled',
             'time_slot_morning_fee',
             'time_slot_afternoon_fee',
@@ -1311,7 +1314,10 @@ class ShopController {
     }
 
     public function setLanguage() {
-        $lang = $_POST['lang'] ?? $_GET['lang'] ?? 'en';
+        $lang = $_POST['lang'] ?? $_GET['lang'] ?? 'bn';
+        if (!in_array($lang, ['en', 'bn'])) {
+            $lang = 'bn';
+        }
         Lang::setLocale($lang);
         
         // Redirect back to previous page

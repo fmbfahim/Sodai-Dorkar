@@ -3,7 +3,7 @@
 namespace Core;
 
 class Lang {
-    private static $locale = 'en';
+    private static $locale = 'bn';
     private static $translations = [];
     private static $initialized = false;
 
@@ -17,12 +17,15 @@ class Lang {
             session_start();
         }
 
-        // Check URL param first, then session, default to 'en'
+        // Check URL param first, then session, default to 'bn'
         if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'bn'])) {
             self::$locale = $_GET['lang'];
             $_SESSION['lang'] = self::$locale;
-        } elseif (isset($_SESSION['lang'])) {
+        } elseif (isset($_SESSION['lang']) && in_array($_SESSION['lang'], ['en', 'bn'])) {
             self::$locale = $_SESSION['lang'];
+        } else {
+            self::$locale = 'bn';
+            $_SESSION['lang'] = 'bn';
         }
 
         self::loadTranslations();
