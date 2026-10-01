@@ -48,6 +48,27 @@ $__ = function($key, $r = []) { return Lang::get($key, $r); };
                                     
                                     <div class="flex-grow text-center sm:text-left">
                                         <h3 class="text-base sm:text-lg font-bold text-gray-800 line-clamp-1"><?= htmlspecialchars($item['name']) ?></h3>
+                                        
+                                        <div class="flex flex-wrap items-center gap-1.5 mt-1 justify-center sm:justify-start">
+                                            <?php if (!empty($item['variant_title'])): ?>
+                                                <span class="inline-flex items-center text-[11px] font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
+                                                    <?= htmlspecialchars($item['variant_title']) ?>
+                                                </span>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($item['addon_title'])): ?>
+                                                <span class="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md">
+                                                    <span>🔪</span> <?= htmlspecialchars($item['addon_title']) ?>
+                                                </span>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($item['is_bogo'])): ?>
+                                                <span class="inline-flex items-center gap-1 text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md">
+                                                    <span>🎁</span> ১+১ ফ্রি (মোট <?= $item['quantity'] * 2 ?>টি পাবেন)
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+
                                         <p class="text-green-600 font-semibold mt-1"><?= $__('currency') ?><?= number_format($item['price'], 2) ?></p>
                                     </div>
                                     

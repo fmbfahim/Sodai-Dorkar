@@ -796,6 +796,9 @@ class ShopController {
                         $_SESSION['cart'] = [];
                     }
 
+                    $isBogo = (($product['special_badge'] ?? '') === 'bogo');
+                    $bogoTag = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি' : '🎁 BOGO Free';
+
                     $unitDesc = '';
                     if ($variantTitle && $addonTitle) {
                         $unitDesc = "{$variantTitle} • {$addonTitle}";
@@ -803,6 +806,16 @@ class ShopController {
                         $unitDesc = $variantTitle;
                     } elseif ($addonTitle) {
                         $unitDesc = $addonTitle;
+                    }
+
+                    if ($isBogo) {
+                        if ($unitDesc) {
+                            if (strpos($unitDesc, '১+১') === false && stripos($unitDesc, 'bogo') === false) {
+                                $unitDesc = "{$unitDesc} • {$bogoTag}";
+                            }
+                        } else {
+                            $unitDesc = $bogoTag;
+                        }
                     }
 
                     $cartKey = (string)$productId;
@@ -834,7 +847,9 @@ class ShopController {
                             'variant_title' => $unitDesc,
                             'addon_title' => $addonTitle,
                             'addon_price' => $addonPrice,
-                            'stock' => $product['stock_qty']
+                            'stock' => $product['stock_qty'],
+                            'special_badge' => $product['special_badge'] ?? 'none',
+                            'is_bogo' => $isBogo ? 1 : 0
                         ];
                     }
                     
@@ -848,6 +863,14 @@ class ShopController {
                             $cartTotal += $item['price'] * $item['quantity'];
                         }
                         $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, Lang::locale());
+
+                        $toastMsg = Lang::get('toast_added_to_cart');
+                        if ($isBogo) {
+                            $toastMsg = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি অফার সহ কার্টে যোগ করা হয়েছে!' : '🎁 Added with Buy 1 Get 1 Free offer!';
+                        } elseif (!empty($addonTitle)) {
+                            $toastMsg = (Lang::locale() === 'bn') ? "🔪 {$addonTitle} সহ কার্টে যোগ হয়েছে!" : "🔪 Added with {$addonTitle}!";
+                        }
+
                         echo json_encode([
                             'status' => 'success',
                             'cart_count' => $cartCount,
@@ -855,7 +878,7 @@ class ShopController {
                             'cart' => $_SESSION['cart'],
                             'product_name' => $displayName,
                             'spend_more_offers' => $spendMoreOffers,
-                            'message' => Lang::get('toast_added_to_cart')
+                            'message' => $toastMsg
                         ]);
                         exit;
                     }
@@ -1159,9 +1182,8 @@ class ShopController {
                         throw new \Exception("পণ্য '{$item['name']}' বর্তমানে স্টকে নেই বা বিক্রির জন্য প্রস্তুত নয়।");
                     }
                     $unitTitle = $item['variant_title'] ?? null;
-                    $baseQty = floatval($item['base_qty'] ?? 1.000);
-                    $qtyOrdered = intval($item['quantity']);
-                    $deductTotal = $baseQty * $qtyOrdered;
+                    $qtyMultiplier = !empty($item['is_bogo']) ? 2 : 1;
+                    $deductTotal = $baseQty * $qtyOrdered * $qtyMultiplier;
 
                     $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qtyOrdered, $item['price']]);
                     $stmtStock->execute([$deductTotal, $pid]);

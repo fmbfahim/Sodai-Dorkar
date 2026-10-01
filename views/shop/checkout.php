@@ -336,9 +336,19 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <span class="text-xs text-gray-400 mt-0.5">
                                         <?= $item['quantity'] ?> × <?= $__('currency') ?><?= number_format($item['price'], 2) ?>
                                         <?php if (!empty($item['variant_title'])): ?>
-                                            <span class="text-[10px] text-gray-400">(<?= htmlspecialchars($item['variant_title']) ?>)</span>
+                                            <span class="text-[10px] text-gray-500 font-medium">(<?= htmlspecialchars($item['variant_title']) ?>)</span>
                                         <?php endif; ?>
                                     </span>
+                                    <?php if (!empty($item['addon_title'])): ?>
+                                        <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded w-fit mt-1 border border-amber-200">
+                                            🔪 <?= htmlspecialchars($item['addon_title']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($item['is_bogo'])): ?>
+                                        <span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded w-fit mt-0.5 border border-rose-200">
+                                            🎁 ১+১ ফ্রি (মোট <?= $item['quantity'] * 2 ?>টি ডেলিভারি)
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                                 <span class="font-bold text-gray-800 text-xs sm:text-sm whitespace-nowrap">
                                     <?= $__('currency') ?><?= number_format($itemTotal, 2) ?>

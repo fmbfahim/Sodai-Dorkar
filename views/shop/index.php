@@ -538,11 +538,22 @@ if (empty($bannerSubtitle)) {
                             $productAddons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
                             $hasAddons = !empty($productAddons) && is_array($productAddons);
                             $specialBadge = $product['special_badge'] ?? 'none';
+                            $isBogo = ($specialBadge === 'bogo');
+                            $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                         ?>
 
                         <!-- Product Card -->
                         <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-md transition-all duration-200 group flex flex-col h-full overflow-hidden relative"
                              data-product-id="<?= $product['id'] ?>"
+                             data-product-name="<?= htmlspecialchars($product['name'], ENT_QUOTES) ?>"
+                             data-product-img="<?= htmlspecialchars($productImg, ENT_QUOTES) ?>"
+                             data-product-price="<?= floatval($initialPrice) ?>"
+                             data-product-reg-price="<?= floatval($product['regular_price'] ?? 0) ?>"
+                             data-has-addons="<?= $hasAddons ? '1' : '0' ?>"
+                             data-is-bogo="<?= $isBogo ? '1' : '0' ?>"
+                             data-special-badge="<?= htmlspecialchars($specialBadge, ENT_QUOTES) ?>"
+                             data-addons='<?= htmlspecialchars(json_encode($productAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
+                             data-variants='<?= htmlspecialchars(json_encode($uInfo['variants'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
                              data-out-of-stock="<?= $isOutOfStock ? '1' : '0' ?>"
                              data-base-unit="<?= htmlspecialchars($product['base_unit'] ?? 'pcs') ?>"
                              data-selected-variant-title="<?= htmlspecialchars($initialTitle) ?>"
@@ -552,8 +563,14 @@ if (empty($bannerSubtitle)) {
                             <!-- Badges (Special, Popularity, Discount & Stock) -->
                             <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
                                 <div class="flex flex-col gap-1 items-start">
+                                    <?php if ($hasAddons): ?>
+                                        <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                            🔪 কাটিং/ড্রেসিং সুবিধা
+                                        </span>
+                                    <?php endif; ?>
+
                                     <?php if ($specialBadge === 'bogo'): ?>
-                                        <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 animate-pulse">
                                             🎁 ১+১ ফ্রি
                                         </span>
                                     <?php elseif ($specialBadge === 'hot_deal'): ?>
@@ -646,37 +663,37 @@ if (empty($bannerSubtitle)) {
                                     <?php endif; ?>
                                 </div>
 
-                                <!-- Unit Variants Picker if Available -->
-                                <?php if ($hasCustom): ?>
-                                    <div class="pt-0.5 pb-1 flex flex-wrap items-center gap-1 unit-badges-container">
-                                        <?php foreach ($uInfo['variants'] as $v): ?>
-                                            <?php 
-                                                $isActive = ($v['title'] === $initialTitle); 
-                                                $activeClass = $isActive 
-                                                    ? 'border-emerald-600 text-emerald-700 bg-emerald-50/70 font-bold active-variant shadow-2xs' 
-                                                    : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 font-medium';
-                                            ?>
-                                            <button type="button" 
-                                                    onclick="selectProductCardVariant(this, '<?= htmlspecialchars($v['title'], ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>)"
-                                                    class="variant-pill inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer <?= $activeClass ?>">
-                                                <?= htmlspecialchars($v['title']) ?>
-                                            </button>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <!-- Bottom Action: Add to Bag / Interactive Stepper -->
+                                   <!-- Bottom Action: Add to Bag / Interactive Stepper -->
                                 <div class="mt-auto pt-2 card-action-container" data-product-id="<?= $product['id'] ?>">
                                     <?php if ($isOutOfStock): ?>
                                         <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
                                             <span>স্টক শেষ</span>
                                         </button>
-                                    <?php elseif ($hasAddons): ?>
-                                        <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" 
-                                           class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
-                                            <span>🔪 কাটিং/ড্রেসিং পছন্দ করুন</span>
-                                            <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                                        </a>
+                                    <?php elseif ($hasAddons || $isBogo): ?>
+                                        <?php
+                                            $btnText = 'ব্যাগে যোগ করুন';
+                                            $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                                            $iconEmoji = '';
+                                            if ($hasAddons && $isBogo) {
+                                                $btnText = '🎁 ১+১ ও কাটিং পছন্দ করুন';
+                                                $btnCls = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold';
+                                                $iconEmoji = '🎁';
+                                            } elseif ($hasAddons) {
+                                                $btnText = '🔪 কাটিং/ড্রেসিং পছন্দ করুন';
+                                                $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 font-extrabold';
+                                                $iconEmoji = '🔪';
+                                            } elseif ($isBogo) {
+                                                $btnText = '🎁 ১+১ অফার সহ নিন';
+                                                $btnCls = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold animate-pulse';
+                                                $iconEmoji = '🎁';
+                                            }
+                                        ?>
+                                        <button type="button" 
+                                                onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
+                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl <?= $btnCls ?> border text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
+                                            <?php if ($iconEmoji): ?><span><?= $iconEmoji ?></span><?php endif; ?>
+                                            <span><?= $btnText ?></span>
+                                        </button>
                                     <?php else: ?>
                                         <button type="button" 
                                                 onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
@@ -700,183 +717,6 @@ if (empty($bannerSubtitle)) {
     </div>
 
 </main>
-
-<script>
-// Switch variant on product card
-function selectProductCardVariant(pillBtn, title, price, qty) {
-    const card = pillBtn.closest('.product-card');
-    if (!card) return;
-
-    card.dataset.selectedVariantTitle = title;
-    card.dataset.selectedVariantPrice = price;
-    card.dataset.selectedVariantQty = qty;
-
-    const priceEl = card.querySelector('.card-price');
-    if (priceEl) {
-        priceEl.textContent = Number(price).toLocaleString('en-US');
-    }
-
-    card.querySelectorAll('.variant-pill').forEach(btn => {
-        btn.className = 'variant-pill inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer border-gray-200 text-gray-500 bg-white hover:border-gray-300 font-medium';
-    });
-    pillBtn.className = 'variant-pill inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer border-emerald-600 text-emerald-700 bg-emerald-50/70 font-bold active-variant shadow-2xs';
-
-    renderCardActionButton(card);
-}
-
-// Find matching item in cart for a product card
-function findCartItemForCard(card) {
-    const productId = card.dataset.productId;
-    const selectedVariant = card.dataset.selectedVariantTitle || '';
-    const cart = window.SODAI_STATE?.cart || {};
-
-    for (const key in cart) {
-        const item = cart[key];
-        if (String(item.product_id) === String(productId)) {
-            if (selectedVariant) {
-                if (item.variant_title === selectedVariant) return item;
-            } else {
-                if (!item.variant_title) return item;
-            }
-        }
-    }
-    return null;
-}
-
-// Convert numbers to Bengali digits
-function convertToBanglaNumber(num) {
-    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return String(num).replace(/[0-9]/g, d => bnDigits[d]);
-}
-
-// Render Add to Bag OR [-] Qty [+] bar for a card
-function renderCardActionButton(card) {
-    const container = card.querySelector('.card-action-container');
-    if (!container) return;
-    if (card.dataset.outOfStock === '1') return;
-
-    const productId = card.dataset.productId;
-    const selectedVariant = card.dataset.selectedVariantTitle || '';
-    const cartItem = findCartItemForCard(card);
-    const quantity = cartItem ? parseInt(cartItem.quantity) : 0;
-    const isBn = (window.SODAI_STATE?.locale === 'bn');
-    const addToBagText = 'ব্যাগে যোগ করুন';
-    const inBagSuffix = 'টি ব্যাগে';
-
-    if (quantity > 0) {
-        const displayQty = isBn ? convertToBanglaNumber(quantity) : quantity;
-        container.innerHTML = `
-            <div class="w-full py-1 px-1 rounded-xl bg-emerald-700 text-white font-bold text-xs flex items-center justify-between shadow-md select-none transition-all">
-                <button type="button" 
-                        onclick="cardChangeQty(${productId}, -1, this)" 
-                        class="w-6 sm:w-7 h-6 sm:h-7 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm cursor-pointer"
-                        title="কমান">
-                    −
-                </button>
-                <div class="flex flex-col items-center justify-center px-1 text-center leading-tight">
-                    <span class="text-[11px] sm:text-xs font-black tracking-tight text-white">${displayQty} ${inBagSuffix}</span>
-                    ${selectedVariant ? `<span class="text-[9px] text-emerald-200 font-medium truncate max-w-[80px]">${selectedVariant}</span>` : ''}
-                </div>
-                <button type="button" 
-                        onclick="cardChangeQty(${productId}, 1, this)" 
-                        class="w-6 sm:w-7 h-6 sm:h-7 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm cursor-pointer"
-                        title="বাড়ান">
-                    +
-                </button>
-            </div>
-        `;
-    } else {
-        container.innerHTML = `
-            <button type="button" 
-                    onclick="cardAddToCart(${productId}, this)" 
-                    class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-700 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-700 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <span>${addToBagText}</span>
-            </button>
-        `;
-    }
-}
-
-// Sync all product cards on the page with current cart
-function syncProductCardsWithCart() {
-    document.querySelectorAll('.product-card').forEach(card => {
-        renderCardActionButton(card);
-    });
-}
-
-// Handle Add to Bag from Card
-function cardAddToCart(productId, btn) {
-    const card = btn.closest('.product-card');
-    const vTitle = card?.dataset?.selectedVariantTitle || '';
-    const vPrice = card?.dataset?.selectedVariantPrice || '';
-    const vQty = card?.dataset?.selectedVariantQty || '';
-
-    const formData = new FormData();
-    formData.append('product_id', productId);
-    formData.append('quantity', 1);
-    if (vTitle) formData.append('variant_title', vTitle);
-    if (vPrice) formData.append('variant_price', vPrice);
-    if (vQty) formData.append('variant_qty', vQty);
-
-    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
-
-    btn.disabled = true;
-    btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-emerald-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-    fetch((window.APP_BASE || '') + '/cart/add', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') {
-            updateCartUI(data);
-            showToast(data.message || 'কার্টে যোগ করা হয়েছে');
-        }
-    })
-    .catch(() => showToast('ত্রুটি ঘটেছে', 'error'));
-}
-
-// Handle Quantity Change (+ or -) from Card
-function cardChangeQty(productId, delta, btn) {
-    const card = btn.closest('.product-card');
-    const cartItem = findCartItemForCard(card);
-    if (!cartItem) return;
-
-    const newQty = parseInt(cartItem.quantity) + delta;
-    const itemKey = cartItem.cart_key;
-
-    const formData = new FormData();
-    formData.append('cart_key', itemKey);
-    formData.append('product_id', itemKey);
-    formData.append('quantity', Math.max(0, newQty));
-
-    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
-
-    fetch((window.APP_BASE || '') + '/cart/update', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') {
-            updateCartUI(data);
-        }
-    })
-    .catch(() => showToast('ত্রুটি ঘটেছে', 'error'));
-}
-
-// Trigger initial card sync on load
-document.addEventListener('DOMContentLoaded', () => {
-    syncProductCardsWithCart();
-});
-</script>
 
 <?php 
 $content = ob_get_clean();

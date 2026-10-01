@@ -183,6 +183,22 @@ $specialBadge = $product['special_badge'] ?? 'none';
                             <?php endif; ?>
                         </div>
 
+                        <?php if ($specialBadge === 'bogo'): ?>
+                            <div class="my-4 p-4 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border-2 border-amber-400/50 rounded-2xl flex items-center gap-3.5 shadow-xs">
+                                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center text-2xl shrink-0 shadow-md animate-bounce">
+                                    🎁
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-amber-900 text-sm sm:text-base flex items-center gap-1.5">
+                                        <span><?= $locale === 'bn' ? 'স্পেশাল ১টি কিনলে ১টি ফ্রি (BOGO) অফার!' : 'Special Buy 1 Get 1 Free (BOGO) Offer!' ?></span>
+                                    </div>
+                                    <p class="text-amber-800/90 font-medium text-xs mt-0.5 leading-relaxed">
+                                        <?= $locale === 'bn' ? '১টি পণ্য অর্ডার করলেই ডেলিভারির সাথে পাচ্ছেন মোট ২টি পণ্য! কোনো বাড়তি চার্জ নেই।' : 'Order 1 and get total 2 items delivered! No extra charge.' ?>
+                                    </p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Variants / Weight Options (if available) -->
                         <?php if ($hasVariants): ?>
                             <div class="my-5 pt-3 border-t border-gray-100">

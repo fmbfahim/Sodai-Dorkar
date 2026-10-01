@@ -622,6 +622,108 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </div>
     </div>
 
+    <!-- Quick Criteria & Options Modal (For Cutting/Dressing & BOGO Offers) -->
+    <div id="quick-criteria-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs hidden transition-all duration-300 opacity-0" onclick="handleQuickCriteriaBackdropClick(event)">
+        <div class="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden transform transition-all duration-300 translate-y-full sm:translate-y-0 sm:scale-95" id="quick-criteria-dialog">
+            
+            <!-- Header -->
+            <div class="p-4 sm:p-5 border-b border-gray-100 flex items-start justify-between gap-3 bg-gray-50/70">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-gray-200/80 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-2xs">
+                        <img id="qc-product-img" src="" alt="" class="w-full h-full object-contain mix-blend-multiply" onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                    </div>
+                    <div class="min-w-0">
+                        <span id="qc-criteria-tag" class="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 mb-1">
+                            🔪 কাটিং/ড্রেসিং সুবিধা
+                        </span>
+                        <h3 id="qc-product-name" class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug line-clamp-1"></h3>
+                        <div class="flex items-baseline gap-2 mt-0.5">
+                            <span class="text-xs font-bold text-gray-700">৳</span>
+                            <span id="qc-display-unit-price" class="text-base sm:text-lg font-black text-emerald-700 leading-none">0</span>
+                            <span id="qc-display-reg-price" class="text-xs text-gray-400 line-through leading-none hidden"></span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeQuickCriteriaModal()" class="w-8 h-8 rounded-full bg-gray-200/70 hover:bg-gray-300 text-gray-600 hover:text-gray-900 flex items-center justify-center font-bold text-base transition-colors cursor-pointer" title="<?= $__('drawer_close') ?>">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4 custom-scrollbar">
+                
+                <!-- BOGO Special Banner (Shown if product has BOGO) -->
+                <div id="qc-bogo-banner" class="hidden p-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-amber-500 text-white shadow-sm">
+                    <div class="flex items-center gap-2 font-black text-sm">
+                        <span class="text-xl">🎁</span>
+                        <span><?= ($locale === 'bn') ? '১টি কিনলে ১টি ফ্রি (BOGO Offer)!' : 'Buy 1 Get 1 Free (BOGO Offer)!' ?></span>
+                    </div>
+                    <p class="text-xs text-rose-100 mt-1 font-medium leading-relaxed">
+                        <?= ($locale === 'bn') ? 'এই পণ্যের সাথে ১টি অর্ডার করলে আপনি আরও ১টি সম্পূর্ণ ফ্রি পাবেন। ডেলিভারির সময় মোট ২টি পণ্য বুঝে পাবেন।' : 'Order 1 and get 1 completely free! You will receive 2 items in total upon delivery.' ?>
+                    </p>
+                </div>
+
+                <!-- Unit / Weight Variants Selection -->
+                <div id="qc-variants-section" class="hidden">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <?= ($locale === 'bn') ? 'ওজন / সাইজ নির্বাচন করুন:' : 'Select Size / Variant:' ?>
+                    </label>
+                    <div id="qc-variants-container" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Custom Processing / Cutting & Dressing Options -->
+                <div id="qc-addons-section" class="hidden">
+                    <div class="mb-2">
+                        <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="text-base">🔪</span>
+                            <span><?= ($locale === 'bn') ? 'কাটিং ও ড্রেসিং পছন্দ করুন:' : 'Select Cutting & Dressing Option:' ?></span>
+                        </label>
+                        <p class="text-[11px] text-gray-500 font-medium mt-0.5">
+                            <?= ($locale === 'bn') ? 'আপনার পছন্দ অনুযায়ী তাজা কেটে বা ড্রেসিং করে দেওয়া হবে' : 'We will cut/dress freshly as per your requirement' ?>
+                        </p>
+                    </div>
+                    <div id="qc-addons-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+
+                <!-- Quantity Stepper & Multiplier -->
+                <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-0.5">
+                            <?= ($locale === 'bn') ? 'পরিমাণ:' : 'Quantity:' ?>
+                        </label>
+                        <div id="qc-bogo-multiplier-note" class="hidden text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                            <span>🎁</span> <span id="qc-bogo-total-count">মোট পাবেন: ২ টি</span>
+                        </div>
+                    </div>
+                    <div class="inline-flex items-center border border-gray-200 rounded-2xl bg-white p-1 shadow-2xs">
+                        <button type="button" onclick="changeQuickCriteriaQty(-1)" class="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 flex items-center justify-center font-black text-lg transition-colors cursor-pointer active:scale-95">−</button>
+                        <input type="number" id="qc-qty-input" value="1" min="1" readonly class="w-12 text-center font-black text-gray-900 text-base focus:outline-none bg-transparent">
+                        <button type="button" onclick="changeQuickCriteriaQty(1)" class="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 flex items-center justify-center font-black text-lg transition-colors cursor-pointer active:scale-95">+</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Action -->
+            <div class="p-4 sm:p-5 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between gap-4">
+                <div>
+                    <span class="text-[11px] font-medium text-gray-500 block"><?= ($locale === 'bn') ? 'সর্বমোট মূল্য' : 'Total Amount' ?></span>
+                    <div class="flex items-baseline gap-1 text-emerald-700">
+                        <span class="text-sm font-bold">৳</span>
+                        <span id="qc-total-price" class="text-xl sm:text-2xl font-black">0</span>
+                    </div>
+                </div>
+                <button type="button" id="qc-submit-btn" onclick="submitQuickCriteriaAddToCart(this)" class="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-[0.98] transition-all cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span><?= ($locale === 'bn') ? 'ব্যাগে যোগ করুন' : 'Add to Bag' ?></span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- 4. RICH MEGA FOOTER (FreshMart Style Dark Forest Theme) -->
     <footer class="bg-[#0f2819] text-white pt-16 pb-8 mt-16 border-t border-emerald-950" id="footer">
         <div class="container mx-auto px-4">
@@ -888,6 +990,16 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                         </div>
                         <div class="flex-grow min-w-0">
                             <h4 class="text-sm font-semibold text-gray-800 truncate" title="${item.name}">${item.name}</h4>
+                            ${item.addon_title ? `
+                                <div class="text-[11px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
+                                    <span>🔪</span> <span>${item.addon_title}</span>
+                                </div>
+                            ` : ''}
+                            ${(item.is_bogo == 1 || item.special_badge === 'bogo') ? `
+                                <div class="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 mt-1">
+                                    <span>🎁</span> <span>${window.SODAI_STATE.locale === 'bn' ? `১+১ ফ্রি: মোট ${item.quantity * 2}টি পাবেন` : `BOGO: Get ${item.quantity * 2} pcs total`}</span>
+                                </div>
+                            ` : ''}
                             <div class="flex items-center gap-1.5 mt-0.5">
                                 <span class="text-xs font-black text-emerald-600">${window.SODAI_STATE.currency}${parseFloat(item.price).toFixed(2)}</span>
                                 ${item.regular_price && parseFloat(item.regular_price) > parseFloat(item.price) ? `
@@ -1136,6 +1248,351 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             return String(num).replace(/[0-9]/g, d => bnDigits[d]);
         }
 
+        // ── Quick Criteria & Options Modal Logic (Cutting/Dressing & BOGO) ──
+        window.QC_STATE = {
+            productId: null,
+            productName: '',
+            productImg: '',
+            basePrice: 0,
+            regPrice: 0,
+            selectedVariantTitle: '',
+            selectedVariantPrice: 0,
+            selectedVariantQty: 1,
+            selectedAddonTitle: '',
+            selectedAddonPrice: 0,
+            quantity: 1,
+            isBogo: false,
+            hasAddons: false,
+            variants: [],
+            addons: []
+        };
+
+        function openQuickCriteriaModal(productId, triggerBtn = null) {
+            const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+            if (!card) {
+                window.location.href = (window.APP_BASE || '') + '/product?id=' + productId;
+                return;
+            }
+
+            const isBn = (window.SODAI_STATE?.locale === 'bn');
+            let addons = [];
+            try {
+                addons = JSON.parse(card.dataset.addons || '[]');
+            } catch(e) { addons = []; }
+
+            let variants = [];
+            try {
+                variants = JSON.parse(card.dataset.variants || '[]');
+            } catch(e) { variants = []; }
+
+            const isBogo = (card.dataset.isBogo === '1' || card.dataset.specialBadge === 'bogo');
+            const hasAddons = (card.dataset.hasAddons === '1' || (Array.isArray(addons) && addons.length > 0));
+            const baseSellPrice = parseFloat(card.dataset.productPrice || 0);
+            const regPrice = parseFloat(card.dataset.productRegPrice || 0);
+            const initialVarTitle = card.dataset.selectedVariantTitle || '';
+            const initialVarPrice = parseFloat(card.dataset.selectedVariantPrice || baseSellPrice);
+            const initialVarQty = parseFloat(card.dataset.selectedVariantQty || 1);
+
+            // Populate QC_STATE
+            window.QC_STATE = {
+                productId: productId,
+                productName: card.dataset.productName || card.querySelector('h3')?.textContent?.trim() || '',
+                productImg: card.dataset.productImg || card.querySelector('img')?.src || '',
+                basePrice: baseSellPrice,
+                regPrice: regPrice,
+                selectedVariantTitle: initialVarTitle,
+                selectedVariantPrice: initialVarPrice,
+                selectedVariantQty: initialVarQty,
+                selectedAddonTitle: '',
+                selectedAddonPrice: 0,
+                quantity: 1,
+                isBogo: isBogo,
+                hasAddons: hasAddons,
+                variants: variants,
+                addons: addons
+            };
+
+            // Set basic header info
+            const imgEl = document.getElementById('qc-product-img');
+            const nameEl = document.getElementById('qc-product-name');
+            const tagEl = document.getElementById('qc-criteria-tag');
+            const regEl = document.getElementById('qc-display-reg-price');
+
+            if (imgEl) imgEl.src = window.QC_STATE.productImg;
+            if (nameEl) nameEl.textContent = window.QC_STATE.productName;
+
+            if (tagEl) {
+                if (isBogo && hasAddons) {
+                    tagEl.textContent = isBn ? '🎁 ১+১ ফ্রি ও কাটিং সুবিধা' : '🎁 BOGO & Custom Cut';
+                    tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 mb-1';
+                    tagEl.classList.remove('hidden');
+                } else if (isBogo) {
+                    tagEl.textContent = isBn ? '🎁 ১টি কিনলে ১টি ফ্রি অফার' : '🎁 Buy 1 Get 1 Free Offer';
+                    tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 mb-1';
+                    tagEl.classList.remove('hidden');
+                } else if (hasAddons) {
+                    tagEl.textContent = isBn ? '🔪 কাটিং ও ড্রেসিং সুবিধা' : '🔪 Custom Cut & Dressing';
+                    tagEl.className = 'inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 mb-1';
+                    tagEl.classList.remove('hidden');
+                } else {
+                    tagEl.classList.add('hidden');
+                }
+            }
+
+            if (regEl) {
+                if (regPrice > baseSellPrice) {
+                    regEl.textContent = '৳' + Number(regPrice).toLocaleString();
+                    regEl.classList.remove('hidden');
+                } else {
+                    regEl.classList.add('hidden');
+                }
+            }
+
+            // BOGO Banner
+            const bogoBanner = document.getElementById('qc-bogo-banner');
+            const bogoNote = document.getElementById('qc-bogo-multiplier-note');
+            if (isBogo) {
+                bogoBanner?.classList.remove('hidden');
+                bogoNote?.classList.remove('hidden');
+            } else {
+                bogoBanner?.classList.add('hidden');
+                bogoNote?.classList.add('hidden');
+            }
+
+            // Variants Section
+            const varSec = document.getElementById('qc-variants-section');
+            const varCont = document.getElementById('qc-variants-container');
+            if (variants && variants.length > 0) {
+                varSec?.classList.remove('hidden');
+                varCont.innerHTML = variants.map(v => {
+                    const isSelected = (v.title === window.QC_STATE.selectedVariantTitle) || (!window.QC_STATE.selectedVariantTitle && v.is_default);
+                    if (isSelected) {
+                        window.QC_STATE.selectedVariantTitle = v.title;
+                        window.QC_STATE.selectedVariantPrice = parseFloat(v.price);
+                        window.QC_STATE.selectedVariantQty = parseFloat(v.qty || 1);
+                    }
+                    const activeCls = isSelected 
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' 
+                        : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+                    return `
+                        <button type="button" 
+                                onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, this)" 
+                                class="qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${activeCls}">
+                            <span>${escapeHtml(v.title)}</span>
+                            <span class="ml-1 text-emerald-600">৳${Number(v.price).toLocaleString()}</span>
+                        </button>
+                    `;
+                }).join('');
+            } else {
+                varSec?.classList.add('hidden');
+                if (varCont) varCont.innerHTML = '';
+            }
+
+            // Addons (Cutting & Dressing) Section
+            const addSec = document.getElementById('qc-addons-section');
+            const addCont = document.getElementById('qc-addons-container');
+            if (addons && addons.length > 0) {
+                addSec?.classList.remove('hidden');
+                // Find default addon
+                let defaultAddon = addons.find(a => a.is_default == 1) || addons[0];
+                window.QC_STATE.selectedAddonTitle = defaultAddon ? defaultAddon.name : '';
+                window.QC_STATE.selectedAddonPrice = defaultAddon ? parseFloat(defaultAddon.price || 0) : 0;
+
+                addCont.innerHTML = addons.map((a, idx) => {
+                    const isChecked = (a.name === window.QC_STATE.selectedAddonTitle);
+                    const aPrice = parseFloat(a.price || 0);
+                    const priceBadge = aPrice > 0 ? `+৳${Number(aPrice).toLocaleString()}` : (isBn ? 'ফ্রি' : 'Free');
+                    const badgeCls = aPrice > 0 ? 'text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md' : 'text-gray-400 font-bold';
+                    const cardCls = isChecked 
+                        ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-2xs' 
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
+
+                    return `
+                        <label class="qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${cardCls}"
+                               onclick="selectQuickCriteriaAddon('${escapeHtml(a.name)}', ${aPrice}, this)">
+                            <div class="flex items-center gap-2.5">
+                                <input type="radio" name="qc_addon_choice" value="${escapeHtml(a.name)}" ${isChecked ? 'checked' : ''} class="text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="text-xs sm:text-[13px] font-bold">${escapeHtml(a.name)}</span>
+                            </div>
+                            <span class="text-xs font-black ${badgeCls}">
+                                ${priceBadge}
+                            </span>
+                        </label>
+                    `;
+                }).join('');
+            } else {
+                addSec?.classList.add('hidden');
+                if (addCont) addCont.innerHTML = '';
+            }
+
+            // Reset quantity to 1
+            const qtyInput = document.getElementById('qc-qty-input');
+            if (qtyInput) qtyInput.value = 1;
+            window.QC_STATE.quantity = 1;
+
+            updateQuickCriteriaPriceDisplay();
+
+            // Open Modal
+            const modal = document.getElementById('quick-criteria-modal');
+            const dialog = document.getElementById('quick-criteria-dialog');
+            if (modal && dialog) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                requestAnimationFrame(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.classList.add('opacity-100');
+                    dialog.classList.remove('translate-y-full', 'sm:scale-95');
+                    dialog.classList.add('translate-y-0', 'sm:scale-100');
+                });
+            }
+        }
+
+        function closeQuickCriteriaModal() {
+            const modal = document.getElementById('quick-criteria-modal');
+            const dialog = document.getElementById('quick-criteria-dialog');
+            if (!modal || !dialog) return;
+
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            dialog.classList.remove('translate-y-0', 'sm:scale-100');
+            dialog.classList.add('translate-y-full', 'sm:scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        function handleQuickCriteriaBackdropClick(e) {
+            if (e.target && e.target.id === 'quick-criteria-modal') {
+                closeQuickCriteriaModal();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('quick-criteria-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeQuickCriteriaModal();
+                }
+            }
+        });
+
+        function changeQuickCriteriaQty(delta) {
+            const qtyInput = document.getElementById('qc-qty-input');
+            if (!qtyInput) return;
+            let curr = parseInt(qtyInput.value) || 1;
+            curr = Math.max(1, curr + delta);
+            qtyInput.value = curr;
+            window.QC_STATE.quantity = curr;
+            updateQuickCriteriaPriceDisplay();
+        }
+
+        function selectQuickCriteriaVariant(title, price, qty, btn) {
+            document.querySelectorAll('.qc-var-pill').forEach(el => {
+                el.className = 'qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+            });
+            btn.className = 'qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs';
+
+            window.QC_STATE.selectedVariantTitle = title;
+            window.QC_STATE.selectedVariantPrice = price;
+            window.QC_STATE.selectedVariantQty = qty;
+            updateQuickCriteriaPriceDisplay();
+        }
+
+        function selectQuickCriteriaAddon(name, price, cardEl) {
+            document.querySelectorAll('.qc-addon-card').forEach(el => {
+                el.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-gray-200 bg-white text-gray-700 hover:border-emerald-300';
+                const radio = el.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+            cardEl.className = 'qc-addon-card relative flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-2xs';
+            const radio = cardEl.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+
+            window.QC_STATE.selectedAddonTitle = name;
+            window.QC_STATE.selectedAddonPrice = price;
+            updateQuickCriteriaPriceDisplay();
+        }
+
+        function updateQuickCriteriaPriceDisplay() {
+            const isBn = (window.SODAI_STATE?.locale === 'bn');
+            const baseP = parseFloat(window.QC_STATE.selectedVariantPrice || window.QC_STATE.basePrice || 0);
+            const addonP = parseFloat(window.QC_STATE.selectedAddonPrice || 0);
+            const unitTotal = baseP + addonP;
+            const fullTotal = unitTotal * window.QC_STATE.quantity;
+
+            const unitEl = document.getElementById('qc-display-unit-price');
+            const totalEl = document.getElementById('qc-total-price');
+            const bogoCountEl = document.getElementById('qc-bogo-total-count');
+
+            if (unitEl) unitEl.textContent = unitTotal.toLocaleString();
+            if (totalEl) totalEl.textContent = fullTotal.toLocaleString();
+
+            if (bogoCountEl && window.QC_STATE.isBogo) {
+                const totalReceive = window.QC_STATE.quantity * 2;
+                bogoCountEl.textContent = isBn 
+                    ? `মোট পাবেন: ${convertToBanglaNumber(totalReceive)} টি (${convertToBanglaNumber(window.QC_STATE.quantity)}টি কেনা + ${convertToBanglaNumber(window.QC_STATE.quantity)}টি ফ্রি)`
+                    : `Total Receive: ${totalReceive} items (${window.QC_STATE.quantity} bought + ${window.QC_STATE.quantity} FREE)`;
+            }
+        }
+
+        function submitQuickCriteriaAddToCart(btn) {
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+            const formData = new FormData();
+            formData.append('product_id', window.QC_STATE.productId);
+            formData.append('quantity', window.QC_STATE.quantity);
+
+            if (window.QC_STATE.selectedVariantTitle) {
+                formData.append('variant_title', window.QC_STATE.selectedVariantTitle);
+            }
+            if (window.QC_STATE.selectedVariantPrice) {
+                formData.append('variant_price', window.QC_STATE.selectedVariantPrice);
+            }
+            if (window.QC_STATE.selectedVariantQty) {
+                formData.append('variant_qty', window.QC_STATE.selectedVariantQty);
+            }
+            if (window.QC_STATE.selectedAddonTitle) {
+                formData.append('addon_title', window.QC_STATE.selectedAddonTitle);
+            }
+            if (window.QC_STATE.selectedAddonPrice) {
+                formData.append('addon_price', window.QC_STATE.selectedAddonPrice);
+            }
+
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta) formData.append('csrf_token', csrfMeta.getAttribute('content'));
+
+            fetch((window.APP_BASE || '') + '/cart/add', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateCartUI(data);
+                    closeQuickCriteriaModal();
+                    showToast(data.message || (window.SODAI_STATE?.locale === 'bn' ? 'কার্টে যোগ করা হয়েছে' : 'Added to bag'));
+                    openCartDrawer();
+                } else {
+                    showToast(data.message || 'ত্রুটি ঘটেছে', 'error');
+                }
+            })
+            .catch(() => showToast('ত্রুটি ঘটেছে', 'error'))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+        }
+
         // Render Add to Bag OR [-] Qty [+] controller for a card
         function renderCardActionButton(card) {
             const container = card.querySelector('.card-action-container');
@@ -1149,40 +1606,79 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             const isBn = (window.SODAI_STATE?.locale === 'bn');
             const addToBagText = window.SODAI_STATE?.addToBagText || (isBn ? 'ব্যাগ এ যোগ করুন' : 'Add to Bag');
             const inBagSuffix = window.SODAI_STATE?.inBagText || (isBn ? 'টি ব্যাগে' : 'in bag');
+            const hasAddons = (card.dataset.hasAddons === '1');
+            const isBogo = (card.dataset.isBogo === '1' || card.dataset.specialBadge === 'bogo');
 
             if (quantity > 0) {
                 const displayQty = isBn ? convertToBanglaNumber(quantity) : quantity;
+                const subNote = cartItem.addon_title ? `🔪 ${cartItem.addon_title}` : (selectedVariant || '');
                 container.innerHTML = `
-                    <div class="w-full py-1 px-1 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-between shadow-md select-none transition-all">
-                        <button type="button" 
-                                onclick="cardChangeQty(${productId}, -1, this)" 
-                                class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
-                                title="কমান">
-                            −
-                        </button>
-                        <div class="flex flex-col items-center justify-center px-1 text-center leading-tight">
-                            <span class="text-xs sm:text-[13px] font-black tracking-tight text-white">${displayQty} ${inBagSuffix}</span>
-                            ${selectedVariant ? `<span class="text-[10px] text-emerald-100 font-medium truncate max-w-[90px]">${selectedVariant}</span>` : ''}
+                    <div class="w-full flex flex-col gap-1">
+                        <div class="w-full py-1 px-1 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-between shadow-md select-none transition-all">
+                            <button type="button" 
+                                    onclick="cardChangeQty(${productId}, -1, this)" 
+                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
+                                    title="কমান">
+                                −
+                            </button>
+                            <div class="flex flex-col items-center justify-center px-1 text-center leading-tight">
+                                <span class="text-xs sm:text-[13px] font-black tracking-tight text-white">${displayQty} ${inBagSuffix}</span>
+                                ${subNote ? `<span class="text-[10px] text-emerald-100 font-medium truncate max-w-[100px]">${subNote}</span>` : ''}
+                            </div>
+                            <button type="button" 
+                                    onclick="cardChangeQty(${productId}, 1, this)" 
+                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
+                                    title="বাড়ান">
+                                +
+                            </button>
                         </div>
-                        <button type="button" 
-                                onclick="cardChangeQty(${productId}, 1, this)" 
-                                class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
-                                title="বাড়ান">
-                            +
-                        </button>
+                        ${(hasAddons || isBogo) ? `
+                            <button type="button" onclick="openQuickCriteriaModal(${productId})" class="text-[10px] text-amber-800 hover:text-amber-900 font-extrabold text-center underline cursor-pointer py-0.5">
+                                ${hasAddons ? (isBn ? '🔪 অপশন/কাটিং পরিবর্তন' : 'Change Cut/Dressing') : (isBn ? '🎁 অফার বিস্তারিত' : 'Offer Details')}
+                            </button>
+                        ` : ''}
                     </div>
                 `;
             } else {
-                container.innerHTML = `
-                    <button type="button" 
-                            onclick="cardAddToCart(${productId}, this)" 
-                            class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        <span>${addToBagText}</span>
-                    </button>
-                `;
+                if (hasAddons || isBogo) {
+                    let btnText = addToBagText;
+                    let btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                    let iconEmoji = '';
+
+                    if (hasAddons && isBogo) {
+                        btnText = isBn ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
+                        iconEmoji = '🎁';
+                        btnClass = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 shadow-2xs font-extrabold';
+                    } else if (hasAddons) {
+                        btnText = isBn ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
+                        iconEmoji = '🔪';
+                        btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 shadow-2xs font-extrabold';
+                    } else if (isBogo) {
+                        btnText = isBn ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
+                        iconEmoji = '🎁';
+                        btnClass = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 shadow-2xs font-extrabold animate-pulse';
+                    }
+
+                    container.innerHTML = `
+                        <button type="button" 
+                                onclick="openQuickCriteriaModal(${productId})" 
+                                class="w-full py-2 px-3 rounded-xl ${btnClass} border text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                            ${iconEmoji ? `<span class="text-sm">${iconEmoji}</span>` : ''}
+                            <span>${btnText}</span>
+                        </button>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <button type="button" 
+                                onclick="cardAddToCart(${productId}, this)" 
+                                class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            <span>${addToBagText}</span>
+                        </button>
+                    `;
+                }
             }
         }
 
@@ -1196,6 +1692,15 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         // Card Add to Bag
         function cardAddToCart(productId, btn) {
             const card = btn.closest('.product-card');
+            const hasAddons = (card?.dataset?.hasAddons === '1');
+            const isBogo = (card?.dataset?.isBogo === '1' || card?.dataset?.specialBadge === 'bogo');
+
+            // Safety intercept: If product has criteria (addons or BOGO), open quick selection modal!
+            if (hasAddons || isBogo) {
+                openQuickCriteriaModal(productId, btn);
+                return;
+            }
+
             const vTitle = card?.dataset?.selectedVariantTitle || '';
             const vPrice = card?.dataset?.selectedVariantPrice || '';
             const vQty = card?.dataset?.selectedVariantQty || '';

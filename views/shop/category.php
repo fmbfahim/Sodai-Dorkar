@@ -640,10 +640,21 @@ if (!empty($search)) $activeFilterCount++;
                                 $productAddons = !empty($product['addons_json']) ? json_decode($product['addons_json'], true) : [];
                                 $hasAddons = !empty($productAddons) && is_array($productAddons);
                                 $specialBadge = $product['special_badge'] ?? 'none';
+                                $isBogo = ($specialBadge === 'bogo');
+                                $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                             ?>
 
                             <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-lg transition-all duration-300 group flex flex-col h-full overflow-hidden relative"
                                  data-product-id="<?= $product['id'] ?>"
+                                 data-product-name="<?= htmlspecialchars($product['name'], ENT_QUOTES) ?>"
+                                 data-product-img="<?= htmlspecialchars($productImg, ENT_QUOTES) ?>"
+                                 data-product-price="<?= floatval($initialPrice) ?>"
+                                 data-product-reg-price="<?= floatval($product['regular_price'] ?? 0) ?>"
+                                 data-has-addons="<?= $hasAddons ? '1' : '0' ?>"
+                                 data-is-bogo="<?= $isBogo ? '1' : '0' ?>"
+                                 data-special-badge="<?= htmlspecialchars($specialBadge, ENT_QUOTES) ?>"
+                                 data-addons='<?= htmlspecialchars(json_encode($productAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
+                                 data-variants='<?= htmlspecialchars(json_encode($uInfo['variants'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
                                  data-out-of-stock="<?= $isOutOfStock ? '1' : '0' ?>"
                                  data-base-unit="<?= htmlspecialchars($product['base_unit'] ?? 'pcs') ?>"
                                  data-selected-variant-title="<?= htmlspecialchars($initialTitle) ?>"
@@ -653,6 +664,12 @@ if (!empty($search)) $activeFilterCount++;
                                 <!-- Top Category & Discount Badges -->
                                 <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between pointer-events-none gap-1">
                                     <div class="flex items-center gap-1 flex-wrap min-w-0">
+                                        <?php if ($hasAddons): ?>
+                                            <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap">
+                                                🔪 <?= $locale === 'bn' ? 'কাটিং সুবিধা' : 'Cut Option' ?>
+                                            </span>
+                                        <?php endif; ?>
+
                                         <?php if ($specialBadge === 'bogo'): ?>
                                             <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap animate-pulse">
                                                 🎁 <?= $locale === 'bn' ? '১+১ ফ্রি' : 'BOGO' ?>
@@ -763,12 +780,31 @@ if (!empty($search)) $activeFilterCount++;
                                             <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-not-allowed">
                                                 <span><?= $locale === 'bn' ? 'স্টক শেষ' : 'Out of Stock' ?></span>
                                             </button>
-                                        <?php elseif ($hasAddons): ?>
-                                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" 
-                                               class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                                                <span>🔪 <?= $locale === 'bn' ? 'কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing' ?></span>
-                                                <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                                            </a>
+                                        <?php elseif ($hasAddons || $isBogo): ?>
+                                            <?php
+                                                $btnText = $__('add_to_bag');
+                                                $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                                                $iconEmoji = '';
+                                                if ($hasAddons && $isBogo) {
+                                                    $btnText = $locale === 'bn' ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
+                                                    $btnCls = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold';
+                                                    $iconEmoji = '🎁';
+                                                } elseif ($hasAddons) {
+                                                    $btnText = $locale === 'bn' ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
+                                                    $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 font-extrabold';
+                                                    $iconEmoji = '🔪';
+                                                } elseif ($isBogo) {
+                                                    $btnText = $locale === 'bn' ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
+                                                    $btnCls = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold animate-pulse';
+                                                    $iconEmoji = '🎁';
+                                                }
+                                            ?>
+                                            <button type="button" 
+                                                    onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
+                                                    class="w-full py-2 px-3 rounded-xl <?= $btnCls ?> border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                                                <?php if ($iconEmoji): ?><span><?= $iconEmoji ?></span><?php endif; ?>
+                                                <span><?= $btnText ?></span>
+                                            </button>
                                         <?php else: ?>
                                             <button type="button" 
                                                     onclick="cardAddToCart(<?= $product['id'] ?>, this)" 

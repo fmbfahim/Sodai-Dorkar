@@ -215,12 +215,31 @@ if (!empty($search)) $activeFilterCount++;
                         $prodAddons = !empty($prod['addons_json']) ? json_decode($prod['addons_json'], true) : [];
                         $prodHasAddons = !empty($prodAddons) && is_array($prodAddons);
                         $prodBadge = $prod['special_badge'] ?? 'none';
+                        $prodIsBogo = ($prodBadge === 'bogo');
+                        $isProdOutOfStock = (($prod['availability_status'] ?? '') === 'out_of_stock');
                     ?>
-                    <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
+                    <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group"
+                         data-product-id="<?= $prod['id'] ?>"
+                         data-product-name="<?= htmlspecialchars($prod['name'], ENT_QUOTES) ?>"
+                         data-product-img="<?= htmlspecialchars($pImg, ENT_QUOTES) ?>"
+                         data-product-price="<?= floatval($pSell) ?>"
+                         data-product-reg-price="<?= floatval($pReg) ?>"
+                         data-has-addons="<?= $prodHasAddons ? '1' : '0' ?>"
+                         data-is-bogo="<?= $prodIsBogo ? '1' : '0' ?>"
+                         data-special-badge="<?= htmlspecialchars($prodBadge, ENT_QUOTES) ?>"
+                         data-addons='<?= htmlspecialchars(json_encode($prodAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
+                         data-variants='[]'
+                         data-out-of-stock="<?= $isProdOutOfStock ? '1' : '0' ?>">
                         
                         <!-- Product Image -->
                         <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden">
                             <div class="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+                                <?php if ($prodHasAddons): ?>
+                                    <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap">
+                                        🔪 <?= (Lang::locale() === 'bn') ? 'কাটিং সুবিধা' : 'Cut Option' ?>
+                                    </span>
+                                <?php endif; ?>
+
                                 <?php if ($prodBadge === 'bogo'): ?>
                                     <span class="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs animate-pulse">
                                         🎁 <?= (Lang::locale() === 'bn') ? '১+১ ফ্রি' : 'BOGO' ?>
@@ -276,27 +295,47 @@ if (!empty($search)) $activeFilterCount++;
                             </div>
 
                             <!-- Add to Bag Button -->
-                            <?php $isProdOutOfStock = (($prod['availability_status'] ?? '') === 'out_of_stock'); ?>
-                            <?php if ($isProdOutOfStock): ?>
-                                <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
-                                    <span><?= (Lang::locale() === 'bn') ? 'স্টক শেষ' : 'Out of Stock' ?></span>
-                                </button>
-                            <?php elseif ($prodHasAddons): ?>
-                                <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" 
-                                   class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
-                                    <span>🔪 <?= (Lang::locale() === 'bn') ? 'কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing' ?></span>
-                                    <svg class="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                                </a>
-                            <?php else: ?>
-                                <button type="button" 
-                                        onclick="addToCartAjax(<?= $prod['id'] ?>, this)"
-                                        class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                    <span><?= (Lang::locale() === 'bn') ? 'ব্যাগে যোগ করুন' : 'Add to Cart' ?></span>
-                                </button>
-                            <?php endif; ?>
+                            <div class="mt-auto card-action-container" data-product-id="<?= $prod['id'] ?>">
+                                <?php if ($isProdOutOfStock): ?>
+                                    <button type="button" disabled class="w-full py-2 px-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                        <span><?= (Lang::locale() === 'bn') ? 'স্টক শেষ' : 'Out of Stock' ?></span>
+                                    </button>
+                                <?php elseif ($prodHasAddons || $prodIsBogo): ?>
+                                    <?php
+                                        $btnText = (Lang::locale() === 'bn') ? 'ব্যাগে যোগ করুন' : 'Add to Bag';
+                                        $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                                        $iconEmoji = '';
+                                        if ($prodHasAddons && $prodIsBogo) {
+                                            $btnText = (Lang::locale() === 'bn') ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
+                                            $btnCls = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold';
+                                            $iconEmoji = '🎁';
+                                        } elseif ($prodHasAddons) {
+                                            $btnText = (Lang::locale() === 'bn') ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
+                                            $btnCls = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600 font-extrabold';
+                                            $iconEmoji = '🔪';
+                                        } elseif ($prodIsBogo) {
+                                            $btnText = (Lang::locale() === 'bn') ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
+                                            $btnCls = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600 font-extrabold animate-pulse';
+                                            $iconEmoji = '🎁';
+                                        }
+                                    ?>
+                                    <button type="button" 
+                                            onclick="openQuickCriteriaModal(<?= $prod['id'] ?>, this)" 
+                                            class="w-full py-2 px-3 rounded-xl <?= $btnCls ?> border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
+                                        <?php if ($iconEmoji): ?><span><?= $iconEmoji ?></span><?php endif; ?>
+                                        <span><?= $btnText ?></span>
+                                    </button>
+                                <?php else: ?>
+                                    <button type="button" 
+                                            onclick="cardAddToCart(<?= $prod['id'] ?>, this)"
+                                            class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-sm group/btn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        <span><?= (Lang::locale() === 'bn') ? 'ব্যাগে যোগ করুন' : 'Add to Cart' ?></span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                     <?php endforeach; ?>
