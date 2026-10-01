@@ -111,7 +111,8 @@ class SettingsController extends Controller {
             ],
             'visibility' => [
                 'top_announcement_bar_enabled',
-                'seo_index_allow'
+                'seo_index_allow',
+                'welcome_popup_enabled'
             ]
         ];
 

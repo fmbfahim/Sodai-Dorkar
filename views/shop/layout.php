@@ -622,6 +622,85 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </div>
     </div>
 
+    <!-- Welcome Pop-up Banner & Account Prompt Modal (৫০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি ব্যানার) -->
+    <?php
+    $popupSettings = class_exists('\Models\Setting') ? \Models\Setting::getMultiple([
+        'welcome_popup_enabled',
+        'welcome_popup_image',
+        'welcome_popup_link',
+        'welcome_popup_title',
+        'welcome_popup_subtitle',
+        'welcome_popup_btn_text',
+        'welcome_popup_btn_link'
+    ]) : [];
+
+    $isPopupEnabled = ($popupSettings['welcome_popup_enabled'] ?? '1') === '1';
+    $popupImg = !empty($popupSettings['welcome_popup_image']) ? $popupSettings['welcome_popup_image'] : '/images/free_delivery_500.jpg';
+    $popupImgUrl = (strpos($popupImg, 'http') === 0) ? $popupImg : ($base . $popupImg);
+    $popupLink = !empty($popupSettings['welcome_popup_link']) ? $popupSettings['welcome_popup_link'] : ($base . '/checkout/auth');
+    $popupTitle = $popupSettings['welcome_popup_title'] ?? ($locale === 'bn' ? '🎁 ৫০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি!' : '🎁 Free Delivery on Orders Over ৳500!');
+    $popupSub = $popupSettings['welcome_popup_subtitle'] ?? ($locale === 'bn' ? 'সদাই দরকারে এখনই আপনার ফ্রি অ্যাকাউন্ট তৈরি করুন এবং আকর্ষণীয় অফার সহ উপভোগ করুন ফ্রি হোম ডেলিভারি!' : 'Create your free account today to enjoy exclusive discounts, faster ordering, and free home delivery!');
+    $popupBtnText = $popupSettings['welcome_popup_btn_text'] ?? ($locale === 'bn' ? '✨ একাউন্ট তৈরি করুন / লগইন' : '✨ Create Account / Login');
+    $popupBtnLink = !empty($popupSettings['welcome_popup_btn_link']) ? $popupSettings['welcome_popup_btn_link'] : ($base . '/checkout/auth');
+    $isLoggedIn = !empty($_SESSION['customer_id']);
+    ?>
+
+    <?php if ($isPopupEnabled): ?>
+    <div id="welcome-promo-modal" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs hidden opacity-0 transition-all duration-300">
+        <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100 transform transition-all duration-300 scale-95" id="welcome-promo-dialog">
+            
+            <!-- Top Close Button (Floating) -->
+            <button type="button" onclick="closeWelcomePromoModal()" class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-sm font-black transition-all shadow-md cursor-pointer hover:scale-105" title="Close">
+                ✕
+            </button>
+
+            <!-- Banner Image (Clickable if link exists) -->
+            <div class="relative bg-emerald-950 overflow-hidden group">
+                <a href="<?= htmlspecialchars($popupLink) ?>" class="block overflow-hidden cursor-pointer" onclick="handlePromoBannerClick(event, '<?= htmlspecialchars($popupLink) ?>')">
+                    <img src="<?= htmlspecialchars($popupImgUrl) ?>" alt="Special Offer" class="w-full h-auto max-h-[280px] sm:max-h-[320px] object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='/sodai-dorkar/public/images/free_delivery_500.jpg'">
+                </a>
+                <div class="absolute bottom-2 right-2 bg-black/50 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
+                    <?= $locale === 'bn' ? 'ক্লিক করে অফার দেখুন' : 'Click to View Offer' ?>
+                </div>
+            </div>
+
+            <!-- Content & Actions -->
+            <div class="p-5 sm:p-6 text-center space-y-3 bg-gradient-to-b from-white to-emerald-50/40">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black shadow-2xs">
+                    <span>⚡ স্পেশাল ওয়েলকাম অফার</span>
+                </div>
+                
+                <h3 class="text-lg sm:text-xl font-black text-gray-900 leading-snug">
+                    <?= htmlspecialchars($popupTitle) ?>
+                </h3>
+
+                <p class="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md mx-auto">
+                    <?= htmlspecialchars($popupSub) ?>
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="pt-2 flex flex-col sm:flex-row items-center gap-2.5 justify-center">
+                    <?php if (!$isLoggedIn): ?>
+                        <a href="<?= htmlspecialchars($popupBtnLink) ?>" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-3 px-5 rounded-2xl shadow-lg hover:shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+                            <ion-icon name="person-add-outline" class="text-lg"></ion-icon>
+                            <span><?= htmlspecialchars($popupBtnText) ?></span>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= $base ?>/shop" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-3 px-5 rounded-2xl shadow-lg hover:shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+                            <ion-icon name="cart-outline" class="text-lg"></ion-icon>
+                            <span><?= $locale === 'bn' ? '🛒 এখনই কেনাকাটা করুন' : '🛒 Shop Now' ?></span>
+                        </a>
+                    <?php endif; ?>
+
+                    <button type="button" onclick="closeWelcomePromoModal()" class="w-full sm:w-auto px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer">
+                        <?= $locale === 'bn' ? 'পরে করব' : 'Maybe Later' ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Quick Criteria & Options Modal (For Cutting/Dressing & BOGO Offers) -->
     <div id="quick-criteria-modal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs hidden opacity-0 transition-opacity duration-300" onclick="handleQuickCriteriaBackdropClick(event)">
         <div class="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden transform transition-all duration-300 ease-out translate-y-full sm:translate-y-4 sm:scale-95" id="quick-criteria-dialog">
@@ -1830,6 +1909,62 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             renderSpendMoreOffersUI('cart-spend-more-container', window.SODAI_STATE.spendMoreOffers);
             syncProductCardsWithCart();
         });
+
+        // ── Welcome Promo & Account Prompt Modal Trigger ──
+        (function initWelcomePromoModal() {
+            const promoModal = document.getElementById('welcome-promo-modal');
+            const promoDialog = document.getElementById('welcome-promo-dialog');
+            if (!promoModal || !promoDialog) return;
+
+            // Check if already dismissed in this session
+            const hasSeen = sessionStorage.getItem('sd_welcome_promo_seen');
+            if (!hasSeen) {
+                setTimeout(function() {
+                    promoModal.classList.remove('hidden');
+                    void promoModal.offsetWidth;
+                    promoModal.classList.remove('opacity-0');
+                    promoModal.classList.add('opacity-100');
+                    promoDialog.classList.remove('scale-95');
+                    promoDialog.classList.add('scale-100');
+                }, 800);
+            }
+
+            // Close on backdrop click
+            promoModal.addEventListener('click', function(e) {
+                if (e.target === promoModal) {
+                    closeWelcomePromoModal();
+                }
+            });
+        })();
+
+        window.closeWelcomePromoModal = function() {
+            const promoModal = document.getElementById('welcome-promo-modal');
+            const promoDialog = document.getElementById('welcome-promo-dialog');
+            if (!promoModal || !promoDialog) return;
+
+            promoModal.classList.remove('opacity-100');
+            promoModal.classList.add('opacity-0');
+            promoDialog.classList.remove('scale-100');
+            promoDialog.classList.add('scale-95');
+            setTimeout(function() {
+                promoModal.classList.add('hidden');
+            }, 300);
+
+            try {
+                sessionStorage.setItem('sd_welcome_promo_seen', '1');
+            } catch(e) {}
+        };
+
+        window.handlePromoBannerClick = function(e, linkUrl) {
+            try {
+                sessionStorage.setItem('sd_welcome_promo_seen', '1');
+            } catch(e) {}
+            if (linkUrl && linkUrl !== '#' && linkUrl !== '') {
+                window.location.href = linkUrl;
+            } else {
+                closeWelcomePromoModal();
+            }
+        };
 
         // Mobile Header Auto-Collapse on Scroll (Only Search Bar Shows)
         (function initMobileHeaderScroll() {

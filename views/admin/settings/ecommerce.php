@@ -1937,6 +1937,96 @@
             </div>
         </div>
 
+        <!-- Welcome Pop-up Banner & Account Prompt (৫০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি ব্যানার) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                        <ion-icon name="gift-outline"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base">Welcome Pop-up Banner & Account Prompt (ভিজিটর পপ-আপ ব্যানার)</h3>
+                        <p class="text-[11px] text-secondary-400">Display an eye-catching welcome popup to visitors encouraging account creation with free delivery promotion.</p>
+                    </div>
+                </div>
+                <label class="custom-toggle">
+                    <input type="checkbox" name="welcome_popup_enabled" value="1" 
+                           <?= ($settings['welcome_popup_enabled'] ?? '1') == '1' ? 'checked' : '' ?>>
+                    <span class="toggle-track <?= ($settings['welcome_popup_enabled'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                        <span class="toggle-thumb"></span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Image URL / Path -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Banner Image Path / URL (ব্যানার ছবির পাথ/ইউআরএল)</label>
+                        <input type="text" name="welcome_popup_image" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_image'] ?? '/images/free_delivery_500.jpg') ?>" 
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                        <p class="text-[11px] text-secondary-400 mt-1">Default: <code>/images/free_delivery_500.jpg</code> (ব্যানার ছবি পরিবর্তন করতে চাইলে ফাইলের লিংক দিন)</p>
+                    </div>
+
+                    <!-- Clickable Link URL -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Banner Click Link (ছবিতে ক্লিক করলে যে লিংকে যাবে)</label>
+                        <input type="text" name="welcome_popup_link" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_link'] ?? '/checkout/auth') ?>" 
+                               placeholder="e.g. /checkout/auth or /shop or custom URL"
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                        <p class="text-[11px] text-secondary-400 mt-1">ভিজিটর ব্যানারে ক্লিক করলে নির্দিষ্ট পেইজে রিডাইরেক্ট হবে (যেমন: একাউন্ট তৈরি বা শপ)।</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Title -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Popup Heading Title (শিরোনাম)</label>
+                        <input type="text" name="welcome_popup_title" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_title'] ?? '৫০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি!') ?>" 
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
+                    </div>
+
+                    <!-- Subtitle -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Subtitle / Message (বার্তা)</label>
+                        <input type="text" name="welcome_popup_subtitle" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_subtitle'] ?? 'এখনই একটি ফ্রি একাউন্ট তৈরি করুন এবং আকর্ষণীয় অফার সহ উপভোগ করুন ফ্রি হোম ডেলিভারি!') ?>" 
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Button Text -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Button Text (অ্যাকাউন্ট বাটনের লেখা)</label>
+                        <input type="text" name="welcome_popup_btn_text" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_btn_text'] ?? 'একাউন্ট তৈরি করুন / লগইন') ?>" 
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
+                    </div>
+
+                    <!-- Button Link -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Button Link (বাটনের লিংক)</label>
+                        <input type="text" name="welcome_popup_btn_link" 
+                               value="<?= htmlspecialchars($settings['welcome_popup_btn_link'] ?? '/checkout/auth') ?>" 
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                    </div>
+                </div>
+
+                <!-- Preview Box -->
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <img src="<?= htmlspecialchars($settings['welcome_popup_image'] ?? '/images/free_delivery_500.jpg') ?>" class="w-40 h-24 object-cover rounded-lg border border-slate-300 shadow-2xs bg-white" onerror="this.src='/sodai-dorkar/public/images/free_delivery_500.jpg'">
+                    <div class="text-xs text-slate-600">
+                        <strong class="text-slate-800 text-sm block">ব্যানার প্রিভিউ (Current Banner Preview)</strong>
+                        <span>৫০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি ব্যানার। ভিজিটর সাইটে ঢুকলে এই ছবি এবং একাউন্ট তৈরি করার প্রম্পট পপ-আপে প্রদর্শিত হবে।</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- SEO & Search Engine Indexing -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
             <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center justify-between">
