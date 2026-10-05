@@ -481,45 +481,201 @@ class CustomerAuthController
     }
 
     // ─────────────────────────────────────────────
-    // Reset Password (after PIN login)
+    // Forgot Password & Reset Flow
     // ─────────────────────────────────────────────
 
-    public function showResetPassword()
+    public function showForgotPassword()
+    {
+        $this->startSession();
+        if (isset($_SESSION['customer_id'])) {
+            $this->redirect($this->base() . '/account/change-password');
+        }
+
+        $stmt    = $this->db->query("SELECT * FROM areas ORDER BY name ASC");
+        $areas   = $stmt->fetchAll();
+
+        $stmt2       = $this->db->query("SELECT key_name, value FROM settings");
+        $settingsRaw = $stmt2->fetchAll();
+        $settings    = [];
+        foreach ($settingsRaw as $s) {
+            $settings[$s['key_name']] = $s['value'];
+        }
+
+        return View::render('shop/checkout_auth', [
+            'areas'    => $areas,
+            'settings' => $settings,
+            'error'    => $_GET['error'] ?? null,
+            'tab'      => 'forgot',
+        ]);
+    }
+
+    public function sendForgotPasswordOtp()
+    {
+        $this->startSession();
+        $base  = $this->base();
+        $phone = trim($_POST['phone'] ?? '');
+
+        // Normalize phone number (digits only)
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($cleanPhone, '880')) {
+            $cleanPhone = substr($cleanPhone, 2);
+        }
+
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+        if (empty($cleanPhone) || strlen($cleanPhone) < 10) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'সঠিক মোবাইল নম্বর প্রবেশ করান।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=invalid_phone");
+        }
+
+        // Check if customer exists with this phone
+        $stmt = $this->db->query("SELECT id, name, phone FROM customers WHERE phone = ? OR phone LIKE ?", [
+            $cleanPhone,
+            '%' . substr($cleanPhone, -10)
+        ]);
+        $customer = $stmt->fetch();
+
+        if (!$customer) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'এই মোবাইল নম্বরে কোনো অ্যাকাউন্ট খুঁজে পাওয়া যায়নি। দয়া করে রেজিস্ট্রেশন করুন।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=account_not_found");
+        }
+
+        $customerPhone = $customer['phone'];
+        $otpRes = $this->otpService->generate($customerPhone);
+
+        $_SESSION['forgot_password_phone'] = $customerPhone;
+        $_SESSION['forgot_password_step']  = 'otp';
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status'  => 'success',
+                'message' => 'আপনার মোবাইলে ৬-সংখ্যার ভেরিফিকেশন কোড (OTP) পাঠানো হয়েছে।',
+                'phone'   => $customerPhone,
+                'debug_code' => (!empty($otpRes['code']) && empty($otpRes['sent'])) ? $otpRes['code'] : null
+            ]);
+            exit;
+        }
+
+        $this->redirect("$base/checkout/auth?tab=forgot&step=otp&phone=" . urlencode($customerPhone));
+    }
+
+    public function resetPassword()
     {
         $this->startSession();
         $base = $this->base();
-        if (empty($_SESSION['customer_id'])) {
-            $this->redirect("$base/checkout/auth");
+
+        $phone           = trim($_POST['phone'] ?? ($_SESSION['forgot_password_phone'] ?? ''));
+        $otp             = trim($_POST['otp'] ?? '');
+        $newPassword     = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($cleanPhone, '880')) {
+            $cleanPhone = substr($cleanPhone, 2);
         }
-        return View::render('shop/reset_password', ['error' => $_GET['error'] ?? null]);
+
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+        if (empty($cleanPhone) || empty($otp) || empty($newPassword)) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'সবগুলো প্রয়োজনীয় ঘর পূরণ করুন।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=missing_fields");
+        }
+
+        if (strlen($newPassword) < 6) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=short_password");
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'উভয় পাসওয়ার্ড হুবহু এক হতে হবে।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=password_mismatch");
+        }
+
+        // Verify Customer
+        $stmt = $this->db->query("SELECT id, name, phone FROM customers WHERE phone = ? OR phone LIKE ?", [
+            $cleanPhone,
+            '%' . substr($cleanPhone, -10)
+        ]);
+        $customer = $stmt->fetch();
+
+        if (!$customer) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'কাস্টমার অ্যাকাউন্ট পাওয়া যায়নি।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=account_not_found");
+        }
+
+        $verified = $this->otpService->verify($customer['phone'], $otp, true);
+        if (!$verified) {
+            $verified = $this->otpService->verify($customer['phone'], $otp, false);
+        }
+
+        if (!$verified) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'ভুল ভেরিফিকেশন কোড (OTP) বা কোডের মেয়াদ শেষ হয়ে গেছে।']);
+                exit;
+            }
+            $this->redirect("$base/checkout/auth?tab=forgot&error=invalid_otp");
+        }
+
+        // Hash and update password
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $this->db->query(
+            "UPDATE customers SET password = ?, otp_code = NULL, otp_expiry = NULL, otp_verified = 1 WHERE id = ?",
+            [$hashedPassword, $customer['id']]
+        );
+
+        // Auto-login customer
+        session_regenerate_id(true);
+        $_SESSION['customer_id']   = $customer['id'];
+        $_SESSION['customer_name'] = $customer['name'];
+        unset($_SESSION['forgot_password_phone'], $_SESSION['forgot_password_step']);
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status'   => 'success',
+                'message'  => 'পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে এবং আপনি সফলভাবে লগইন হয়েছেন!',
+                'redirect' => !empty($_SESSION['cart']) ? "$base/checkout" : "$base/account"
+            ]);
+            exit;
+        }
+
+        $this->redirect(!empty($_SESSION['cart']) ? "$base/checkout" : "$base/account");
+    }
+
+    public function showResetPassword()
+    {
+        return $this->showForgotPassword();
     }
 
     public function updatePassword()
     {
-        $this->startSession();
-        $base = $this->base();
-        if (empty($_SESSION['customer_id'])) {
-            $this->redirect("$base/checkout/auth");
-        }
-
-        $newPassword     = $_POST['new_password'] ?? '';
-        $confirmPassword = $_POST['confirm_password'] ?? '';
-
-        if (strlen($newPassword) < 6) {
-            $this->redirect("$base/checkout/reset-password?error=short");
-        }
-        if ($newPassword !== $confirmPassword) {
-            $this->redirect("$base/checkout/reset-password?error=mismatch");
-        }
-
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $customerId     = $_SESSION['customer_id'];
-        $this->db->query(
-            "UPDATE customers SET password = ?, reset_code = NULL WHERE id = ?",
-            [$hashedPassword, $customerId]
-        );
-
-        $this->redirect("$base/checkout");
+        return $this->resetPassword();
     }
 
     // ─────────────────────────────────────────────

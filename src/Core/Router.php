@@ -32,6 +32,15 @@ class Router {
 
         if ($callback === false) {
             http_response_code(404);
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => '404 - Not Found']);
+                return;
+            }
+            if (class_exists('Core\View')) {
+                echo \Core\View::render('errors/404');
+                return;
+            }
             echo "404 - Not Found";
             return;
         }

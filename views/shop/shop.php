@@ -223,7 +223,7 @@ if (!empty($search)) $activeFilterCount++;
                         $prodBadge = $prod['special_badge'] ?? ($prodIsBogo ? 'bogo' : 'none');
                         $isProdOutOfStock = (($prod['availability_status'] ?? '') === 'out_of_stock');
                     ?>
-                    <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group"
+                    <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group relative"
                          data-product-id="<?= $prod['id'] ?>"
                          data-product-name="<?= htmlspecialchars($prod['name'], ENT_QUOTES) ?>"
                          data-product-img="<?= htmlspecialchars($pImg, ENT_QUOTES) ?>"
@@ -240,6 +240,15 @@ if (!empty($search)) $activeFilterCount++;
                          data-variants='[]'
                          data-out-of-stock="<?= $isProdOutOfStock ? '1' : '0' ?>">
                         
+                        <?php if (!empty($_SESSION['user_id'])): ?>
+                        <!-- Admin Quick Edit Floating Action (WordPress Style) -->
+                        <a href="<?= $base ?>/admin/products/edit?id=<?= $prod['id'] ?>" target="_blank" title="<?= (Lang::locale() === 'bn') ? 'অ্যাডমিনে এডিট করুন' : 'Edit in Admin' ?>" class="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-slate-900/90 hover:bg-amber-500 text-amber-300 hover:text-slate-950 flex items-center justify-center shadow-lg transition-all hover:scale-110 border border-white/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </a>
+                        <?php endif; ?>
+
                         <!-- Product Image -->
                         <a href="<?= $base ?>/product?id=<?= $prod['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden">
                             <div class="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">

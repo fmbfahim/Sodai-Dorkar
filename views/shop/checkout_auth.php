@@ -363,6 +363,15 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
                 </div>
               </div>
             </button>
+
+            <button onclick="switchTab('forgot')" id="tab-forgot"
+                    class="auth-tab-btn <?= $activeTab === 'forgot' ? 'active' : '' ?>">
+              <span class="tab-icon"><ion-icon name="key-outline"></ion-icon></span>
+              <div>
+                <div style="font-size:.95rem;">পাসওয়ার্ড রিসেট</div>
+                <div style="font-size:.72rem;font-weight:500;opacity:.75">ভুলে গেছেন? উদ্ধার করুন</div>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -726,6 +735,94 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
           </form>
         </div>
 
+        <!-- ╔══════════════════════════════════════════╗ -->
+        <!-- ║         FORGOT PASSWORD FORM             ║ -->
+        <!-- ╚══════════════════════════════════════════╝ -->
+        <div class="form-section <?= $activeTab === 'forgot' ? 'active' : '' ?>" id="form-forgot">
+          <div class="mb-6">
+            <h2 style="font-size:1.45rem;font-weight:900;color:#111827;margin-bottom:.35rem;">পাসওয়ার্ড রিসেট করুন 🔑</h2>
+            <p style="font-size:.85rem;color:#6b7280;">আপনার রেজিস্টার্ড মোবাইল নম্বর দিন। আমরা ভেরিফিকেশন কোড (OTP) পাঠাব।</p>
+          </div>
+
+          <div id="forgot-alert-box" style="display:none;padding:12px 16px;border-radius:14px;margin-bottom:18px;font-size:.85rem;font-weight:600;"></div>
+
+          <!-- Step 1: Send OTP -->
+          <div id="forgot-step-phone">
+            <div style="margin-bottom:18px;">
+              <label class="form-label" for="forgot-phone">মোবাইল নম্বর *</label>
+              <div class="auth-input-icon-wrap">
+                <ion-icon name="call-outline"></ion-icon>
+                <input type="tel" id="forgot-phone" class="auth-input font-mono text-base"
+                       placeholder="01XXXXXXXXX" autocomplete="tel" value="<?= $preFillPhone ?>">
+              </div>
+              <p style="font-size:.75rem;color:#9ca3af;margin-top:6px;">যে নম্বর দিয়ে অ্যাকাউন্ট খোলা হয়েছে সেটি লিখুন।</p>
+            </div>
+
+            <button type="button" id="btn-forgot-send-otp" onclick="handleForgotSendOtp()" class="auth-btn-primary">
+              <ion-icon name="paper-plane-outline" style="font-size:1.2rem;"></ion-icon>
+              <span>ওটিপি কোড পাঠান (Send OTP)</span>
+            </button>
+          </div>
+
+          <!-- Step 2: Verify OTP & Set New Password -->
+          <div id="forgot-step-reset" style="display:none;">
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <label class="form-label" style="margin-bottom:0;">ভেরিফিকেশন কোড (OTP) *</label>
+                <span id="forgot-phone-display" style="font-size:.78rem;font-weight:700;color:#059669;font-family:monospace;"></span>
+              </div>
+              <div class="auth-input-icon-wrap">
+                <ion-icon name="shield-checkmark-outline"></ion-icon>
+                <input type="text" id="forgot-otp" maxlength="6" class="auth-input font-mono text-center text-lg tracking-widest font-black"
+                       placeholder="••••••" autocomplete="one-time-code">
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+                <span id="forgot-timer" style="font-size:.75rem;color:#6b7280;">পুনরায় কোড পাঠানোর সময়: <strong>60s</strong></span>
+                <button type="button" id="btn-forgot-resend" onclick="handleForgotResendOtp()" style="display:none;background:none;border:none;color:#059669;font-size:.78rem;font-weight:700;cursor:pointer;">
+                  পুনরায় পাঠান ↻
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <label class="form-label" for="forgot-new-pass">নতুন পাসওয়ার্ড * (কমপক্ষে ৬ অক্ষর)</label>
+              <div class="auth-input-icon-wrap" style="position:relative;">
+                <ion-icon name="lock-closed-outline"></ion-icon>
+                <input type="password" id="forgot-new-pass" class="auth-input" style="padding-right:44px;"
+                       placeholder="••••••••" minlength="6" autocomplete="new-password">
+                <button type="button" onclick="togglePassVisibility('forgot-new-pass', this)"
+                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;">
+                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <label class="form-label" for="forgot-confirm-pass">পাসওয়ার্ড নিশ্চিত করুন *</label>
+              <div class="auth-input-icon-wrap" style="position:relative;">
+                <ion-icon name="lock-closed-outline"></ion-icon>
+                <input type="password" id="forgot-confirm-pass" class="auth-input" style="padding-right:44px;"
+                       placeholder="••••••••" minlength="6" autocomplete="new-password">
+                <button type="button" onclick="togglePassVisibility('forgot-confirm-pass', this)"
+                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;">
+                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" id="btn-forgot-submit" onclick="handleForgotSubmitReset()" class="auth-btn-primary">
+              <ion-icon name="checkmark-done-circle-outline" style="font-size:1.2rem;"></ion-icon>
+              <span>পাসওয়ার্ড পরিবর্তন ও লগইন করুন</span>
+            </button>
+          </div>
+
+          <div style="margin-top:24px;padding-top:18px;border-top:1px solid #f1f5f9;text-align:center;">
+            <button type="button" onclick="switchTab('login')" style="background:none;border:none;font-size:.85rem;color:#059669;font-weight:700;cursor:pointer;">
+              ← পাসওয়ার্ড মনে পড়েছে? লগইন করুন
+            </button>
+          </div>
+        </div>
+
       </div><!-- /auth-panel -->
     </div><!-- /auth-card -->
   </div>
@@ -743,9 +840,11 @@ let otpSecondsLeft = 60;
 
 // ── Tab Switching (Login vs Registration) ─────────────────
 function switchTab(tab) {
-  ['login','signup'].forEach(t => {
-    document.getElementById('form-' + t).classList.remove('active');
-    document.getElementById('tab-' + t).classList.remove('active');
+  ['login','signup','forgot'].forEach(t => {
+    const f = document.getElementById('form-' + t);
+    const b = document.getElementById('tab-' + t);
+    if (f) f.classList.remove('active');
+    if (b) b.classList.remove('active');
   });
   document.getElementById('form-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');

@@ -127,6 +127,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             }
         }
     </style>
+    <!-- Meta / Facebook Pixel Integration -->
+    <?= class_exists('\Core\FacebookPixelService') ? \Core\FacebookPixelService::renderHeaderSnippet() : '' ?>
 </head>
 <body class="bg-gray-50 text-secondary-800 antialiased min-h-screen flex flex-col font-sans">
 <?php
@@ -162,7 +164,80 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         }
     }
 }
+
+// WordPress-Style Frontend Admin Bar check
+$isAdminLoggedIn = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '', ['admin', 'super_admin', 'manager', 'accountant', 'staff']);
+$currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['id']) && strpos($_SERVER['REQUEST_URI'] ?? '', '/product') !== false ? (int)$_GET['id'] : null);
 ?>
+
+    <!-- WordPress-Style Frontend Admin Bar (Only visible when Admin/Staff is logged in) -->
+    <?php if ($isAdminLoggedIn): ?>
+    <div id="wp-frontend-admin-bar" class="bg-slate-950 text-slate-200 text-xs font-medium border-b border-slate-800 sticky top-0 z-[1000] shadow-md backdrop-blur-md bg-opacity-95">
+        <div class="container mx-auto px-4 py-1.5 flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+                <!-- Brand Badge -->
+                <a href="<?= $base ?>/admin/dashboard" class="inline-flex items-center gap-1.5 font-black text-white hover:text-emerald-400 transition-colors">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>সদাই অ্যাডমিন</span>
+                </a>
+
+                <div class="h-3 w-px bg-slate-700 hidden sm:block"></div>
+
+                <!-- Dashboard link -->
+                <a href="<?= $base ?>/admin/dashboard" class="hover:text-white transition-colors flex items-center gap-1 text-[11px] sm:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span>ড্যাশবোর্ড</span>
+                </a>
+
+                <!-- Products list -->
+                <a href="<?= $base ?>/admin/products" class="hover:text-white transition-colors flex items-center gap-1 text-[11px] sm:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>পণ্যসমূহ</span>
+                </a>
+
+                <!-- Add Product -->
+                <a href="<?= $base ?>/admin/products/create" class="hover:text-white transition-colors flex items-center gap-1 text-[11px] sm:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>+ নতুন পণ্য</span>
+                </a>
+
+                <!-- Orders -->
+                <a href="<?= $base ?>/admin/orders" class="hover:text-white transition-colors flex items-center gap-1 text-[11px] sm:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span>অর্ডারসমূহ</span>
+                </a>
+
+                <!-- Contextual: Edit This Product if viewing a product -->
+                <?php if ($currentProductId): ?>
+                <a href="<?= $base ?>/admin/products/edit?id=<?= $currentProductId ?>" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] sm:text-xs shadow-xs transition-transform hover:scale-105">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span>এই পণ্যটি এডিট করুন (Edit Product) ↗</span>
+                </a>
+                <?php endif; ?>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="text-[11px] text-slate-400 hidden md:inline">
+                    লগইন: <strong class="text-white"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></strong> (<?= htmlspecialchars($_SESSION['role'] ?? 'admin') ?>)
+                </span>
+                <a href="<?= $base ?>/logout" class="text-[11px] text-rose-300 hover:text-rose-100 transition-colors flex items-center gap-1 font-semibold">
+                    <span>লগআউট</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
@@ -288,15 +363,21 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 </div>
             </a>
 
-            <!-- Central Search Bar with Category Dropdown -->
-            <form action="<?= $base ?>/" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-2 relative">
+            <!-- Central Search Bar with Category Dropdown & Instant Predictive Search -->
+            <form action="<?= $base ?>/" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-2 relative" id="header-search-form">
                 <?php if (!empty($isDeals)): ?>
                     <input type="hidden" name="deals" value="1">
                 <?php endif; ?>
-                <div class="flex w-full items-center border-2 border-emerald-600/90 rounded-xl overflow-hidden bg-white shadow-xs focus-within:ring-2 focus-within:ring-emerald-500/20">
-                    <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" 
+                <div class="flex w-full items-center border-2 border-emerald-600/80 hover:border-emerald-600 rounded-2xl overflow-hidden bg-white shadow-xs focus-within:ring-4 focus-within:ring-emerald-500/15 focus-within:border-emerald-600 transition-all">
+                    <div class="pl-3.5 pr-1 text-emerald-600 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="search" id="desktop-search-input" value="<?= htmlspecialchars($search ?? '') ?>" 
                            placeholder="<?= $__('header_search_placeholder') ?>" 
-                           class="flex-1 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
+                           autocomplete="off"
+                           class="flex-1 px-2.5 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
                     
                     <div class="h-6 w-px bg-gray-200"></div>
                     
@@ -319,10 +400,12 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     </select>
 
                     <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 transition-colors flex items-center justify-center font-bold">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                        <span class="text-xs font-black tracking-wide"><?= $locale === 'bn' ? 'খুঁজুন' : 'Search' ?></span>
                     </button>
+                </div>
+
+                <!-- Instant Live Predictive Search Dropdown -->
+                <div id="desktop-live-search-dropdown" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 hidden max-h-96 overflow-y-auto">
                 </div>
             </form>
 
@@ -450,13 +533,16 @@ if (!isset($mainCategories) || empty($mainCategories)) {
         </nav>
 
         <!-- Mobile Search Input Bar -->
-        <div class="md:hidden px-4 py-2.5 bg-gray-50 border-t border-gray-100 transition-all duration-200" id="header-mobile-search">
-            <form action="<?= $base ?>/" method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
-                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="<?= $__('header_search_placeholder') ?>" class="flex-1 px-3 py-2 text-xs text-gray-800 focus:outline-none bg-transparent">
+        <div class="md:hidden px-4 py-2.5 bg-gray-50 border-t border-gray-100 transition-all duration-200 relative" id="header-mobile-search">
+            <form action="<?= $base ?>/" method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20" id="mobile-search-form">
+                <input type="text" name="search" id="mobile-search-input" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="<?= $__('header_search_placeholder') ?>" autocomplete="off" class="flex-1 px-3 py-2 text-xs text-gray-800 focus:outline-none bg-transparent">
                 <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </button>
             </form>
+            <!-- Mobile Live Search Popover -->
+            <div id="mobile-live-search-dropdown" class="absolute left-4 right-4 top-full mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 hidden max-h-80 overflow-y-auto">
+            </div>
         </div>
     </header>
 
@@ -1743,20 +1829,20 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                 const subNote = cartItem.addon_title ? `🔪 ${cartItem.addon_title}` : (selectedVariant || '');
                 container.innerHTML = `
                     <div class="w-full flex flex-col gap-1">
-                        <div class="w-full py-1 px-1 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-between shadow-md select-none transition-all">
+                        <div class="w-full py-1.5 px-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs flex items-center justify-between shadow-md select-none transition-all">
                             <button type="button" 
                                     onclick="cardChangeQty(${productId}, -1, this)" 
-                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
+                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
                                     title="কমান">
                                 −
                             </button>
                             <div class="flex flex-col items-center justify-center px-1 text-center leading-tight">
                                 <span class="text-xs sm:text-[13px] font-black tracking-tight text-white">${displayQty} ${inBagSuffix}</span>
-                                ${subNote ? `<span class="text-[10px] text-emerald-100 font-medium truncate max-w-[100px]">${subNote}</span>` : ''}
+                                ${subNote ? `<span class="text-[10px] text-emerald-200 font-medium truncate max-w-[100px]">${subNote}</span>` : ''}
                             </div>
                             <button type="button" 
                                     onclick="cardChangeQty(${productId}, 1, this)" 
-                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-700/90 hover:bg-emerald-800 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
+                                    class="w-7 sm:w-8 h-7 sm:h-8 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 text-white flex items-center justify-center transition-all font-black text-sm sm:text-base cursor-pointer"
                                     title="বাড়ান">
                                 +
                             </button>
@@ -1771,32 +1857,35 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             } else {
                 if (hasCriteria) {
                     let btnText = buttonLabel;
-                    let btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border-amber-300 hover:border-amber-600';
+                    let btnClass = 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white';
                     let pulseClass = isBogo ? 'animate-pulse' : '';
 
                     if (!btnText) {
                         if (hasAddons && isBogo) {
                             btnText = isBn ? '🎁 ১+১ ও কাটিং পছন্দ করুন' : '🎁 BOGO & Choose Cut';
-                            btnClass = 'bg-gradient-to-r from-amber-50 to-rose-50 hover:from-amber-600 hover:to-rose-600 text-rose-950 hover:text-white border-rose-300 hover:border-rose-600';
+                            btnClass = 'bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 active:scale-95 text-white';
                         } else if (isBogo) {
                             btnText = isBn ? '🎁 ১+১ অফার সহ নিন' : '🎁 Add with BOGO Free';
-                            btnClass = 'bg-rose-50 hover:bg-rose-600 text-rose-900 hover:text-white border-rose-300 hover:border-rose-600';
+                            btnClass = 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-95 text-white';
                         } else if (criteriaType === 'fish_cutting') {
                             btnText = isBn ? '🔪 কাটিং পছন্দ করুন' : '🔪 Choose Cut';
-                            btnClass = 'bg-sky-50 hover:bg-sky-600 text-sky-950 hover:text-white border-sky-300 hover:border-sky-600';
+                            btnClass = 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-95 text-white';
                         } else if (criteriaType === 'dressing') {
                             btnText = isBn ? '🔪 ড্রেসিং পছন্দ করুন' : '🔪 Choose Dressing';
-                            btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border-amber-300 hover:border-amber-600';
+                            btnClass = 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white';
                         } else {
                             btnText = isBn ? '🔪 কাটিং/ড্রেসিং পছন্দ করুন' : 'Choose Cut/Dressing';
-                            btnClass = 'bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border-amber-300 hover:border-amber-600';
+                            btnClass = 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white';
                         }
                     }
 
                     container.innerHTML = `
                         <button type="button" 
                                 onclick="openQuickCriteriaModal(${productId}, this)" 
-                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl ${btnClass} border text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn ${pulseClass}">
+                                class="w-full py-2 px-2.5 rounded-xl ${btnClass} text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-amber-500/30 cursor-pointer group/btn ${pulseClass}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+                            </svg>
                             <span>${btnText}</span>
                         </button>
                     `;
@@ -1804,8 +1893,8 @@ if (!isset($mainCategories) || empty($mainCategories)) {
                     container.innerHTML = `
                         <button type="button" 
                                 onclick="cardAddToCart(${productId}, this)" 
-                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 sm:h-4 w-3.5 sm:w-4 text-emerald-600 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                class="w-full py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-emerald-600/30 cursor-pointer group/btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white transition-transform group-hover/btn:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
                             <span>${addToBagText}</span>
@@ -1992,6 +2081,101 @@ if (!isset($mainCategories) || empty($mainCategories)) {
             window.addEventListener('scroll', onScroll, { passive: true });
             window.addEventListener('resize', onScroll, { passive: true });
             onScroll();
+        })();
+
+        // ── Predictive Instant Live Search (Desktop & Mobile) ──
+        (function initPredictiveSearch() {
+            let debounceTimer = null;
+            const searchInputs = [
+                { input: document.getElementById('desktop-search-input'), dropdown: document.getElementById('desktop-live-search-dropdown') },
+                { input: document.getElementById('mobile-search-input'), dropdown: document.getElementById('mobile-live-search-dropdown') }
+            ];
+
+            searchInputs.forEach(({ input, dropdown }) => {
+                if (!input || !dropdown) return;
+
+                input.addEventListener('input', function() {
+                    const q = this.value.trim();
+                    clearTimeout(debounceTimer);
+                    if (q.length < 1) {
+                        dropdown.innerHTML = '';
+                        dropdown.classList.add('hidden');
+                        return;
+                    }
+
+                    debounceTimer = setTimeout(() => {
+                        fetch((window.APP_BASE || '') + '/api/search?q=' + encodeURIComponent(q))
+                            .then(res => res.json())
+                            .then(data => {
+                                const items = data.results || [];
+                                if (items.length === 0) {
+                                    dropdown.innerHTML = `
+                                        <div class="p-4 text-center text-xs text-gray-500">
+                                            <span>কোনো পণ্য পাওয়া যায়নি</span>
+                                        </div>
+                                    `;
+                                    dropdown.classList.remove('hidden');
+                                    return;
+                                }
+
+                                const isBn = (window.SODAI_STATE?.locale === 'bn');
+                                let html = `
+                                    <div class="px-3 py-1.5 bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-wider flex items-center justify-between border-b border-gray-100">
+                                        <span>${isBn ? 'সরাসরি ফলাফল' : 'Quick Results'}</span>
+                                        <span>${items.length} ${isBn ? 'টি পাওয়া গেছে' : 'found'}</span>
+                                    </div>
+                                    <div class="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+                                `;
+
+                                items.forEach(item => {
+                                    html += `
+                                        <a href="${item.url}" class="flex items-center gap-3 p-2.5 hover:bg-emerald-50/60 transition-colors group">
+                                            <div class="w-11 h-11 rounded-xl bg-white border border-gray-100 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                                                <img src="${item.image}" alt="${escapeHtml(item.name)}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform" onerror="this.src='${window.APP_BASE || ''}/images/default-product.svg'">
+                                            </div>
+                                            <div class="flex-1 min-w-0 text-left">
+                                                <div class="text-xs font-bold text-gray-800 group-hover:text-emerald-700 truncate">${escapeHtml(item.name)}</div>
+                                                <div class="text-[10px] text-gray-400 truncate">${escapeHtml(item.category || '')}</div>
+                                            </div>
+                                            <div class="text-right shrink-0">
+                                                <span class="text-xs font-black text-emerald-700">৳${Number(item.sell_price).toLocaleString()}</span>
+                                                ${item.regular_price && item.regular_price > item.sell_price ? `<div class="text-[10px] text-gray-400 line-through">৳${Number(item.regular_price).toLocaleString()}</div>` : ''}
+                                            </div>
+                                        </a>
+                                    `;
+                                });
+
+                                html += `
+                                    </div>
+                                    <button type="submit" class="w-full py-2 bg-gray-50 hover:bg-emerald-600 hover:text-white text-xs font-bold text-gray-700 text-center transition-colors border-t border-gray-100 flex items-center justify-center gap-1 cursor-pointer">
+                                        <span>${isBn ? 'সকল ফলাফল দেখুন' : 'View All Results'}</span>
+                                        <span>→</span>
+                                    </button>
+                                `;
+
+                                dropdown.innerHTML = html;
+                                dropdown.classList.remove('hidden');
+                            })
+                            .catch(() => {
+                                dropdown.classList.add('hidden');
+                            });
+                    }, 250);
+                });
+
+                // Hide on click outside
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+
+                // Close on Escape
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+            });
         })();
     </script>
 </body>

@@ -258,18 +258,18 @@ if (empty($bannerSubtitle)) {
 
         <!-- ==============================================
              LEFT VERTICAL CATEGORY RAIL ("All Category")
-             Sticky vertical rail matching wireframe
+             Clean, Modern, Rounded-2xl Category Rail
              ============================================== -->
         <aside class="w-20 sm:w-24 md:w-26 lg:w-28 flex-shrink-0 sticky top-16 md:top-20 z-20 self-start">
-            <div class="bg-[#dcfce7]/75 sm:bg-[#dcfce7]/90 border border-emerald-200/80 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
+            <div class="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
                 
                 <!-- Rail Header: "All Category" -->
-                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-emerald-900 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1 border-b border-emerald-200/80 w-full select-none block transition-colors" title="<?= $locale === 'bn' ? 'হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য' : 'Home & Most Popular' ?>">
+                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-gray-800 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1.5 border-b border-gray-100 w-full select-none block transition-colors" title="<?= $locale === 'bn' ? 'হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য' : 'Home & Most Popular' ?>">
                     <?= $locale === 'bn' ? 'সকল ক্যাটাগরি' : 'All Categories' ?>
                 </a>
 
-                <!-- Vertical Category List with Circular Badges -->
-                <div class="flex flex-col items-center gap-3 sm:gap-4 w-full py-1">
+                <!-- Vertical Category List with Crisp Squircle Badges -->
+                <div class="flex flex-col items-center gap-2.5 sm:gap-3.5 w-full py-1">
                     <?php foreach ($railCategories as $rc): ?>
                         <?php
                             $isRcActive = false;
@@ -295,12 +295,12 @@ if (empty($bannerSubtitle)) {
                            class="flex flex-col items-center group text-center w-full transition-transform active:scale-95 cursor-pointer"
                            title="<?= htmlspecialchars($rc['name']) ?>">
                             
-                            <!-- Circular Badge (White background so category images appear large and crisp) -->
-                            <div class="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full flex items-center justify-center transition-all duration-200 shadow-xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/25 scale-105 shadow-md' : 'border-emerald-200 hover:border-emerald-500 hover:shadow-xs hover:scale-105' ?>">
+                            <!-- Squircle / Circle Badge with High-Quality Contrast -->
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 md:w-17 md:h-17 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-2xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/20 scale-105 shadow-md bg-emerald-50/40' : 'border-gray-100 group-hover:border-emerald-400 group-hover:shadow-xs group-hover:scale-105' ?>">
                                 <?php if ($vis['type'] === 'image'): ?>
                                     <img src="<?= htmlspecialchars($vis['val']) ?>" 
                                          alt="<?= htmlspecialchars($rc['name']) ?>" 
-                                         class="w-full h-full object-contain p-1.5 sm:p-2 transition-transform duration-200 group-hover:scale-110" 
+                                         class="w-full h-full object-contain p-1.5 sm:p-2 transition-transform duration-300 group-hover:scale-110" 
                                          loading="lazy"
                                          onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                                 <?php else: ?>
@@ -308,13 +308,14 @@ if (empty($bannerSubtitle)) {
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Underline Bar / Bengali Category Label (as in Desktop-1 and iPhone 17-1 wireframes) -->
+                            <!-- Bengali Category Label -->
                             <div class="w-full mt-1.5 px-0.5 flex flex-col items-center">
-                                <span class="text-[9px] sm:text-[11px] md:text-xs font-bold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-emerald-900/90 group-hover:text-emerald-950' ?>">
+                                <span class="text-[10px] sm:text-[11px] font-bold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-gray-700 group-hover:text-emerald-800' ?>">
                                     <?= htmlspecialchars($rc['name']) ?>
                                 </span>
-                                <!-- Green horizontal bar indicator beneath each circle -->
-                                <div class="w-5 sm:w-7 h-1 rounded-full mt-1 transition-all <?= $isRcActive ? 'bg-emerald-700 h-1.5' : 'bg-emerald-600/60 group-hover:bg-emerald-700' ?>"></div>
+                                <?php if ($isRcActive): ?>
+                                    <div class="w-2 h-1 rounded-full bg-emerald-600 mt-1 shadow-2xs"></div>
+                                <?php endif; ?>
                             </div>
                         </a>
                     <?php endforeach; ?>
@@ -325,32 +326,33 @@ if (empty($bannerSubtitle)) {
 
         <!-- ==============================================
              RIGHT MAIN SECTION
-             Hero Banner + Subcategory Pills + Product Grid
+             Hero Banner + Trust Bar + Subcategory Pills + Product Grid
              ============================================== -->
         <section class="flex-1 min-w-0">
 
-            <!-- 1. CATEGORY HERO BANNER (Matches Desktop - 1 & iPhone 17 - 1) -->
-            <div class="bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 rounded-2xl sm:rounded-3xl p-3 sm:p-5 lg:p-6 text-white shadow-md relative overflow-hidden mb-3 sm:mb-4 border border-emerald-900/40">
-                <!-- Ambient blur lighting -->
-                <div class="absolute -right-8 -bottom-8 w-44 h-44 sm:w-60 sm:h-60 bg-emerald-500/25 rounded-full blur-2xl pointer-events-none"></div>
+            <!-- 1. CATEGORY HERO BANNER (10/10 Modern Dual-Tone Mesh Banner) -->
+            <div class="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 rounded-3xl p-4 sm:p-6 lg:p-7 text-white shadow-xl relative overflow-hidden mb-3 sm:mb-4 border border-emerald-700/30">
+                <!-- Ambient blur glow elements -->
+                <div class="absolute -right-12 -bottom-12 w-64 h-64 sm:w-80 sm:h-80 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute left-1/3 -top-12 w-52 h-52 bg-teal-400/15 rounded-full blur-2xl pointer-events-none"></div>
 
-                <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6">
+                <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
                     
-                    <!-- Left: 3D Grocery Cart / Badge + Title & Bengali Subtitle -->
-                    <div class="flex items-center gap-3 sm:gap-5 w-full sm:w-auto">
+                    <!-- Left: 3D Grocery Illustration + Headline & CTA Chips -->
+                    <div class="flex items-center gap-3.5 sm:gap-5 w-full lg:w-auto">
                         <!-- 3D Grocery Shopping Cart Illustration -->
-                        <div class="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex-shrink-0 relative">
+                        <div class="w-16 h-16 sm:w-22 sm:h-22 md:w-26 md:h-26 flex-shrink-0 relative">
                             <img src="<?= $base ?>/images/grocery_cart_hero.jpg" 
                                  alt="Fresh Grocery Basket" 
-                                 class="w-full h-full object-contain filter drop-shadow-lg transform hover:scale-105 transition-transform duration-300 rounded-2xl bg-white/10 p-0.5 backdrop-blur-xs">
+                                 class="w-full h-full object-contain filter drop-shadow-xl transform hover:scale-105 transition-transform duration-300 rounded-2xl bg-white/10 p-1 backdrop-blur-xs border border-white/15">
                         </div>
 
-                        <!-- Text Information -->
+                        <!-- Text Information & Interactive Badges -->
                         <div class="min-w-0 flex-1">
                             <?php if (!$isFiltered): ?>
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] sm:text-xs font-black mb-1.5 border border-amber-400/30">
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-300 text-[10px] sm:text-xs font-black mb-1.5 border border-white/20 shadow-2xs">
                                     <span>🔥</span>
-                                    <span><?= $locale === 'bn' ? 'শীর্ষ চাহিদাসম্পন্ন ও ট্রেন্ডিং পণ্য' : 'Top In-Demand & Trending' ?></span>
+                                    <span><?= $locale === 'bn' ? 'শীর্ষ চাহিদাসম্পন্ন ও সেরা বাজার' : 'Top In-Demand & Best Market' ?></span>
                                 </div>
                             <?php elseif (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
                                 <a href="<?= $base ?>/?category=<?= $parentCategory['id'] ?>" class="inline-flex items-center gap-1.5 text-xs text-emerald-200 hover:text-white mb-1.5 transition-colors group font-semibold">
@@ -358,34 +360,52 @@ if (empty($bannerSubtitle)) {
                                     <span><?= htmlspecialchars($parentCategory['name']) ?></span>
                                 </a>
                             <?php endif; ?>
-                            <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+
+                            <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-[40px] font-black tracking-tight text-white leading-tight drop-shadow-xs">
                                 <?= htmlspecialchars($bannerTitle ?? ($activeCat['name'] ?? ($locale === 'bn' ? 'সবচেয়ে জনপ্রিয় পণ্যসমূহ' : 'Most Popular Products'))) ?>
                             </h1>
-                            <p class="text-[11px] sm:text-xs md:text-sm lg:text-base text-emerald-100 font-medium mt-1 leading-snug line-clamp-2 max-w-xl">
+
+                            <p class="text-xs sm:text-sm text-emerald-100/90 font-medium mt-1 leading-snug line-clamp-2 max-w-xl">
                                 <?= htmlspecialchars($bannerSubtitle) ?>
                             </p>
+
+                            <!-- Hero Action Chips (Flash Deals & Promo Coupon) -->
+                            <div class="flex items-center gap-2 sm:gap-3 mt-3 flex-wrap">
+                                <a href="<?= $base ?>/?deals=1" class="inline-flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-transform active:scale-95">
+                                    <span>⚡</span>
+                                    <span><?= $locale === 'bn' ? 'ফ্ল্যাশ ডিলস' : 'Flash Deals' ?></span>
+                                </a>
+
+                                <button type="button" 
+                                        onclick="navigator.clipboard.writeText('SODAI50'); showToast('<?= $locale === 'bn' ? 'কুপন SODAI50 কপি করা হয়েছে!' : 'Coupon SODAI50 copied!' ?>', 'success')" 
+                                        class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-bold text-xs px-3 py-1.5 rounded-xl border border-white/20 transition-all cursor-pointer shadow-2xs backdrop-blur-xs active:scale-95"
+                                        title="<?= $locale === 'bn' ? 'ক্লিক করে কুপন কপি করুন' : 'Click to copy coupon' ?>">
+                                    <span>🎁</span>
+                                    <span><?= $locale === 'bn' ? 'কুপন: SODAI50 (ট্যাপ করুন)' : 'Coupon: SODAI50 (Tap)' ?></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Right Accent Block: Top #1 Popular Product Spotlight OR Direct Online Market -->
+                    <!-- Right Accent Block: Glassmorphic Spotlight Card -->
                     <?php if (!$isFiltered && !empty($topPopularProduct)): ?>
-                        <div class="hidden lg:flex items-center gap-3 bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2.5 pr-4 shadow-xl backdrop-blur-xs flex-shrink-0 group hover:border-amber-400/60 transition-all">
-                            <div class="relative w-14 h-14 bg-white rounded-xl p-1 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
+                        <div class="w-full lg:w-auto flex items-center justify-between lg:justify-start gap-3 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-3 shadow-lg backdrop-blur-md flex-shrink-0 group hover:border-amber-400/50 transition-all">
+                            <div class="relative w-16 h-16 bg-white rounded-xl p-1 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
                                 <span class="absolute top-0 left-0 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg shadow-2xs z-10">👑 #১</span>
                                 <img src="<?= htmlspecialchars(\Models\Product::getImageUrl($topPopularProduct['image_path'] ?? '', $base)) ?>" 
                                      alt="<?= htmlspecialchars($topPopularProduct['name']) ?>" 
                                      class="w-full h-full object-contain group-hover:scale-110 transition-transform"
                                      onerror="this.onerror=null; this.src='<?= $base ?>/images/default-product.svg';">
                             </div>
-                            <div class="text-left max-w-[200px]">
-                                <span class="text-[10px] uppercase font-black tracking-wider text-amber-300 block flex items-center gap-1">
-                                    <?= $locale === 'bn' ? '⭐ এক নম্বর সেরা পণ্য' : '⭐ #1 Top Product' ?>
+                            <div class="text-left max-w-[210px]">
+                                <span class="text-[10px] uppercase font-black tracking-wider text-amber-300 flex items-center gap-1">
+                                    ⭐ <?= $locale === 'bn' ? '১ নম্বর সেরা পণ্য' : '#1 Best Seller' ?>
                                 </span>
-                                <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="text-xs font-bold text-white hover:text-amber-200 block truncate transition-colors" title="<?= htmlspecialchars($topPopularProduct['name']) ?>">
+                                <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="text-xs sm:text-sm font-bold text-white hover:text-amber-200 block truncate transition-colors" title="<?= htmlspecialchars($topPopularProduct['name']) ?>">
                                     <?= htmlspecialchars($topPopularProduct['name']) ?>
                                 </a>
-                                <div class="flex items-center gap-1.5 mt-0.5">
-                                    <span class="text-xs font-black text-emerald-200">
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs sm:text-sm font-black text-amber-300">
                                         ৳<?= number_format($topPopularProduct['sell_price']) ?>
                                     </span>
                                     <?php if (\Models\Product::hasDiscount($topPopularProduct)): ?>
@@ -393,23 +413,69 @@ if (empty($bannerSubtitle)) {
                                             ৳<?= number_format($topPopularProduct['regular_price']) ?>
                                         </span>
                                     <?php endif; ?>
+                                    <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="ml-auto text-[10px] font-black bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-0.5 rounded-lg transition-colors">
+                                        <?= $locale === 'bn' ? 'দেখুন' : 'View' ?> →
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     <?php else: ?>
                         <div class="hidden md:flex flex-col items-end justify-center text-right flex-shrink-0">
-                            <div class="bg-emerald-900/80 border border-emerald-600/40 rounded-2xl p-3 px-4 shadow-inner flex items-center gap-3">
+                            <div class="bg-emerald-950/60 border border-emerald-600/30 rounded-2xl p-3 px-4 shadow-inner flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl text-emerald-200">
-                                    🛒
+                                    ⚡
                                 </div>
                                 <div class="text-left">
-                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block"><?= $locale === 'bn' ? 'সরাসরি অনলাইন বাজার' : 'Direct Online Market' ?></span>
-                                    <span class="text-xs sm:text-sm font-black text-white block"><?= $locale === 'bn' ? 'সেরা দামে সেরা মান' : 'Best Quality & Best Price' ?></span>
+                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block"><?= $locale === 'bn' ? 'সরাসরি দ্রুত ডেলিভারি' : 'Express Fast Delivery' ?></span>
+                                    <span class="text-xs sm:text-sm font-black text-white block"><?= $locale === 'bn' ? '৩০-৪৫ মিনিটে আপনার দরজায়' : 'At Your Door in 30-45 Mins' ?></span>
                                 </div>
                             </div>
                         </div>
                     <?php endif; ?>
 
+                </div>
+            </div>
+
+            <!-- TRUST & VALUE PROPOSITION BAR (Adds High-End E-Commerce Credibility) -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3 sm:p-3.5 mb-3 sm:mb-4 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 text-base">
+                        ⚡
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? 'দ্রুত ডেলিভারি' : 'Fast Delivery' ?></h4>
+                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate"><?= $locale === 'bn' ? '৩০-৪৫ মিনিটে পৌঁছে যাবে' : 'Within 30-45 mins' ?></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 text-base">
+                        🥦
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? '১০০% খাঁটি ও তাজা' : '100% Fresh & Halal' ?></h4>
+                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate"><?= $locale === 'bn' ? 'বাছাইকৃত সেরা পণ্য' : 'Top quality guaranteed' ?></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 text-base">
+                        💵
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? 'ক্যাশ অন ডেলিভারি' : 'Cash on Delivery' ?></h4>
+                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate"><?= $locale === 'bn' ? 'পণ্য পেয়ে টাকা দিন' : 'Pay after checking' ?></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 text-base">
+                        🔄
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? 'সহজ রিটার্ন' : 'Easy Return' ?></h4>
+                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate"><?= $locale === 'bn' ? 'তাত্ক্ষণিক সমাধান' : 'Hassle-free replacement' ?></p>
+                    </div>
                 </div>
             </div>
 
@@ -420,7 +486,7 @@ if (empty($bannerSubtitle)) {
                     <!-- If filtered, Back to All Products / Home Button -->
                     <?php if ($isFiltered): ?>
                         <a href="<?= $base ?>/" 
-                           class="flex-shrink-0 pl-2 pr-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-100 hover:text-white border border-emerald-700/60 shadow-xs group"
+                           class="flex-shrink-0 pl-2 pr-3 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-950 hover:bg-emerald-900 text-white border border-emerald-700/60 shadow-xs group"
                            title="<?= $locale === 'bn' ? 'হোম পেজে ফিরুন (সবচেয়ে জনপ্রিয় পণ্যসমূহ)' : 'Back to Home (Most Popular Products)' ?>">
                             <svg class="w-3.5 h-3.5 shrink-0 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -432,7 +498,7 @@ if (empty($bannerSubtitle)) {
                     <!-- Back Pill if drilled down to a child category -->
                     <?php if (!empty($parentCategory) && (int)$parentCategory['id'] !== (int)($activeCat['id'] ?? 0)): ?>
                         <a href="<?= $base ?>/?category=<?= $parentCategory['id'] ?>" 
-                           class="flex-shrink-0 pl-2.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-900/80 hover:bg-emerald-950 text-emerald-100 hover:text-white border border-emerald-600/50 shadow-xs group"
+                           class="flex-shrink-0 pl-2.5 pr-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-emerald-900/90 hover:bg-emerald-950 text-white border border-emerald-600/50 shadow-xs group"
                            title="পূর্ববর্তী ক্যাটাগরি: <?= htmlspecialchars($parentCategory['name']) ?>">
                             <svg class="w-3.5 h-3.5 shrink-0 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
@@ -447,8 +513,8 @@ if (empty($bannerSubtitle)) {
                         $allPillUrl = !empty($activeCat) ? $base . '/?category=' . $activeCat['id'] : $base . '/';
                     ?>
                     <a href="<?= $allPillUrl ?>" 
-                       class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 <?= $isAllActive ? 'bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                       class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 <?= $isAllActive ? 'bg-emerald-700 text-white shadow-md shadow-emerald-700/25 ring-2 ring-emerald-700/30' : 'bg-white hover:bg-emerald-50/80 text-gray-700 hover:text-emerald-900 border border-gray-200/90 hover:border-emerald-300 shadow-2xs font-semibold' ?>">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs <?= $isAllActive ? 'border border-white/40' : 'border border-gray-200' ?>">
                             <span class="text-xs sm:text-sm leading-none select-none">🛒</span>
                         </div>
                         <span class="whitespace-nowrap"><?= $locale === 'bn' ? 'সবগুলো' : 'All' ?></span>
@@ -472,10 +538,10 @@ if (empty($bannerSubtitle)) {
                             $scVis = getCategoryVisual($sc, $base);
                         ?>
                         <a href="<?= $scUrl ?>" 
-                           class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm transition-all flex items-center gap-2 <?= $isScActive ? 'bg-emerald-800 text-white font-bold shadow-sm ring-2 ring-emerald-700/40' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold' ?>">
+                           class="flex-shrink-0 pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 py-1.5 rounded-full text-xs sm:text-sm transition-all flex items-center gap-2 <?= $isScActive ? 'bg-emerald-700 text-white font-black shadow-md shadow-emerald-700/25 ring-2 ring-emerald-700/30 border border-emerald-700' : 'bg-white hover:bg-emerald-50 text-gray-700 hover:text-emerald-900 border border-gray-200/90 hover:border-emerald-300 font-semibold shadow-2xs' ?>">
                             
                             <!-- Subcategory Visual Image / Icon Container -->
-                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-2xs shrink-0 <?= $isScActive ? 'border border-white/40' : 'border border-emerald-200' ?>">
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-2xs shrink-0 <?= $isScActive ? 'border border-white/40' : 'border border-gray-200' ?>">
                                 <?php if ($scVis['type'] === 'image'): ?>
                                     <img src="<?= htmlspecialchars($scVis['val']) ?>" 
                                          alt="<?= htmlspecialchars($sc['name']) ?>" 
@@ -489,7 +555,7 @@ if (empty($bannerSubtitle)) {
 
                             <span class="whitespace-nowrap"><?= htmlspecialchars($sc['name']) ?></span>
                             <?php if (!empty($sc['total_product_count'])): ?>
-                                <span class="text-[10px] px-1.5 py-0.5 rounded-full <?= $isScActive ? 'bg-white/20 text-white' : 'bg-emerald-200 text-emerald-900 font-bold' ?>">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full <?= $isScActive ? 'bg-white/20 text-white font-bold' : 'bg-gray-100 text-gray-600 font-bold' ?>">
                                     <?= $sc['total_product_count'] ?>
                                 </span>
                             <?php endif; ?>
@@ -514,8 +580,8 @@ if (empty($bannerSubtitle)) {
                     </a>
                 </div>
             <?php else: ?>
-                <!-- RESPONSIVE GRID: 6 columns on wide desktop matching Desktop - 1, 2 columns on mobile matching iPhone 17 - 1 -->
-                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-3.5">
+                <!-- RESPONSIVE GRID: 6 columns on wide desktop, 2 columns on mobile -->
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3.5 lg:gap-4" id="products-catalog-grid">
                     <?php foreach ($products as $pIdx => $product): ?>
                         <?php 
                             $uInfo = getProductUnits($product); 
@@ -526,6 +592,7 @@ if (empty($bannerSubtitle)) {
 
                             $hasDiscount = \Models\Product::hasDiscount($product);
                             $discountPercent = $hasDiscount ? \Models\Product::getDiscountPercent($product) : 0;
+                            $discountSavings = $hasDiscount ? ((float)($product['regular_price'] ?? 0) - (float)$product['sell_price']) : 0;
                             $stockQtyNum = floatval($product['stock_qty']);
                             $stockClean = (floor($stockQtyNum) == $stockQtyNum) 
                                 ? intval($stockQtyNum) 
@@ -547,8 +614,8 @@ if (empty($bannerSubtitle)) {
                             $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                         ?>
 
-                        <!-- Product Card -->
-                        <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-400 hover:shadow-md transition-all duration-200 group flex flex-col h-full overflow-hidden relative"
+                        <!-- Product Card (10/10 Modern Design with Smooth Hover Lift & Shadows) -->
+                        <div class="product-card bg-white rounded-2xl border border-gray-100/90 hover:border-emerald-400 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full overflow-hidden relative"
                              data-product-id="<?= $product['id'] ?>"
                              data-product-name="<?= htmlspecialchars($product['name'], ENT_QUOTES) ?>"
                              data-product-img="<?= htmlspecialchars($productImg, ENT_QUOTES) ?>"
@@ -569,78 +636,86 @@ if (empty($bannerSubtitle)) {
                              data-selected-variant-price="<?= $initialPrice ?>"
                              data-selected-variant-qty="<?= $initialQty ?>">
                             
+                            <?php if (!empty($_SESSION['user_id'])): ?>
+                            <!-- Admin Quick Edit Floating Action (WordPress Style) -->
+                            <a href="<?= $base ?>/admin/products/edit?id=<?= $product['id'] ?>" target="_blank" title="<?= $locale === 'bn' ? 'অ্যাডমিনে এডিট করুন' : 'Edit in Admin' ?>" class="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-slate-900/90 hover:bg-amber-500 text-amber-300 hover:text-slate-950 flex items-center justify-center shadow-lg transition-all hover:scale-110 border border-white/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </a>
+                            <?php endif; ?>
+
                             <!-- Badges (Special, Popularity, Discount & Stock) -->
                             <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
                                 <div class="flex flex-col gap-1 items-start">
                                     <?php if (!empty($badgeLabel)): ?>
-                                        <span class="bg-gradient-to-r from-amber-600 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                        <span class="bg-gradient-to-r from-amber-500 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5 <?= $isBogo ? 'animate-pulse' : '' ?>">
                                             <?= htmlspecialchars($badgeLabel) ?>
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if ($specialBadge === 'hot_deal'): ?>
-                                        <span class="bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
                                             ⚡ <?= $locale === 'bn' ? 'হট ডিল' : 'Hot Deal' ?>
                                         </span>
                                     <?php elseif ($specialBadge === 'fresh_catch' && empty($badgeLabel)): ?>
-                                        <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
                                             🐟 <?= $locale === 'bn' ? 'তাজা সংগ্রহ' : 'Fresh Catch' ?>
                                         </span>
                                     <?php elseif ($specialBadge === 'halal_meat' && empty($badgeLabel)): ?>
-                                        <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
                                             🥩 <?= $locale === 'bn' ? 'হালাল মাংস' : 'Halal Meat' ?>
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if ($isTopOne): ?>
-                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                            👑 <?= $locale === 'bn' ? '#১ মোস্ট পপুলার' : '#1 Most Popular' ?>
+                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
+                                            👑 <?= $locale === 'bn' ? '#১ সেরা পণ্য' : '#1 Popular' ?>
                                         </span>
                                     <?php elseif ($demandPct > 0): ?>
-                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
                                             🔥 <?= $demandPct ?>% <?= $locale === 'bn' ? 'জনপ্রিয়' : 'Popular' ?>
                                         </span>
                                     <?php elseif ($totalSold > 0): ?>
-                                        <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                        <span class="bg-amber-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5">
                                             🔥 <?= $locale === 'bn' ? 'সেরা বিক্রিত' : 'Best Seller' ?>
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if ($hasDiscount): ?>
-                                        <span class="bg-emerald-700 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-2xs">
+                                        <span class="bg-emerald-600 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs tracking-tight">
                                             <?= $discountPercent ?>% <?= $locale === 'bn' ? 'ছাড়' : 'OFF' ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
 
                                 <?php if ($isOutOfStock): ?>
-                                    <span class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
+                                    <span class="bg-rose-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-2xs">
                                         <?= $__('products_out_of_stock') ?>
                                     </span>
                                 <?php elseif ($stockQtyNum < 10 && $stockQtyNum > 0): ?>
-                                    <span class="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
+                                    <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-2xs">
                                         <?= $locale === 'bn' ? 'বাকি: ' : 'Left: ' ?><?= $stockClean ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Centered Image Container -->
-                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-2.5 flex items-center justify-center overflow-hidden cursor-pointer">
+                            <!-- Centered Clean Product Image Container -->
+                            <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="relative bg-white h-44 sm:h-52 w-full p-3 flex items-center justify-center overflow-hidden cursor-pointer group/img">
                                 <?php 
-                                $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
                                 $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
                                 ?>
                                 <img src="<?= htmlspecialchars($productImg) ?>" 
                                      alt="<?= htmlspecialchars($product['name']) ?>" 
-                                     class="h-full w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105" 
+                                     class="h-full w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/img:scale-108" 
                                      loading="lazy"
                                      onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';">
                             </a>
 
-                            <!-- Card Content -->
-                            <div class="p-2.5 sm:p-3 pt-1 flex flex-col flex-grow">
+                            <!-- Card Content (Typography Hierarchy & Spacing) -->
+                            <div class="p-3 sm:p-3.5 pt-1 flex flex-col flex-grow bg-white">
                                 <!-- Product Name -->
-                                <h3 class="font-bold text-gray-900 text-xs sm:text-[13px] leading-snug line-clamp-2 min-h-[2rem] sm:min-h-[2.4rem] mb-1 group-hover:text-emerald-700 transition-colors" 
+                                <h3 class="font-bold text-gray-900 text-xs sm:text-[13px] leading-snug line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] mb-1 group-hover:text-emerald-700 transition-colors" 
                                     title="<?= htmlspecialchars($product['name']) ?>">
                                     <a href="<?= $base ?>/product?id=<?= $product['id'] ?>" class="hover:text-emerald-700 transition-colors">
                                         <?= htmlspecialchars($product['name']) ?>
@@ -648,14 +723,17 @@ if (empty($bannerSubtitle)) {
                                 </h3>
 
                                 <!-- Unit / Weight -->
-                                <div class="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-1.5">
-                                    <?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?>
+                                <div class="text-[10px] sm:text-[11px] text-gray-400 font-semibold mb-2 flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                    </svg>
+                                    <span><?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?></span>
                                 </div>
 
-                                <!-- Price Section -->
-                                <div class="flex items-baseline gap-1.5 mb-2 flex-wrap">
+                                <!-- Price Section & Savings Badge -->
+                                <div class="flex items-baseline gap-1.5 mb-2.5 flex-wrap">
                                     <div class="flex items-baseline gap-0.5">
-                                        <span class="text-xs font-bold text-gray-700 leading-none">৳</span>
+                                        <span class="text-xs font-bold text-emerald-800 leading-none">৳</span>
                                         <span class="card-price text-sm sm:text-base font-black text-gray-900 leading-none">
                                             <?= number_format($initialPrice) ?>
                                         </span>
@@ -665,26 +743,32 @@ if (empty($bannerSubtitle)) {
                                         <span class="card-regular-price text-[10px] sm:text-[11px] text-gray-400 line-through font-medium leading-none">
                                             ৳<?= number_format($product['regular_price']) ?>
                                         </span>
+                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80 leading-none">
+                                            ৳<?= number_format($discountSavings) ?> <?= $locale === 'bn' ? 'সাশ্রয়' : 'Save' ?>
+                                        </span>
                                     <?php endif; ?>
                                 </div>
 
-                                   <!-- Bottom Action: Add to Bag / Interactive Stepper -->
-                                <div class="mt-auto pt-2 card-action-container" data-product-id="<?= $product['id'] ?>">
+                                <!-- Bottom Action: Add to Bag / Interactive Stepper (Solid Punchy Emerald) -->
+                                <div class="mt-auto pt-1 card-action-container" data-product-id="<?= $product['id'] ?>">
                                     <?php if ($isOutOfStock): ?>
-                                        <button type="button" disabled class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                        <button type="button" disabled class="w-full py-2 px-2.5 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed">
                                             <span><?= $__('products_out_of_stock') ?></span>
                                         </button>
                                     <?php elseif ($hasCriteria): ?>
                                         <button type="button" 
                                                 onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
-                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                                class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-amber-500/30 cursor-pointer group/btn <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+                                            </svg>
                                             <span><?= htmlspecialchars($buttonLabel) ?></span>
                                         </button>
                                     <?php else: ?>
                                         <button type="button" 
                                                 onclick="cardAddToCart(<?= $product['id'] ?>, this)" 
-                                                class="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-700 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs cursor-pointer group/btn">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-700 group-hover/btn:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                                class="w-full py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-emerald-600/30 cursor-pointer group/btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white transition-transform group-hover/btn:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                             </svg>
                                             <span><?= $__('add_to_bag') ?></span>

@@ -186,6 +186,21 @@ $locale = Lang::locale();
     </div>
 </div>
 
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof fbq === 'function') {
+        fbq('track', 'Purchase', {
+            value: <?= (float)($order['payable_amount'] ?? $order['total_amount'] ?? 0) ?>,
+            currency: 'BDT',
+            content_name: 'Order #<?= htmlspecialchars($order['order_number'] ?? $order['id'] ?? '') ?>',
+            content_type: 'product'
+        });
+    }
+});
+</script>
+<?php endif; ?>
+
 <?php 
 $content = ob_get_clean();
 require 'layout.php';

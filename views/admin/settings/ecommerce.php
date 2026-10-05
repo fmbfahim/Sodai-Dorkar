@@ -342,6 +342,13 @@
                 <span>Site Visibility</span>
             </a>
 
+            <!-- Tab 6: Meta Pixel & CAPI -->
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=pixel" 
+               class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'pixel' ? 'bg-blue-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
+                <ion-icon name="logo-facebook" class="text-lg text-blue-500 <?= $activeTab === 'pixel' ? 'text-white' : '' ?>"></ion-icon>
+                <span>Meta Pixel & CAPI</span>
+            </a>
+
         </div>
     </div>
 
@@ -2056,6 +2063,199 @@
 
         <?php endif; ?>
 
+        <!-- =========================================================
+             TAB 6: META / FACEBOOK PIXEL & CONVERSIONS API (CAPI)
+             ========================================================= -->
+        <?php if ($activeTab === 'pixel'): ?>
+
+        <!-- Master Enable / Disable Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl shadow-2xs">
+                        <ion-icon name="logo-facebook"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base flex items-center gap-2">
+                            <span>Meta Pixel &amp; Conversions API</span>
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Official Standard</span>
+                        </h3>
+                        <p class="text-[11px] text-secondary-400">Track website visitors, browser events, and server-side Conversions API (CAPI) for Facebook ads.</p>
+                    </div>
+                </div>
+                <label class="custom-toggle">
+                    <input type="checkbox" name="facebook_pixel_enabled" value="1" 
+                           <?= ($settings['facebook_pixel_enabled'] ?? '0') == '1' ? 'checked' : '' ?>>
+                    <span class="toggle-track <?= ($settings['facebook_pixel_enabled'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                        <span class="toggle-thumb"></span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Meta Pixel ID -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5 flex items-center justify-between">
+                        <span>Meta Pixel ID (পিক্সেল আইডি) *</span>
+                        <a href="https://adsmanager.facebook.com/events_manager" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold">
+                            <span>Events Manager এ যান</span>
+                            <ion-icon name="open-outline"></ion-icon>
+                        </a>
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="facebook_pixel_id" id="fb_pixel_id_input"
+                               value="<?= htmlspecialchars($settings['facebook_pixel_id'] ?? '') ?>" 
+                               placeholder="e.g. 123456789012345"
+                               class="w-full px-3.5 py-2.5 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-secondary-900 font-bold">
+                    </div>
+                    <p class="text-[11px] text-secondary-500 mt-1">
+                        Meta Events Manager &rarr; Data Sources থেকে আপনার ১৬ বা ১৫ সংখ্যার Pixel ID টি কপি করে এখানে দিন।
+                    </p>
+                </div>
+
+                <!-- Conversions API Token -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">
+                        Conversions API (CAPI) Access Token (অ্যাক্সেস টোকেন)
+                    </label>
+                    <textarea name="facebook_capi_token" id="fb_capi_token_input" rows="3"
+                              placeholder="EAAB..." 
+                              class="w-full px-3.5 py-2 text-xs border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-secondary-800 break-all leading-relaxed"><?= htmlspecialchars($settings['facebook_capi_token'] ?? '') ?></textarea>
+                    <p class="text-[11px] text-secondary-500 mt-1">
+                        Events Manager &rarr; Settings &rarr; Conversions API &rarr; <strong>"Generate access token"</strong> ক্লিক করে প্রাপ্ত টোকেনটি পেস্ট করুন। এটি সার্ভার-সাইড থেকে সরাসরি ইভেন্ট মেটায় পাঠাবে (iOS 14+ এবং Ad Blocker ট্র্যাকিং লস এড়াতে অত্যন্ত কার্যকর)।
+                    </p>
+                </div>
+
+                <!-- Test Event Code -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5 flex items-center justify-between">
+                        <span>Test Event Code (টেস্ট ইভেন্ট কোড - ঐচ্ছিক)</span>
+                        <span class="text-[11px] font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Testing Only</span>
+                    </label>
+                    <input type="text" name="facebook_capi_test_code" id="fb_test_code_input"
+                           value="<?= htmlspecialchars($settings['facebook_capi_test_code'] ?? '') ?>" 
+                           placeholder="e.g. TEST12345"
+                           class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold">
+                    <p class="text-[11px] text-secondary-500 mt-1">
+                        Meta Events Manager &rarr; <strong>Test Events</strong> ট্যাবে গিয়ে উপরের ডানপাশে প্রদর্শিত কোডটি দিন। লাইভ অর্ডারের সময় এটি ফাঁকা রাখতে পারেন।
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracked Standard Events Configuration -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                    <ion-icon name="analytics-outline"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary-800 text-sm sm:text-base">Standard Events Tracking (ইভেন্ট ট্র্যাকিং সেটিং)</h3>
+                    <p class="text-[11px] text-secondary-400">Choose which standard e-commerce events to automatically capture and send to Meta.</p>
+                </div>
+            </div>
+
+            <div class="p-6 divide-y divide-secondary-100 text-sm">
+                <!-- PageView -->
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-secondary-800 block">PageView</span>
+                        <span class="text-xs text-secondary-500">প্রতিটি ওয়েবপেজ লোড ও ব্রাউজিং ইভেন্ট ট্র্যাক করুন।</span>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="facebook_pixel_track_pageview" value="1" 
+                               <?= ($settings['facebook_pixel_track_pageview'] ?? '1') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['facebook_pixel_track_pageview'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- ViewContent -->
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-secondary-800 block">ViewContent (Product Views)</span>
+                        <span class="text-xs text-secondary-500">গ্রাহক যখন নির্দিষ্ট পণ্যের বিবরণী পেজ দেখেন তখন পণ্যের নাম ও দাম ট্র্যাক করুন।</span>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="facebook_pixel_track_view_content" value="1" 
+                               <?= ($settings['facebook_pixel_track_view_content'] ?? '1') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['facebook_pixel_track_view_content'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- AddToCart -->
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-secondary-800 block">AddToCart</span>
+                        <span class="text-xs text-secondary-500">কার্টে কোনো পণ্য যোগ করার মুহূর্তে পণ্যের মূল্য ও কার্ট মান ট্র্যাক করুন।</span>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="facebook_pixel_track_add_to_cart" value="1" 
+                               <?= ($settings['facebook_pixel_track_add_to_cart'] ?? '1') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['facebook_pixel_track_add_to_cart'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- InitiateCheckout -->
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-secondary-800 block">InitiateCheckout</span>
+                        <span class="text-xs text-secondary-500">চেকআউট পেজে ভিজিট এবং অর্ডার শুরুর ধাপ ট্র্যাক করুন।</span>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="facebook_pixel_track_initiate_checkout" value="1" 
+                               <?= ($settings['facebook_pixel_track_initiate_checkout'] ?? '1') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['facebook_pixel_track_initiate_checkout'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Purchase -->
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-secondary-800 block">Purchase (Browser + Server CAPI)</span>
+                        <span class="text-xs text-secondary-500">সফল অর্ডার কনফার্মেশনে মোট টাকার অংক (BDT), অর্ডার আইডি ও গ্রাহকের তথ্য ব্রাউজার এবং সার্ভার উভয় দিক থেকে স্বয়ংক্রিয়ভাবে ট্র্যাক হবে।</span>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="facebook_pixel_track_purchase" value="1" 
+                               <?= ($settings['facebook_pixel_track_purchase'] ?? '1') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['facebook_pixel_track_purchase'] ?? '1') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Connection Test Tool -->
+        <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-md border border-blue-800">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold text-blue-300 bg-blue-500/20 border border-blue-400/30 mb-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Direct Meta Graph API Test</span>
+                    </div>
+                    <h4 class="text-lg font-black">Meta API কানেকশন টেস্ট করুন</h4>
+                    <p class="text-xs text-slate-300 max-w-xl">
+                        Pixel ID এবং CAPI Token টি সঠিকভাবে কাজ করছে কিনা তা ফেসবুক সার্ভারে এখনই একটি টেস্ট ইভেন্ট পাঠিয়ে সরাসরি যাচাই করুন।
+                    </p>
+                </div>
+                <button type="button" onclick="testMetaPixelConnection()" id="btn_test_pixel" class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer">
+                    <ion-icon name="paper-plane-outline" class="text-base"></ion-icon>
+                    <span>Send Test Event to Meta</span>
+                </button>
+            </div>
+            <div id="test_pixel_result" class="mt-4 text-xs font-medium" style="display:none;"></div>
+        </div>
+
+        <?php endif; ?>
+
         <!-- Save Button Bar -->
         <div class="flex items-center justify-end gap-3 pt-2">
             <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transform active:scale-95 transition-all flex items-center gap-2 text-sm cursor-pointer">
@@ -2393,6 +2593,58 @@
             btn.innerHTML = originalText;
             resDiv.className = 'mt-2 text-xs font-bold text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200';
             resDiv.textContent = 'সার্ভার বা নেটওয়ার্ক ত্রুটি! পুনরায় চেষ্টা করুন।';
+        }
+    }
+
+    async function testMetaPixelConnection() {
+        const pixelId = document.getElementById('fb_pixel_id_input')?.value.trim();
+        const token = document.getElementById('fb_capi_token_input')?.value.trim();
+        const testCode = document.getElementById('fb_test_code_input')?.value.trim();
+        const btn = document.getElementById('btn_test_pixel');
+        const resDiv = document.getElementById('test_pixel_result');
+
+        if (!pixelId || !token) {
+            alert('অনুগ্রহ করে Meta Pixel ID এবং Conversions API Access Token উভয়ই পূরণ করুন।');
+            return;
+        }
+
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>মেটা সার্ভারে পাঠানো হচ্ছে...</span>';
+        resDiv.style.display = 'block';
+        resDiv.className = 'mt-3 text-xs font-semibold text-slate-300';
+        resDiv.textContent = '⏳ Meta Graph API এর সাথে যোগাযোগ করা হচ্ছে...';
+
+        try {
+            const formData = new FormData();
+            formData.append('pixel_id', pixelId);
+            formData.append('capi_token', token);
+            formData.append('test_code', testCode);
+            const csrfEl = document.querySelector('input[name="csrf_token"]');
+            if (csrfEl) formData.append('csrf_token', csrfEl.value);
+
+            const base = (window.location.pathname.includes('/sodai-dorkar/public')) ? '/sodai-dorkar/public' : '';
+            const res = await fetch(`${base}/admin/api/test-facebook-pixel`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (data.status === 'success') {
+                resDiv.className = 'mt-3 text-xs font-bold text-emerald-300 bg-emerald-950/80 p-3 rounded-xl border border-emerald-500/50';
+                resDiv.innerHTML = `✅ ${data.message} ${data.fbtrace_id ? '<div class="text-[11px] font-mono mt-1 text-slate-300">FBTrace ID: ' + data.fbtrace_id + '</div>' : ''}`;
+            } else {
+                resDiv.className = 'mt-3 text-xs font-bold text-rose-300 bg-rose-950/80 p-3 rounded-xl border border-rose-500/50';
+                resDiv.innerHTML = `❌ ${data.message}`;
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            resDiv.className = 'mt-3 text-xs font-bold text-rose-300 bg-rose-950/80 p-3 rounded-xl border border-rose-500/50';
+            resDiv.textContent = 'সার্ভার বা নেটওয়ার্ক সংযোগ ব্যর্থ হয়েছে: ' + e.message;
         }
     }
     </script>

@@ -125,8 +125,16 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                             <?php endif; ?>
                         </div>
 
-                        <!-- Brand / Origin Pill -->
-                        <div class="absolute top-4 right-4 z-10">
+                        <!-- Brand / Origin Pill & Admin Quick Edit Icon -->
+                        <div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+                            <?php if (!empty($_SESSION['user_id'])): ?>
+                            <a href="<?= $base ?>/admin/products/edit?id=<?= $product['id'] ?>" target="_blank" title="<?= $locale === 'bn' ? 'অ্যাডমিনে এডিট করুন' : 'Edit in Admin' ?>" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1.5 rounded-xl shadow-md transition-all hover:scale-110 flex items-center gap-1 text-xs font-black">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                <span><?= $locale === 'bn' ? 'এডিট' : 'Edit' ?></span>
+                            </a>
+                            <?php endif; ?>
                             <span class="inline-flex items-center gap-1 bg-white/95 backdrop-blur-xs border border-gray-200 text-gray-700 text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-2xs">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                                 <?= $locale === 'bn' ? '১০০% অরিজিনাল' : '100% Authentic' ?>
@@ -144,6 +152,30 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                 <!-- Right: Product Information & Purchase Area -->
                 <div class="lg:col-span-7 flex flex-col justify-between">
                     <div>
+                        <!-- WordPress-style Admin In-Page Edit Notice & Button -->
+                        <?php if (!empty($_SESSION['user_id'])): ?>
+                        <div class="mb-4 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 animate-pulse"></span>
+                                <div>
+                                    <span class="text-xs font-black text-amber-950 block">
+                                        <?= $locale === 'bn' ? 'অ্যাডমিন কাস্টমাইজেশন মোড সক্রিয়' : 'Admin Customization Mode Active' ?>
+                                    </span>
+                                    <span class="text-[11px] text-amber-800">
+                                        <?= $locale === 'bn' ? 'এই পণ্যের দাম, ছবি, বিবরণী বা স্টক পরিবর্তন করতে সরাসরি এডিট করুন।' : 'Modify product pricing, images, details, or stock directly in admin.' ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <a href="<?= $base ?>/admin/products/edit?id=<?= $product['id'] ?>" target="_blank" class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-sm transition-all hover:scale-105">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                <span><?= $locale === 'bn' ? 'প্রোডাক্ট এডিট করুন' : 'Edit Product' ?></span>
+                                <span class="text-[10px]">↗</span>
+                            </a>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Category & Brand Tags -->
                         <div class="flex items-center gap-2 flex-wrap mb-3">
                             <?php if (!empty($product['category_name'])): ?>
@@ -579,6 +611,22 @@ function submitDetailAddToCart(productId, btn) {
         btn.innerHTML = originalHtml;
     });
 }
+
+// Meta Pixel ViewContent Event
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof fbq === 'function') {
+        fbq('track', 'ViewContent', {
+            content_name: <?= json_encode($product['name']) ?>,
+            content_category: <?= json_encode($product['category_name'] ?? '') ?>,
+            content_ids: [<?= json_encode((string)$product['id']) ?>],
+            content_type: 'product',
+            value: <?= (float)$sellPrice ?>,
+            currency: 'BDT'
+        });
+    }
+});
+<?php endif; ?>
 </script>
 
 <?php 

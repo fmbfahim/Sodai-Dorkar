@@ -560,6 +560,19 @@ document.getElementById('checkout-form').addEventListener('submit', function(e) 
         btnLoading.classList.remove('flex');
     }, 10000);
 });
+
+// Meta Pixel InitiateCheckout Event
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof fbq === 'function') {
+        fbq('track', 'InitiateCheckout', {
+            value: <?= (float)($subtotal ?? 0) ?>,
+            currency: 'BDT',
+            num_items: <?= isset($cart) && is_array($cart) ? count($cart) : 0 ?>
+        });
+    }
+});
+<?php endif; ?>
 </script>
 
 <?php 

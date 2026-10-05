@@ -62,7 +62,8 @@ $router->get('/order/success', 'ShopController@success');
 $router->get('/set-language', 'ShopController@setLanguage');
 $router->post('/set-language', 'ShopController@setLanguage');
 
-// API Routes for cascading dropdowns
+// API Routes for search & cascading dropdowns
+$router->get('/api/search', 'ShopController@apiSearch');
 $router->get('/api/zones', 'ShopController@getZones');
 $router->get('/api/points', 'ShopController@getPoints');
 
@@ -77,8 +78,12 @@ $router->post('/checkout/check-phone', 'CustomerAuthController@checkPhone');
 $router->post('/checkout/send-signup-otp', 'CustomerAuthController@sendSignupOtp');
 $router->post('/checkout/verify-signup-otp', 'CustomerAuthController@verifySignupOtp');
 $router->post('/checkout/resend-signup-otp', 'CustomerAuthController@resendSignupOtp');
-$router->get('/checkout/reset-password', 'CustomerAuthController@showResetPassword');
-$router->post('/checkout/reset-password', 'CustomerAuthController@updatePassword');
+$router->get('/checkout/forgot-password', 'CustomerAuthController@showForgotPassword');
+$router->get('/customer/forgot-password', 'CustomerAuthController@showForgotPassword');
+$router->post('/checkout/forgot-password/send-otp', 'CustomerAuthController@sendForgotPasswordOtp');
+$router->post('/checkout/forgot-password/reset', 'CustomerAuthController@resetPassword');
+$router->get('/checkout/reset-password', 'CustomerAuthController@showForgotPassword');
+$router->post('/checkout/reset-password', 'CustomerAuthController@resetPassword');
 $router->post('/checkout/firebase-login', 'CustomerAuthController@firebaseLogin');
 $router->post('/checkout/firebase-verify-signup', 'FirebaseAuthController@verifySignup');
 $router->post('/checkout/firebase-verify-login', 'FirebaseAuthController@verifyLogin');
@@ -286,6 +291,8 @@ $router->post('/admin/settings/update', 'SettingsController@update');
 $router->get('/admin/ecommerce-settings', 'SettingsController@ecommerce');
 $router->post('/admin/ecommerce-settings/update', 'SettingsController@updateEcommerce');
 $router->post('/admin/settings/test-sms', 'SettingsController@sendTestSms');
+$router->post('/admin/settings/test-facebook-pixel', 'SettingsController@testFacebookPixel');
+$router->post('/admin/api/test-facebook-pixel', 'SettingsController@testFacebookPixel');
 $router->get('/admin/settings/units', 'SettingsController@units');
 $router->post('/admin/settings/units/store', 'SettingsController@storeUnit');
 $router->post('/admin/settings/units/delete', 'SettingsController@deleteUnit');

@@ -698,8 +698,11 @@ class ShopController {
         $isAdmin = (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'super_admin'])) || (isset($_GET['preview']) && $_GET['preview'] == '1');
 
         if (!$product || (!$isAdmin && !in_array($product['availability_status'] ?? '', ['in_stock', 'available']))) {
-            header("Location: {$base}/");
-            exit;
+            http_response_code(404);
+            return View::render('errors/404', [
+                'title' => '৪০৪ - পণ্যটি খুঁজে পাওয়া যায়নি',
+                'base' => $base
+            ]);
         }
 
         // Fetch parent category if exists
@@ -764,7 +767,8 @@ class ShopController {
             'relatedProducts' => $relatedProducts,
             'parentCategory' => $parentCategory,
             'variants' => $variants,
-            'locale' => $locale
+            'locale' => $locale,
+            'isAdmin' => $isAdmin
         ]);
     }
 
@@ -1287,11 +1291,30 @@ class ShopController {
                     ]);
                 } catch (\Exception $ex) {}
 
+                // Send Meta Conversions API (CAPI) Server-Side Purchase Event
+                try {
+                    if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()) {
+                        \Core\FacebookPixelService::sendServerEvent('Purchase', [
+                            'value' => (float)$totalAmount,
+                            'currency' => 'BDT',
+                            'order_id' => (string)$orderId,
+                            'content_name' => "Order #{$orderId}",
+                            'content_type' => 'product'
+                        ], [
+                            'phone' => $phone,
+                            'name' => $customerName
+                        ]);
+                    }
+                } catch (\Throwable $fbEx) {
+                    error_log("Meta CAPI Purchase Event error: " . $fbEx->getMessage());
+                }
+
                 // Clear cart
                 unset($_SESSION['cart']);
 
                 // Redirect to success
-                header('Location: /sodai-dorkar/public/order/success?order_id=' . $orderId);
+                $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+                header("Location: {$base}/order/success?order_id=" . $orderId);
                 exit;
 
             } catch (\Exception $e) {
@@ -1428,6 +1451,44 @@ class ShopController {
         }
         $stmt = $this->db->query("SELECT id, name FROM points WHERE zone_id = ? ORDER BY name ASC", [$zoneId]);
         echo json_encode($stmt->fetchAll());
+        exit;
+    }
+
+    public function apiSearch() {
+        header('Content-Type: application/json');
+        $q = trim($_GET['q'] ?? '');
+        if (mb_strlen($q) < 1) {
+            echo json_encode(['results' => []]);
+            exit;
+        }
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $sql = "SELECT p.id, p.name, p.sell_price, p.regular_price, p.image_path, p.base_unit, c.name as category_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.availability_status IN ('in_stock', 'available')
+                AND (p.name LIKE ? OR p.sku LIKE ? OR p.tags LIKE ?)
+                ORDER BY p.name ASC
+                LIMIT 8";
+        $term = "%{$q}%";
+        $stmt = $this->db->query($sql, [$term, $term, $term]);
+        $rows = $stmt->fetchAll();
+
+        $results = [];
+        foreach ($rows as $r) {
+            $img = \Models\Product::getImageUrl($r['image_path'] ?? '', $base);
+            $results[] = [
+                'id' => (int)$r['id'],
+                'name' => $r['name'],
+                'sell_price' => (float)$r['sell_price'],
+                'regular_price' => $r['regular_price'] !== null ? (float)$r['regular_price'] : null,
+                'image' => $img,
+                'category' => $r['category_name'] ?? '',
+                'url' => $base . '/product?id=' . $r['id']
+            ];
+        }
+
+        echo json_encode(['results' => $results]);
         exit;
     }
 }

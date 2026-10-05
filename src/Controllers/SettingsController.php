@@ -40,7 +40,7 @@ class SettingsController extends Controller {
         $settingModel = new Setting();
         $settings = $settingModel->getAll();
         
-        $validTabs = ['products', 'shipping', 'payments', 'privacy', 'visibility'];
+        $validTabs = ['products', 'shipping', 'payments', 'privacy', 'visibility', 'pixel'];
         $tab = $_GET['tab'] ?? 'products';
         if (!in_array($tab, $validTabs)) {
             $tab = 'products';
@@ -113,6 +113,14 @@ class SettingsController extends Controller {
                 'top_announcement_bar_enabled',
                 'seo_index_allow',
                 'welcome_popup_enabled'
+            ],
+            'pixel' => [
+                'facebook_pixel_enabled',
+                'facebook_pixel_track_pageview',
+                'facebook_pixel_track_view_content',
+                'facebook_pixel_track_add_to_cart',
+                'facebook_pixel_track_initiate_checkout',
+                'facebook_pixel_track_purchase'
             ]
         ];
 
@@ -418,6 +426,17 @@ class SettingsController extends Controller {
         $testCode   = rand(100000, 999999);
         $result     = $otpService->sendTestMessage($phone, "Fresh E-mart Test SMS. Code: $testCode");
 
+        echo json_encode($result);
+        exit;
+    }
+
+    public function testFacebookPixel() {
+        $pixelId  = trim($_POST['pixel_id'] ?? '');
+        $token    = trim($_POST['capi_token'] ?? '');
+        $testCode = trim($_POST['test_code'] ?? '');
+
+        $result = \Core\FacebookPixelService::testConnection($pixelId, $token, $testCode);
+        header('Content-Type: application/json');
         echo json_encode($result);
         exit;
     }
