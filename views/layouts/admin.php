@@ -341,6 +341,12 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                                 <span class="font-medium">E-Commerce Config</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="<?= $base ?>/admin/ecommerce-settings?tab=marketing" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-blue-50 hover:text-blue-700 transition-colors group text-sm">
+                                <ion-icon name="megaphone-outline" class="text-lg mr-3 group-hover:text-blue-600"></ion-icon>
+                                <span class="font-medium">মার্কেটিং ও ট্র্যাকিং</span>
+                            </a>
+                        </li>
                     <?php endif; ?>
                 <?php endif; ?>
             </ul>

@@ -105,15 +105,16 @@ function getPosProductVariants($product) {
                         $discountAmount = $hasDiscount ? \Models\Product::getDiscountAmount($p) : 0;
                         $stockNum = floatval($p['stock_qty']);
                         $stockClean = (floor($stockNum) == $stockNum) ? intval($stockNum) : rtrim(rtrim(number_format($stockNum, 3), '0'), '.');
-                        $isOutOfStock = ($stockNum <= 0);
+                        $isOutOfStock = ($stockNum <= 0 || ($p['availability_status'] ?? '') === 'out_of_stock');
                         $baseUnit = $p['base_unit'] ?? 'pcs';
                     ?>
-                    <div class="pos-product-card bg-white p-2.5 rounded-2xl shadow-xs border border-secondary-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col h-full group relative min-w-0 <?= $isOutOfStock ? 'opacity-65' : '' ?>"
+                    <div class="pos-product-card bg-white p-2.5 rounded-2xl shadow-xs border <?= $isOutOfStock ? 'border-red-200 hover:border-red-400' : 'border-secondary-200 hover:border-primary-500' ?> hover:shadow-md transition-all flex flex-col h-full group relative min-w-0"
                          data-product-id="<?= $p['id'] ?>"
                          data-category="<?= $p['category_id'] ?? '' ?>"
                          data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>"
                          data-sku="<?= htmlspecialchars(strtolower($p['sku'] ?? '')) ?>"
                          data-stock="<?= $stockNum ?>"
+                         data-is-out-of-stock="<?= $isOutOfStock ? '1' : '0' ?>"
                          data-base-unit="<?= htmlspecialchars($baseUnit) ?>"
                          data-regular-price="<?= floatval($p['regular_price'] ?? 0) ?>"
                          data-active-variant-title="<?= htmlspecialchars($vInfo['default_title']) ?>"
@@ -138,12 +139,13 @@ function getPosProductVariants($product) {
 
                             <!-- Stock Badge -->
                             <?php if ($isOutOfStock): ?>
-                                <span class="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1 py-0.2 rounded shrink-0">
-                                    Out of Stock
+                                <span class="text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded shadow-2xs shrink-0 flex items-center gap-1" title="স্টক শেষ হলেও অ্যাডমিন POS থেকে অর্ডার নেওয়া যাবে">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span>স্টক আউট</span>
                                 </span>
                             <?php else: ?>
                                 <span class="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded shrink-0">
-                                    Stock: <?= $stockClean ?> <?= htmlspecialchars($baseUnit) ?>
+                                    স্টক: <?= $stockClean ?> <?= htmlspecialchars($baseUnit) ?>
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -200,10 +202,10 @@ function getPosProductVariants($product) {
                         <!-- Add Button -->
                         <button type="button" 
                                 onclick="addCardProductToCart(this)" 
-                                <?= $isOutOfStock ? 'disabled' : '' ?>
-                                class="w-full py-1 px-2 rounded-lg <?= $isOutOfStock ? 'bg-secondary-200 text-secondary-400 cursor-not-allowed' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600 active:scale-95' ?> font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer mt-auto">
+                                class="w-full py-1.5 px-2 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300 hover:border-amber-600' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600' ?> font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95 mt-auto"
+                                title="<?= $isOutOfStock ? 'স্টক আউট পণ্য (অর্ডার নেওয়া যাবে)' : 'কার্টে যোগ করুন' ?>">
                             <ion-icon name="cart-outline" class="text-sm"></ion-icon>
-                            <span><?= $isOutOfStock ? 'Out of Stock' : '+ Add' ?></span>
+                            <span><?= $isOutOfStock ? '+ Add (স্টক আউট)' : '+ Add' ?></span>
                         </button>
                     </div>
                 <?php endforeach; endif; ?>
@@ -599,28 +601,16 @@ function getPosProductVariants($product) {
         const price = parseFloat(card.dataset.activeVariantPrice || 0);
         const baseQty = parseFloat(card.dataset.activeVariantQty || 1.000);
         const maxStock = parseFloat(card.dataset.stock || 0);
+        const isOutOfStock = (card.dataset.isOutOfStock === '1' || maxStock <= 0);
         const baseUnit = card.dataset.baseUnit || 'pcs';
-
-        if (maxStock <= 0) {
-            alert('Item is out of stock!');
-            return;
-        }
 
         // Unique cart item identifier (product_id + variant_title)
         const cartKey = productId + '_' + variantTitle;
         const existing = cart.find(i => i.cartKey === cartKey);
 
         if (existing) {
-            if ((existing.qty + 1) * existing.baseQty > maxStock) {
-                alert(`Stock limit reached! Available stock: ${maxStock} ${baseUnit}`);
-                return;
-            }
             existing.qty++;
         } else {
-            if (baseQty > maxStock) {
-                alert(`Stock limit reached! Available stock: ${maxStock} ${baseUnit}`);
-                return;
-            }
             cart.push({
                 cartKey: cartKey,
                 id: productId,
@@ -630,6 +620,7 @@ function getPosProductVariants($product) {
                 baseQty: baseQty,
                 qty: 1,
                 maxStock: maxStock,
+                isOutOfStock: isOutOfStock,
                 baseUnit: baseUnit
             });
         }
@@ -648,11 +639,6 @@ function getPosProductVariants($product) {
             return;
         }
 
-        if (newQty * item.baseQty > item.maxStock) {
-            alert(`Stock limit reached! Available stock: ${item.maxStock} ${item.baseUnit}`);
-            return;
-        }
-
         item.qty = newQty;
         renderCart();
     }
@@ -664,11 +650,6 @@ function getPosProductVariants($product) {
 
         let v = parseInt(val);
         if (isNaN(v) || v < 1) v = 1;
-
-        if (v * item.baseQty > item.maxStock) {
-            alert(`Stock limit reached! Available stock: ${item.maxStock} ${item.baseUnit}`);
-            v = Math.floor(item.maxStock / item.baseQty) || 1;
-        }
 
         item.qty = v;
         renderCart();
@@ -696,11 +677,18 @@ function getPosProductVariants($product) {
                 <tr class="group hover:bg-secondary-50 transition-colors">
                     <td class="px-3 py-2 align-middle">
                         <div class="font-bold text-secondary-900 text-xs leading-snug line-clamp-2" title="${item.name}">${item.name}</div>
-                        ${item.variant_title ? `
-                            <span class="inline-block mt-0.5 text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200 px-1.5 py-0.2 rounded">
-                                ${item.variant_title}
-                            </span>
-                        ` : ''}
+                        <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                            ${item.variant_title ? `
+                                <span class="text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200 px-1.5 py-0.2 rounded">
+                                    ${item.variant_title}
+                                </span>
+                            ` : ''}
+                            ${(item.isOutOfStock || (item.qty * item.baseQty > item.maxStock)) ? `
+                                <span class="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded shadow-2xs" title="স্টক শেষ হলেও অর্ডারে গ্রহণ করা হয়েছে">
+                                    স্টক আউট
+                                </span>
+                            ` : ''}
+                        </div>
                         <div class="text-[10px] text-secondary-400 mt-0.5">৳ ${item.price.toFixed(0)} / unit</div>
                     </td>
                     <td class="px-1 py-1 align-middle">

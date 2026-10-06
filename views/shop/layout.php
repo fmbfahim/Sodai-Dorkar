@@ -129,8 +129,38 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </style>
     <!-- Meta / Facebook Pixel Integration -->
     <?= class_exists('\Core\FacebookPixelService') ? \Core\FacebookPixelService::renderHeaderSnippet() : '' ?>
+
+    <?php if (!empty($storeSettings['google_analytics_enabled']) && $storeSettings['google_analytics_enabled'] == '1' && !empty($storeSettings['google_analytics_id'])): ?>
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= htmlspecialchars($storeSettings['google_analytics_id']) ?>"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '<?= htmlspecialchars($storeSettings['google_analytics_id']) ?>');
+    </script>
+    <?php endif; ?>
+
+    <?php if (!empty($storeSettings['google_analytics_enabled']) && $storeSettings['google_analytics_enabled'] == '1' && !empty($storeSettings['google_tag_manager_id'])): ?>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','<?= htmlspecialchars($storeSettings['google_tag_manager_id']) ?>');</script>
+    <?php endif; ?>
+
+    <?php if (!empty($storeSettings['custom_header_scripts'])): ?>
+    <!-- Custom Tracking / Header Scripts -->
+    <?= $storeSettings['custom_header_scripts'] ?>
+    <?php endif; ?>
 </head>
 <body class="bg-gray-50 text-secondary-800 antialiased min-h-screen flex flex-col font-sans">
+<?php if (!empty($storeSettings['google_analytics_enabled']) && $storeSettings['google_analytics_enabled'] == '1' && !empty($storeSettings['google_tag_manager_id'])): ?>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=<?= htmlspecialchars($storeSettings['google_tag_manager_id']) ?>"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<?php endif; ?>
 <?php
 // Fallback for categories if not passed from controller
 if (!isset($allCategories) || empty($allCategories)) {

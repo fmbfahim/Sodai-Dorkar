@@ -12,8 +12,67 @@ class Tracker {
         if (self::$db === null) {
             $config = require __DIR__ . '/../../config/database.php';
             self::$db = new Database($config);
+            self::ensureSchema();
         }
         return self::$db;
+    }
+
+    /**
+     * Auto-create visitor tracking tables if they do not exist
+     */
+    public static function ensureSchema() {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            if (self::$db === null) {
+                $config = require __DIR__ . '/../../config/database.php';
+                self::$db = new Database($config);
+            }
+            self::$db->query("CREATE TABLE IF NOT EXISTS visitor_sessions (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                session_id VARCHAR(128) NOT NULL,
+                ip_address VARCHAR(45) NOT NULL,
+                device_type VARCHAR(30) DEFAULT 'desktop',
+                browser VARCHAR(50) DEFAULT 'Other',
+                platform VARCHAR(50) DEFAULT 'Other',
+                user_agent TEXT NULL,
+                customer_id INT UNSIGNED NULL,
+                customer_name VARCHAR(191) NULL,
+                customer_phone VARCHAR(50) NULL,
+                landing_page VARCHAR(255) NULL,
+                current_page VARCHAR(255) NULL,
+                referrer VARCHAR(255) NULL,
+                page_views INT UNSIGNED DEFAULT 1,
+                cart_items_count INT UNSIGNED DEFAULT 0,
+                cart_total DECIMAL(10,2) DEFAULT 0.00,
+                has_ordered TINYINT(1) DEFAULT 0,
+                last_activity_at DATETIME NOT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_session (session_id),
+                INDEX idx_ip (ip_address),
+                INDEX idx_last_activity (last_activity_at),
+                INDEX idx_customer (customer_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            self::$db->query("CREATE TABLE IF NOT EXISTS visitor_activities (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                session_id VARCHAR(128) NOT NULL,
+                ip_address VARCHAR(45) NOT NULL,
+                action_type VARCHAR(50) NOT NULL,
+                description VARCHAR(255) NULL,
+                page_url VARCHAR(255) NULL,
+                meta_data LONGTEXT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_session (session_id),
+                INDEX idx_ip (ip_address),
+                INDEX idx_action (action_type),
+                INDEX idx_created (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            error_log("Tracker::ensureSchema error: " . $e->getMessage());
+        }
     }
 
     /**

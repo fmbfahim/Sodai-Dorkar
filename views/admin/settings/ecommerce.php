@@ -342,11 +342,12 @@
                 <span>Site Visibility</span>
             </a>
 
-            <!-- Tab 6: Meta Pixel & CAPI -->
-            <a href="<?= $base ?>/admin/ecommerce-settings?tab=pixel" 
-               class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= $activeTab === 'pixel' ? 'bg-blue-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
-                <ion-icon name="logo-facebook" class="text-lg text-blue-500 <?= $activeTab === 'pixel' ? 'text-white' : '' ?>"></ion-icon>
-                <span>Meta Pixel & CAPI</span>
+            <!-- Tab 6: Marketing & Tracking (মার্কেটিং ও ট্র্যাকিং) -->
+            <a href="<?= $base ?>/admin/ecommerce-settings?tab=marketing" 
+               class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all <?= in_array($activeTab, ['marketing', 'pixel', 'tracking']) ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm' : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50' ?>">
+                <ion-icon name="megaphone-outline" class="text-lg"></ion-icon>
+                <span>মার্কেটিং ও ট্র্যাকিং (Marketing &amp; Tracking)</span>
+                <span class="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">Pixel + CAPI</span>
             </a>
 
         </div>
@@ -2064,9 +2065,28 @@
         <?php endif; ?>
 
         <!-- =========================================================
-             TAB 6: META / FACEBOOK PIXEL & CONVERSIONS API (CAPI)
+             TAB 6: MARKETING & TRACKING (মার্কেটিং ও ট্র্যাকিং)
              ========================================================= -->
-        <?php if ($activeTab === 'pixel'): ?>
+        <?php if ($activeTab === 'marketing' || $activeTab === 'pixel' || $activeTab === 'tracking'): ?>
+
+        <!-- Marketing Hub Header Banner -->
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                    <ion-icon name="megaphone"></ion-icon>
+                </div>
+                <div>
+                    <h2 class="text-lg font-black tracking-tight">মার্কেটিং, বিজ্ঞাপন ও ট্র্যাকিং হাব (Marketing &amp; Tracking Hub)</h2>
+                    <p class="text-xs text-blue-100 mt-0.5">ফেসবুক বিজ্ঞাপন, মেটা পিক্সেল (Meta Pixel), গুগল অ্যানালিটিক্স এবং সার্ভার-সাইড ট্র্যাকিং কনফিগার করুন।</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
+                <a href="<?= $base ?>/admin/reports" target="_blank" class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all flex items-center gap-1.5 backdrop-blur-sm border border-white/20">
+                    <ion-icon name="analytics-outline" class="text-base"></ion-icon>
+                    <span>লাইভ ভিজিটর রিপোর্ট</span>
+                </a>
+            </div>
+        </div>
 
         <!-- Master Enable / Disable Card -->
         <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
@@ -2252,6 +2272,81 @@
                 </button>
             </div>
             <div id="test_pixel_result" class="mt-4 text-xs font-medium" style="display:none;"></div>
+        </div>
+
+        <!-- Google Analytics & Tag Manager Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-2xs">
+                        <ion-icon name="logo-google"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base flex items-center gap-2">
+                            <span>Google Analytics (GA4) &amp; Google Tag Manager (GTM)</span>
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Google Official</span>
+                        </h3>
+                        <p class="text-[11px] text-secondary-400">গুগল অ্যানালিটিক্স ৪ মেজারমেন্ট আইডি অথবা গুগল ট্যাগ ম্যানেজার কন্টেইনার আইডি সেট করুন।</p>
+                    </div>
+                </div>
+                <label class="custom-toggle">
+                    <input type="checkbox" name="google_analytics_enabled" value="1" 
+                           <?= ($settings['google_analytics_enabled'] ?? '0') == '1' ? 'checked' : '' ?>>
+                    <span class="toggle-track <?= ($settings['google_analytics_enabled'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                        <span class="toggle-thumb"></span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">
+                        Google Analytics 4 Measurement ID (GA4)
+                    </label>
+                    <input type="text" name="google_analytics_id" 
+                           value="<?= htmlspecialchars($settings['google_analytics_id'] ?? '') ?>" 
+                           placeholder="e.g. G-XXXXXXXXXX" 
+                           class="w-full px-3.5 py-2.5 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-secondary-900 font-bold">
+                    <p class="text-[11px] text-secondary-400 mt-1">Google Analytics Admin &gt; Data Streams থেকে <code class="font-mono text-amber-700 font-bold">G-</code> দিয়ে শুরু কোড দিন।</p>
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">
+                        Google Tag Manager Container ID (GTM)
+                    </label>
+                    <input type="text" name="google_tag_manager_id" 
+                           value="<?= htmlspecialchars($settings['google_tag_manager_id'] ?? '') ?>" 
+                           placeholder="e.g. GTM-XXXXXXX" 
+                           class="w-full px-3.5 py-2.5 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-secondary-900 font-bold">
+                    <p class="text-[11px] text-secondary-400 mt-1">Tag Manager কন্টেইনার আইডি (যেমন: <code class="font-mono text-amber-700 font-bold">GTM-XXXXXXX</code>)।</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Header & Footer Tracking Scripts -->
+        <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/90 overflow-hidden">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50/70 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl shadow-2xs">
+                        <ion-icon name="code-slash-outline"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base">Custom Header Tracking Scripts (কাস্টম ট্র্যাকিং স্ক্রিপ্ট)</h3>
+                        <p class="text-[11px] text-secondary-400">TikTok Pixel, Pinterest Tag, Hotjar অথবা যেকোনো বিজ্ঞাপন নেটওয়ার্কের ট্র্যাকিং কোড এখানে পেস্ট করুন।</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">
+                    Header Script &lt;head&gt; Code
+                </label>
+                <textarea name="custom_header_scripts" rows="4" 
+                          placeholder="&lt;script&gt;
+// Your custom tracking script here (e.g. TikTok Pixel)
+&lt;/script&gt;"
+                          class="w-full p-3.5 text-xs font-mono border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-secondary-800 bg-secondary-50/50"><?= htmlspecialchars($settings['custom_header_scripts'] ?? '') ?></textarea>
+                <p class="text-[11px] text-secondary-400 mt-1">এই কোডটি স্বয়ংক্রিয়ভাবে ওয়েবসাইটের সকল পেজের &lt;head&gt; সেকশনে লোড হবে।</p>
+            </div>
         </div>
 
         <?php endif; ?>

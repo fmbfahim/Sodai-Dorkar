@@ -40,8 +40,11 @@ class SettingsController extends Controller {
         $settingModel = new Setting();
         $settings = $settingModel->getAll();
         
-        $validTabs = ['products', 'shipping', 'payments', 'privacy', 'visibility', 'pixel'];
+        $validTabs = ['products', 'shipping', 'payments', 'privacy', 'visibility', 'marketing', 'pixel', 'tracking'];
         $tab = $_GET['tab'] ?? 'products';
+        if (in_array($tab, ['pixel', 'tracking'])) {
+            $tab = 'marketing';
+        }
         if (!in_array($tab, $validTabs)) {
             $tab = 'products';
         }
@@ -121,6 +124,16 @@ class SettingsController extends Controller {
                 'facebook_pixel_track_add_to_cart',
                 'facebook_pixel_track_initiate_checkout',
                 'facebook_pixel_track_purchase'
+            ],
+            'marketing' => [
+                'facebook_pixel_enabled',
+                'facebook_pixel_track_pageview',
+                'facebook_pixel_track_view_content',
+                'facebook_pixel_track_add_to_cart',
+                'facebook_pixel_track_initiate_checkout',
+                'facebook_pixel_track_purchase',
+                'google_analytics_enabled',
+                'google_tag_manager_enabled'
             ]
         ];
 

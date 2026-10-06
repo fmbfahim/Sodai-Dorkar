@@ -41,7 +41,15 @@
                         <div class="flex justify-between items-end mt-1 pt-1 border-t border-dashed border-secondary-100">
                              <div class="flex flex-col">
                                  <span class="text-[10px] text-secondary-400">Stock</span>
-                                 <span class="text-xs font-bold text-secondary-700"><?php echo $p['stock_qty']; ?></span>
+                                 <?php 
+                                     $stockQty = floatval($p['stock_qty'] ?? 0);
+                                     $isOut = ($stockQty <= 0 || ($p['availability_status'] ?? '') === 'out_of_stock');
+                                 ?>
+                                 <?php if ($isOut): ?>
+                                     <span class="text-[10px] font-bold text-red-600 bg-red-50 px-1 rounded">স্টক আউট</span>
+                                 <?php else: ?>
+                                     <span class="text-xs font-bold text-secondary-700"><?php echo $p['stock_qty']; ?></span>
+                                 <?php endif; ?>
                              </div>
                              <span class="font-bold text-primary-600">৳ <?php echo number_format($p['sell_price']); ?></span>
                         </div>
@@ -287,8 +295,6 @@
         const item = cart.find(i => i.id === id);
         if(item) {
             const newQty = item.qty + delta;
-            // Note: item.max is (Allocated + Stock). So we can go up to that.
-            if(newQty > item.max) { alert('Stock Limit Reached (Max: '+item.max+')'); return; }
             if(newQty > 0) { item.qty = newQty; renderCart(); }
         }
     }
