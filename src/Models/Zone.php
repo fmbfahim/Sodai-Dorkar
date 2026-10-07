@@ -36,7 +36,7 @@ class Zone {
     }
 
     public function find($id) {
-        $stmt = $this->db->query("SELECT * FROM zones WHERE id = :id", ['id' => $id]);
+        $stmt = $this->db->query("SELECT zones.*, areas.name as area_name FROM zones LEFT JOIN areas ON zones.area_id = areas.id WHERE zones.id = :id", ['id' => $id]);
         return $stmt->fetch();
     }
 
