@@ -416,24 +416,26 @@ class Product {
             'purchase_unit_qty'   => !empty($data['purchase_unit_qty']) ? $data['purchase_unit_qty'] : 1.000,
             'selling_unit'        => $data['selling_unit'] ?? null,
             'unit_variants_json'  => !empty($data['unit_variants_json']) ? $data['unit_variants_json'] : null,
+            'addons_json'         => !empty($data['addons_json']) ? $data['addons_json'] : null,
+            'special_badge'       => $data['special_badge'] ?? 'none',
         ];
 
         if (isset($data['image_path'])) {
             $fields['image_path'] = $data['image_path'];
         }
-        if (isset($data['is_verified'])) {
+        if (array_key_exists('is_verified', $data)) {
             $fields['is_verified'] = $data['is_verified'];
         }
-        if (isset($data['availability_status'])) {
+        if (array_key_exists('availability_status', $data)) {
             $fields['availability_status'] = $data['availability_status'];
         }
-        if (isset($data['demand_percentage'])) {
+        if (array_key_exists('demand_percentage', $data)) {
             $fields['demand_percentage'] = $data['demand_percentage'];
         }
-        if (isset($data['addons_json'])) {
+        if (array_key_exists('addons_json', $data)) {
             $fields['addons_json'] = !empty($data['addons_json']) ? $data['addons_json'] : null;
         }
-        if (isset($data['special_badge'])) {
+        if (array_key_exists('special_badge', $data)) {
             $fields['special_badge'] = $data['special_badge'];
         }
 
@@ -724,37 +726,7 @@ class Product {
             || (!empty($catName) && preg_match('/(মাংস|মুরগি|chicken|meat|beef|mutton)/iu', $catName))
             || (!empty($catSlug) && preg_match('/(meat|chicken|beef|mutton)/iu', $catSlug));
 
-        // 6. If no explicit addons configured in database, provide smart default cutting/dressing criteria!
-        if (empty($addons) || !is_array($addons) || count($addons) === 0) {
-            if ($isFish) {
-                $addons = [
-                    ['name' => ($locale === 'bn' ? 'আস্ত নাড়ি-ভুঁড়ি ও আঁশ পরিষ্কার' : 'Whole Cleaned (Scales & Guts Removed)'), 'price' => 0, 'is_default' => 1],
-                    ['name' => ($locale === 'bn' ? 'কারি কাট / টুকরো পিস' : 'Curry Cut / Medium Slices'), 'price' => 0, 'is_default' => 0],
-                    ['name' => ($locale === 'bn' ? 'মাথা আলাদা ও পিস কাট' : 'Head Separate & Slices'), 'price' => 0, 'is_default' => 0],
-                    ['name' => ($locale === 'bn' ? 'আস্ত মাছ দিন (না কেটে)' : 'Intact Whole Fish (Uncut)'), 'price' => 0, 'is_default' => 0],
-                ];
-            } elseif ($isMeat) {
-                $isChicken = preg_match('/(মুরগি|মুরগী|চিকেন|ব্রয়লার|ব্রয়লার|সোনালী|সোনালি|কক|লেয়ার|লেয়ার|হাঁস|chicken)/iu', $nameLower)
-                             || preg_match('/(chicken|মুরগি)/iu', $catName);
-                if ($isChicken) {
-                    $addons = [
-                        ['name' => ($locale === 'bn' ? 'চামড়া সহ কারি কাট' : 'Curry Cut with Skin'), 'price' => 0, 'is_default' => 1],
-                        ['name' => ($locale === 'bn' ? 'চামড়া ছাড়া কারি কাট' : 'Skinless Curry Cut'), 'price' => 0, 'is_default' => 0],
-                        ['name' => ($locale === 'bn' ? 'রোস্ট সাইজ (৪ টুকরা)' : 'Roast Cut (4 Pcs)'), 'price' => 0, 'is_default' => 0],
-                        ['name' => ($locale === 'bn' ? 'চামড়া সহ আস্ত ড্রেসিং' : 'Whole Dressing with Skin'), 'price' => 0, 'is_default' => 0],
-                        ['name' => ($locale === 'bn' ? 'চামড়া ছাড়া আস্ত ড্রেসিং' : 'Skinless Whole Dressing'), 'price' => 0, 'is_default' => 0],
-                    ];
-                } else {
-                    $addons = [
-                        ['name' => ($locale === 'bn' ? 'নিয়মিত কারি কাট (হাড় সহ)' : 'Regular Curry Cut (Bone-in)'), 'price' => 0, 'is_default' => 1],
-                        ['name' => ($locale === 'bn' ? 'ছোট পিস / বিরিয়ানি কাট' : 'Small Cut / Biryani Cut'), 'price' => 0, 'is_default' => 0],
-                        ['name' => ($locale === 'bn' ? 'চর্বি ছাড়িয়ে মাঝারি পিস' : 'Fat Trimmed Medium Cut'), 'price' => 0, 'is_default' => 0],
-                        ['name' => ($locale === 'bn' ? 'আস্ত মাংস (না কেটে)' : 'Whole Meat Piece (Uncut)'), 'price' => 0, 'is_default' => 0],
-                    ];
-                }
-            }
-        }
-
+        // 6. Only products with explicit addons configured in database will have cutting/dressing options
         $hasAddons = !empty($addons) && is_array($addons) && count($addons) > 0;
         $hasCriteria = $hasAddons || $isBogo;
 

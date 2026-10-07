@@ -534,6 +534,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         </div>
                 <!-- 5. Processing, Cutting & Dressing Add-ons -->
                 <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/80 p-6">
+                    <input type="hidden" name="addons_submitted" value="1">
                     <div class="flex items-center justify-between border-b border-secondary-100 pb-3 mb-4 flex-wrap gap-2">
                         <div class="flex items-center gap-2">
                             <span class="p-1.5 bg-amber-500/10 text-amber-600 rounded-lg flex items-center justify-center text-base">
@@ -554,6 +555,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <button type="button" onclick="addAddonRow()" class="px-3 py-1 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors flex items-center gap-1 shadow-2xs">
                                 <ion-icon name="add-outline"></ion-icon>
                                 <span>অপশন যোগ করুন</span>
+                            </button>
+                            <button type="button" onclick="clearAllAddons()" class="px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors flex items-center gap-1 shadow-2xs" title="সকল অপশন মুছে ফেলুন">
+                                <ion-icon name="trash-outline"></ion-icon>
+                                <span>সব মুছুন</span>
                             </button>
                         </div>
                     </div>
@@ -1356,11 +1361,20 @@ function addAddonRow(name = '', price = 0, isDefault = false) {
 
 function deleteAddonRow(btn) {
     const row = btn.closest('tr');
-    row.remove();
+    if (row) row.remove();
     const tbody = document.getElementById('addons-tbody');
     const emptyState = document.getElementById('addons-empty-state');
     if (tbody && tbody.querySelectorAll('tr').length === 0 && emptyState) {
         emptyState.classList.remove('hidden');
+    }
+}
+
+function clearAllAddons() {
+    if (confirm('আপনি কি নিশ্চিত যে এই পণ্যের সকল ড্রেসিং ও কাটিং অপশন মুছে ফেলতে চান? সেভ করার পর এটি সাধারণ পণ্য হিসেবে বিক্রি হবে।')) {
+        const tbody = document.getElementById('addons-tbody');
+        if (tbody) tbody.innerHTML = '';
+        const emptyState = document.getElementById('addons-empty-state');
+        if (emptyState) emptyState.classList.remove('hidden');
     }
 }
 
