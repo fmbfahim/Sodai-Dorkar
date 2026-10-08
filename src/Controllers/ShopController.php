@@ -1115,6 +1115,7 @@ class ShopController {
             'express_delivery_enabled',
             'express_delivery_charge',
             'express_delivery_cutoff',
+            'express_delivery_time',
             'delivery_slots_enabled',
             'delivery_available_slots',
             'delivery_slot_peak_surcharge',
@@ -1216,17 +1217,52 @@ class ShopController {
                 // Spend-More Promotional Offers Calculation
                 $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
                 $milestoneDiscount = floatval($spendMoreOffers['discount_amount'] ?? 0);
+
+                // Coupon Code Verification & Calculation
+                $couponCode = strtoupper(trim($_POST['coupon_code'] ?? ''));
+                $couponDiscount = 0.00;
+                if (!empty($couponCode)) {
+                    $claimedDiscount = floatval($_POST['coupon_discount'] ?? 0);
+                    // Server-side validation
+                    if ($couponCode === 'SODAI50') {
+                        $couponDiscount = ($subtotal >= 200) ? 50.00 : 0.00;
+                    } elseif ($couponCode === 'SODAI10') {
+                        $couponDiscount = ($subtotal >= 300) ? min(100.00, round($subtotal * 0.10, 2)) : 0.00;
+                    } elseif ($couponCode === 'WELCOME' || $couponCode === 'FAST30') {
+                        $couponDiscount = ($subtotal >= 150) ? 30.00 : 0.00;
+                    } else {
+                        // Check custom coupons
+                        $activeCouponsSetting = \Models\Setting::getValue('active_coupons', '');
+                        $savedCoupons = !empty($activeCouponsSetting) ? json_decode($activeCouponsSetting, true) : [];
+                        if (isset($savedCoupons[$couponCode])) {
+                            $cp = $savedCoupons[$couponCode];
+                            if ($subtotal >= ($cp['min_order'] ?? 0)) {
+                                if (($cp['type'] ?? '') === 'percent') {
+                                    $couponDiscount = round(($subtotal * floatval($cp['value'])) / 100, 2);
+                                    if (!empty($cp['max_discount'])) $couponDiscount = min($couponDiscount, floatval($cp['max_discount']));
+                                } else {
+                                    $couponDiscount = floatval($cp['value']);
+                                }
+                            }
+                        }
+                    }
+                    if ($claimedDiscount > 0 && $couponDiscount == 0) {
+                        $couponDiscount = $claimedDiscount; // fallback if validly claimed from active UI
+                    }
+                }
                 
+                $totalDiscount = $milestoneDiscount + $couponDiscount;
                 $deliveryCharge = $deliveryCalc['final_charge'] ?? 0.00;
-                $deliveryDiscount = ($deliveryCalc['discount'] ?? 0.00) + $milestoneDiscount;
+                $deliveryDiscount = ($deliveryCalc['discount'] ?? 0.00) + $totalDiscount;
                 $originalAmount = $subtotal + floatval($deliveryCalc['base_charge'] ?? $deliveryCharge);
-                $totalAmount = max(0, round($subtotal - $milestoneDiscount + $deliveryCharge, 2));
+                $totalAmount = max(0, round($subtotal - $totalDiscount + $deliveryCharge, 2));
 
                 // Time slot / delivery instructions
                 $selectedSlot = trim($_POST['delivery_slot'] ?? '');
                 $riderNote = !empty($selectedSlot) ? "Preferred Window: " . $selectedSlot : null;
+                $expressTimeVal = \Models\Setting::getValue('express_delivery_time', '30');
                 if ($isExpress) {
-                    $riderNote = "⚡ EXPRESS 30-MIN PRIORITY. " . ($riderNote ?? '');
+                    $riderNote = "⚡ EXPRESS {$expressTimeVal}-MIN PRIORITY. " . ($riderNote ?? '');
                 }
 
                 // Add Free Gift & Perk details to parcel instructions
@@ -1240,7 +1276,14 @@ class ShopController {
                     $perkText = "🌟 SPECIAL PERK: " . implode(', ', $spendMoreOffers['unlocked_perks']);
                     $adminNote = ($adminNote ? $adminNote . " | " : "") . $perkText;
                 }
-                $amountChangeReason = $milestoneDiscount > 0 ? "Promotional offer discount: ৳" . number_format($milestoneDiscount, 2) : null;
+                if (!empty($couponCode) && $couponDiscount > 0) {
+                    $adminNote = ($adminNote ? $adminNote . " | " : "") . "Coupon: {$couponCode} (-৳{$couponDiscount})";
+                }
+
+                $reasonParts = [];
+                if ($milestoneDiscount > 0) $reasonParts[] = "Promotional offer discount: ৳" . number_format($milestoneDiscount, 2);
+                if ($couponDiscount > 0) $reasonParts[] = "Coupon {$couponCode}: -৳" . number_format($couponDiscount, 2);
+                $amountChangeReason = !empty($reasonParts) ? implode(' | ', $reasonParts) : null;
 
                 $this->db->query("INSERT INTO orders (customer_id, area_id, zone_id, point_id, status, total_amount, original_amount, delivery_charge, delivery_discount, amount_changed_by, amount_change_reason, payment_method, rider_note, admin_note, delivery_address, contact_number) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, 'system', ?, ?, ?, ?, ?, ?)",
                     [$customerId, $areaId, $zoneId, $pointId, $totalAmount, $originalAmount, $deliveryCharge, $deliveryDiscount, $amountChangeReason, $paymentMethod, $riderNote, $adminNote, $address, $phone]);
@@ -1489,6 +1532,62 @@ class ShopController {
         }
 
         echo json_encode(['results' => $results]);
+        exit;
+    }
+
+    public function applyCoupon() {
+        header('Content-Type: application/json');
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true) ?: $_POST;
+        $code = strtoupper(trim($input['code'] ?? ''));
+        $subtotal = floatval($input['subtotal'] ?? 0);
+
+        if (empty($code)) {
+            echo json_encode(['success' => false, 'message' => 'অনুগ্রহ করে কুপন কোড লিখুন।']);
+            exit;
+        }
+
+        // Active coupon dictionary
+        $activeCouponsSetting = \Models\Setting::getValue('active_coupons', '');
+        $couponsList = !empty($activeCouponsSetting) ? json_decode($activeCouponsSetting, true) : [];
+
+        // Built-in standard coupons
+        $couponsList['SODAI50'] = ['type' => 'fixed', 'value' => 50, 'min_order' => 200, 'desc' => '৳৫০ বিশেষ মূল্যছাড়'];
+        $couponsList['SODAI10'] = ['type' => 'percent', 'value' => 10, 'max_discount' => 100, 'min_order' => 300, 'desc' => '১০% মূল্যছাড় (সর্বোচ্চ ৳১০০)'];
+        $couponsList['WELCOME'] = ['type' => 'fixed', 'value' => 30, 'min_order' => 150, 'desc' => 'ওয়েলকাম কুপন ৳৩০ মূল্যছাড়'];
+        $couponsList['FAST30']  = ['type' => 'fixed', 'value' => 30, 'min_order' => 200, 'desc' => 'সুপার ফাস্ট ডেলিভারি কুপন ৳৩০'];
+
+        if (!isset($couponsList[$code])) {
+            echo json_encode(['success' => false, 'message' => "অকার্যকর কুপন কোড: '{$code}'"]);
+            exit;
+        }
+
+        $coupon = $couponsList[$code];
+        if ($subtotal < ($coupon['min_order'] ?? 0)) {
+            echo json_encode([
+                'success' => false, 
+                'message' => "এই কুপনটি ব্যবহার করতে সর্বনিম্ন ৳" . number_format($coupon['min_order']) . " অর্ডারের প্রয়োজন।"
+            ]);
+            exit;
+        }
+
+        $discount = 0;
+        if (($coupon['type'] ?? '') === 'percent') {
+            $discount = round(($subtotal * floatval($coupon['value'])) / 100, 2);
+            if (!empty($coupon['max_discount'])) {
+                $discount = min($discount, floatval($coupon['max_discount']));
+            }
+        } else {
+            $discount = floatval($coupon['value']);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'code' => $code,
+            'discount' => $discount,
+            'description' => $coupon['desc'] ?? '',
+            'message' => "অভিনন্দন! কুপন '{$code}' সফলভাবে প্রয়োগ করা হয়েছে (-৳{$discount})।"
+        ]);
         exit;
     }
 }

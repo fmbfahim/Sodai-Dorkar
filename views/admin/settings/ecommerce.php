@@ -1117,7 +1117,18 @@
                 </label>
             </div>
 
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">ডেলিভারির সময় / Duration</label>
+                    <div class="relative">
+                        <input type="text" name="express_delivery_time" 
+                               value="<?= htmlspecialchars($settings['express_delivery_time'] ?? '30') ?>" 
+                               placeholder="e.g. 30 বা ৩০-মিনিট বা ৩০-৪৫ মিনিট"
+                               class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
+                    </div>
+                    <p class="text-[11px] text-secondary-400 mt-1">কত মিনিটে এক্সপ্রেস ডেলিভারি সম্পন্ন হবে (যেমন: 30 বা ৩০-মিনিট বা ৩০-৪৫ মিনিট)।</p>
+                </div>
+
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">Express Delivery Surcharge (৳)</label>
                     <div class="relative">
@@ -1126,7 +1137,7 @@
                                value="<?= htmlspecialchars($settings['express_delivery_charge'] ?? '60') ?>" 
                                class="w-full pl-9 pr-4 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
                     </div>
-                    <p class="text-[11px] text-secondary-400 mt-1">Extra fee charged when customer selects priority 30-minute delivery.</p>
+                    <p class="text-[11px] text-secondary-400 mt-1">এক্সপ্রেস ডেলিভারি সিলেক্ট করলে অতিরিক্ত সার্ভিস ফি।</p>
                 </div>
 
                 <div>
@@ -1135,7 +1146,7 @@
                            value="<?= htmlspecialchars($settings['express_cutoff_time'] ?? '08:30 PM') ?>" 
                            placeholder="e.g. 08:30 PM"
                            class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold">
-                    <p class="text-[11px] text-secondary-400 mt-1">Express fast-track option will not be offered after this hour.</p>
+                    <p class="text-[11px] text-secondary-400 mt-1">প্রতিদিন এই সময়ের পর আর এক্সপ্রেস অপশন অফার করা হবে না।</p>
                 </div>
             </div>
         </div>

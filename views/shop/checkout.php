@@ -13,6 +13,17 @@ $milestoneDiscount = floatval($spendMoreOffers['discount_amount'] ?? 0);
 $baseCharge = $deliveryCalc['base_charge'] ?? 30.00;
 $currentCharge = $deliveryCalc['charge'] ?? 0.00;
 $expressCharge = floatval($ecommerceSettings['express_delivery_charge'] ?? 60.00);
+$expTimeVal = trim($ecommerceSettings['express_delivery_time'] ?? '30');
+if ($expTimeVal === '') $expTimeVal = '30';
+$expressTimeDisplay = is_numeric($expTimeVal) 
+    ? ($locale === 'bn' ? $expTimeVal . '-মিনিট' : $expTimeVal . '-Minute') 
+    : $expTimeVal;
+$expressTitle = ($locale === 'bn') 
+    ? "এক্সপ্রেস {$expressTimeDisplay} সুপার ফাস্ট ডেলিভারি" 
+    : "Express {$expressTimeDisplay} Priority Delivery";
+$expressSurchargeLabel = ($locale === 'bn')
+    ? "এক্সপ্রেস {$expressTimeDisplay} অতিরিক্ত ফি"
+    : "Express {$expressTimeDisplay} Surcharge";
 $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2));
 ?>
 
@@ -169,6 +180,8 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
             <div class="lg:w-2/3 space-y-6">
                 <form action="<?= $base ?>/checkout/place-order" method="POST" id="checkout-form">
                     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                    <input type="hidden" name="coupon_code" id="form-coupon-code" value="">
+                    <input type="hidden" name="coupon_discount" id="form-coupon-discount" value="0">
                     
                     <!-- 1. Customer & Delivery Destination Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
@@ -269,7 +282,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                                     <span class="text-2xl">⚡</span>
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <span class="text-sm font-extrabold text-orange-900"><?= $__('express_delivery_title') ?></span>
+                                            <span class="text-sm font-extrabold text-orange-900"><?= htmlspecialchars($expressTitle) ?></span>
                                             <span class="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                                                 +৳<?= number_format($expressCharge, 2) ?>
                                             </span>
@@ -401,6 +414,31 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                     </div>
                     <?php endif; ?>
                     
+                    <!-- Coupon Code Input Box -->
+                    <div class="mb-5 pt-4 border-t border-gray-100">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <span>🎟️</span>
+                                <span><?= $locale === 'bn' ? 'কুপন কোড (প্রোমো ছাড়)' : 'Coupon / Promo Code' ?></span>
+                            </span>
+                            <span class="text-[10px] text-emerald-600 font-bold cursor-pointer hover:underline" onclick="document.getElementById('coupon_code_input').value='SODAI50'; applyCouponCode();">
+                                <?= $locale === 'bn' ? 'ব্যবহার করুন: SODAI50' : 'Use: SODAI50' ?>
+                            </span>
+                        </label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <input type="text" id="coupon_code_input" 
+                                       placeholder="<?= $locale === 'bn' ? 'কুপন কোড লিখুন (যেমন: SODAI50)' : 'Enter promo coupon...' ?>" 
+                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm font-mono uppercase font-bold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50/50 focus:bg-white transition-all shadow-2xs">
+                            </div>
+                            <button type="button" id="apply-coupon-btn" onclick="applyCouponCode()" 
+                                    class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer shrink-0">
+                                <?= $locale === 'bn' ? 'এপ্লাই' : 'Apply' ?>
+                            </button>
+                        </div>
+                        <div id="coupon-message" class="text-xs mt-1.5 hidden"></div>
+                    </div>
+                    
                     <!-- Charges Breakdown -->
                     <div class="space-y-3 text-xs sm:text-sm text-gray-600 mb-6 border-t border-gray-100 pt-5">
                         <div class="flex justify-between">
@@ -418,6 +456,22 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
                             <span class="font-black text-emerald-800 text-xs sm:text-sm">- <?= $__('currency') ?><?= number_format($milestoneDiscount, 2) ?></span>
                         </div>
                         <?php endif; ?>
+
+                        <!-- Applied Coupon Discount Row -->
+                        <div id="coupon-discount-row" class="hidden justify-between items-center text-emerald-700 bg-emerald-50/90 px-2.5 py-1.5 rounded-xl border border-emerald-200/80 font-bold">
+                            <span class="flex items-center gap-1.5">
+                                <span>🎟️</span>
+                                <span><?= $locale === 'bn' ? 'কুপন ছাড়' : 'Coupon Discount' ?> (<span id="coupon-code-label" class="font-mono"></span>)</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-emerald-800 text-xs sm:text-sm" id="coupon-discount-display">-<?= $__('currency') ?>0.00</span>
+                                <button type="button" onclick="removeCouponCode()" class="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer" title="<?= $locale === 'bn' ? 'কুপন বাতিল করুন' : 'Remove Coupon' ?>">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                         
                         <!-- Base Delivery Fee -->
                         <div class="flex justify-between items-center">
@@ -458,7 +512,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
 
                         <!-- Express Delivery Fee Dynamic Row -->
                         <div id="express-fee-row" class="hidden justify-between items-center text-orange-700 bg-orange-50/60 px-2 py-1 rounded-lg">
-                            <span>⚡ <?= $__('express_delivery_surcharge') ?></span>
+                            <span>⚡ <?= htmlspecialchars($expressSurchargeLabel) ?></span>
                             <span class="font-bold">+<?= $__('currency') ?><?= number_format($expressCharge, 2) ?></span>
                         </div>
                     </div>
@@ -503,6 +557,8 @@ const milestoneDiscount = <?= floatval($milestoneDiscount) ?>;
 const baseDeliveryCharge = <?= floatval($currentCharge) ?>;
 const expressFeeAmount = <?= floatval($expressCharge) ?>;
 const currencySymbol = '<?= $__('currency') ?>';
+let currentCouponCode = '';
+let currentCouponDiscount = 0;
 
 function updateCheckoutTotals() {
     const expressCheckbox = document.getElementById('is_express');
@@ -528,7 +584,7 @@ function updateCheckoutTotals() {
         }
     }
     
-    const grandTotal = Math.max(0, baseSubtotal - milestoneDiscount + totalDelivery);
+    const grandTotal = Math.max(0, baseSubtotal - milestoneDiscount - currentCouponDiscount + totalDelivery);
     const formattedTotal = currencySymbol + grandTotal.toFixed(2);
     
     if (grandTotalDisplay) {
@@ -537,6 +593,88 @@ function updateCheckoutTotals() {
     if (btnTotalText) {
         btnTotalText.innerText = formattedTotal;
     }
+}
+
+async function applyCouponCode() {
+    const input = document.getElementById('coupon_code_input');
+    const msg = document.getElementById('coupon-message');
+    const btn = document.getElementById('apply-coupon-btn');
+    const code = (input ? input.value : '').trim();
+    if (!code) {
+        if (msg) {
+            msg.className = 'text-xs mt-1.5 text-rose-600 block font-bold';
+            msg.innerText = 'অনুগ্রহ করে কুপন কোড লিখুন।';
+        }
+        return;
+    }
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = '...';
+    }
+    try {
+        const res = await fetch('<?= $base ?>/api/apply-coupon', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ code: code, subtotal: baseSubtotal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentCouponCode = data.code;
+            currentCouponDiscount = parseFloat(data.discount) || 0;
+            
+            document.getElementById('form-coupon-code').value = currentCouponCode;
+            document.getElementById('form-coupon-discount').value = currentCouponDiscount;
+            document.getElementById('coupon-code-label').innerText = currentCouponCode;
+            document.getElementById('coupon-discount-display').innerText = '- ' + currencySymbol + currentCouponDiscount.toFixed(2);
+            
+            const couponRow = document.getElementById('coupon-discount-row');
+            if (couponRow) {
+                couponRow.classList.remove('hidden');
+                couponRow.classList.add('flex');
+            }
+            if (msg) {
+                msg.className = 'text-xs mt-1.5 text-emerald-600 block font-bold';
+                msg.innerText = data.message;
+            }
+            updateCheckoutTotals();
+        } else {
+            if (msg) {
+                msg.className = 'text-xs mt-1.5 text-rose-600 block font-bold';
+                msg.innerText = data.message;
+            }
+        }
+    } catch(err) {
+        if (msg) {
+            msg.className = 'text-xs mt-1.5 text-rose-600 block font-bold';
+            msg.innerText = 'কুপন যাচাইকরণে সমস্যা হয়েছে, পুনরায় চেষ্টা করুন।';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '<?= $locale === 'bn' ? 'এপ্লাই' : 'Apply' ?>';
+        }
+    }
+}
+
+function removeCouponCode() {
+    currentCouponCode = '';
+    currentCouponDiscount = 0;
+    document.getElementById('form-coupon-code').value = '';
+    document.getElementById('form-coupon-discount').value = '0';
+    document.getElementById('coupon_code_input').value = '';
+    
+    const couponRow = document.getElementById('coupon-discount-row');
+    if (couponRow) {
+        couponRow.classList.add('hidden');
+        couponRow.classList.remove('flex');
+    }
+    const msg = document.getElementById('coupon-message');
+    if (msg) {
+        msg.className = 'text-xs mt-1.5 text-gray-500 block';
+        msg.innerText = 'কুপন ছাড় বাতিল করা হয়েছে।';
+    }
+    updateCheckoutTotals();
 }
 
 document.getElementById('checkout-form').addEventListener('submit', function(e) {

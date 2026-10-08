@@ -66,6 +66,7 @@ $router->post('/set-language', 'ShopController@setLanguage');
 $router->get('/api/search', 'ShopController@apiSearch');
 $router->get('/api/zones', 'ShopController@getZones');
 $router->get('/api/points', 'ShopController@getPoints');
+$router->post('/api/apply-coupon', 'ShopController@applyCoupon');
 
 // Customer Auth Routes
 $router->get('/checkout/auth', 'CustomerAuthController@showAuth');

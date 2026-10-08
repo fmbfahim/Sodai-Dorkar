@@ -246,6 +246,16 @@ if (empty($bannerSubtitle)) {
         $bannerSubtitle = 'সেরা মানের নিত্যপ্রয়োজনীয় পণ্য ও দ্রুত ডেলিভারি - আপনার দৈনন্দিন প্রয়োজনের সবকিছু এক জায়গায়';
     }
 }
+
+// Express delivery dynamic settings
+$expressDeliveryEnabled = class_exists('\Models\Setting') ? (\Models\Setting::getValue('express_delivery_enabled', '0') == '1') : false;
+$expressDeliveryTime = class_exists('\Models\Setting') ? trim(\Models\Setting::getValue('express_delivery_time', '30')) : '30';
+$expressDeliveryDisplay = ($locale === 'bn') ? Lang::bengaliNumber($expressDeliveryTime) . ' মিনিটে' : $expressDeliveryTime . ' Mins';
+
+$activeSubCatName = '';
+if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
+    $activeSubCatName = $catLookup[$activeSubId]['name'];
+}
 ?>
 
 <!-- =======================================================
@@ -426,8 +436,14 @@ if (empty($bannerSubtitle)) {
                                     ⚡
                                 </div>
                                 <div class="text-left">
-                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block"><?= $locale === 'bn' ? 'সরাসরি দ্রুত ডেলিভারি' : 'Express Fast Delivery' ?></span>
-                                    <span class="text-xs sm:text-sm font-black text-white block"><?= $locale === 'bn' ? '৩০-৪৫ মিনিটে আপনার দরজায়' : 'At Your Door in 30-45 Mins' ?></span>
+                                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block">
+                                        <?= $locale === 'bn' ? ($expressDeliveryEnabled ? 'এক্সপ্রেস সুপার ফাস্ট ডেলিভারি' : 'সরাসরি হোম ডেলিভারি') : ($expressDeliveryEnabled ? 'Express Fast Delivery' : 'Standard Delivery') ?>
+                                    </span>
+                                    <span class="text-xs sm:text-sm font-black text-white block">
+                                        <?= $expressDeliveryEnabled 
+                                            ? ($locale === 'bn' ? "{$expressDeliveryDisplay} আপনার দরজায়" : "At Your Door in {$expressDeliveryTime} Mins") 
+                                            : ($locale === 'bn' ? 'বিশ্বস্ত ও নিরাপদ ডেলিভারি' : 'Reliable & Safe Delivery') ?>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -444,7 +460,11 @@ if (empty($bannerSubtitle)) {
                     </div>
                     <div class="min-w-0">
                         <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? 'দ্রুত ডেলিভারি' : 'Fast Delivery' ?></h4>
-                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate"><?= $locale === 'bn' ? '৩০-৪৫ মিনিটে পৌঁছে যাবে' : 'Within 30-45 mins' ?></p>
+                        <p class="text-[10px] text-gray-400 font-medium leading-tight truncate">
+                            <?= $expressDeliveryEnabled 
+                                ? ($locale === 'bn' ? "{$expressDeliveryDisplay} পৌঁছে যাবে" : "Within {$expressDeliveryTime} mins") 
+                                : ($locale === 'bn' ? 'সরাসরি পৌঁছে যাবে আপনার ঠিকানায়' : 'Delivered to your address') ?>
+                        </p>
                     </div>
                 </div>
 
@@ -566,6 +586,30 @@ if (empty($bannerSubtitle)) {
                     <?php endforeach; ?>
                 </div>
             </div>
+
+            <!-- ACTIVE CATEGORY SELECTION HEADER (Shows at top above products when filtered) -->
+            <?php if ($isFiltered): ?>
+                <div class="mb-3.5 px-3.5 py-2.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between text-xs shadow-2xs">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+                        <span class="text-gray-500 font-medium shrink-0"><?= $locale === 'bn' ? 'সিলেক্টেড ক্যাটাগরি:' : 'Selected Category:' ?></span>
+                        <span class="font-bold text-emerald-950 truncate text-xs sm:text-sm">
+                            <?= htmlspecialchars($activeCat['name'] ?? ($bannerTitle ?? 'পণ্যসমূহ')) ?>
+                        </span>
+                        <?php if (!empty($activeSubCatName)): ?>
+                            <span class="text-gray-400 font-bold">›</span>
+                            <span class="font-bold text-emerald-800 truncate"><?= htmlspecialchars($activeSubCatName) ?></span>
+                        <?php endif; ?>
+                        <span class="text-[10px] font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                            <?= count($products) ?> <?= $locale === 'bn' ? 'টি পণ্য' : 'items' ?>
+                        </span>
+                    </div>
+                    <a href="<?= $base ?>/" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 shrink-0 ml-2 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors border border-red-200/60" title="<?= $locale === 'bn' ? 'সকল পণ্য দেখুন' : 'Show all' ?>">
+                        <span>✕</span>
+                        <span><?= $locale === 'bn' ? 'মুছুন' : 'Clear' ?></span>
+                    </a>
+                </div>
+            <?php endif; ?>
 
             <!-- 3. PRODUCT CARDS GRID (6 columns on Desktop, 2 columns on Mobile) -->
             <?php if (empty($products)): ?>

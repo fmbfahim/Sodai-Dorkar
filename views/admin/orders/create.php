@@ -110,6 +110,20 @@ function getPosProductVariants($product) {
             <div class="flex gap-2 sm:gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide select-none w-full min-w-0" id="categoryFilter">
                 <!-- Injected via JavaScript with circular category icons & drill-down -->
             </div>
+
+            <!-- Active Selected Category Header Bar (Always shown on top when a category is selected) -->
+            <div id="activeCategoryHeader" class="hidden px-2.5 py-1.5 rounded-xl bg-primary-50/90 border border-primary-200/90 items-center justify-between text-xs transition-all shadow-2xs">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2 h-2 rounded-full bg-primary-600 animate-pulse shrink-0"></span>
+                    <span class="text-secondary-500 font-medium shrink-0">ফিল্টার মেনু:</span>
+                    <span id="activeCategoryTitle" class="font-bold text-primary-800 truncate"></span>
+                    <span id="activeCategoryCount" class="text-[10px] font-bold bg-white text-primary-700 px-2 py-0.5 rounded-full border border-primary-200 shrink-0">0 টি পণ্য</span>
+                </div>
+                <button type="button" onclick="clearCategoryFilter()" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer shrink-0 ml-2 hover:bg-red-50 px-2 py-0.5 rounded-md transition-colors" title="সব পণ্য দেখুন">
+                    <ion-icon name="close-circle" class="text-sm"></ion-icon>
+                    <span>মুছুন</span>
+                </button>
+            </div>
         </div>
         
         <!-- Products Grid (2 columns on mobile, up to 5 on large screens) -->
@@ -362,6 +376,36 @@ function getPosProductVariants($product) {
                            class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
+
+            <!-- Coupon Code Field -->
+            <div class="flex justify-between items-center text-xs sm:text-sm">
+                <div class="flex items-center gap-1">
+                    <span class="text-secondary-600 font-medium">কুপন কোড</span>
+                    <span class="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-1 py-0.2 rounded border border-emerald-100">PROMO</span>
+                </div>
+                <div class="flex items-center gap-1 w-32 sm:w-36">
+                    <input type="text" id="orderCouponCode" placeholder="SODAI50" 
+                           class="w-full uppercase text-center px-1.5 py-1 text-xs font-mono font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                    <button type="button" onclick="applyPosCoupon()" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer shrink-0">Apply</button>
+                </div>
+            </div>
+
+            <!-- Express Delivery Toggle Option -->
+            <?php 
+                $expEnabled = ($settings['express_delivery_enabled'] ?? '0') == '1';
+                $expCharge = floatval($settings['express_delivery_charge'] ?? 60);
+                $expTime = $settings['express_delivery_time'] ?? '30';
+            ?>
+            <?php if ($expEnabled): ?>
+            <div class="flex justify-between items-center text-xs bg-orange-50/70 p-1.5 rounded-lg border border-orange-200/80">
+                <label for="posExpressCheck" class="flex items-center gap-1 text-orange-950 font-bold cursor-pointer select-none text-[10px] sm:text-[11px]">
+                    <span>⚡</span>
+                    <span>এক্সপ্রেস <?= htmlspecialchars($expTime) ?>-মি. (+৳<?= number_format($expCharge) ?>)</span>
+                </label>
+                <input type="checkbox" id="posExpressCheck" onchange="togglePosExpress(this)" 
+                       class="w-4 h-4 text-orange-600 rounded border-orange-300 focus:ring-orange-500 cursor-pointer">
+            </div>
+            <?php endif; ?>
 
             <!-- Delivery Charge Input -->
             <div class="flex justify-between items-center text-xs sm:text-sm">
@@ -686,16 +730,16 @@ function getPosProductVariants($product) {
             
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `cat-btn flex flex-col items-center gap-1 min-w-[52px] sm:min-w-[60px] group transition-all shrink-0 cursor-pointer ${isActive ? 'active opacity-100' : 'opacity-75 hover:opacity-100'}`;
+            btn.className = `cat-btn flex flex-col items-center gap-1 min-w-[54px] sm:min-w-[62px] group transition-all shrink-0 cursor-pointer ${isActive ? 'active opacity-100 scale-105' : 'opacity-75 hover:opacity-100'}`;
             
             btn.onclick = () => {
+                filterCatId = cat.id;
                 if (hasSub) {
                     renderCategories(cat.id);
                 } else {
-                    filterCatId = cat.id;
                     renderCategories(parentId);
-                    applyProductFilters();
                 }
+                applyProductFilters();
             };
 
             const imgHtml = cat.image_path 
@@ -703,15 +747,22 @@ function getPosProductVariants($product) {
                 : `<span class="text-sm sm:text-base font-bold text-secondary-400 uppercase">${cat.name.charAt(0)}</span>`;
 
             btn.innerHTML = `
-                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary-50 border border-secondary-200 overflow-hidden flex items-center justify-center shadow-2xs transition-all group-hover:border-primary-500 group-hover:shadow-md ${isActive ? 'ring-2 ring-primary-600 ring-offset-2 border-primary-600 bg-primary-50/50' : ''}">
+                <div class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex items-center justify-center shadow-2xs transition-all ${isActive ? 'ring-3 ring-primary-600 ring-offset-2 border-2 border-primary-600 bg-primary-100/90 shadow-md' : 'bg-secondary-50 border border-secondary-200 group-hover:border-primary-500 group-hover:shadow-sm'}">
                     ${imgHtml}
+                    ${isActive ? `<span class="absolute top-0 right-0 w-3 h-3 bg-primary-600 text-white rounded-full flex items-center justify-center text-[7px] font-black shadow-xs">✓</span>` : ''}
                 </div>
-                <span class="text-[9px] sm:text-[10px] font-semibold ${isActive ? 'text-primary-600 font-bold' : 'text-secondary-600'} text-center leading-tight max-w-[56px] sm:max-w-[64px] truncate group-hover:text-primary-600" title="${cat.name}">
+                <span class="text-[9px] sm:text-[10px] ${isActive ? 'text-primary-700 font-black' : 'text-secondary-600 font-semibold'} text-center leading-tight max-w-[56px] sm:max-w-[64px] truncate group-hover:text-primary-600" title="${cat.name}">
                     ${cat.name} ${hasSub ? '›' : ''}
                 </span>
             `;
             container.appendChild(btn);
         });
+
+        // Auto-scroll active item into view
+        const activeBtn = container.querySelector('.cat-btn.active');
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
     }
 
     // Initialize Categories on Load
@@ -724,6 +775,12 @@ function getPosProductVariants($product) {
 
     function clearSearch() {
         document.getElementById('productSearch').value = '';
+        filterCatId = 'all';
+        renderCategories(null);
+        applyProductFilters();
+    }
+
+    function clearCategoryFilter() {
         filterCatId = 'all';
         renderCategories(null);
         applyProductFilters();
@@ -753,6 +810,25 @@ function getPosProductVariants($product) {
                 card.style.display = 'none';
             }
         });
+
+        // Update active category indicator banner at top
+        const activeHeader = document.getElementById('activeCategoryHeader');
+        const activeTitle = document.getElementById('activeCategoryTitle');
+        const activeCount = document.getElementById('activeCategoryCount');
+
+        if (activeHeader) {
+            if (filterCatId !== 'all') {
+                const activeCatObj = allCategories.find(c => c.id == filterCatId);
+                const catName = activeCatObj ? activeCatObj.name : 'ক্যাটাগরি #' + filterCatId;
+                if (activeTitle) activeTitle.innerText = catName;
+                if (activeCount) activeCount.innerText = visibleCount + ' টি পণ্য';
+                activeHeader.classList.remove('hidden');
+                activeHeader.classList.add('flex');
+            } else {
+                activeHeader.classList.add('hidden');
+                activeHeader.classList.remove('flex');
+            }
+        }
 
         const noRes = document.getElementById('noResults');
         if (visibleCount === 0) {
@@ -1025,6 +1101,50 @@ function getPosProductVariants($product) {
         
         const total = Math.max(0, subtotal - discount + delivery);
         document.getElementById('cartTotal').innerText = '৳ ' + total.toFixed(2);
+    }
+
+    const posExpressFee = <?= floatval($settings['express_delivery_charge'] ?? 60) ?>;
+    let isPosExpressActive = false;
+
+    function togglePosExpress(cb) {
+        isPosExpressActive = cb.checked;
+        const delivInput = document.getElementById('deliveryCharge');
+        let currentDeliv = parseFloat(delivInput.value) || 0;
+        if (isPosExpressActive) {
+            delivInput.value = currentDeliv + posExpressFee;
+        } else {
+            delivInput.value = Math.max(0, currentDeliv - posExpressFee);
+        }
+        calculateTotal();
+    }
+
+    async function applyPosCoupon() {
+        const codeInput = document.getElementById('orderCouponCode');
+        const code = (codeInput ? codeInput.value : '').trim().toUpperCase();
+        if (!code) {
+            alert('কুপন কোড লিখুন (যেমন: SODAI50)');
+            return;
+        }
+        const subText = document.getElementById('cartSubtotal').innerText.replace(/[^\d.-]/g, '');
+        const subtotal = parseFloat(subText) || 0;
+
+        try {
+            const res = await fetch(`${baseUrl}/api/apply-coupon`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code: code, subtotal: subtotal })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('orderDiscount').value = data.discount;
+                calculateTotal();
+                alert(data.message);
+            } else {
+                alert(data.message);
+            }
+        } catch(e) {
+            alert('কুপন যাচাই করতে সমস্যা হয়েছে');
+        }
     }
 
     // Live Customer Search

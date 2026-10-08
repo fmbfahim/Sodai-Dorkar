@@ -12,6 +12,104 @@ $roleTitles = [
 ];
 $displayRole = $roleTitles[$currentRole] ?? ucfirst($currentRole);
 $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_title', 'Fresh E mart') : 'Fresh E mart';
+
+// Current active menu detection
+$reqUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$currentPath = $reqUri;
+if (!empty($base) && strpos($currentPath, $base) === 0) {
+    $currentPath = substr($currentPath, strlen($base));
+}
+$currentPath = '/' . ltrim($currentPath, '/');
+$currentPath = rtrim($currentPath, '/') ?: '/';
+
+$isMenuActive = function($path, $exact = false) use ($currentPath) {
+    if ($exact) {
+        return $currentPath === $path;
+    }
+    return $currentPath === $path || strpos($currentPath, $path . '/') === 0;
+};
+
+// Top Header Active Menu Badge Label
+$activeNavLabel = 'Dashboard';
+if ($isMenuActive('/admin/orders/create', true)) {
+    $activeNavLabel = 'New Order (POS)';
+} elseif ($isMenuActive('/admin/orders/incomplete', true)) {
+    $activeNavLabel = 'Incomplete Orders';
+} elseif ($isMenuActive('/admin/orders/packaging', true)) {
+    $activeNavLabel = 'Packaging List';
+} elseif ($isMenuActive('/admin/orders/returns', true)) {
+    $activeNavLabel = 'Returns & Damages';
+} elseif ($isMenuActive('/admin/orders', true)) {
+    $activeNavLabel = 'Orders (অর্ডার)';
+} elseif ($isMenuActive('/admin/products/dashboard', true)) {
+    $activeNavLabel = 'Product Dashboard';
+} elseif ($isMenuActive('/admin/products/bulk-import', true)) {
+    $activeNavLabel = 'Bulk Import';
+} elseif ($isMenuActive('/admin/products/image-finder', true)) {
+    $activeNavLabel = 'Auto Image Finder';
+} elseif ($isMenuActive('/admin/products/shwapno-importer', true)) {
+    $activeNavLabel = 'Shwapno Scraper';
+} elseif ($isMenuActive('/admin/products/verification', true)) {
+    $activeNavLabel = 'Verification';
+} elseif ($isMenuActive('/admin/products/availability', true)) {
+    $activeNavLabel = 'Availability';
+} elseif ($isMenuActive('/admin/products/procurement', true)) {
+    $activeNavLabel = 'Procurement List';
+} elseif ($isMenuActive('/admin/products', false)) {
+    $activeNavLabel = 'Products (পণ্যসমূহ)';
+} elseif ($isMenuActive('/admin/categories', false)) {
+    $activeNavLabel = 'Categories (ক্যাটাগরি)';
+} elseif ($isMenuActive('/admin/brands', false)) {
+    $activeNavLabel = 'Brands (ব্র্যান্ড)';
+} elseif ($isMenuActive('/admin/warehouses', false)) {
+    $activeNavLabel = 'Warehouses';
+} elseif ($isMenuActive('/admin/areas', false)) {
+    $activeNavLabel = 'Unions (Areas)';
+} elseif ($isMenuActive('/admin/zones', false)) {
+    $activeNavLabel = 'Zones';
+} elseif ($isMenuActive('/admin/points', false)) {
+    $activeNavLabel = 'Points';
+} elseif ($isMenuActive('/admin/vendors', false)) {
+    $activeNavLabel = 'Suppliers';
+} elseif ($isMenuActive('/admin/purchases', false)) {
+    $activeNavLabel = 'Stock In (Purchases)';
+} elseif ($isMenuActive('/admin/customers', false)) {
+    $activeNavLabel = 'Customers';
+} elseif ($isMenuActive('/admin/delivery-men', false)) {
+    $activeNavLabel = 'Delivery Riders';
+} elseif ($isMenuActive('/admin/dispatch', false)) {
+    $activeNavLabel = 'Dispatch Board';
+} elseif ($isMenuActive('/admin/reports/visitors', true)) {
+    $activeNavLabel = 'Visitor Report';
+} elseif ($isMenuActive('/admin/reports/sales', true)) {
+    $activeNavLabel = 'Sales Report';
+} elseif ($isMenuActive('/admin/reports/stock', true)) {
+    $activeNavLabel = 'Stock Alert';
+} elseif ($isMenuActive('/admin/accounts', false)) {
+    $activeNavLabel = 'Accounts Ledger';
+} elseif ($isMenuActive('/admin/hr', false) || $isMenuActive('/admin/payroll', false)) {
+    $activeNavLabel = 'HR & Payroll';
+} elseif ($isMenuActive('/admin/users', false)) {
+    $activeNavLabel = 'User Access Control';
+} elseif ($isMenuActive('/admin/ecommerce-settings', false)) {
+    $activeNavLabel = 'E-Commerce Config';
+} elseif ($isMenuActive('/admin/settings', false)) {
+    $activeNavLabel = 'Settings';
+} elseif ($isMenuActive('/admin/profile', false)) {
+    $activeNavLabel = 'Profile';
+}
+
+$navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActive) {
+    $active = $isMenuActive($path, $exact);
+    if ($isSub) {
+        return $active 
+            ? 'flex items-center px-4 py-1.5 text-xs rounded-xl bg-primary-100 text-primary-800 font-bold border-l-4 border-primary-600 pl-7 transition-colors group shadow-2xs' 
+            : 'flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8 font-medium';
+    }
+    return $active
+        ? 'flex items-center px-4 py-2 rounded-xl bg-primary-50 text-primary-700 font-bold border-l-4 border-primary-600 shadow-2xs transition-colors group text-sm'
+        : 'flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm font-medium';
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,9 +151,9 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
             <ul class="space-y-1 px-3">
                 <?php if (\Core\Auth::can('dashboard')): ?>
                 <li>
-                    <a href="<?= $base ?>/admin/dashboard" class="flex items-center px-4 py-2.5 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group">
+                    <a href="<?= $base ?>/admin/dashboard" class="<?= $isMenuActive('/admin/dashboard', true) ? 'flex items-center px-4 py-2.5 rounded-xl bg-primary-50 text-primary-700 font-bold border-l-4 border-primary-600 shadow-2xs transition-colors group text-sm' : 'flex items-center px-4 py-2.5 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm font-medium' ?>">
                         <ion-icon name="grid-outline" class="text-xl mr-3 group-hover:text-primary-600"></ion-icon>
-                        <span class="font-medium text-sm">Dashboard</span>
+                        <span class="font-medium">Dashboard</span>
                     </a>
                 </li>
                 <?php endif; ?>
@@ -66,25 +164,25 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                     
                     <?php if (\Core\Auth::can('locations')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/warehouses" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/warehouses" class="<?= $navItemClass('/admin/warehouses', false) ?>">
                                 <ion-icon name="business-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Warehouses</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/areas" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/areas" class="<?= $navItemClass('/admin/areas', false) ?>">
                                 <ion-icon name="map-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Unions (Areas)</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/zones" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8 text-sm">
+                            <a href="<?= $base ?>/admin/zones" class="<?= $navItemClass('/admin/zones', false, true) ?>">
                                 <ion-icon name="navigate-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Zones</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/points" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8 text-sm">
+                            <a href="<?= $base ?>/admin/points" class="<?= $navItemClass('/admin/points', false, true) ?>">
                                 <ion-icon name="location-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Points</span>
                             </a>
@@ -93,13 +191,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('vendors_purchases')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/vendors" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/vendors" class="<?= $navItemClass('/admin/vendors', false) ?>">
                                 <ion-icon name="storefront-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Suppliers</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/purchases" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/purchases" class="<?= $navItemClass('/admin/purchases', false) ?>">
                                 <ion-icon name="receipt-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Stock In (Purchases)</span>
                             </a>
@@ -108,25 +206,25 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('products')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/products/dashboard" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/products/dashboard" class="<?= $navItemClass('/admin/products/dashboard', true) ?>">
                                 <ion-icon name="grid-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Product Dashboard</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/products" class="<?= $navItemClass('/admin/products', true) ?>">
                                 <ion-icon name="cube-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">All Products</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products/bulk-import" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/bulk-import" class="<?= $navItemClass('/admin/products/bulk-import', true, true) ?>">
                                 <ion-icon name="cloud-upload-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Bulk Import (CSV)</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products/image-finder" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/image-finder" class="<?= $navItemClass('/admin/products/image-finder', true, true) ?> justify-between">
                                 <div class="flex items-center">
                                     <ion-icon name="sparkles-outline" class="text-base mr-3 text-amber-500 group-hover:text-emerald-600"></ion-icon>
                                     <span class="font-medium">Auto Image Finder</span>
@@ -135,7 +233,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products/shwapno-importer" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-teal-50 hover:text-teal-700 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/shwapno-importer" class="<?= $navItemClass('/admin/products/shwapno-importer', true, true) ?> justify-between">
                                 <div class="flex items-center">
                                     <ion-icon name="cloud-download-outline" class="text-base mr-3 text-teal-600 group-hover:text-teal-700"></ion-icon>
                                     <span class="font-medium">Shwapno Scraper</span>
@@ -145,19 +243,19 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                         </li>
 
                         <li>
-                            <a href="<?= $base ?>/admin/products/verification" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/verification" class="<?= $navItemClass('/admin/products/verification', true, true) ?>">
                                 <ion-icon name="checkmark-done-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Verification</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products/availability" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/availability" class="<?= $navItemClass('/admin/products/availability', true, true) ?>">
                                 <ion-icon name="flash-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Availability</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/products/procurement" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/products/procurement" class="<?= $navItemClass('/admin/products/procurement', true, true) ?>">
                                 <ion-icon name="cart-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Procurement List</span>
                             </a>
@@ -166,13 +264,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('categories_brands')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/categories" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/categories" class="<?= $navItemClass('/admin/categories', false) ?>">
                                 <ion-icon name="folder-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Categories</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/brands" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/brands" class="<?= $navItemClass('/admin/brands', false) ?>">
                                 <ion-icon name="pricetag-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Brands</span>
                             </a>
@@ -186,7 +284,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('customers')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/customers" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/customers" class="<?= $navItemClass('/admin/customers', false) ?>">
                                 <ion-icon name="people-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Customers</span>
                             </a>
@@ -195,13 +293,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('delivery_men')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/delivery-men" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/delivery-men" class="<?= $navItemClass('/admin/delivery-men', false) ?>">
                                 <ion-icon name="bicycle-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Delivery Men</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/delivery-men/allocation" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/delivery-men/allocation" class="<?= $navItemClass('/admin/delivery-men/allocation', true, true) ?>">
                                 <ion-icon name="calendar-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Area Allocations</span>
                             </a>
@@ -210,13 +308,19 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('orders')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/orders" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/orders" class="<?= $navItemClass('/admin/orders', true) ?>">
                                 <ion-icon name="cart-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Orders</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/orders/incomplete" class="flex items-center justify-between px-4 py-1.5 text-xs rounded-xl text-amber-700 hover:bg-amber-50 hover:text-amber-800 transition-colors group pl-8 font-semibold">
+                            <a href="<?= $base ?>/admin/orders/create" class="<?= $navItemClass('/admin/orders/create', true, true) ?> font-semibold text-primary-700">
+                                <ion-icon name="add-circle-outline" class="text-base mr-3 text-primary-600"></ion-icon>
+                                <span>New Order (নতুন অর্ডার)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="<?= $base ?>/admin/orders/incomplete" class="<?= $navItemClass('/admin/orders/incomplete', true, true) ?> justify-between text-amber-700 font-semibold">
                                 <div class="flex items-center">
                                     <ion-icon name="alert-circle-outline" class="text-base mr-3 text-amber-500"></ion-icon>
                                     <span>Incomplete Orders</span>
@@ -225,13 +329,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/orders/packaging" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/orders/packaging" class="<?= $navItemClass('/admin/orders/packaging', true, true) ?>">
                                 <ion-icon name="cube-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Packaging List</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/orders/returns" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/orders/returns" class="<?= $navItemClass('/admin/orders/returns', true, true) ?>">
                                 <ion-icon name="sync-circle-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Returns & Damages</span>
                             </a>
@@ -240,7 +344,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('dispatch')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/dispatch" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/dispatch" class="<?= $navItemClass('/admin/dispatch', false) ?>">
                                 <ion-icon name="paper-plane-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Dispatch Board</span>
                             </a>
@@ -252,7 +356,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                 <?php if (\Core\Auth::can('reports')): ?>
                     <li class="px-4 pt-4 pb-2 text-[11px] font-bold text-secondary-400 uppercase tracking-wider">Reports & Analytics</li>
                     <li>
-                        <a href="<?= $base ?>/admin/reports/visitors" class="flex items-center justify-between px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                        <a href="<?= $base ?>/admin/reports/visitors" class="<?= $navItemClass('/admin/reports/visitors', true) ?> justify-between">
                             <div class="flex items-center">
                                 <ion-icon name="analytics-outline" class="text-lg mr-3 text-emerald-600"></ion-icon>
                                 <span class="font-medium">Visitor Report</span>
@@ -261,19 +365,19 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                         </a>
                     </li>
                     <li>
-                        <a href="<?= $base ?>/admin/reports/sales" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                        <a href="<?= $base ?>/admin/reports/sales" class="<?= $navItemClass('/admin/reports/sales', true) ?>">
                             <ion-icon name="bar-chart-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                             <span class="font-medium">Sales Report</span>
                         </a>
                     </li>
                     <li>
-                        <a href="<?= $base ?>/admin/reports/stock" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                        <a href="<?= $base ?>/admin/reports/stock" class="<?= $navItemClass('/admin/reports/stock', true) ?>">
                             <ion-icon name="alert-circle-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                             <span class="font-medium">Stock Alert</span>
                         </a>
                     </li>
                     <li>
-                        <a href="<?= $base ?>/admin/accounts" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                        <a href="<?= $base ?>/admin/accounts" class="<?= $navItemClass('/admin/accounts', false) ?>">
                             <ion-icon name="wallet-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                             <span class="font-medium">Accounts Ledger</span>
                         </a>
@@ -286,25 +390,25 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                     
                     <?php if (\Core\Auth::can('hr')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/hr/employees" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/hr/employees" class="<?= $navItemClass('/admin/hr/employees', false) ?>">
                                 <ion-icon name="people-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Employees</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/hr/attendance" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/hr/attendance" class="<?= $navItemClass('/admin/hr/attendance', true, true) ?>">
                                 <ion-icon name="calendar-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Daily Attendance</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/hr/leaves" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/hr/leaves" class="<?= $navItemClass('/admin/hr/leaves', true, true) ?>">
                                 <ion-icon name="airplane-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Leave Requests</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/hr/departments" class="flex items-center px-4 py-1.5 text-xs rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group pl-8">
+                            <a href="<?= $base ?>/admin/hr/departments" class="<?= $navItemClass('/admin/hr/departments', true, true) ?>">
                                 <ion-icon name="business-outline" class="text-base mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Departments</span>
                             </a>
@@ -313,7 +417,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('payroll')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/payroll" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/payroll" class="<?= $navItemClass('/admin/payroll', false) ?>">
                                 <ion-icon name="wallet-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Payroll & Salary</span>
                             </a>
@@ -327,7 +431,7 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                     
                     <?php if (\Core\Auth::can('users')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/users" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-primary-50 hover:text-primary-600 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/users" class="<?= $navItemClass('/admin/users', false) ?>">
                                 <ion-icon name="shield-checkmark-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">User Access Control</span>
                             </a>
@@ -336,13 +440,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
 
                     <?php if (\Core\Auth::can('settings')): ?>
                         <li>
-                            <a href="<?= $base ?>/admin/ecommerce-settings" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/ecommerce-settings" class="<?= $navItemClass('/admin/ecommerce-settings', false) ?>">
                                 <ion-icon name="storefront-outline" class="text-lg mr-3 group-hover:text-emerald-600"></ion-icon>
                                 <span class="font-medium">E-Commerce Config</span>
                             </a>
                         </li>
                         <li>
-                            <a href="<?= $base ?>/admin/ecommerce-settings?tab=marketing" class="flex items-center px-4 py-2 rounded-xl text-secondary-600 hover:bg-blue-50 hover:text-blue-700 transition-colors group text-sm">
+                            <a href="<?= $base ?>/admin/ecommerce-settings?tab=marketing" class="<?= $navItemClass('/admin/ecommerce-settings?tab=marketing', false) ?>">
                                 <ion-icon name="megaphone-outline" class="text-lg mr-3 group-hover:text-blue-600"></ion-icon>
                                 <span class="font-medium">মার্কেটিং ও ট্র্যাকিং</span>
                             </a>
@@ -353,12 +457,12 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
         </nav>
 
         <div class="p-4 border-t border-secondary-100 space-y-1 bg-white">
-            <a href="<?= $base ?>/admin/profile" class="flex items-center px-3 py-2 rounded-xl text-secondary-600 hover:bg-secondary-50 transition-colors text-sm font-medium">
+            <a href="<?= $base ?>/admin/profile" class="<?= $navItemClass('/admin/profile', false) ?>">
                 <ion-icon name="person-circle-outline" class="text-lg mr-2.5"></ion-icon>
                 <span>Profile</span>
             </a>
             <?php if (\Core\Auth::can('settings')): ?>
-                <a href="<?= $base ?>/admin/settings" class="flex items-center px-3 py-2 rounded-xl text-secondary-600 hover:bg-secondary-50 transition-colors text-sm font-medium">
+                <a href="<?= $base ?>/admin/settings" class="<?= $navItemClass('/admin/settings', true) ?>">
                     <ion-icon name="settings-outline" class="text-lg mr-2.5"></ion-icon>
                     <span>Settings</span>
                 </a>
@@ -378,7 +482,13 @@ $adminSiteTitle = class_exists('\Models\Setting') ? \Models\Setting::getValue('s
                     <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
                 </button>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-secondary-800"><?php echo $title ?? 'Dashboard'; ?></h1>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-xl md:text-2xl font-bold text-secondary-800"><?php echo $title ?? 'Dashboard'; ?></h1>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold border border-primary-200 shadow-2xs">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary-600 animate-pulse"></span>
+                            <span><?= htmlspecialchars($activeNavLabel) ?></span>
+                        </span>
+                    </div>
                     <p class="text-secondary-500 text-xs mt-0.5 hidden md:block">Logged in as <strong class="text-secondary-800"><?= htmlspecialchars($currentUserName) ?></strong> (<?= htmlspecialchars($displayRole) ?>)</p>
                 </div>
             </div>
