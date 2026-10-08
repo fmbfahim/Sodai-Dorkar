@@ -113,7 +113,7 @@ function getPosProductVariants($product) {
         </div>
         
         <!-- Products Grid (2 columns on mobile, up to 6 on big screens) -->
-        <div class="flex-1 min-w-0 overflow-y-auto p-2 sm:p-3 bg-secondary-50/70 pb-16 lg:pb-3">
+        <div class="flex-1 min-w-0 overflow-y-auto p-2 sm:p-3 bg-secondary-50/70 pb-28 lg:pb-4">
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-2.5" id="productsGrid">
                 <?php if (!empty($products)): foreach ($products as $p): ?>
                     <?php 
@@ -125,6 +125,7 @@ function getPosProductVariants($product) {
                         $stockClean = (floor($stockNum) == $stockNum) ? intval($stockNum) : rtrim(rtrim(number_format($stockNum, 3), '0'), '.');
                         $isOutOfStock = ($stockNum <= 0 || ($p['availability_status'] ?? '') === 'out_of_stock');
                         $baseUnit = $p['base_unit'] ?? 'pcs';
+                        $posImg = !empty($p['image_path']) ? htmlspecialchars($p['image_path']) : $base . '/images/default-product.svg';
                     ?>
                     <div class="pos-product-card bg-white p-2 sm:p-2.5 rounded-2xl shadow-xs border <?= $isOutOfStock ? 'border-red-200 hover:border-red-400' : 'border-secondary-200 hover:border-primary-500' ?> hover:shadow-md transition-all flex flex-col h-full group relative min-w-0"
                          data-product-id="<?= $p['id'] ?>"
@@ -137,7 +138,8 @@ function getPosProductVariants($product) {
                          data-regular-price="<?= floatval($p['regular_price'] ?? 0) ?>"
                          data-active-variant-title="<?= htmlspecialchars($vInfo['default_title']) ?>"
                          data-active-variant-price="<?= $vInfo['default_price'] ?>"
-                         data-active-variant-qty="<?= $vInfo['default_qty'] ?>">
+                         data-active-variant-qty="<?= $vInfo['default_qty'] ?>"
+                         data-image="<?= $posImg ?>">
                          
                         <!-- Top Badges -->
                         <div class="flex items-center justify-between gap-1 mb-1 sm:mb-1.5">
@@ -235,42 +237,26 @@ function getPosProductVariants($product) {
                 </div>
             </div>
         </div>
-
-        <!-- Mobile Floating Sticky Cart Bar (visible when items in cart and on mobile products tab) -->
-        <div id="mobileFloatingCartBar" 
-             onclick="switchToMobileTab('cart')" 
-             class="pos-mobile-bar hidden fixed sm:absolute bottom-3 left-3 right-3 z-30 bg-secondary-900/95 backdrop-blur-md text-white p-2.5 sm:p-3 rounded-2xl shadow-2xl items-center justify-between cursor-pointer border border-secondary-700/60 transition-all hover:bg-secondary-900 animate-bounce-subtle">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-xl bg-primary-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs" id="mobileFloatCount">0</div>
-                <div class="min-w-0">
-                    <div class="text-[10px] text-secondary-300 font-medium">কার্ট আইটেম ও মোট</div>
-                    <div class="text-xs sm:text-sm font-black text-white" id="mobileFloatTotal">৳ 0.00</div>
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5 text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white px-3.5 py-1.5 sm:py-2 rounded-xl shrink-0 transition-colors shadow-xs">
-                <span>কার্ট ও চেকআউট</span>
-                <ion-icon name="arrow-forward-outline" class="text-sm"></ion-icon>
-            </div>
-        </div>
     </div>
 
     <!-- RIGHT PANEL: POS Cart & Checkout Details -->
-    <div id="posCartPanel" class="pos-panel-inactive w-full lg:w-80 xl:w-96 lg:min-w-[310px] lg:max-w-[380px] flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 h-full overflow-hidden shrink-0">
-        
-        <!-- Mobile Back Header -->
-        <div class="pos-mobile-bar flex lg:hidden items-center justify-between px-3 py-2 bg-secondary-50 border-b border-secondary-200 shrink-0">
-            <button type="button" onclick="switchToMobileTab('products')" class="text-xs font-bold text-primary-700 hover:text-primary-800 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-secondary-200 shadow-2xs cursor-pointer active:scale-95 transition-all">
+          <!-- Mobile Back Header -->
+        <div class="pos-mobile-bar flex lg:hidden items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-xs shrink-0">
+            <button type="button" onclick="switchToMobileTab('products')" class="text-xs font-bold text-white hover:text-white/90 flex items-center gap-1.5 bg-white/15 active:bg-white/25 px-3 py-1.5 rounded-xl backdrop-blur-xs transition-all cursor-pointer">
                 <ion-icon name="arrow-back-outline" class="text-base"></ion-icon>
-                <span>← পণ্য তালিকা (আরও যোগ করুন)</span>
+                <span>← পণ্য তালিকা</span>
             </button>
-            <span class="text-xs font-black text-secondary-500 uppercase tracking-wider">POS Cart</span>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-black tracking-wide">অর্ডার কার্ট</span>
+                <span id="mobileCartHeaderCount" class="px-2 py-0.5 text-[10px] font-black rounded-full bg-white text-primary-700 shadow-2xs">0 আইটেম</span>
+            </div>
         </div>
 
         <!-- Customer Selection Box -->
         <div class="p-2.5 sm:p-3.5 border-b border-secondary-100 bg-secondary-50/80 shrink-0">
             <div class="flex justify-between items-center mb-1.5">
                 <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider">Customer</label>
-                <button type="button" onclick="openQuickCustomerModal()" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                <button type="button" onclick="openQuickCustomerModal()" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 cursor-pointer">
                     <ion-icon name="person-add-outline"></ion-icon> + New Customer
                 </button>
             </div>
@@ -285,28 +271,18 @@ function getPosProductVariants($product) {
             </div>
             
             <!-- Selected Customer Display Card -->
-            <div id="selectedCustomerDisplay" class="hidden bg-white border border-emerald-300 bg-emerald-50/40 p-0 rounded-xl mt-1 relative overflow-hidden shadow-xs">
-                <div class="flex flex-col sm:flex-row">
-                    <div class="p-2.5 sm:p-3 flex-1 min-w-0">
+            <div id="selectedCustomerDisplay" class="hidden bg-white border border-emerald-300 bg-emerald-50/40 p-2 sm:p-2.5 rounded-xl mt-1.5 relative overflow-hidden shadow-xs">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
                         <div class="font-bold text-secondary-900 text-xs sm:text-sm truncate" id="dispName"></div>
-                        <div class="text-xs text-secondary-500 font-mono mt-0.5 truncate" id="dispPhone"></div>
-                        <div class="flex gap-2 mt-2">
-                             <span class="text-[9px] sm:text-[10px] text-emerald-700 font-bold px-1.5 py-0.5 bg-emerald-100 rounded border border-emerald-200">SELECTED</span>
-                             <button type="button" onclick="clearCustomer()" class="text-[9px] sm:text-[10px] text-red-600 font-bold px-2 py-0.5 bg-white border border-red-200 rounded hover:bg-red-50 transition-colors">CHANGE</button>
-                        </div>
+                        <div class="text-[11px] text-secondary-500 font-mono truncate" id="dispPhone"></div>
                     </div>
-                    
-                    <!-- Stats Area -->
-                    <div class="w-full sm:w-24 bg-white border-t sm:border-t-0 sm:border-l border-emerald-100 p-2 flex flex-row sm:flex-col justify-around sm:justify-center items-center gap-1">
-                         <div class="flex flex-col items-center">
-                             <span class="text-[8px] sm:text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Success</span>
-                             <span class="text-sm sm:text-base font-black text-emerald-600 leading-none" id="statRatio">-%</span>
-                         </div>
-                         <div class="hidden sm:block w-full h-px bg-secondary-100 my-0.5"></div>
-                         <div class="flex flex-col items-center">
-                             <span class="text-[8px] sm:text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Orders</span>
-                             <span class="text-xs font-bold text-secondary-700 leading-none" id="statOrders">-</span>
-                         </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <div class="flex flex-col items-end mr-1">
+                             <span class="text-[9px] text-secondary-400 font-bold uppercase">Success</span>
+                             <span class="text-xs font-black text-emerald-600 leading-none" id="statRatio">-%</span>
+                        </div>
+                        <button type="button" onclick="clearCustomer()" class="text-[9px] sm:text-[10px] text-red-600 font-bold px-2 py-0.5 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors cursor-pointer">CHANGE</button>
                     </div>
                 </div>
             </div>
@@ -321,25 +297,31 @@ function getPosProductVariants($product) {
             </div>
         </div>
 
-        <!-- Cart Items List -->
+        <!-- Cart Items List Container -->
         <div class="flex-1 overflow-y-auto p-0 min-w-0">
-            <table class="w-full text-left text-xs sm:text-sm">
-                <thead class="bg-secondary-50 text-secondary-500 sticky top-0 z-10 shadow-2xs border-b border-secondary-100 bg-white">
-                    <tr>
-                        <th class="px-2.5 sm:px-3 py-2 text-xs font-bold">Item & Unit</th>
-                        <th class="px-1 sm:px-2 py-2 text-center w-20 sm:w-24 text-xs font-bold">Qty</th>
-                        <th class="px-1.5 sm:px-2 py-2 text-right w-16 sm:w-20 text-xs font-bold">Price</th>
-                        <th class="px-1 py-2 w-7 sm:w-8"></th>
-                    </tr>
-                </thead>
-                <tbody id="cartItems" class="divide-y divide-secondary-100"></tbody>
-            </table>
+            <div class="px-3.5 py-2 bg-secondary-50 border-b border-secondary-100 flex items-center justify-between text-xs font-bold text-secondary-600 sticky top-0 z-10 bg-white/95 backdrop-blur-xs">
+                <div class="flex items-center gap-1.5">
+                    <ion-icon name="cart-outline" class="text-sm text-primary-600"></ion-icon>
+                    <span>কার্ট আইটেম</span>
+                    <span id="cartHeaderBadge" class="ml-1 px-1.5 py-0.2 rounded-full bg-primary-100 text-primary-700 font-bold text-[10px]">0</span>
+                </div>
+                <button type="button" onclick="clearEntireCart()" class="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer transition-colors" title="কার্ট খালি করুন">
+                    <ion-icon name="trash-outline"></ion-icon>
+                    <span>খালি করুন</span>
+                </button>
+            </div>
             
-            <div id="emptyCartMsg" class="text-center text-secondary-400 py-10 sm:py-12 text-xs sm:text-sm italic flex flex-col items-center">
-                <ion-icon name="cart-outline" class="text-4xl mb-2 opacity-25"></ion-icon>
-                <span>Cart is empty! Add products to cart</span>
-                <button type="button" onclick="switchToMobileTab('products')" class="lg:hidden mt-3 px-3.5 py-1.5 bg-primary-50 text-primary-700 font-bold text-xs rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors">
-                    🛍️ পণ্য ব্রাউজ করুন
+            <div id="cartItems" class="divide-y divide-secondary-100 min-w-0"></div>
+            
+            <div id="emptyCartMsg" class="text-center text-secondary-400 py-10 sm:py-14 px-4 text-xs sm:text-sm italic flex flex-col items-center">
+                <div class="w-14 h-14 rounded-2xl bg-secondary-100 flex items-center justify-center mb-2.5 text-secondary-400">
+                    <ion-icon name="cart-outline" class="text-3xl opacity-50"></ion-icon>
+                </div>
+                <span class="font-bold text-secondary-700 text-sm not-italic">কার্ট বর্তমানে খালি!</span>
+                <span class="text-xs text-secondary-400 mt-0.5 not-italic">পণ্য তালিকা থেকে আইটেম যোগ করুন</span>
+                <button type="button" onclick="switchToMobileTab('products')" class="lg:hidden mt-3.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <ion-icon name="grid-outline" class="text-base"></ion-icon>
+                    <span>🛍️ পণ্য ব্রাউজ করুন</span>
                 </button>
             </div>
         </div>
@@ -348,8 +330,8 @@ function getPosProductVariants($product) {
         <div class="p-2.5 sm:p-3.5 border-t border-secondary-100 bg-secondary-50/90 shrink-0 space-y-1.5 sm:space-y-2">
             <!-- Subtotal -->
             <div class="flex justify-between items-center text-xs sm:text-sm">
-                <span class="text-secondary-600 font-medium">Subtotal</span>
-                <span class="font-bold text-secondary-800" id="cartSubtotal">৳ 0.00</span>
+                <span class="text-secondary-600 font-semibold">Subtotal</span>
+                <span class="font-bold text-secondary-900 text-sm" id="cartSubtotal">৳ 0.00</span>
             </div>
 
             <!-- Counter Discount Field -->
@@ -358,26 +340,29 @@ function getPosProductVariants($product) {
                     <span class="text-secondary-600 font-medium">Counter Discount</span>
                     <span class="text-[9px] text-red-500 font-bold bg-red-50 px-1 py-0.2 rounded border border-red-100">DISCOUNT</span>
                 </div>
-                <div class="flex items-center w-20 sm:w-24">
+                <div class="flex items-center w-22 sm:w-24">
                     <span class="text-secondary-500 mr-1 text-xs">৳</span>
                     <input type="number" id="orderDiscount" value="0" min="0" oninput="calculateTotal()" 
-                           class="w-full text-right px-1.5 sm:px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
 
             <!-- Delivery Charge Input -->
             <div class="flex justify-between items-center text-xs sm:text-sm">
-                <span class="text-secondary-600 font-medium">Delivery Charge</span>
-                <div class="flex items-center w-20 sm:w-24">
+                <div>
+                    <span class="text-secondary-600 font-medium">Delivery Charge</span>
+                    <span class="text-[10px] text-secondary-400 block sm:inline sm:ml-1">(৳ 5000+ ফ্রি)</span>
+                </div>
+                <div class="flex items-center w-22 sm:w-24">
                     <span class="text-secondary-500 mr-1 text-xs">৳</span>
                     <input type="number" id="deliveryCharge" value="0" min="0" oninput="calculateTotal()" 
-                           class="w-full text-right px-1.5 sm:px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
 
             <!-- Mark Delivered Checkbox (for Counter Sales) -->
             <div class="pt-1.5 border-t border-secondary-200/80">
-                <label class="flex items-center gap-2 cursor-pointer select-none text-[11px] sm:text-xs font-semibold text-secondary-700">
+                <label class="flex items-center gap-2 cursor-pointer select-none text-[11px] sm:text-xs font-semibold text-secondary-700 bg-white/70 p-1.5 rounded-lg border border-secondary-200/60">
                     <input type="checkbox" id="markDeliveredCheck" checked class="w-4 h-4 text-primary-600 rounded border-secondary-300 focus:ring-primary-500">
                     <span>Mark as Delivered & Paid (Cash)</span>
                 </label>
@@ -391,11 +376,35 @@ function getPosProductVariants($product) {
 
             <!-- Action Button -->
             <button type="button" onclick="placeOrder()" 
-                    class="w-full bg-primary-600 hover:bg-primary-700 active:scale-98 text-white font-bold py-2 sm:py-2.5 px-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md cursor-pointer text-xs sm:text-sm">
+                    class="w-full bg-primary-600 hover:bg-primary-700 active:scale-98 text-white font-bold py-2.5 px-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md cursor-pointer text-xs sm:text-sm">
                 <span id="btnText">Confirm Order</span>
                 <ion-icon name="arrow-forward" class="text-base sm:text-lg"></ion-icon> 
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Mobile Floating Sticky Cart Bar (Always pinned to bottom of screen on mobile) -->
+<div id="mobileFloatingCartBar" 
+     onclick="switchToMobileTab('cart')" 
+     class="hidden lg:hidden items-center justify-between cursor-pointer select-none"
+     style="position: fixed !important; bottom: 12px !important; left: 12px !important; right: 12px !important; z-index: 99999 !important; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 18px; padding: 10px 14px; box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.4), 0 6px 14px -3px rgba(0, 0, 0, 0.25); border: 1px solid rgba(51, 65, 85, 0.6);">
+    <div class="flex items-center gap-3 min-w-0">
+        <!-- Thumbnail Preview / Badge -->
+        <div class="relative shrink-0 flex items-center">
+            <div id="mobileFloatImgPreview" class="w-10 h-10 rounded-xl bg-white/10 border border-white/20 p-1 flex items-center justify-center overflow-hidden">
+                <ion-icon name="cart" class="text-xl text-primary-400"></ion-icon>
+            </div>
+            <span id="mobileFloatCount" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white font-black text-[10px] flex items-center justify-center shadow-xs border border-secondary-900">0</span>
+        </div>
+        <div class="min-w-0">
+            <div class="text-[10px] text-secondary-300 font-semibold tracking-wide">কার্ট ও সর্বমোট</div>
+            <div class="text-sm sm:text-base font-black text-emerald-400 leading-tight" id="mobileFloatTotal">৳ 0.00</div>
+        </div>
+    </div>
+    <div class="flex items-center gap-1.5 text-xs font-bold bg-primary-600 hover:bg-primary-500 active:scale-95 text-white px-3.5 py-2 rounded-xl shrink-0 transition-all shadow-md">
+        <span>কার্ট ও চেকআউট</span>
+        <ion-icon name="arrow-forward-outline" class="text-base"></ion-icon>
     </div>
 </div>
 
@@ -468,12 +477,22 @@ function getPosProductVariants($product) {
         .pos-panel-inactive {
             display: flex !important;
         }
-        .pos-mobile-bar {
+        .pos-mobile-bar,
+        #mobileFloatingCartBar {
             display: none !important;
         }
         .pos-desktop-only {
             display: flex !important;
         }
+    }
+
+    /* Floating sticky cart bar style */
+    #mobileFloatingCartBar {
+        position: fixed !important;
+        bottom: 14px !important;
+        left: 12px !important;
+        right: 12px !important;
+        z-index: 99999 !important;
     }
 
     .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -533,8 +552,7 @@ function getPosProductVariants($product) {
 
             // Hide floating bar when on Cart tab
             if (mobileFloatBar) {
-                mobileFloatBar.classList.add('hidden');
-                mobileFloatBar.classList.remove('flex');
+                mobileFloatBar.style.display = 'none';
             }
         } else {
             if (prodPanel) {
@@ -556,8 +574,7 @@ function getPosProductVariants($product) {
             // Show floating bar if cart has items
             const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
             if (mobileFloatBar && totalItems > 0 && window.innerWidth < 1024) {
-                mobileFloatBar.classList.remove('hidden');
-                mobileFloatBar.classList.add('flex');
+                mobileFloatBar.style.display = 'flex';
             }
         }
     }
@@ -761,6 +778,8 @@ function getPosProductVariants($product) {
         const maxStock = parseFloat(card.dataset.stock || 0);
         const isOutOfStock = (card.dataset.isOutOfStock === '1' || maxStock <= 0);
         const baseUnit = card.dataset.baseUnit || 'pcs';
+        const imgEl = card.querySelector('img');
+        const image = card.dataset.image || (imgEl ? imgEl.src : baseUrl + '/images/default-product.svg');
 
         // Unique cart item identifier (product_id + variant_title)
         const cartKey = productId + '_' + variantTitle;
@@ -773,6 +792,7 @@ function getPosProductVariants($product) {
                 cartKey: cartKey,
                 id: productId,
                 name: name,
+                image: image,
                 variant_title: variantTitle,
                 price: price,
                 baseQty: baseQty,
@@ -781,6 +801,12 @@ function getPosProductVariants($product) {
                 isOutOfStock: isOutOfStock,
                 baseUnit: baseUnit
             });
+        }
+
+        // Update preview thumbnail in floating cart bar
+        const floatPreview = document.getElementById('mobileFloatImgPreview');
+        if (floatPreview && image) {
+            floatPreview.innerHTML = `<img src="${image}" alt="${name}" class="w-full h-full object-contain">`;
         }
 
         // Brief visual feedback on button
@@ -828,7 +854,20 @@ function getPosProductVariants($product) {
         renderCart();
     }
 
-    // Render POS Cart Table
+    // Clear Entire Cart
+    function clearEntireCart() {
+        if (cart.length === 0) return;
+        if (confirm('আপনি কি নিশ্চিত যে সম্পূর্ণ কার্ট খালি করতে চান?')) {
+            cart = [];
+            const floatPreview = document.getElementById('mobileFloatImgPreview');
+            if (floatPreview) {
+                floatPreview.innerHTML = '<ion-icon name="cart" class="text-xl text-primary-400"></ion-icon>';
+            }
+            renderCart();
+        }
+    }
+
+    // Render POS Cart Items (with product thumbnails & touch controls)
     function renderCart() {
         const container = document.getElementById('cartItems');
         const emptyMsg = document.getElementById('emptyCartMsg');
@@ -842,39 +881,54 @@ function getPosProductVariants($product) {
         } else {
             emptyMsg.style.display = 'none';
             container.innerHTML = cart.map(item => `
-                <tr class="group hover:bg-secondary-50 transition-colors">
-                    <td class="px-2.5 sm:px-3 py-2 align-middle">
-                        <div class="font-bold text-secondary-900 text-xs leading-snug line-clamp-2" title="${item.name}">${item.name}</div>
-                        <div class="flex items-center gap-1 flex-wrap mt-0.5">
-                            ${item.variant_title ? `
-                                <span class="text-[9px] sm:text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200 px-1 sm:px-1.5 py-0.2 rounded">
-                                    ${item.variant_title}
-                                </span>
-                            ` : ''}
-                            ${(item.isOutOfStock || (item.qty * item.baseQty > item.maxStock)) ? `
-                                <span class="text-[8px] sm:text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1 sm:px-1.5 py-0.2 rounded shadow-2xs" title="স্টক শেষ হলেও অর্ডারে গ্রহণ করা হয়েছে">
-                                    স্টক আউট
-                                </span>
-                            ` : ''}
+                <div class="p-2.5 sm:p-3 hover:bg-secondary-50/70 transition-colors flex items-center gap-2.5 sm:gap-3 group">
+                    <!-- Product Image Thumbnail -->
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-secondary-50 border border-secondary-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                        <img src="${item.image || baseUrl + '/images/default-product.svg'}" 
+                             alt="${item.name}" 
+                             class="w-full h-full object-contain"
+                             onerror="this.src='${baseUrl}/images/default-product.svg'">
+                    </div>
+                    
+                    <!-- Item Info & Controls -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-1.5">
+                            <div class="min-w-0 flex-1">
+                                <h5 class="font-bold text-secondary-900 text-xs sm:text-sm line-clamp-1 leading-snug" title="${item.name}">${item.name}</h5>
+                                <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                                    ${item.variant_title ? `
+                                        <span class="text-[9px] sm:text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200/80 px-1.5 py-0.2 rounded">
+                                            ${item.variant_title}
+                                        </span>
+                                    ` : ''}
+                                    ${(item.isOutOfStock || (item.qty * item.baseQty > item.maxStock)) ? `
+                                        <span class="text-[8px] sm:text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded shadow-2xs" title="স্টক শেষ হলেও অর্ডারে গ্রহণ করা হয়েছে">
+                                            স্টক আউট
+                                        </span>
+                                    ` : ''}
+                                    <span class="text-[10px] sm:text-[11px] text-secondary-400 font-medium">৳ ${Number(item.price).toLocaleString()} / ইউনিট</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Remove Item -->
+                            <button type="button" onclick="removeItem('${item.cartKey}')" class="text-secondary-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50 cursor-pointer shrink-0" title="রিমুভ করুন">
+                                <ion-icon name="trash-outline" class="text-base"></ion-icon>
+                            </button>
                         </div>
-                        <div class="text-[10px] text-secondary-400 mt-0.5">৳ ${item.price.toFixed(0)} / unit</div>
-                    </td>
-                    <td class="px-1 py-1 align-middle text-center">
-                        <div class="inline-flex items-center justify-center border border-secondary-200 rounded-lg overflow-hidden h-6.5 sm:h-7 bg-white shadow-2xs">
-                            <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-5 sm:w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-r border-secondary-200 font-black text-xs cursor-pointer">−</button>
-                            <input type="number" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-6.5 sm:w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold appearance-none bg-white">
-                            <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-5 sm:w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-l border-secondary-200 font-black text-xs cursor-pointer">+</button>
+                        
+                        <!-- Stepper & Price Row -->
+                        <div class="flex items-center justify-between mt-2 pt-1 border-t border-dashed border-secondary-100">
+                            <div class="inline-flex items-center border border-secondary-200 rounded-lg overflow-hidden h-7 bg-white shadow-2xs">
+                                <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">−</button>
+                                <input type="number" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-8 sm:w-9 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold bg-white">
+                                <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">+</button>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs sm:text-sm font-black text-primary-700">৳ ${Number(item.price * item.qty).toLocaleString()}</span>
+                            </div>
                         </div>
-                    </td>
-                    <td class="px-1.5 sm:px-2 py-2 text-right align-middle font-bold text-secondary-900 text-xs whitespace-nowrap">
-                        ৳ ${(item.price * item.qty).toFixed(0)}
-                    </td>
-                    <td class="px-1 py-1 text-center align-middle">
-                        <button type="button" onclick="removeItem('${item.cartKey}')" class="text-secondary-400 hover:text-red-500 transition-colors p-1 sm:p-1.5 rounded-lg hover:bg-red-50 cursor-pointer" title="Remove">
-                            <ion-icon name="trash-outline" class="text-sm sm:text-base"></ion-icon>
-                        </button>
-                    </td>
-                </tr>
+                    </div>
+                </div>
             `).join('');
             
             subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -901,6 +955,12 @@ function getPosProductVariants($product) {
         const mobileFloatBar = document.getElementById('mobileFloatingCartBar');
         const mobileFloatCount = document.getElementById('mobileFloatCount');
         const mobileFloatTotal = document.getElementById('mobileFloatTotal');
+        const mobileFloatImgPreview = document.getElementById('mobileFloatImgPreview');
+        const cartHeaderBadge = document.getElementById('cartHeaderBadge');
+        const mobileCartHeaderCount = document.getElementById('mobileCartHeaderCount');
+
+        if (cartHeaderBadge) cartHeaderBadge.innerText = totalItems;
+        if (mobileCartHeaderCount) mobileCartHeaderCount.innerText = totalItems + ' আইটেম';
 
         if (mobileTabBadge) {
             if (totalItems > 0) {
@@ -915,13 +975,19 @@ function getPosProductVariants($product) {
         }
         if (mobileFloatBar) {
             if (totalItems > 0 && currentMobileTab === 'products' && window.innerWidth < 1024) {
-                mobileFloatBar.classList.remove('hidden');
-                mobileFloatBar.classList.add('flex');
+                mobileFloatBar.style.display = 'flex';
                 if (mobileFloatCount) mobileFloatCount.innerText = totalItems;
                 if (mobileFloatTotal) mobileFloatTotal.innerText = '৳ ' + subtotal.toFixed(2);
+                
+                // Show thumbnail of latest item in sticky cart bar
+                if (mobileFloatImgPreview && cart.length > 0) {
+                    const lastItem = cart[cart.length - 1];
+                    if (lastItem && lastItem.image) {
+                        mobileFloatImgPreview.innerHTML = `<img src="${lastItem.image}" alt="${lastItem.name}" class="w-full h-full object-contain">`;
+                    }
+                }
             } else {
-                mobileFloatBar.classList.add('hidden');
-                mobileFloatBar.classList.remove('flex');
+                mobileFloatBar.style.display = 'none';
             }
         }
     }
