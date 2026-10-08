@@ -229,9 +229,9 @@ return [
     'delivery_slot_night' => 'রাত (০৭:৩০ PM - ১০:০০ PM)',
 
     // Express Delivery
-    'express_delivery_title' => 'এক্সপ্রেস ৩০-মিনিট সুপার ফাস্ট ডেলিভারি',
+    'express_delivery_title' => 'এক্সপ্রেস ২-ঘন্টা সুপার ফাস্ট ডেলিভারি',
     'express_delivery_desc' => 'অগ্রাধিকার ভিত্তিতে তাৎক্ষণিক প্যাকেটজাতকরণ ও দ্রুততম সময়ে ডেলিভারি। দৈনিক শেষ সময়:',
-    'express_delivery_surcharge' => 'এক্সপ্রেস ৩০-মি. অতিরিক্ত ফি',
+    'express_delivery_surcharge' => 'এক্সপ্রেস ২-ঘন্টা অতিরিক্ত ফি',
 
     // Surcharges & Fees
     'heavy_weight_surcharge' => 'অতিরিক্ত ওজন ফি',

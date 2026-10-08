@@ -229,9 +229,9 @@ return [
     'delivery_slot_night' => 'Night (07:30 PM - 10:00 PM)',
 
     // Express Delivery
-    'express_delivery_title' => 'Express 30-Minute Priority Delivery',
+    'express_delivery_title' => 'Express 2-Hour Priority Delivery',
     'express_delivery_desc' => 'Instant prioritized picking & immediate dispatch to your doorstep. Daily cutoff:',
-    'express_delivery_surcharge' => 'Express 30-Min Surcharge',
+    'express_delivery_surcharge' => 'Express 2-Hour Surcharge',
 
     // Surcharges & Fees
     'heavy_weight_surcharge' => 'Heavy Order Surcharge',

@@ -249,8 +249,15 @@ if (empty($bannerSubtitle)) {
 
 // Express delivery dynamic settings
 $expressDeliveryEnabled = class_exists('\Models\Setting') ? (\Models\Setting::getValue('express_delivery_enabled', '0') == '1') : false;
-$expressDeliveryTime = class_exists('\Models\Setting') ? trim(\Models\Setting::getValue('express_delivery_time', '30')) : '30';
-$expressDeliveryDisplay = ($locale === 'bn') ? Lang::bengaliNumber($expressDeliveryTime) . ' মিনিটে' : $expressDeliveryTime . ' Mins';
+$expressDeliveryTime = class_exists('\Models\Setting') ? trim(\Models\Setting::getValue('express_delivery_time', '২ ঘন্টা')) : '২ ঘন্টা';
+if (empty($expressDeliveryTime) || $expressDeliveryTime === '30') $expressDeliveryTime = '২ ঘন্টা';
+if (is_numeric($expressDeliveryTime)) {
+    $expressDeliveryDisplay = ($locale === 'bn') ? Lang::bengaliNumber($expressDeliveryTime) . ' মিনিট' : $expressDeliveryTime . ' Mins';
+} else {
+    $expressDeliveryDisplay = ($locale !== 'bn' && (strpos($expressDeliveryTime, 'ঘন্ট') !== false || strpos($expressDeliveryTime, 'ঘণ্ট') !== false)) 
+        ? '2 Hours' 
+        : $expressDeliveryTime;
+}
 
 $activeSubCatName = '';
 if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
@@ -441,7 +448,7 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                     </span>
                                     <span class="text-xs sm:text-sm font-black text-white block">
                                         <?= $expressDeliveryEnabled 
-                                            ? ($locale === 'bn' ? "{$expressDeliveryDisplay} আপনার দরজায়" : "At Your Door in {$expressDeliveryTime} Mins") 
+                                            ? ($locale === 'bn' ? "{$expressDeliveryDisplay}র মধ্যে আপনার দরজায়" : "At Your Door in {$expressDeliveryDisplay}") 
                                             : ($locale === 'bn' ? 'বিশ্বস্ত ও নিরাপদ ডেলিভারি' : 'Reliable & Safe Delivery') ?>
                                     </span>
                                 </div>
@@ -462,7 +469,7 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                         <h4 class="text-xs font-black text-gray-900 leading-tight"><?= $locale === 'bn' ? 'দ্রুত ডেলিভারি' : 'Fast Delivery' ?></h4>
                         <p class="text-[10px] text-gray-400 font-medium leading-tight truncate">
                             <?= $expressDeliveryEnabled 
-                                ? ($locale === 'bn' ? "{$expressDeliveryDisplay} পৌঁছে যাবে" : "Within {$expressDeliveryTime} mins") 
+                                ? ($locale === 'bn' ? "{$expressDeliveryDisplay}র মধ্যে পৌঁছে যাবে" : "Within {$expressDeliveryDisplay}") 
                                 : ($locale === 'bn' ? 'সরাসরি পৌঁছে যাবে আপনার ঠিকানায়' : 'Delivered to your address') ?>
                         </p>
                     </div>

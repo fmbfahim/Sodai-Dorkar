@@ -13,11 +13,15 @@ $milestoneDiscount = floatval($spendMoreOffers['discount_amount'] ?? 0);
 $baseCharge = $deliveryCalc['base_charge'] ?? 30.00;
 $currentCharge = $deliveryCalc['charge'] ?? 0.00;
 $expressCharge = floatval($ecommerceSettings['express_delivery_charge'] ?? 60.00);
-$expTimeVal = trim($ecommerceSettings['express_delivery_time'] ?? '30');
-if ($expTimeVal === '') $expTimeVal = '30';
-$expressTimeDisplay = is_numeric($expTimeVal) 
-    ? ($locale === 'bn' ? $expTimeVal . '-মিনিট' : $expTimeVal . '-Minute') 
-    : $expTimeVal;
+$expTimeVal = trim($ecommerceSettings['express_delivery_time'] ?? '২ ঘন্টা');
+if ($expTimeVal === '' || $expTimeVal === '30') $expTimeVal = '২ ঘন্টা';
+if (is_numeric($expTimeVal)) {
+    $expressTimeDisplay = ($locale === 'bn') ? Lang::bengaliNumber($expTimeVal) . '-মিনিট' : $expTimeVal . '-Minute';
+} else {
+    $expressTimeDisplay = ($locale !== 'bn' && (strpos($expTimeVal, 'ঘন্ট') !== false || strpos($expTimeVal, 'ঘণ্ট') !== false)) 
+        ? '2-Hour' 
+        : $expTimeVal;
+}
 $expressTitle = ($locale === 'bn') 
     ? "এক্সপ্রেস {$expressTimeDisplay} সুপার ফাস্ট ডেলিভারি" 
     : "Express {$expressTimeDisplay} Priority Delivery";

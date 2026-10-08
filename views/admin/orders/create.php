@@ -394,13 +394,14 @@ function getPosProductVariants($product) {
             <?php 
                 $expEnabled = ($settings['express_delivery_enabled'] ?? '0') == '1';
                 $expCharge = floatval($settings['express_delivery_charge'] ?? 60);
-                $expTime = $settings['express_delivery_time'] ?? '30';
+                $expTime = !empty($settings['express_delivery_time']) && $settings['express_delivery_time'] !== '30' ? $settings['express_delivery_time'] : '২ ঘন্টা';
+                $expTimeLabel = is_numeric($expTime) ? $expTime . '-মি.' : $expTime;
             ?>
             <?php if ($expEnabled): ?>
             <div class="flex justify-between items-center text-xs bg-orange-50/70 p-1.5 rounded-lg border border-orange-200/80">
                 <label for="posExpressCheck" class="flex items-center gap-1 text-orange-950 font-bold cursor-pointer select-none text-[10px] sm:text-[11px]">
                     <span>⚡</span>
-                    <span>এক্সপ্রেস <?= htmlspecialchars($expTime) ?>-মি. (+৳<?= number_format($expCharge) ?>)</span>
+                    <span>এক্সপ্রেস <?= htmlspecialchars($expTimeLabel) ?> (+৳<?= number_format($expCharge) ?>)</span>
                 </label>
                 <input type="checkbox" id="posExpressCheck" onchange="togglePosExpress(this)" 
                        class="w-4 h-4 text-orange-600 rounded border-orange-300 focus:ring-orange-500 cursor-pointer">

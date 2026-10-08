@@ -1104,7 +1104,7 @@
                         <ion-icon name="flash-outline"></ion-icon>
                     </div>
                     <div>
-                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base">Express 30-Minute Priority Delivery</h3>
+                        <h3 class="font-bold text-secondary-800 text-sm sm:text-base">Express Priority Delivery (ডিফল্ট ২ ঘন্টা)</h3>
                         <p class="text-[11px] text-secondary-400">Offer an optional fast-track service for customers needing immediate delivery.</p>
                     </div>
                 </div>
@@ -1122,11 +1122,11 @@
                     <label class="block text-xs sm:text-sm font-bold text-secondary-800 mb-1.5">ডেলিভারির সময় / Duration</label>
                     <div class="relative">
                         <input type="text" name="express_delivery_time" 
-                               value="<?= htmlspecialchars($settings['express_delivery_time'] ?? '30') ?>" 
-                               placeholder="e.g. 30 বা ৩০-মিনিট বা ৩০-৪৫ মিনিট"
+                               value="<?= htmlspecialchars(!empty($settings['express_delivery_time']) && $settings['express_delivery_time'] !== '30' ? $settings['express_delivery_time'] : '২ ঘন্টা') ?>" 
+                               placeholder="e.g. ২ ঘন্টা বা ১-২ ঘন্টা বা ৩০ মিনিট"
                                class="w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
                     </div>
-                    <p class="text-[11px] text-secondary-400 mt-1">কত মিনিটে এক্সপ্রেস ডেলিভারি সম্পন্ন হবে (যেমন: 30 বা ৩০-মিনিট বা ৩০-৪৫ মিনিট)।</p>
+                    <p class="text-[11px] text-secondary-400 mt-1">ডিফল্ট ২ ঘন্টা (প্রয়োজনে পরিবর্তন করতে পারেন, যেমন: ২ ঘন্টা বা ১-২ ঘন্টা বা ৩০ মিনিট)।</p>
                 </div>
 
                 <div>

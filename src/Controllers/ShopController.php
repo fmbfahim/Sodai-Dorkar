@@ -1260,9 +1260,10 @@ class ShopController {
                 // Time slot / delivery instructions
                 $selectedSlot = trim($_POST['delivery_slot'] ?? '');
                 $riderNote = !empty($selectedSlot) ? "Preferred Window: " . $selectedSlot : null;
-                $expressTimeVal = \Models\Setting::getValue('express_delivery_time', '30');
+                $expressTimeVal = \Models\Setting::getValue('express_delivery_time', '২ ঘন্টা');
+                if (empty($expressTimeVal) || $expressTimeVal === '30') $expressTimeVal = '২ ঘন্টা';
                 if ($isExpress) {
-                    $riderNote = "⚡ EXPRESS {$expressTimeVal}-MIN PRIORITY. " . ($riderNote ?? '');
+                    $riderNote = "⚡ EXPRESS {$expressTimeVal} PRIORITY. " . ($riderNote ?? '');
                 }
 
                 // Add Free Gift & Perk details to parcel instructions
