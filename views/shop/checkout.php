@@ -2,6 +2,7 @@
 ob_start(); 
 use Core\Lang;
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
 $minOrder = floatval($ecommerceSettings['min_order_amount'] ?? 0);
 $maxOrder = floatval($ecommerceSettings['max_order_amount'] ?? 0);
@@ -157,8 +158,8 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
         <div class="bg-amber-50/80 border border-amber-200 text-amber-900 rounded-2xl p-4 mb-6 flex items-start gap-3 shadow-sm">
             <span class="text-xl shrink-0 mt-0.5">⛈️</span>
             <div class="text-xs sm:text-sm leading-relaxed">
-                <span class="font-bold">Logistics Notice:</span> <?= htmlspecialchars($deliveryCalc['weather_notice']) ?>
-                <span class="inline-block font-bold text-amber-700 ml-1">(+৳<?= number_format($deliveryCalc['weather_fee'] ?? 0, 2) ?> emergency fee applied)</span>
+                <span class="font-bold"><?= $__('logistics_notice') ?>:</span> <?= htmlspecialchars($deliveryCalc['weather_notice']) ?>
+                <span class="inline-block font-bold text-amber-700 ml-1">(+৳<?= number_format($deliveryCalc['weather_fee'] ?? 0, 2) ?> <?= $__('emergency_fee_applied') ?>)</span>
             </div>
         </div>
         <?php endif; ?>
@@ -166,7 +167,7 @@ $initialTotal = max(0, round($subtotal - $milestoneDiscount + $currentCharge, 2)
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Checkout Main Form -->
             <div class="lg:w-2/3 space-y-6">
-                <form action="/sodai-dorkar/public/checkout/place-order" method="POST" id="checkout-form">
+                <form action="<?= $base ?>/checkout/place-order" method="POST" id="checkout-form">
                     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                     
                     <!-- 1. Customer & Delivery Destination Card -->

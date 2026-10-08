@@ -249,4 +249,6 @@ return [
     'you_may_also_like' => 'আপনার আরও পছন্দ হতে পারে',
     'cross_selling_subtitle' => 'যেসব গ্রাহক এই পণ্যগুলো নিয়েছেন, তারা নিচের নিত্যপ্রয়োজনীয় পণ্যগুলোও সাথে নিয়েছেন',
     'explore_full_catalog' => 'সম্পূর্ণ ক্যাটালগ দেখুন',
+    'logistics_notice' => 'লজিস্টিকস নোটিশ',
+    'emergency_fee_applied' => 'জরুরি ফি যুক্ত হয়েছে',
 ];

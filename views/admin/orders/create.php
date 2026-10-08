@@ -1,6 +1,8 @@
 <?php
 // views/admin/orders/create.php
 
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
 // Helper function to decode product variants for POS
 function getPosProductVariants($product) {
     if (!empty($product['unit_variants_json'])) {
@@ -65,38 +67,54 @@ function getPosProductVariants($product) {
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<div class="h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-3.5 min-w-0 w-full overflow-hidden">
+<!-- Mobile Mode Switcher Tabs (Only visible on screens < lg) -->
+<div class="pos-mobile-bar flex lg:hidden items-center bg-white p-1 rounded-2xl border border-secondary-200 shadow-2xs mb-2 shrink-0 gap-1 select-none">
+    <button type="button" id="tabBtnProducts" onclick="switchToMobileTab('products')" 
+            class="flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-primary-600 text-white shadow-xs cursor-pointer">
+        <ion-icon name="grid-outline" class="text-base"></ion-icon>
+        <span>পণ্য তালিকা</span>
+    </button>
+    <button type="button" id="tabBtnCart" onclick="switchToMobileTab('cart')" 
+            class="flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-secondary-600 hover:bg-secondary-100 cursor-pointer">
+        <ion-icon name="cart-outline" class="text-base"></ion-icon>
+        <span>কার্ট ও চেকআউট</span>
+        <span id="mobileTabBadge" class="hidden px-1.5 py-0.5 text-[10px] font-black rounded-full bg-red-500 text-white leading-none">0</span>
+        <span id="mobileTabPrice" class="text-[11px] font-bold text-primary-700 ml-0.5">৳ 0</span>
+    </button>
+</div>
+
+<div class="h-[calc(100dvh-150px)] sm:h-[calc(100vh-150px)] lg:h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-3 min-w-0 w-full overflow-hidden relative">
     
     <!-- LEFT PANEL: Products Catalog & Search -->
-    <div class="flex-1 min-w-0 flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 overflow-hidden h-full">
+    <div id="posProductsPanel" class="pos-panel-active flex-1 min-w-0 flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 overflow-hidden h-full relative">
         
         <!-- Search & Category Header -->
-        <div class="p-3 border-b border-secondary-100 flex flex-col gap-2.5 bg-white shrink-0 min-w-0">
+        <div class="p-2.5 sm:p-3 border-b border-secondary-100 flex flex-col gap-2 bg-white shrink-0 min-w-0">
             <!-- Search Row -->
             <div class="flex items-center gap-2">
                 <div class="relative flex-1 min-w-0">
                     <input type="text" id="productSearch" 
                            placeholder="Search product by name, SKU or barcode..." 
-                           class="w-full pl-9 pr-4 py-2 bg-secondary-50 border border-secondary-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all shadow-2xs"
+                           class="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-secondary-50 border border-secondary-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all shadow-2xs"
                            autocomplete="off">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary-400">
-                        <ion-icon name="search-outline" class="text-base"></ion-icon>
+                    <div class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none text-secondary-400">
+                        <ion-icon name="search-outline" class="text-sm sm:text-base"></ion-icon>
                     </div>
                 </div>
-                <button type="button" onclick="clearSearch()" class="px-3 py-2 text-xs font-bold text-secondary-600 hover:text-secondary-900 bg-secondary-100 hover:bg-secondary-200 rounded-xl transition-colors shrink-0">
+                <button type="button" onclick="clearSearch()" class="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-secondary-600 hover:text-secondary-900 bg-secondary-100 hover:bg-secondary-200 rounded-xl transition-colors shrink-0">
                     Reset
                 </button>
             </div>
 
             <!-- Circular Visual Category Icons Bar (with Images & Subcategories) -->
-            <div class="flex gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide select-none w-full min-w-0" id="categoryFilter">
+            <div class="flex gap-2 sm:gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide select-none w-full min-w-0" id="categoryFilter">
                 <!-- Injected via JavaScript with circular category icons & drill-down -->
             </div>
         </div>
         
-        <!-- Products Grid (6 Columns on Desktop) -->
-        <div class="flex-1 min-w-0 overflow-y-auto p-3 bg-secondary-50/70">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5" id="productsGrid">
+        <!-- Products Grid (2 columns on mobile, up to 6 on big screens) -->
+        <div class="flex-1 min-w-0 overflow-y-auto p-2 sm:p-3 bg-secondary-50/70 pb-16 lg:pb-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-2.5" id="productsGrid">
                 <?php if (!empty($products)): foreach ($products as $p): ?>
                     <?php 
                         $vInfo = getPosProductVariants($p);
@@ -108,7 +126,7 @@ function getPosProductVariants($product) {
                         $isOutOfStock = ($stockNum <= 0 || ($p['availability_status'] ?? '') === 'out_of_stock');
                         $baseUnit = $p['base_unit'] ?? 'pcs';
                     ?>
-                    <div class="pos-product-card bg-white p-2.5 rounded-2xl shadow-xs border <?= $isOutOfStock ? 'border-red-200 hover:border-red-400' : 'border-secondary-200 hover:border-primary-500' ?> hover:shadow-md transition-all flex flex-col h-full group relative min-w-0"
+                    <div class="pos-product-card bg-white p-2 sm:p-2.5 rounded-2xl shadow-xs border <?= $isOutOfStock ? 'border-red-200 hover:border-red-400' : 'border-secondary-200 hover:border-primary-500' ?> hover:shadow-md transition-all flex flex-col h-full group relative min-w-0"
                          data-product-id="<?= $p['id'] ?>"
                          data-category="<?= $p['category_id'] ?? '' ?>"
                          data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>"
@@ -122,68 +140,68 @@ function getPosProductVariants($product) {
                          data-active-variant-qty="<?= $vInfo['default_qty'] ?>">
                          
                         <!-- Top Badges -->
-                        <div class="flex items-center justify-between gap-1 mb-1.5">
+                        <div class="flex items-center justify-between gap-1 mb-1 sm:mb-1.5">
                             <div class="flex items-center gap-1 min-w-0">
                                 <?php if (!empty($p['category_name'])): ?>
-                                    <span class="text-[9px] font-semibold text-secondary-500 bg-secondary-100 px-1.5 py-0.2 rounded truncate max-w-[65px]">
+                                    <span class="text-[8px] sm:text-[9px] font-semibold text-secondary-500 bg-secondary-100 px-1 sm:px-1.5 py-0.2 rounded truncate max-w-[55px] sm:max-w-[65px]">
                                         <?= htmlspecialchars($p['category_name']) ?>
                                     </span>
                                 <?php endif; ?>
 
                                 <?php if ($hasDiscount): ?>
-                                    <span class="text-[9px] font-black text-white bg-red-500 px-1 py-0.2 rounded shadow-2xs">
-                                        <?= $discountPercent ?>% OFF
+                                    <span class="text-[8px] sm:text-[9px] font-black text-white bg-red-500 px-1 py-0.2 rounded shadow-2xs">
+                                        <?= $discountPercent ?>%
                                     </span>
                                 <?php endif; ?>
                             </div>
 
                             <!-- Stock Badge -->
                             <?php if ($isOutOfStock): ?>
-                                <span class="text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded shadow-2xs shrink-0 flex items-center gap-1" title="স্টক শেষ হলেও অ্যাডমিন POS থেকে অর্ডার নেওয়া যাবে">
+                                <span class="text-[8px] sm:text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-1 sm:px-1.5 py-0.2 rounded shadow-2xs shrink-0 flex items-center gap-1" title="স্টক শেষ হলেও অ্যাডমিন POS থেকে অর্ডার নেওয়া যাবে">
                                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span>স্টক আউট</span>
+                                    <span>আউট</span>
                                 </span>
                             <?php else: ?>
-                                <span class="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded shrink-0">
-                                    স্টক: <?= $stockClean ?> <?= htmlspecialchars($baseUnit) ?>
+                                <span class="text-[8px] sm:text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1 sm:px-1.5 py-0.2 rounded shrink-0">
+                                    <?= $stockClean ?> <?= htmlspecialchars($baseUnit) ?>
                                 </span>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Product Image (Compact & Proportioned for 6 Columns) -->
-                        <div class="mb-1.5 bg-secondary-50/80 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5 h-20 sm:h-22 border border-secondary-100">
+                        <!-- Product Image (Compact & Proportioned) -->
+                        <div class="mb-1 sm:mb-1.5 bg-secondary-50/80 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1 sm:p-1.5 h-16 sm:h-20 md:h-22 border border-secondary-100">
                             <?php 
-                            $posImg = !empty($p['image_path']) ? htmlspecialchars($p['image_path']) : '/sodai-dorkar/public/images/default-product.svg';
+                            $posImg = !empty($p['image_path']) ? htmlspecialchars($p['image_path']) : $base . '/images/default-product.svg';
                             ?>
                             <img src="<?= $posImg ?>" 
                                  alt="<?= htmlspecialchars($p['name']) ?>" 
                                  class="max-h-full max-w-full object-contain drop-shadow-2xs transition-transform duration-200 group-hover:scale-105"
                                  loading="lazy"
-                                 onerror="this.src='/sodai-dorkar/public/images/default-product.svg'">
+                                 onerror="this.src='<?= $base ?>/images/default-product.svg'">
                         </div>
 
                         <!-- Product Title -->
-                        <h4 class="font-semibold text-secondary-900 text-xs line-clamp-2 h-7 leading-tight mb-1 group-hover:text-primary-600 transition-colors" 
+                        <h4 class="font-semibold text-secondary-900 text-[11px] sm:text-xs line-clamp-2 min-h-[26px] sm:min-h-[30px] leading-tight mb-1 group-hover:text-primary-600 transition-colors" 
                             title="<?= htmlspecialchars($p['name']) ?>">
                             <?= htmlspecialchars($p['name']) ?>
                         </h4>
 
                         <!-- Price Row -->
-                        <div class="flex items-baseline gap-1 mb-1.5 flex-wrap">
+                        <div class="flex items-baseline gap-1 mb-1 sm:mb-1.5 flex-wrap">
                             <span class="text-xs font-bold text-primary-700">৳</span>
-                            <span class="pos-card-price text-sm font-black text-primary-600 leading-none">
+                            <span class="pos-card-price text-xs sm:text-sm font-black text-primary-600 leading-none">
                                 <?= number_format($vInfo['default_price']) ?>
                             </span>
 
                             <?php if ($hasDiscount): ?>
-                                <span class="text-[10px] text-secondary-400 line-through font-medium leading-none">
+                                <span class="text-[9px] sm:text-[10px] text-secondary-400 line-through font-medium leading-none">
                                     ৳ <?= number_format($p['regular_price']) ?>
                                 </span>
                             <?php endif; ?>
                         </div>
 
                         <!-- Multi-Unit Variant Selector Pills -->
-                        <div class="flex flex-wrap gap-1 mb-1.5 pt-1 border-t border-dashed border-secondary-100 pos-variant-pills max-h-12 overflow-y-auto scrollbar-hide">
+                        <div class="flex flex-wrap gap-1 mb-1 sm:mb-1.5 pt-1 border-t border-dashed border-secondary-100 pos-variant-pills max-h-12 overflow-y-auto scrollbar-hide">
                             <?php foreach ($vInfo['variants'] as $v): ?>
                                 <?php 
                                     $isDef = ($v['title'] === $vInfo['default_title']);
@@ -193,7 +211,7 @@ function getPosProductVariants($product) {
                                 ?>
                                 <button type="button" 
                                         onclick="selectPosCardVariant(this, '<?= htmlspecialchars($v['title'], ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty']) ?>)"
-                                        class="pos-variant-btn px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer <?= $pillClass ?>">
+                                        class="pos-variant-btn px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] border transition-all cursor-pointer <?= $pillClass ?>">
                                     <?= htmlspecialchars($v['title']) ?>
                                 </button>
                             <?php endforeach; ?>
@@ -202,28 +220,54 @@ function getPosProductVariants($product) {
                         <!-- Add Button -->
                         <button type="button" 
                                 onclick="addCardProductToCart(this)" 
-                                class="w-full py-1.5 px-2 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300 hover:border-amber-600' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600' ?> font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95 mt-auto"
+                                class="w-full py-1.5 px-1.5 sm:px-2 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300 hover:border-amber-600' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600' ?> font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95 mt-auto"
                                 title="<?= $isOutOfStock ? 'স্টক আউট পণ্য (অর্ডার নেওয়া যাবে)' : 'কার্টে যোগ করুন' ?>">
-                            <ion-icon name="cart-outline" class="text-sm"></ion-icon>
+                            <ion-icon name="cart-outline" class="text-xs sm:text-sm"></ion-icon>
                             <span><?= $isOutOfStock ? '+ Add (স্টক আউট)' : '+ Add' ?></span>
                         </button>
                     </div>
                 <?php endforeach; endif; ?>
 
-                <div id="noResults" class="hidden col-span-full py-14 flex flex-col items-center justify-center text-secondary-400">
-                    <ion-icon name="search-outline" class="text-5xl mb-2 opacity-30"></ion-icon>
-                    <p class="text-sm font-semibold">No products found</p>
-                    <p class="text-xs text-secondary-400 mt-0.5">Try searching with a different keyword or category</p>
+                <div id="noResults" class="hidden col-span-full py-12 flex flex-col items-center justify-center text-secondary-400">
+                    <ion-icon name="search-outline" class="text-4xl sm:text-5xl mb-2 opacity-30"></ion-icon>
+                    <p class="text-xs sm:text-sm font-semibold">No products found</p>
+                    <p class="text-[11px] sm:text-xs text-secondary-400 mt-0.5">Try searching with a different keyword or category</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Mobile Floating Sticky Cart Bar (visible when items in cart and on mobile products tab) -->
+        <div id="mobileFloatingCartBar" 
+             onclick="switchToMobileTab('cart')" 
+             class="pos-mobile-bar hidden fixed sm:absolute bottom-3 left-3 right-3 z-30 bg-secondary-900/95 backdrop-blur-md text-white p-2.5 sm:p-3 rounded-2xl shadow-2xl items-center justify-between cursor-pointer border border-secondary-700/60 transition-all hover:bg-secondary-900 animate-bounce-subtle">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-primary-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs" id="mobileFloatCount">0</div>
+                <div class="min-w-0">
+                    <div class="text-[10px] text-secondary-300 font-medium">কার্ট আইটেম ও মোট</div>
+                    <div class="text-xs sm:text-sm font-black text-white" id="mobileFloatTotal">৳ 0.00</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white px-3.5 py-1.5 sm:py-2 rounded-xl shrink-0 transition-colors shadow-xs">
+                <span>কার্ট ও চেকআউট</span>
+                <ion-icon name="arrow-forward-outline" class="text-sm"></ion-icon>
             </div>
         </div>
     </div>
 
     <!-- RIGHT PANEL: POS Cart & Checkout Details -->
-    <div class="w-full lg:w-80 xl:w-96 min-w-[310px] max-w-[380px] flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 h-full overflow-hidden shrink-0">
+    <div id="posCartPanel" class="pos-panel-inactive w-full lg:w-80 xl:w-96 lg:min-w-[310px] lg:max-w-[380px] flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 h-full overflow-hidden shrink-0">
         
+        <!-- Mobile Back Header -->
+        <div class="pos-mobile-bar flex lg:hidden items-center justify-between px-3 py-2 bg-secondary-50 border-b border-secondary-200 shrink-0">
+            <button type="button" onclick="switchToMobileTab('products')" class="text-xs font-bold text-primary-700 hover:text-primary-800 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-secondary-200 shadow-2xs cursor-pointer active:scale-95 transition-all">
+                <ion-icon name="arrow-back-outline" class="text-base"></ion-icon>
+                <span>← পণ্য তালিকা (আরও যোগ করুন)</span>
+            </button>
+            <span class="text-xs font-black text-secondary-500 uppercase tracking-wider">POS Cart</span>
+        </div>
+
         <!-- Customer Selection Box -->
-        <div class="p-3.5 border-b border-secondary-100 bg-secondary-50/80">
+        <div class="p-2.5 sm:p-3.5 border-b border-secondary-100 bg-secondary-50/80 shrink-0">
             <div class="flex justify-between items-center mb-1.5">
                 <label class="block text-secondary-700 text-xs font-bold uppercase tracking-wider">Customer</label>
                 <button type="button" onclick="openQuickCustomerModal()" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1">
@@ -233,7 +277,7 @@ function getPosProductVariants($product) {
             
             <div class="relative" id="custSearchWrapper">
                 <input type="text" id="customerSearchInput" placeholder="Type Name, Phone or ID..." 
-                       class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm shadow-2xs" 
+                       class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs sm:text-sm shadow-2xs" 
                        autocomplete="off">
                 <!-- Live Search Dropdown -->
                 <div id="customerSearchResults" class="hidden absolute z-50 left-0 right-0 bg-white border border-secondary-200 shadow-xl rounded-xl mt-1 max-h-56 overflow-y-auto divide-y divide-secondary-100"></div>
@@ -242,25 +286,25 @@ function getPosProductVariants($product) {
             
             <!-- Selected Customer Display Card -->
             <div id="selectedCustomerDisplay" class="hidden bg-white border border-emerald-300 bg-emerald-50/40 p-0 rounded-xl mt-1 relative overflow-hidden shadow-xs">
-                <div class="flex">
-                    <div class="p-3 flex-1">
-                        <div class="font-bold text-secondary-900 text-sm" id="dispName"></div>
-                        <div class="text-xs text-secondary-500 font-mono mt-0.5" id="dispPhone"></div>
+                <div class="flex flex-col sm:flex-row">
+                    <div class="p-2.5 sm:p-3 flex-1 min-w-0">
+                        <div class="font-bold text-secondary-900 text-xs sm:text-sm truncate" id="dispName"></div>
+                        <div class="text-xs text-secondary-500 font-mono mt-0.5 truncate" id="dispPhone"></div>
                         <div class="flex gap-2 mt-2">
-                             <span class="text-[10px] text-emerald-700 font-bold px-1.5 py-0.5 bg-emerald-100 rounded border border-emerald-200">SELECTED</span>
-                             <button type="button" onclick="clearCustomer()" class="text-[10px] text-red-600 font-bold px-2 py-0.5 bg-white border border-red-200 rounded hover:bg-red-50 transition-colors">CHANGE</button>
+                             <span class="text-[9px] sm:text-[10px] text-emerald-700 font-bold px-1.5 py-0.5 bg-emerald-100 rounded border border-emerald-200">SELECTED</span>
+                             <button type="button" onclick="clearCustomer()" class="text-[9px] sm:text-[10px] text-red-600 font-bold px-2 py-0.5 bg-white border border-red-200 rounded hover:bg-red-50 transition-colors">CHANGE</button>
                         </div>
                     </div>
                     
                     <!-- Stats Area -->
-                    <div class="w-24 bg-white border-l border-emerald-100 p-2 flex flex-col justify-center items-center gap-1">
+                    <div class="w-full sm:w-24 bg-white border-t sm:border-t-0 sm:border-l border-emerald-100 p-2 flex flex-row sm:flex-col justify-around sm:justify-center items-center gap-1">
                          <div class="flex flex-col items-center">
-                             <span class="text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Success</span>
-                             <span class="text-base font-black text-emerald-600 leading-none" id="statRatio">-%</span>
+                             <span class="text-[8px] sm:text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Success</span>
+                             <span class="text-sm sm:text-base font-black text-emerald-600 leading-none" id="statRatio">-%</span>
                          </div>
-                         <div class="w-full h-px bg-secondary-100 my-0.5"></div>
+                         <div class="hidden sm:block w-full h-px bg-secondary-100 my-0.5"></div>
                          <div class="flex flex-col items-center">
-                             <span class="text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Orders</span>
+                             <span class="text-[8px] sm:text-[9px] text-secondary-400 uppercase font-bold tracking-wider">Orders</span>
                              <span class="text-xs font-bold text-secondary-700 leading-none" id="statOrders">-</span>
                          </div>
                     </div>
@@ -278,114 +322,117 @@ function getPosProductVariants($product) {
         </div>
 
         <!-- Cart Items List -->
-        <div class="flex-1 overflow-y-auto p-0">
-            <table class="w-full text-left text-sm">
+        <div class="flex-1 overflow-y-auto p-0 min-w-0">
+            <table class="w-full text-left text-xs sm:text-sm">
                 <thead class="bg-secondary-50 text-secondary-500 sticky top-0 z-10 shadow-2xs border-b border-secondary-100 bg-white">
                     <tr>
-                        <th class="px-3 py-2 text-xs font-bold">Item & Unit</th>
-                        <th class="px-2 py-2 text-center w-24 text-xs font-bold">Qty</th>
-                        <th class="px-2 py-2 text-right w-20 text-xs font-bold">Price</th>
-                        <th class="px-2 py-2 w-8"></th>
+                        <th class="px-2.5 sm:px-3 py-2 text-xs font-bold">Item & Unit</th>
+                        <th class="px-1 sm:px-2 py-2 text-center w-20 sm:w-24 text-xs font-bold">Qty</th>
+                        <th class="px-1.5 sm:px-2 py-2 text-right w-16 sm:w-20 text-xs font-bold">Price</th>
+                        <th class="px-1 py-2 w-7 sm:w-8"></th>
                     </tr>
                 </thead>
                 <tbody id="cartItems" class="divide-y divide-secondary-100"></tbody>
             </table>
             
-            <div id="emptyCartMsg" class="text-center text-secondary-400 py-12 text-sm italic flex flex-col items-center">
+            <div id="emptyCartMsg" class="text-center text-secondary-400 py-10 sm:py-12 text-xs sm:text-sm italic flex flex-col items-center">
                 <ion-icon name="cart-outline" class="text-4xl mb-2 opacity-25"></ion-icon>
                 <span>Cart is empty! Add products to cart</span>
+                <button type="button" onclick="switchToMobileTab('products')" class="lg:hidden mt-3 px-3.5 py-1.5 bg-primary-50 text-primary-700 font-bold text-xs rounded-xl border border-primary-200 hover:bg-primary-100 transition-colors">
+                    🛍️ পণ্য ব্রাউজ করুন
+                </button>
             </div>
         </div>
 
         <!-- Totals & Order Summary -->
-        <div class="p-3.5 border-t border-secondary-100 bg-secondary-50/90 shrink-0 space-y-2">
+        <div class="p-2.5 sm:p-3.5 border-t border-secondary-100 bg-secondary-50/90 shrink-0 space-y-1.5 sm:space-y-2">
             <!-- Subtotal -->
-            <div class="flex justify-between items-center text-sm">
+            <div class="flex justify-between items-center text-xs sm:text-sm">
                 <span class="text-secondary-600 font-medium">Subtotal</span>
                 <span class="font-bold text-secondary-800" id="cartSubtotal">৳ 0.00</span>
             </div>
 
             <!-- Counter Discount Field -->
-            <div class="flex justify-between items-center text-sm">
+            <div class="flex justify-between items-center text-xs sm:text-sm">
                 <div class="flex items-center gap-1">
                     <span class="text-secondary-600 font-medium">Counter Discount</span>
                     <span class="text-[9px] text-red-500 font-bold bg-red-50 px-1 py-0.2 rounded border border-red-100">DISCOUNT</span>
                 </div>
-                <div class="flex items-center w-24">
+                <div class="flex items-center w-20 sm:w-24">
                     <span class="text-secondary-500 mr-1 text-xs">৳</span>
                     <input type="number" id="orderDiscount" value="0" min="0" oninput="calculateTotal()" 
-                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                           class="w-full text-right px-1.5 sm:px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
 
             <!-- Delivery Charge Input -->
-            <div class="flex justify-between items-center text-sm">
+            <div class="flex justify-between items-center text-xs sm:text-sm">
                 <span class="text-secondary-600 font-medium">Delivery Charge</span>
-                <div class="flex items-center w-24">
+                <div class="flex items-center w-20 sm:w-24">
                     <span class="text-secondary-500 mr-1 text-xs">৳</span>
                     <input type="number" id="deliveryCharge" value="0" min="0" oninput="calculateTotal()" 
-                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                           class="w-full text-right px-1.5 sm:px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
 
             <!-- Mark Delivered Checkbox (for Counter Sales) -->
             <div class="pt-1.5 border-t border-secondary-200/80">
-                <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-secondary-700">
+                <label class="flex items-center gap-2 cursor-pointer select-none text-[11px] sm:text-xs font-semibold text-secondary-700">
                     <input type="checkbox" id="markDeliveredCheck" checked class="w-4 h-4 text-primary-600 rounded border-secondary-300 focus:ring-primary-500">
                     <span>Mark as Delivered & Paid (Cash)</span>
                 </label>
             </div>
             
             <!-- Grand Total -->
-            <div class="flex justify-between items-center pt-2 border-t border-secondary-200">
-                <span class="text-secondary-900 font-bold text-base">Grand Total</span>
-                <span class="font-black text-primary-600 text-xl" id="cartTotal">৳ 0.00</span>
+            <div class="flex justify-between items-center pt-1.5 sm:pt-2 border-t border-secondary-200">
+                <span class="text-secondary-900 font-bold text-sm sm:text-base">Grand Total</span>
+                <span class="font-black text-primary-600 text-lg sm:text-xl" id="cartTotal">৳ 0.00</span>
             </div>
 
             <!-- Action Button -->
             <button type="button" onclick="placeOrder()" 
-                    class="w-full bg-primary-600 hover:bg-primary-700 active:scale-98 text-white font-bold py-2.5 px-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md cursor-pointer">
+                    class="w-full bg-primary-600 hover:bg-primary-700 active:scale-98 text-white font-bold py-2 sm:py-2.5 px-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md cursor-pointer text-xs sm:text-sm">
                 <span id="btnText">Confirm Order</span>
-                <ion-icon name="arrow-forward" class="text-lg"></ion-icon> 
+                <ion-icon name="arrow-forward" class="text-base sm:text-lg"></ion-icon> 
             </button>
         </div>
     </div>
 </div>
 
 <!-- Quick Customer Creation Modal -->
-<div id="quickCustomerModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl shadow-2xl border border-secondary-100 w-full max-w-md p-6">
-        <div class="flex justify-between items-center mb-4 pb-2 border-b border-secondary-100">
-            <h3 class="font-bold text-secondary-900 text-base">Register New Customer</h3>
+<div id="quickCustomerModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-secondary-100 w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="flex justify-between items-center p-3.5 sm:p-4 border-b border-secondary-100 shrink-0">
+            <h3 class="font-bold text-secondary-900 text-sm sm:text-base">Register New Customer</h3>
             <button type="button" onclick="closeQuickCustomerModal()" class="text-secondary-400 hover:text-secondary-600 p-1">
                 <ion-icon name="close-outline" class="text-2xl"></ion-icon>
             </button>
         </div>
-        <form id="quickCustomerForm" onsubmit="saveQuickCustomer(event)" class="space-y-3.5">
+        <form id="quickCustomerForm" onsubmit="saveQuickCustomer(event)" class="p-3.5 sm:p-4 overflow-y-auto space-y-3">
             <div>
                 <label class="block text-xs font-bold text-secondary-700 mb-1">Customer Name *</label>
-                <input type="text" id="qcName" required placeholder="Full Name" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                <input type="text" id="qcName" required placeholder="Full Name" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
             </div>
             <div>
                 <label class="block text-xs font-bold text-secondary-700 mb-1">Phone Number *</label>
-                <input type="text" id="qcPhone" required placeholder="017xxxxxxxx" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                <input type="text" id="qcPhone" required placeholder="017xxxxxxxx" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
             </div>
             <div>
                 <label class="block text-xs font-bold text-secondary-700 mb-1">Address Details</label>
-                <input type="text" id="qcAddress" placeholder="Street, Area or Landmark" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                <input type="text" id="qcAddress" placeholder="Street, Area or Landmark" class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
             </div>
             <div>
                 <label class="block text-xs font-bold text-secondary-700 mb-1">Pin Location on Map (Optional)</label>
-                <div id="qcMap" class="w-full h-40 rounded-xl border border-secondary-300 relative z-0"></div>
+                <div id="qcMap" class="w-full h-32 sm:h-40 rounded-xl border border-secondary-300 relative z-0"></div>
                 <input type="hidden" id="qcLatitude">
                 <input type="hidden" id="qcLongitude">
                 <p class="text-[10px] text-secondary-500 mt-1">Click on the map or drag the marker to pinpoint location.</p>
             </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <button type="button" onclick="closeQuickCustomerModal()" class="px-4 py-2 text-xs font-bold text-secondary-600 bg-secondary-100 hover:bg-secondary-200 rounded-xl transition-colors">
+            <div class="pt-2 flex justify-end gap-2 border-t border-secondary-100">
+                <button type="button" onclick="closeQuickCustomerModal()" class="px-3.5 py-2 text-xs font-bold text-secondary-600 bg-secondary-100 hover:bg-secondary-200 rounded-xl transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm">
+                <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm">
                     Save & Select
                 </button>
             </div>
@@ -394,22 +441,133 @@ function getPosProductVariants($product) {
 </div>
 
 <style>
+    /* POS Mobile & Desktop Responsiveness Architecture */
+    @media (max-width: 1023.98px) {
+        .pos-panel-active {
+            display: flex !important;
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1 1 100% !important;
+        }
+        .pos-panel-inactive {
+            display: none !important;
+        }
+        .pos-mobile-bar {
+            display: flex !important;
+        }
+        .pos-desktop-only {
+            display: none !important;
+        }
+        /* Tighten admin main header spacing on mobile so POS has max viewport */
+        main > header {
+            margin-bottom: 0.5rem !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .pos-panel-active,
+        .pos-panel-inactive {
+            display: flex !important;
+        }
+        .pos-mobile-bar {
+            display: none !important;
+        }
+        .pos-desktop-only {
+            display: flex !important;
+        }
+    }
+
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes bounceSubtle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    .animate-bounce-subtle {
+        animation: bounceSubtle 2.5s ease-in-out infinite;
+    }
 </style>
 
 <script>
+    // Global Constants & Path Base
+    const baseUrl = '<?= $base ?>';
+
     // Global Data & Cart State
     let cart = [];
     let pendingOrder = null;
     let selectedCustId = null;
     let filterCatId = 'all';
+    let currentMobileTab = 'products';
 
     const allCategories = <?= !empty($categories) ? json_encode($categories) : '[]' ?>;
 
     // Settings
     const defaultDeliveryCharge = <?= floatval($settings['delivery_charge_default'] ?? 60) ?>;
     const freeDeliveryThreshold = <?= floatval($settings['delivery_free_threshold'] ?? 5000) ?>;
+
+    // --- Mobile Tab Switching ---
+    function switchToMobileTab(tab) {
+        currentMobileTab = tab;
+        const prodPanel = document.getElementById('posProductsPanel');
+        const cartPanel = document.getElementById('posCartPanel');
+        const btnProd = document.getElementById('tabBtnProducts');
+        const btnCart = document.getElementById('tabBtnCart');
+        const mobileFloatBar = document.getElementById('mobileFloatingCartBar');
+
+        if (tab === 'cart') {
+            if (prodPanel) {
+                prodPanel.classList.remove('pos-panel-active');
+                prodPanel.classList.add('pos-panel-inactive');
+            }
+            if (cartPanel) {
+                cartPanel.classList.remove('pos-panel-inactive');
+                cartPanel.classList.add('pos-panel-active');
+            }
+
+            if (btnProd) {
+                btnProd.className = "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-secondary-600 hover:bg-secondary-100 cursor-pointer";
+            }
+            if (btnCart) {
+                btnCart.className = "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-primary-600 text-white shadow-xs cursor-pointer";
+            }
+
+            // Hide floating bar when on Cart tab
+            if (mobileFloatBar) {
+                mobileFloatBar.classList.add('hidden');
+                mobileFloatBar.classList.remove('flex');
+            }
+        } else {
+            if (prodPanel) {
+                prodPanel.classList.remove('pos-panel-inactive');
+                prodPanel.classList.add('pos-panel-active');
+            }
+            if (cartPanel) {
+                cartPanel.classList.remove('pos-panel-active');
+                cartPanel.classList.add('pos-panel-inactive');
+            }
+
+            if (btnProd) {
+                btnProd.className = "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-primary-600 text-white shadow-xs cursor-pointer";
+            }
+            if (btnCart) {
+                btnCart.className = "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-secondary-600 hover:bg-secondary-100 cursor-pointer";
+            }
+
+            // Show floating bar if cart has items
+            const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+            if (mobileFloatBar && totalItems > 0 && window.innerWidth < 1024) {
+                mobileFloatBar.classList.remove('hidden');
+                mobileFloatBar.classList.add('flex');
+            }
+        }
+    }
+
+    // Auto-adjust tabs on window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < 1024) {
+            switchToMobileTab(currentMobileTab);
+        }
+    });
 
     // --- Circular Hierarchical Category Logic ---
     let currentParentId = null; // null = root categories
@@ -452,30 +610,30 @@ function getPosProductVariants($product) {
             
             const backBtn = document.createElement('button');
             backBtn.type = 'button';
-            backBtn.className = "cat-btn flex flex-col items-center gap-1 min-w-[58px] group transition-all shrink-0 cursor-pointer";
+            backBtn.className = "cat-btn flex flex-col items-center gap-1 min-w-[50px] sm:min-w-[58px] group transition-all shrink-0 cursor-pointer";
             backBtn.onclick = () => renderCategories(grandParentId);
             backBtn.innerHTML = `
-                <div style="width: 48px; height: 48px;" class="rounded-full bg-secondary-100 hover:bg-secondary-200 text-secondary-600 flex items-center justify-center shadow-xs border border-secondary-200">
-                    <ion-icon name="arrow-back" class="text-xl"></ion-icon>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary-100 hover:bg-secondary-200 text-secondary-600 flex items-center justify-center shadow-xs border border-secondary-200">
+                    <ion-icon name="arrow-back" class="text-lg sm:text-xl"></ion-icon>
                 </div>
-                <span class="text-[10px] font-bold text-secondary-600">Back</span>
+                <span class="text-[9px] sm:text-[10px] font-bold text-secondary-600">Back</span>
             `;
             container.appendChild(backBtn);
         } else {
             // "All" Button
             const allBtn = document.createElement('button');
             allBtn.type = 'button';
-            allBtn.className = `cat-btn flex flex-col items-center gap-1 min-w-[58px] group transition-all shrink-0 cursor-pointer ${filterCatId === 'all' ? 'active' : 'opacity-70 hover:opacity-100'}`;
+            allBtn.className = `cat-btn flex flex-col items-center gap-1 min-w-[50px] sm:min-w-[58px] group transition-all shrink-0 cursor-pointer ${filterCatId === 'all' ? 'active' : 'opacity-70 hover:opacity-100'}`;
             allBtn.onclick = () => { 
                 filterCatId = 'all'; 
                 renderCategories(null); 
                 applyProductFilters(); 
             };
             allBtn.innerHTML = `
-                <div style="width: 48px; height: 48px;" class="rounded-full ${filterCatId === 'all' ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-2' : 'bg-secondary-100 text-secondary-600'} flex items-center justify-center shadow-sm">
-                    <ion-icon name="apps" class="text-2xl"></ion-icon>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full ${filterCatId === 'all' ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-2' : 'bg-secondary-100 text-secondary-600'} flex items-center justify-center shadow-sm">
+                    <ion-icon name="apps" class="text-xl sm:text-2xl"></ion-icon>
                 </div>
-                <span class="text-[10px] font-bold ${filterCatId === 'all' ? 'text-primary-600' : 'text-secondary-700'}">All</span>
+                <span class="text-[9px] sm:text-[10px] font-bold ${filterCatId === 'all' ? 'text-primary-600' : 'text-secondary-700'}">All</span>
             `;
             container.appendChild(allBtn);
         }
@@ -489,7 +647,7 @@ function getPosProductVariants($product) {
             
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `cat-btn flex flex-col items-center gap-1 min-w-[60px] group transition-all shrink-0 cursor-pointer ${isActive ? 'active opacity-100' : 'opacity-75 hover:opacity-100'}`;
+            btn.className = `cat-btn flex flex-col items-center gap-1 min-w-[52px] sm:min-w-[60px] group transition-all shrink-0 cursor-pointer ${isActive ? 'active opacity-100' : 'opacity-75 hover:opacity-100'}`;
             
             btn.onclick = () => {
                 if (hasSub) {
@@ -503,13 +661,13 @@ function getPosProductVariants($product) {
 
             const imgHtml = cat.image_path 
                 ? `<img src="${cat.image_path}" class="w-full h-full object-contain p-1">`
-                : `<span class="text-base font-bold text-secondary-400 uppercase">${cat.name.charAt(0)}</span>`;
+                : `<span class="text-sm sm:text-base font-bold text-secondary-400 uppercase">${cat.name.charAt(0)}</span>`;
 
             btn.innerHTML = `
-                <div style="width: 48px; height: 48px;" class="rounded-full bg-secondary-50 border border-secondary-200 overflow-hidden flex items-center justify-center shadow-2xs transition-all group-hover:border-primary-500 group-hover:shadow-md ${isActive ? 'ring-2 ring-primary-600 ring-offset-2 border-primary-600 bg-primary-50/50' : ''}">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary-50 border border-secondary-200 overflow-hidden flex items-center justify-center shadow-2xs transition-all group-hover:border-primary-500 group-hover:shadow-md ${isActive ? 'ring-2 ring-primary-600 ring-offset-2 border-primary-600 bg-primary-50/50' : ''}">
                     ${imgHtml}
                 </div>
-                <span class="text-[10px] font-semibold ${isActive ? 'text-primary-600 font-bold' : 'text-secondary-600'} text-center leading-tight max-w-[64px] truncate group-hover:text-primary-600" title="${cat.name}">
+                <span class="text-[9px] sm:text-[10px] font-semibold ${isActive ? 'text-primary-600 font-bold' : 'text-secondary-600'} text-center leading-tight max-w-[56px] sm:max-w-[64px] truncate group-hover:text-primary-600" title="${cat.name}">
                     ${cat.name} ${hasSub ? '›' : ''}
                 </span>
             `;
@@ -585,9 +743,9 @@ function getPosProductVariants($product) {
 
         // 3. Highlight selected pill
         card.querySelectorAll('.pos-variant-btn').forEach(b => {
-            b.className = 'pos-variant-btn px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer border-secondary-200 text-secondary-500 bg-white hover:border-secondary-300 font-medium';
+            b.className = 'pos-variant-btn px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] border transition-all cursor-pointer border-secondary-200 text-secondary-500 bg-white hover:border-secondary-300 font-medium';
         });
-        pillBtn.className = 'pos-variant-btn px-1.5 py-0.5 rounded text-[10px] border transition-all cursor-pointer border-primary-600 text-primary-700 bg-primary-50 font-bold active-pos-variant shadow-2xs';
+        pillBtn.className = 'pos-variant-btn px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] border transition-all cursor-pointer border-primary-600 text-primary-700 bg-primary-50 font-bold active-pos-variant shadow-2xs';
     }
 
     // Add selected product / variant to POS cart
@@ -624,6 +782,15 @@ function getPosProductVariants($product) {
                 baseUnit: baseUnit
             });
         }
+
+        // Brief visual feedback on button
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<ion-icon name="checkmark-outline" class="text-sm"></ion-icon> <span>Added</span>';
+        btn.classList.add('bg-emerald-600', 'text-white');
+        setTimeout(() => {
+            btn.innerHTML = origHtml;
+            btn.classList.remove('bg-emerald-600', 'text-white');
+        }, 600);
 
         renderCart();
     }
@@ -667,6 +834,7 @@ function getPosProductVariants($product) {
         const emptyMsg = document.getElementById('emptyCartMsg');
         
         let subtotal = 0;
+        const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
         
         if (cart.length === 0) {
             container.innerHTML = '';
@@ -675,35 +843,35 @@ function getPosProductVariants($product) {
             emptyMsg.style.display = 'none';
             container.innerHTML = cart.map(item => `
                 <tr class="group hover:bg-secondary-50 transition-colors">
-                    <td class="px-3 py-2 align-middle">
+                    <td class="px-2.5 sm:px-3 py-2 align-middle">
                         <div class="font-bold text-secondary-900 text-xs leading-snug line-clamp-2" title="${item.name}">${item.name}</div>
                         <div class="flex items-center gap-1 flex-wrap mt-0.5">
                             ${item.variant_title ? `
-                                <span class="text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200 px-1.5 py-0.2 rounded">
+                                <span class="text-[9px] sm:text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-200 px-1 sm:px-1.5 py-0.2 rounded">
                                     ${item.variant_title}
                                 </span>
                             ` : ''}
                             ${(item.isOutOfStock || (item.qty * item.baseQty > item.maxStock)) ? `
-                                <span class="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded shadow-2xs" title="স্টক শেষ হলেও অর্ডারে গ্রহণ করা হয়েছে">
+                                <span class="text-[8px] sm:text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1 sm:px-1.5 py-0.2 rounded shadow-2xs" title="স্টক শেষ হলেও অর্ডারে গ্রহণ করা হয়েছে">
                                     স্টক আউট
                                 </span>
                             ` : ''}
                         </div>
                         <div class="text-[10px] text-secondary-400 mt-0.5">৳ ${item.price.toFixed(0)} / unit</div>
                     </td>
-                    <td class="px-1 py-1 align-middle">
-                        <div class="flex items-center justify-center border border-secondary-200 rounded-lg overflow-hidden h-7 w-20 bg-white shadow-2xs">
-                            <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-r border-secondary-200 font-black text-xs cursor-pointer">−</button>
-                            <input type="number" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold appearance-none bg-white">
-                            <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-l border-secondary-200 font-black text-xs cursor-pointer">+</button>
+                    <td class="px-1 py-1 align-middle text-center">
+                        <div class="inline-flex items-center justify-center border border-secondary-200 rounded-lg overflow-hidden h-6.5 sm:h-7 bg-white shadow-2xs">
+                            <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-5 sm:w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-r border-secondary-200 font-black text-xs cursor-pointer">−</button>
+                            <input type="number" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-6.5 sm:w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold appearance-none bg-white">
+                            <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-5 sm:w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600 transition-colors border-l border-secondary-200 font-black text-xs cursor-pointer">+</button>
                         </div>
                     </td>
-                    <td class="px-2 py-2 text-right align-middle font-bold text-secondary-900 text-xs">
+                    <td class="px-1.5 sm:px-2 py-2 text-right align-middle font-bold text-secondary-900 text-xs whitespace-nowrap">
                         ৳ ${(item.price * item.qty).toFixed(0)}
                     </td>
                     <td class="px-1 py-1 text-center align-middle">
-                        <button type="button" onclick="removeItem('${item.cartKey}')" class="text-secondary-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 cursor-pointer" title="Remove">
-                            <ion-icon name="trash-outline" class="text-base"></ion-icon>
+                        <button type="button" onclick="removeItem('${item.cartKey}')" class="text-secondary-400 hover:text-red-500 transition-colors p-1 sm:p-1.5 rounded-lg hover:bg-red-50 cursor-pointer" title="Remove">
+                            <ion-icon name="trash-outline" class="text-sm sm:text-base"></ion-icon>
                         </button>
                     </td>
                 </tr>
@@ -726,6 +894,36 @@ function getPosProductVariants($product) {
 
         document.getElementById('cartSubtotal').innerText = '৳ ' + subtotal.toFixed(2);
         calculateTotal();
+
+        // Update Mobile UI Badges and Floating Bar
+        const mobileTabBadge = document.getElementById('mobileTabBadge');
+        const mobileTabPrice = document.getElementById('mobileTabPrice');
+        const mobileFloatBar = document.getElementById('mobileFloatingCartBar');
+        const mobileFloatCount = document.getElementById('mobileFloatCount');
+        const mobileFloatTotal = document.getElementById('mobileFloatTotal');
+
+        if (mobileTabBadge) {
+            if (totalItems > 0) {
+                mobileTabBadge.innerText = totalItems;
+                mobileTabBadge.classList.remove('hidden');
+            } else {
+                mobileTabBadge.classList.add('hidden');
+            }
+        }
+        if (mobileTabPrice) {
+            mobileTabPrice.innerText = '৳ ' + Math.round(subtotal);
+        }
+        if (mobileFloatBar) {
+            if (totalItems > 0 && currentMobileTab === 'products' && window.innerWidth < 1024) {
+                mobileFloatBar.classList.remove('hidden');
+                mobileFloatBar.classList.add('flex');
+                if (mobileFloatCount) mobileFloatCount.innerText = totalItems;
+                if (mobileFloatTotal) mobileFloatTotal.innerText = '৳ ' + subtotal.toFixed(2);
+            } else {
+                mobileFloatBar.classList.add('hidden');
+                mobileFloatBar.classList.remove('flex');
+            }
+        }
     }
 
     // Recalculate Grand Total with Discount & Delivery
@@ -755,7 +953,7 @@ function getPosProductVariants($product) {
 
         searchTimeout = setTimeout(async () => {
             try {
-                const res = await fetch(`/sodai-dorkar/public/admin/customers/search-api?q=${encodeURIComponent(term)}`);
+                const res = await fetch(`${baseUrl}/admin/customers/search-api?q=${encodeURIComponent(term)}`);
                 const data = await res.json();
                 
                 if (data.length > 0) {
@@ -798,7 +996,7 @@ function getPosProductVariants($product) {
         document.getElementById('statOrders').innerText = '...';
 
         try {
-            const res = await fetch(`/sodai-dorkar/public/admin/orders/check-pending?customer_id=${id}`);
+            const res = await fetch(`${baseUrl}/admin/orders/check-pending?customer_id=${id}`);
             const data = await res.json();
             
             if (data.success) {
@@ -903,14 +1101,14 @@ function getPosProductVariants($product) {
         if (lng) formData.append('longitude', lng);
 
         try {
-            const res = await fetch('/sodai-dorkar/public/admin/customers/store', {
+            const res = await fetch(`${baseUrl}/admin/customers/store`, {
                 method: 'POST',
                 body: formData
             });
             
             closeQuickCustomerModal();
             // Automatically search and select this new customer
-            const searchRes = await fetch(`/sodai-dorkar/public/admin/customers/search-api?q=${encodeURIComponent(phone)}`);
+            const searchRes = await fetch(`${baseUrl}/admin/customers/search-api?q=${encodeURIComponent(phone)}`);
             const searchData = await searchRes.json();
             if (searchData.length > 0) {
                 selectCustomer(searchData[0].id, searchData[0].name, searchData[0].phone);
@@ -924,11 +1122,14 @@ function getPosProductVariants($product) {
     async function placeOrder() {
         if (!selectedCustId) {
             alert('Please select a customer first!');
+            // If on mobile and in products view, switch to cart view
+            switchToMobileTab('cart');
             document.getElementById('customerSearchInput').focus();
             return;
         }
         if (cart.length === 0) {
             alert('No products added to cart!');
+            switchToMobileTab('products');
             return;
         }
         
@@ -958,7 +1159,7 @@ function getPosProductVariants($product) {
         btn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Processing...';
 
         try {
-            const res = await fetch('/sodai-dorkar/public/admin/orders/store', {
+            const res = await fetch(`${baseUrl}/admin/orders/store`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -980,7 +1181,7 @@ function getPosProductVariants($product) {
             if (data.success) {
                 // If marked delivered from POS, offer immediate 3" receipt popup or redirect to invoice
                 if (markDelivered) {
-                    window.open('/sodai-dorkar/public/admin/orders/pos-receipt?id=' + data.order_id, '_blank', 'width=400,height=600');
+                    window.open(baseUrl + '/admin/orders/pos-receipt?id=' + data.order_id, '_blank', 'width=400,height=600');
                 }
                 window.location.href = data.redirect;
             } else {

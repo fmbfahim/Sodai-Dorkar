@@ -53,10 +53,10 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
-                <span>Home</span>
+                <span><?= $__('nav_home') ?></span>
             </a>
             <span class="text-gray-300">/</span>
-            <span class="text-emerald-700 font-bold">All Categories</span>
+            <span class="text-emerald-700 font-bold"><?= $__('all_category') ?></span>
         </nav>
 
         <!-- Page Header Banner -->
@@ -65,19 +65,19 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
             <div class="relative z-10 max-w-2xl">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-emerald-100 text-xs font-bold mb-3 border border-white/20">
                     <span>🛒</span>
-                    <span>Department Directory</span>
+                    <span><?= $locale === 'bn' ? 'ক্যাটাগরি ডিরেক্টরি' : 'Department Directory' ?></span>
                 </div>
                 <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-2">
-                    All Categories
+                    <?= $__('all_category') ?>
                 </h1>
                 <p class="text-emerald-100/90 text-xs sm:text-sm leading-relaxed mb-5">
-                    Browse our full range of fresh groceries, pantry staples, dairy, fish, meat, and everyday essentials.
+                    <?= $locale === 'bn' ? 'আমাদের সেরা মানের তাজা শাকসবজি, মাছ-মাংস, চাল-ডাল ও নিত্যপ্রয়োজনীয় পণ্যের সম্পূর্ণ তালিকা ঘুরে দেখুন।' : 'Browse our full range of fresh groceries, pantry staples, dairy, fish, meat, and everyday essentials.' ?>
                 </p>
 
                 <!-- Search Input for Categories -->
                 <div class="relative max-w-md">
                     <input type="text" id="cat-search-input" onkeyup="filterCategoryCards()" 
-                           placeholder="Search category or subcategory..." 
+                           placeholder="<?= $locale === 'bn' ? 'ক্যাটাগরি বা সাবক্যাটাগরি খুঁজুন...' : 'Search category or subcategory...' ?>" 
                            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white text-gray-800 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -88,14 +88,14 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
             <!-- Stats Badge Top Right -->
             <div class="hidden md:flex absolute top-8 right-8 flex-col items-end gap-1.5 text-right">
                 <div class="text-3xl font-black text-white"><?= count($mainCategories) ?></div>
-                <div class="text-xs font-bold text-emerald-200 uppercase tracking-wider">Main Categories</div>
-                <div class="text-xs text-emerald-100 mt-1"><?= count($allCategories) ?> Departments Total</div>
+                <div class="text-xs font-bold text-emerald-200 uppercase tracking-wider"><?= $locale === 'bn' ? 'মূল ক্যাটাগরি' : 'Main Categories' ?></div>
+                <div class="text-xs text-emerald-100 mt-1"><?= count($allCategories) ?> <?= $locale === 'bn' ? 'টি মোট ডিপার্টমেন্ট' : 'Departments Total' ?></div>
             </div>
         </div>
 
         <!-- Quick Jump Pill Bar (Horizontal scroll on mobile) -->
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-            <span class="text-xs font-black text-gray-400 uppercase tracking-wider flex-shrink-0 mr-1">Jump to:</span>
+            <span class="text-xs font-black text-gray-400 uppercase tracking-wider flex-shrink-0 mr-1"><?= $locale === 'bn' ? 'দ্রুত যান:' : 'Jump to:' ?></span>
             <?php foreach ($mainCategories as $mCat): ?>
             <a href="#cat-card-<?= $mCat['id'] ?>" 
                class="flex-shrink-0 px-3 py-1.5 rounded-full bg-white hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 border border-gray-200 text-xs font-bold shadow-2xs transition-all whitespace-nowrap">
@@ -147,7 +147,7 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                     <?php if (!empty($subIds)): ?>
                     <div>
                         <div class="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                            <span>Sub-categories (<?= count($subIds) ?>)</span>
+                            <span><?= $locale === 'bn' ? 'সাব-ক্যাটাগরি' : 'Sub-categories' ?> (<?= count($subIds) ?>)</span>
                         </div>
                         <div class="flex flex-wrap gap-1.5">
                             <?php foreach ($subIds as $sId): 
@@ -165,7 +165,7 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                     </div>
                     <?php else: ?>
                     <div class="text-xs text-gray-400 italic py-2">
-                        Explore all available products in this category.
+                        <?= $locale === 'bn' ? 'এই ক্যাটাগরির সকল পণ্য দেখুন।' : 'Explore all available products in this category.' ?>
                     </div>
                     <?php endif; ?>
 
@@ -173,7 +173,7 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                     <div class="pt-2">
                         <a href="<?= $base ?>/category?id=<?= $cat['id'] ?>" 
                            class="w-full py-2.5 px-4 rounded-xl bg-gray-50 hover:bg-emerald-600 text-gray-800 hover:text-white border border-gray-200 hover:border-emerald-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs group/btn">
-                            <span>Browse All in <?= htmlspecialchars($cat['name']) ?></span>
+                            <span><?= $locale === 'bn' ? htmlspecialchars($cat['name']) . '-এর সব পণ্য দেখুন' : 'Browse All in ' . htmlspecialchars($cat['name']) ?></span>
                             <span class="group-hover/btn:translate-x-1 transition-transform">→</span>
                         </a>
                     </div>
@@ -188,8 +188,8 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400 text-2xl">
                 🔍
             </div>
-            <h3 class="text-base font-bold text-gray-800">No matching categories found</h3>
-            <p class="text-xs text-gray-500 mt-1">Try searching with a different term or clear the search input.</p>
+            <h3 class="text-base font-bold text-gray-800"><?= $locale === 'bn' ? 'কোনো ক্যাটাগরি খুঁজে পাওয়া যায়নি' : 'No matching categories found' ?></h3>
+            <p class="text-xs text-gray-500 mt-1"><?= $locale === 'bn' ? 'অন্য কোনো নামে অনুসন্ধান করে দেখুন।' : 'Try searching with a different term or clear the search input.' ?></p>
         </div>
 
     </div>

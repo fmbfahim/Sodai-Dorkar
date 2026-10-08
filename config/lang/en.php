@@ -249,4 +249,6 @@ return [
     'you_may_also_like' => 'You May Also Like',
     'cross_selling_subtitle' => 'Customers who ordered these items also bought these daily kitchen favorites',
     'explore_full_catalog' => 'Explore Full Catalog',
+    'logistics_notice' => 'Logistics Notice',
+    'emergency_fee_applied' => 'emergency fee applied',
 ];
