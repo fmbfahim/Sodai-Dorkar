@@ -112,9 +112,9 @@ function getPosProductVariants($product) {
             </div>
         </div>
         
-        <!-- Products Grid (2 columns on mobile, up to 6 on big screens) -->
+        <!-- Products Grid (2 columns on mobile, up to 5 on large screens) -->
         <div class="flex-1 min-w-0 overflow-y-auto p-2 sm:p-3 bg-secondary-50/70 pb-28 lg:pb-4">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-2.5" id="productsGrid">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3" id="productsGrid">
                 <?php if (!empty($products)): foreach ($products as $p): ?>
                     <?php 
                         $vInfo = getPosProductVariants($p);
@@ -240,7 +240,23 @@ function getPosProductVariants($product) {
     </div>
 
     <!-- RIGHT PANEL: POS Cart & Checkout Details -->
-          <!-- Mobile Back Header -->
+    <div id="posCartPanel" class="pos-panel-inactive w-full lg:w-[380px] xl:w-[420px] lg:min-w-[340px] lg:max-w-[440px] flex flex-col bg-white rounded-2xl shadow-sm border border-secondary-200 h-full overflow-hidden shrink-0">
+        
+        <!-- Desktop POS Header -->
+        <div class="hidden lg:flex items-center justify-between px-3.5 py-2.5 bg-secondary-50/80 border-b border-secondary-200 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                    <ion-icon name="cart" class="text-base"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary-900 text-xs leading-tight">অর্ডার কার্ট ও চেকআউট</h3>
+                    <p class="text-[10px] text-secondary-400">POS Checkout Terminal</p>
+                </div>
+            </div>
+            <span id="desktopCartBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 text-primary-700">0 আইটেম</span>
+        </div>
+
+        <!-- Mobile Back Header -->
         <div class="pos-mobile-bar flex lg:hidden items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-xs shrink-0">
             <button type="button" onclick="switchToMobileTab('products')" class="text-xs font-bold text-white hover:text-white/90 flex items-center gap-1.5 bg-white/15 active:bg-white/25 px-3 py-1.5 rounded-xl backdrop-blur-xs transition-all cursor-pointer">
                 <ion-icon name="arrow-back-outline" class="text-base"></ion-icon>
@@ -473,9 +489,15 @@ function getPosProductVariants($product) {
         }
     }
     @media (min-width: 1024px) {
-        .pos-panel-active,
-        .pos-panel-inactive {
+        #posProductsPanel {
             display: flex !important;
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+        }
+        #posCartPanel {
+            display: flex !important;
+            flex: 0 0 380px !important;
+            max-width: 440px !important;
         }
         .pos-mobile-bar,
         #mobileFloatingCartBar {
@@ -958,9 +980,11 @@ function getPosProductVariants($product) {
         const mobileFloatImgPreview = document.getElementById('mobileFloatImgPreview');
         const cartHeaderBadge = document.getElementById('cartHeaderBadge');
         const mobileCartHeaderCount = document.getElementById('mobileCartHeaderCount');
+        const desktopCartBadge = document.getElementById('desktopCartBadge');
 
         if (cartHeaderBadge) cartHeaderBadge.innerText = totalItems;
         if (mobileCartHeaderCount) mobileCartHeaderCount.innerText = totalItems + ' আইটেম';
+        if (desktopCartBadge) desktopCartBadge.innerText = totalItems + ' আইটেম';
 
         if (mobileTabBadge) {
             if (totalItems > 0) {
