@@ -984,4 +984,102 @@ class Order {
         $stmt = $this->db->query($sql, ['order_id' => $orderId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Get orders taken by an Agent with filtering
+     */
+    public function getByAgent($agentId, $filters = []) {
+        $sql = "SELECT orders.*, 
+                       customers.name as customer_name, 
+                       customers.phone as customer_phone, 
+                       customers.unique_code,
+                       customers.address_details as customer_address,
+                       a.name as area_name,
+                       z.name as zone_name,
+                       p.name as point_name,
+                       dm.name as delivery_man_name,
+                       dm.phone as delivery_man_phone
+                FROM orders 
+                JOIN customers ON orders.customer_id = customers.id 
+                LEFT JOIN areas a ON COALESCE(orders.area_id, customers.area_id) = a.id
+                LEFT JOIN zones z ON COALESCE(orders.zone_id, customers.zone_id) = z.id
+                LEFT JOIN points p ON COALESCE(orders.point_id, customers.point_id) = p.id
+                LEFT JOIN users dm ON orders.delivery_man_id = dm.id
+                WHERE orders.agent_id = :agent_id";
+        
+        $params = ['agent_id' => $agentId];
+
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            $sql .= " AND orders.status = :status";
+            $params['status'] = $filters['status'];
+        }
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (orders.id = :search_id OR customers.name LIKE :search OR customers.phone LIKE :search)";
+            $params['search_id'] = is_numeric($filters['search']) ? (int)$filters['search'] : 0;
+            $params['search'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($filters['date'])) {
+            $sql .= " AND DATE(orders.created_at) = :order_date";
+            $params['order_date'] = $filters['date'];
+        }
+
+        $sql .= " ORDER BY orders.id DESC";
+
+        if (!empty($filters['limit'])) {
+            $limit = (int)$filters['limit'];
+            $sql .= " LIMIT {$limit}";
+        }
+
+        $stmt = $this->db->query($sql, $params);
+        $orders = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Attach items
+        foreach ($orders as &$order) {
+            $stmtItems = $this->db->query("SELECT oi.*, p.name as product_name, p.sku, p.image_path, p.base_unit 
+                                           FROM order_items oi 
+                                           JOIN products p ON oi.product_id = p.id 
+                                           WHERE oi.order_id = :id", ['id' => $order['id']]);
+            $order['items'] = $stmtItems->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Get KPI statistics for an agent
+     */
+    public function getAgentStats($agentId) {
+        $today = date('Y-m-d');
+
+        $sql = "SELECT 
+                    COUNT(*) as total_orders,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as total_sales,
+                    SUM(CASE WHEN DATE(created_at) = :today THEN 1 ELSE 0 END) as today_orders,
+                    COALESCE(SUM(CASE WHEN DATE(created_at) = :today AND status != 'cancelled' THEN total_amount ELSE 0 END), 0) as today_sales,
+                    SUM(CASE WHEN status IN ('pending', 'processing', 'packed') THEN 1 ELSE 0 END) as pending_orders,
+                    SUM(CASE WHEN status = 'out_for_delivery' THEN 1 ELSE 0 END) as out_for_delivery_orders,
+                    SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders
+                FROM orders 
+                WHERE agent_id = :agent_id";
+
+        $stmt = $this->db->query($sql, [
+            'agent_id' => $agentId,
+            'today' => $today
+        ]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return [
+            'total_orders'               => (int)($row['total_orders'] ?? 0),
+            'total_sales'                => (float)($row['total_sales'] ?? 0),
+            'today_orders'               => (int)($row['today_orders'] ?? 0),
+            'today_sales'                => (float)($row['today_sales'] ?? 0),
+            'pending_orders'             => (int)($row['pending_orders'] ?? 0),
+            'out_for_delivery_orders'    => (int)($row['out_for_delivery_orders'] ?? 0),
+            'delivered_orders'           => (int)($row['delivered_orders'] ?? 0),
+            'cancelled_orders'           => (int)($row['cancelled_orders'] ?? 0)
+        ];
+    }
 }

@@ -47,8 +47,10 @@ class AuthController {
             // Redirect based on role
             if ($user['role'] === 'delivery_man') {
                 header("Location: {$base}/delivery/dashboard");
+            } elseif ($user['role'] === 'agent') {
+                header("Location: {$base}/agent/dashboard");
             } else {
-                // Admin, Manager, Accountant, Staff, Agent go to admin dashboard
+                // Admin, Manager, Accountant, Staff go to admin dashboard
                 header("Location: {$base}/admin/dashboard");
             }
             exit;

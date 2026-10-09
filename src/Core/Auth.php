@@ -129,7 +129,7 @@ class Auth {
             case 'manager':
                 return [
                     'dashboard', 'products', 'categories_brands', 'orders',
-                    'dispatch', 'delivery_men', 'customers', 'vendors_purchases',
+                    'dispatch', 'delivery_men', 'agents', 'customers', 'vendors_purchases',
                     'locations', 'hr', 'payroll', 'reports'
                 ];
             case 'accountant':
@@ -173,6 +173,12 @@ class Auth {
                     'label_bn' => 'গ্রাহক ব্যবস্থাপনা',
                     'desc' => 'Customer accounts, purchase history, profile details, and login PIN reset',
                     'icon' => 'people-outline'
+                ],
+                'agents' => [
+                    'label' => 'Field Agents & Order Desk',
+                    'label_bn' => 'ফিল্ড এজেন্ট ও এরিয়া নির্ধারণ',
+                    'desc' => 'Agent accounts, assign operating union areas, monitor agent performance and orders',
+                    'icon' => 'bag-handle-outline'
                 ],
             ],
             'Catalog & Inventory' => [

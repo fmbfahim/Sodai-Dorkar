@@ -194,6 +194,8 @@ $router->post('/admin/zones/store', 'ZoneController@store');
 $router->get('/admin/zones/edit', 'ZoneController@edit');
 $router->post('/admin/zones/update', 'ZoneController@update');
 $router->post('/admin/zones/delete', 'ZoneController@destroy');
+$router->post('/admin/zones/bulk-delete', 'ZoneController@bulkDestroy');
+$router->post('/admin/zones/clean-corrupted', 'ZoneController@cleanCorrupted');
 
 // Vendors
 $router->get('/admin/customers/search-api', 'CustomerController@apiSearch');
@@ -213,6 +215,8 @@ $router->get('/admin/purchases/show', 'PurchaseController@show');
 $router->get('/admin/points', 'PointController@index');
 $router->post('/admin/points/store', 'PointController@store');
 $router->post('/admin/points/delete', 'PointController@destroy');
+$router->post('/admin/points/bulk-delete', 'PointController@bulkDestroy');
+$router->post('/admin/points/clean-corrupted', 'PointController@cleanCorrupted');
 $router->get('/admin/points/edit', 'PointController@edit');
 $router->post('/admin/points/update', 'PointController@update');
 
@@ -277,6 +281,35 @@ $router->post('/delivery/update-note', 'DeliveryController@updateNote');
 $router->post('/delivery/update-location', 'DeliveryController@updateLocation');
 $router->post('/delivery/change-password', 'DeliveryController@changePassword');
 $router->get('/delivery/parcel-search', 'DeliveryController@parcelSearch');
+
+// Field Sales Agent App Routes (Mobile Responsive Agent Portal)
+$router->get('/agent/dashboard', 'AgentPortalController@dashboard');
+$router->get('/agent/shop', 'AgentPortalController@shop');
+$router->get('/agent/cart/data', 'AgentPortalController@cartData');
+$router->post('/agent/cart/add', 'AgentPortalController@addToCart');
+$router->post('/agent/cart/update', 'AgentPortalController@updateCart');
+$router->post('/agent/cart/remove', 'AgentPortalController@removeFromCart');
+$router->post('/agent/cart/clear', 'AgentPortalController@clearCart');
+$router->get('/agent/checkout', 'AgentPortalController@checkout');
+$router->post('/agent/place-order', 'AgentPortalController@placeOrder');
+$router->get('/agent/orders/success', 'AgentPortalController@success');
+$router->get('/agent/orders', 'AgentPortalController@orders');
+$router->get('/agent/orders/show', 'AgentPortalController@showOrder');
+$router->get('/agent/customers', 'AgentPortalController@customers');
+$router->get('/agent/profile', 'AgentPortalController@profile');
+$router->post('/agent/change-password', 'AgentPortalController@changePassword');
+$router->get('/agent/api/customers/search', 'AgentPortalController@searchCustomers');
+$router->post('/agent/api/customers/store', 'AgentPortalController@storeCustomer');
+$router->get('/agent/api/zones', 'AgentPortalController@getZones');
+$router->get('/agent/api/points', 'AgentPortalController@getPoints');
+
+// Admin Field Agent Management Routes
+$router->get('/admin/agents', 'AgentController@index');
+$router->post('/admin/agents/store', 'AgentController@store');
+$router->post('/admin/agents/update', 'AgentController@update');
+$router->post('/admin/agents/assign-areas', 'AgentController@assignAreas');
+$router->post('/admin/agents/toggle-status', 'AgentController@toggleStatus');
+$router->get('/admin/agents/report', 'AgentController@report');
 
 // Reports
 $router->get('/admin/reports/stock', 'ReportController@stock');

@@ -52,4 +52,22 @@ class Point {
     public function delete($id) {
         $this->db->query("DELETE FROM points WHERE id = :id", ['id' => $id]);
     }
+
+    public function deleteMultiple(array $ids) {
+        if (empty($ids)) return 0;
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (empty($ids)) return 0;
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->query("DELETE FROM points WHERE id IN ($placeholders)", $ids);
+        return $stmt->rowCount();
+    }
+
+    public function deleteCorrupted($zoneId = null) {
+        if ($zoneId) {
+            $stmt = $this->db->query("DELETE FROM points WHERE zone_id = :zone_id AND (name = '??' OR name = '?' OR TRIM(name) = '' OR name LIKE '%?%')", ['zone_id' => $zoneId]);
+        } else {
+            $stmt = $this->db->query("DELETE FROM points WHERE name = '??' OR name = '?' OR TRIM(name) = '' OR name LIKE '%?%'");
+        }
+        return $stmt->rowCount();
+    }
 }

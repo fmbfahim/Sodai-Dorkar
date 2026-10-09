@@ -76,6 +76,12 @@ class Customer {
             $sql .= " AND customers.area_id = :area_id";
             $params['area_id'] = $filters['area_id'];
         }
+        if (!empty($filters['area_ids']) && is_array($filters['area_ids'])) {
+            $cleanAreaIds = array_filter(array_map('intval', $filters['area_ids']));
+            if (!empty($cleanAreaIds)) {
+                $sql .= " AND customers.area_id IN (" . implode(',', $cleanAreaIds) . ")";
+            }
+        }
         if (!empty($filters['zone_id'])) {
             $sql .= " AND customers.zone_id = :zone_id";
             $params['zone_id'] = $filters['zone_id'];
@@ -108,8 +114,8 @@ class Customer {
             'area_id' => $data['area_id'],
             'zone_id' => $data['zone_id'] ?? null,
             'point_id' => $data['point_id'] ?? null,
-            'address_details' => $data['address_details'],
-            'demographics_json' => $data['demographics_json'],
+            'address_details' => $data['address_details'] ?? null,
+            'demographics_json' => $data['demographics_json'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null
         ]);

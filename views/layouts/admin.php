@@ -77,6 +77,8 @@ if ($isMenuActive('/admin/orders/create', true)) {
     $activeNavLabel = 'Customers';
 } elseif ($isMenuActive('/admin/delivery-men', false)) {
     $activeNavLabel = 'Delivery Riders';
+} elseif ($isMenuActive('/admin/agents', false)) {
+    $activeNavLabel = 'Sales Agents (এজেন্ট)';
 } elseif ($isMenuActive('/admin/dispatch', false)) {
     $activeNavLabel = 'Dispatch Board';
 } elseif ($isMenuActive('/admin/reports/visitors', true)) {
@@ -279,7 +281,7 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
                 <?php endif; ?>
 
                 <!-- Operations Section -->
-                <?php if (\Core\Auth::can('customers') || \Core\Auth::can('delivery_men') || \Core\Auth::can('orders') || \Core\Auth::can('dispatch')): ?>
+                <?php if (\Core\Auth::can('customers') || \Core\Auth::can('agents') || \Core\Auth::can('delivery_men') || \Core\Auth::can('orders') || \Core\Auth::can('dispatch')): ?>
                     <li class="px-4 pt-4 pb-2 text-[11px] font-bold text-secondary-400 uppercase tracking-wider">Operations</li>
 
                     <?php if (\Core\Auth::can('customers')): ?>
@@ -287,6 +289,15 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
                             <a href="<?= $base ?>/admin/customers" class="<?= $navItemClass('/admin/customers', false) ?>">
                                 <ion-icon name="people-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">Customers</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::can('agents')): ?>
+                        <li>
+                            <a href="<?= $base ?>/admin/agents" class="<?= $navItemClass('/admin/agents', false) ?>">
+                                <ion-icon name="bag-handle-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
+                                <span class="font-medium">Sales Agents (ফিল্ড এজেন্ট)</span>
                             </a>
                         </li>
                     <?php endif; ?>

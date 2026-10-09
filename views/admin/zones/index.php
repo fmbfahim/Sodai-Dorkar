@@ -186,7 +186,14 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                     </span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Clean Corrupted (??) Button -->
+                    <button type="button" id="cleanCorruptedBtn" title="ত্রুটিপূর্ণ (??) বা অকেজো ওয়ার্ডগুলো স্বয়ংক্রিয়ভাবে মুছে ফেলুন" 
+                            class="text-xs font-bold px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <ion-icon name="trash-bin-outline" class="text-amber-600 text-sm"></ion-icon>
+                        <span>অকেজো (??) ওয়ার্ড মুছুন</span>
+                    </button>
+
                     <!-- Area Filter -->
                     <select id="listFilterArea" class="text-xs font-semibold border border-secondary-300 rounded-xl px-3 py-2 bg-white text-secondary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20">
                         <option value="">সকল ইউনিয়ন (All Unions)</option>
@@ -200,9 +207,26 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                     <!-- Search Input -->
                     <div class="relative">
                         <input type="text" id="zoneSearch" placeholder="ওয়ার্ড বা ইউনিয়ন খুঁজুন..." 
-                               class="text-xs border border-secondary-300 rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 w-full sm:w-44 text-secondary-800 font-medium">
+                                class="text-xs border border-secondary-300 rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 w-full sm:w-44 text-secondary-800 font-medium">
                         <ion-icon name="search-outline" class="absolute left-2.5 top-2.5 text-secondary-400 text-sm"></ion-icon>
                     </div>
+                </div>
+            </div>
+
+            <!-- Floating / Inline Bulk Action Bar -->
+            <div id="bulkActionBar" class="hidden px-5 py-3 bg-red-50 border-b border-red-200 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+                <div class="flex items-center gap-2">
+                    <ion-icon name="checkbox-outline" class="text-red-600 text-lg"></ion-icon>
+                    <span class="text-xs font-bold text-red-800" id="selectedCountText">০ টি ওয়ার্ড নির্বাচিত</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="bulkDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors">
+                        <ion-icon name="trash-outline" class="text-sm"></ion-icon>
+                        <span>নির্বাচিতগুলো মুছে ফেলুন (Delete Selected)</span>
+                    </button>
+                    <button type="button" id="cancelBulkBtn" class="text-secondary-600 hover:text-secondary-900 text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-red-100/60 transition-colors cursor-pointer">
+                        বাতিল
+                    </button>
                 </div>
             </div>
 
@@ -211,6 +235,10 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                 <table class="w-full text-left text-sm text-secondary-600" id="zonesTable">
                     <thead class="bg-secondary-50/80 text-secondary-500 text-xs uppercase tracking-wider font-bold">
                         <tr>
+                            <th class="w-10 px-4 py-3.5 text-center">
+                                <input type="checkbox" id="selectAllCheckbox" title="সবগুলো নির্বাচন করুন" 
+                                       class="rounded border-secondary-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                            </th>
                             <th class="px-6 py-3.5">Zone Name</th>
                             <th class="px-6 py-3.5">Union (Area)</th>
                             <th class="px-6 py-3.5 text-right">Actions</th>
@@ -219,7 +247,7 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                     <tbody class="divide-y divide-secondary-100" id="zonesTbody">
                          <?php if (empty($zones)): ?>
                             <tr id="emptyRow">
-                                <td colspan="3" class="px-6 py-10 text-center text-secondary-400">
+                                <td colspan="4" class="px-6 py-10 text-center text-secondary-400">
                                     <ion-icon name="map-outline" class="text-3xl text-secondary-300 mb-2"></ion-icon>
                                     <p class="font-medium">কোনো ওয়ার্ড পাওয়া যায়নি। বাম পাশের ফর্ম থেকে নতুন ওয়ার্ড যোগ করুন।</p>
                                 </td>
@@ -231,7 +259,11 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                                     data-area-id="<?= $zone['area_id'] ?>" 
                                     data-name="<?= htmlspecialchars(mb_strtolower($zone['name'])) ?>"
                                     data-area-name="<?= htmlspecialchars(mb_strtolower($zone['area_name'])) ?>">
-                                    <td class="px-6 py-4 font-bold text-secondary-900">
+                                    <td class="w-10 px-4 py-4 text-center">
+                                        <input type="checkbox" class="zone-row-checkbox rounded border-secondary-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                               value="<?= $zone['id'] ?>">
+                                    </td>
+                                    <td class="px-6 py-4 font-bold text-secondary-900 zone-name-cell">
                                         <?= htmlspecialchars($zone['name']); ?>
                                     </td>
                                     <td class="px-6 py-4">
@@ -499,16 +531,16 @@ document.addEventListener('DOMContentLoaded', function() {
             inputs.forEach(inp => {
                 const val = inp.value.trim();
                 if (val) {
-                    val.split(/[\r\n,;।]+/).map(s => s.trim()).filter(Boolean).forEach(s => names.push(s));
+                    val.split(/[\r\n,;।\u0964\u0965]+/u).map(s => s.trim()).filter(Boolean).forEach(s => names.push(s));
                 }
             });
         } else {
             const raw = bulkTextarea.value.trim();
             if (raw) {
-                raw.split(/[\r\n,;।]+/).map(s => s.trim()).filter(Boolean).forEach(s => names.push(s));
+                raw.split(/[\r\n,;।\u0964\u0965]+/u).map(s => s.trim()).filter(Boolean).forEach(s => names.push(s));
             }
         }
-        return names;
+        return [...new Set(names)];
     }
 
     function updateZonesPreview() {
@@ -570,7 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         const formData = new FormData();
-        formData.append('csrf_token', zoneForm.querySelector('input[name="csrf_token"]').value);
+        const csrfVal = zoneForm.querySelector('input[name="csrf_token"]').value;
+        formData.append('csrf_token', csrfVal);
         formData.append('area_id', areaId);
         formData.append('is_ajax', '1');
         items.forEach(name => formData.append('names[]', name));
@@ -603,7 +636,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         tr.setAttribute('data-name', (zn.name || '').toLowerCase());
                         tr.setAttribute('data-area-name', (zn.area_name || '').toLowerCase());
                         tr.innerHTML = `
-                            <td class="px-6 py-4 font-bold text-secondary-900">
+                            <td class="w-10 px-4 py-4 text-center">
+                                <input type="checkbox" class="zone-row-checkbox rounded border-secondary-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                       value="${zn.id}">
+                            </td>
+                            <td class="px-6 py-4 font-bold text-secondary-900 zone-name-cell">
                                 ${escapeHtml(zn.name)}
                                 <span class="ml-2 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-600 text-white">নতুন</span>
                             </td>
@@ -617,9 +654,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                 </a>
                                 <form action="${APP_BASE}/admin/zones/delete" method="POST" 
-                                      onsubmit="return confirm('আপনি কি নিশ্চিত যে এই ওয়ার্ডটি মুছে ফেলতে চান?');" 
                                       class="inline delete-form">
-                                    <input type="hidden" name="csrf_token" value="${zoneForm.querySelector('input[name="csrf_token"]').value}">
+                                    <input type="hidden" name="csrf_token" value="${csrfVal}">
                                     <input type="hidden" name="id" value="${zn.id}">
                                     <input type="hidden" name="area_id" value="${areaId}">
                                     <button type="submit" 
@@ -631,6 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>
                         `;
                         zonesTbody.prepend(tr);
+                        attachDeleteHandler(tr.querySelector('.delete-form'));
                     });
                 }
 
@@ -655,7 +692,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error(err);
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
-            // Fallback: normal submit if fetch failed
             zoneForm.submit();
         });
     });
@@ -700,18 +736,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 visibleCount++;
             } else {
                 row.style.display = 'none';
+                const cb = row.querySelector('.zone-row-checkbox');
+                if (cb) cb.checked = false;
             }
         });
 
         if (filteredCountBadge) {
             filteredCountBadge.textContent = `${visibleCount} টি`;
         }
+        updateBulkBar();
     }
 
     if (listFilterArea) {
         listFilterArea.addEventListener('change', function() {
             filterTable();
-            // Also synchronize with left side form if user wants
             const opt = document.querySelector(`.area-option[data-id="${this.value}"]`);
             if (opt) {
                 setAreaSelected(this.value, opt.getAttribute('data-name'), true);
@@ -722,6 +760,216 @@ document.addEventListener('DOMContentLoaded', function() {
     if (zoneSearch) {
         zoneSearch.addEventListener('input', filterTable);
     }
+
+    // ==========================================
+    // 5. BULK SELECTION & BULK DELETE
+    // ==========================================
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const bulkActionBar = document.getElementById('bulkActionBar');
+    const selectedCountText = document.getElementById('selectedCountText');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const cancelBulkBtn = document.getElementById('cancelBulkBtn');
+    const cleanCorruptedBtn = document.getElementById('cleanCorruptedBtn');
+
+    function getSelectedCheckboxes() {
+        return Array.from(document.querySelectorAll('.zone-row-checkbox:checked'));
+    }
+
+    function updateBulkBar() {
+        const checked = getSelectedCheckboxes();
+        const count = checked.length;
+        if (count > 0) {
+            bulkActionBar.classList.remove('hidden');
+            selectedCountText.textContent = `${count} টি ওয়ার্ড নির্বাচিত`;
+        } else {
+            bulkActionBar.classList.add('hidden');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.zone-row').forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cb = row.querySelector('.zone-row-checkbox');
+                    if (cb) cb.checked = isChecked;
+                }
+            });
+            updateBulkBar();
+        });
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('zone-row-checkbox')) {
+            updateBulkBar();
+        }
+    });
+
+    if (cancelBulkBtn) {
+        cancelBulkBtn.addEventListener('click', function() {
+            document.querySelectorAll('.zone-row-checkbox').forEach(cb => cb.checked = false);
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            updateBulkBar();
+        });
+    }
+
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function() {
+            const checked = getSelectedCheckboxes();
+            const ids = checked.map(cb => cb.value);
+            if (ids.length === 0) return;
+
+            if (!confirm(`আপনি কি নিশ্চিত যে নির্বাচিত মোট ${ids.length} টি ওয়ার্ড মুছে ফেলতে চান?`)) {
+                return;
+            }
+
+            const csrfToken = zoneForm.querySelector('input[name="csrf_token"]').value;
+            const originalHtml = bulkDeleteBtn.innerHTML;
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>মুছে ফেলা হচ্ছে...</span>
+            `;
+
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            formData.append('is_ajax', '1');
+            formData.append('area_id', areaIdInput.value);
+            ids.forEach(id => formData.append('ids[]', id));
+
+            fetch(`${APP_BASE}/admin/zones/bulk-delete`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = originalHtml;
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    ids.forEach(id => {
+                        const tr = document.querySelector(`.zone-row[data-id="${id}"]`);
+                        if (tr) tr.remove();
+                    });
+                    updateBulkBar();
+                    filterTable();
+                } else {
+                    showAlert(data.message || 'ওয়ার্ডগুলো মুছতে সমস্যা হয়েছে।', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = originalHtml;
+                showAlert('সার্ভারের সাথে যোগাযোগে ত্রুটি ঘটেছে।', 'error');
+            });
+        });
+    }
+
+    // ==========================================
+    // 6. CLEAN CORRUPTED (??) ZONES
+    // ==========================================
+    if (cleanCorruptedBtn) {
+        cleanCorruptedBtn.addEventListener('click', function() {
+            if (!confirm('আপনি কি নিশ্চিত যে সকল ত্রুটিপূর্ণ (??) বা খালি নামের ওয়ার্ডগুলো মুছে ফেলতে চান?')) {
+                return;
+            }
+
+            const csrfToken = zoneForm.querySelector('input[name="csrf_token"]').value;
+            const originalHtml = cleanCorruptedBtn.innerHTML;
+            cleanCorruptedBtn.disabled = true;
+            cleanCorruptedBtn.innerHTML = `<span>পরিষ্কার করা হচ্ছে...</span>`;
+
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            formData.append('is_ajax', '1');
+            if (areaIdInput.value) {
+                formData.append('area_id', areaIdInput.value);
+            }
+
+            fetch(`${APP_BASE}/admin/zones/clean-corrupted`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                cleanCorruptedBtn.disabled = false;
+                cleanCorruptedBtn.innerHTML = originalHtml;
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    // Remove all corrupted rows from table
+                    document.querySelectorAll('.zone-row').forEach(row => {
+                        const nameCell = row.querySelector('.zone-name-cell');
+                        const text = nameCell ? nameCell.textContent.trim() : '';
+                        if (text === '??' || text === '?' || text === '' || text.includes('??')) {
+                            row.remove();
+                        }
+                    });
+                    updateBulkBar();
+                    filterTable();
+                } else {
+                    showAlert(data.message || 'পরিষ্কার করতে সমস্যা হয়েছে।', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                cleanCorruptedBtn.disabled = false;
+                cleanCorruptedBtn.innerHTML = originalHtml;
+                showAlert('সার্ভারের সাথে যোগাযোগে ত্রুটি ঘটেছে।', 'error');
+            });
+        });
+    }
+
+    // ==========================================
+    // 7. AJAX SINGLE ROW DELETE HANDLER
+    // ==========================================
+    function attachDeleteHandler(form) {
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!confirm('আপনি কি নিশ্চিত যে এই ওয়ার্ডটি মুছে ফেলতে চান?')) {
+                return;
+            }
+
+            const formData = new FormData(form);
+            formData.append('is_ajax', '1');
+
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    const tr = form.closest('.zone-row');
+                    if (tr) tr.remove();
+                    updateBulkBar();
+                    filterTable();
+                } else {
+                    if (btn) btn.disabled = false;
+                    showAlert(data.message || 'ওয়ার্ড মুছতে সমস্যা হয়েছে।', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                // Fallback to regular submit
+                form.submit();
+            });
+        });
+    }
+
+    document.querySelectorAll('.delete-form').forEach(form => attachDeleteHandler(form));
 
     // Trigger initial filter on load
     filterTable();

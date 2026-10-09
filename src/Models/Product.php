@@ -147,7 +147,13 @@ class Product {
         }
 
         if (!empty($filters['availability_status'])) {
-            if ($filters['availability_status'] === 'archived') {
+            if (is_array($filters['availability_status'])) {
+                $placeholders = implode(',', array_fill(0, count($filters['availability_status']), '?'));
+                $sql .= " AND products.availability_status IN ({$placeholders}) AND (products.is_deleted = 0 OR products.is_deleted IS NULL)";
+                foreach ($filters['availability_status'] as $av) {
+                    $params[] = $av;
+                }
+            } elseif ($filters['availability_status'] === 'archived') {
                 $sql .= " AND (products.is_deleted = 1 OR products.availability_status = 'archived')";
             } elseif ($filters['availability_status'] === 'pending') {
                 $sql .= " AND (products.availability_status = 'pending' OR products.availability_status IS NULL OR products.availability_status = '') AND (products.is_deleted = 0 OR products.is_deleted IS NULL) AND (products.availability_status != 'archived' OR products.availability_status IS NULL)";

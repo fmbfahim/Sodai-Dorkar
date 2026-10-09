@@ -31,36 +31,51 @@ class ZoneController extends Controller {
     }
 
     public function store() {
-        $rawNames = $_POST['names'] ?? ($_POST['name'] ?? '');
         $area_id = $_POST['area_id'] ?? '';
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
                   || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false)
                   || !empty($_POST['is_ajax']);
 
-        $items = [];
-        if (is_array($rawNames)) {
-            foreach ($rawNames as $item) {
-                if (is_string($item)) {
-                    $splits = preg_split('/[\r\n,;।]+/', $item);
-                    foreach ($splits as $s) {
-                        $s = trim($s);
-                        if ($s !== '') $items[] = $s;
-                    }
-                }
+        $rawInputs = [];
+        if (!empty($_POST['names'])) {
+            if (is_array($_POST['names'])) {
+                $rawInputs = array_merge($rawInputs, $_POST['names']);
+            } else {
+                $rawInputs[] = $_POST['names'];
             }
-        } elseif (is_string($rawNames)) {
-            $splits = preg_split('/[\r\n,;।]+/', $rawNames);
-            foreach ($splits as $s) {
-                $s = trim($s);
-                if ($s !== '') $items[] = $s;
+        }
+        if (!empty($_POST['name'])) {
+            if (is_array($_POST['name'])) {
+                $rawInputs = array_merge($rawInputs, $_POST['name']);
+            } else {
+                $rawInputs[] = $_POST['name'];
             }
         }
 
-        // Deduplicate whitespace / empty items
-        $items = array_values(array_filter($items, function($val) {
+        $items = [];
+        foreach ($rawInputs as $item) {
+            if (is_string($item)) {
+                // Strip outer delimiters and whitespace safely with regex
+                $item = preg_replace('/^[\s,;।\x{0964}\x{0965}]+|[\s,;।\x{0964}\x{0965}]+$/u', '', $item);
+                // Split by newline, comma, semicolon, and Bengali dāṛi with /u (UTF-8 unicode modifier)
+                $splits = preg_split('/[\r\n,;।\x{0964}\x{0965}]+/u', $item);
+                if (is_array($splits)) {
+                    foreach ($splits as $s) {
+                        $s = trim($s);
+                        $s = preg_replace('/^[\s,;।\x{0964}\x{0965}]+|[\s,;।\x{0964}\x{0965}]+$/u', '', $s);
+                        if ($s !== '') {
+                            $items[] = $s;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Deduplicate whitespace / empty items and duplicate entries in the same batch
+        $items = array_values(array_unique(array_filter($items, function($val) {
             return trim($val) !== '';
-        }));
+        })));
 
         if (!empty($items) && $area_id) {
             $zoneModel = new Zone();
@@ -168,14 +183,75 @@ class ZoneController extends Controller {
 
     public function destroy() {
         $id = $_POST['id'] ?? null;
+        $ids = $_POST['ids'] ?? [];
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $area_id = $_POST['area_id'] ?? ($_SESSION['last_zone_area_id'] ?? '');
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+                  || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false)
+                  || !empty($_POST['is_ajax']);
 
-        if ($id) {
-            $zoneModel = new Zone();
-            $zoneModel->delete($id);
+        $zoneModel = new Zone();
+        $deletedCount = 0;
+
+        if (!empty($ids) && is_array($ids)) {
+            $ids = array_values(array_filter(array_map('intval', $ids)));
+            if (!empty($ids)) {
+                $deletedCount = $zoneModel->deleteMultiple($ids);
+            }
+        } elseif ($id) {
+            $zoneModel->delete(intval($id));
+            $deletedCount = 1;
         }
-        $redirectUrl = "{$base}/admin/zones" . ($area_id ? "?area_id={$area_id}&success=" . urlencode("Zone মুছে ফেলা হয়েছে!") : "?success=" . urlencode("Zone মুছে ফেলা হয়েছে!"));
+
+        $msg = $deletedCount > 1 
+            ? "একত্রে {$deletedCount} টি Zone মুছে ফেলা হয়েছে!" 
+            : "Zone মুছে ফেলা হয়েছে!";
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => $msg,
+                'count' => $deletedCount,
+                'ids' => !empty($ids) ? $ids : ($id ? [intval($id)] : [])
+            ]);
+            exit;
+        }
+
+        $redirectUrl = "{$base}/admin/zones" . ($area_id ? "?area_id={$area_id}&success=" . urlencode($msg) : "?success=" . urlencode($msg));
+        header("Location: {$redirectUrl}");
+        exit;
+    }
+
+    public function bulkDestroy() {
+        return $this->destroy();
+    }
+
+    public function cleanCorrupted() {
+        $area_id = $_POST['area_id'] ?? null;
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+                  || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false)
+                  || !empty($_POST['is_ajax']);
+
+        $zoneModel = new Zone();
+        $deletedCount = $zoneModel->deleteCorrupted($area_id);
+
+        $msg = $deletedCount > 0 
+            ? "মোট {$deletedCount} টি ত্রুটিপূর্ণ/অকেজো (??) Zone মুছে ফেলা হয়েছে!" 
+            : "কোনো ত্রুটিপূর্ণ (??) Zone পাওয়া যায়নি।";
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => $msg,
+                'count' => $deletedCount
+            ]);
+            exit;
+        }
+
+        $redirectUrl = "{$base}/admin/zones" . ($area_id ? "?area_id={$area_id}&success=" . urlencode($msg) : "?success=" . urlencode($msg));
         header("Location: {$redirectUrl}");
         exit;
     }

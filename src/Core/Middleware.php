@@ -24,6 +24,8 @@ class Middleware {
                 
                 if ($_SESSION['role'] === 'delivery_man') {
                     header("Location: {$base}/delivery/dashboard");
+                } elseif ($_SESSION['role'] === 'agent') {
+                    header("Location: {$base}/agent/dashboard");
                 } elseif ($_SESSION['role'] === 'admin') {
                     header("Location: {$base}/admin/dashboard");
                 } else {

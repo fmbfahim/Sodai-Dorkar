@@ -43,10 +43,21 @@ class OrderController extends Controller {
     }
 
     public function incompleteOrders() {
-        $incModel = new \Models\IncompleteOrder();
         $status = $_GET['status'] ?? 'all';
-        $incompletes = $incModel->all($status);
-        $stats = $incModel->getStats();
+        try {
+            $incModel = new \Models\IncompleteOrder();
+            $incompletes = $incModel->all($status);
+            $stats = $incModel->getStats();
+        } catch (\Throwable $e) {
+            error_log("OrderController::incompleteOrders error: " . $e->getMessage());
+            $incompletes = [];
+            $stats = [
+                'today_count' => 0,
+                'total_incomplete' => 0,
+                'total_amount' => 0.0,
+                'converted_count' => 0
+            ];
+        }
 
         return $this->view('admin/orders/incomplete', [
             'title' => 'Incomplete Orders & Abandoned Carts',

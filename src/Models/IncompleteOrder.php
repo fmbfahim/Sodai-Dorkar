@@ -7,10 +7,47 @@ use PDO;
 
 class IncompleteOrder {
     protected $db;
+    private static $schemaEnsured = false;
 
     public function __construct() {
         $config = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        $this->ensureSchema();
+    }
+
+    /**
+     * Ensure the incomplete_orders table exists in the database
+     */
+    public function ensureSchema() {
+        if (self::$schemaEnsured) return;
+        self::$schemaEnsured = true;
+
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS `incomplete_orders` (
+                `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                `session_id` varchar(128) NOT NULL,
+                `customer_id` int(10) unsigned DEFAULT NULL,
+                `customer_name` varchar(100) DEFAULT NULL,
+                `customer_phone` varchar(30) DEFAULT NULL,
+                `customer_address` text DEFAULT NULL,
+                `ip_address` varchar(45) DEFAULT NULL,
+                `user_agent` text DEFAULT NULL,
+                `cart_items` longtext NOT NULL,
+                `items_count` int(10) unsigned DEFAULT 0,
+                `total_amount` decimal(10,2) DEFAULT 0.00,
+                `status` enum('incomplete','converted','cancelled','recovered') DEFAULT 'incomplete',
+                `converted_order_id` int(10) unsigned DEFAULT NULL,
+                `created_at` datetime NOT NULL,
+                `updated_at` datetime NOT NULL,
+                PRIMARY KEY (`id`),
+                KEY `idx_session` (`session_id`),
+                KEY `idx_customer` (`customer_id`),
+                KEY `idx_status` (`status`),
+                KEY `idx_updated` (`updated_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::ensureSchema error: " . $e->getMessage());
+        }
     }
 
     /**
@@ -31,102 +68,106 @@ class IncompleteOrder {
      * Synchronize the current session's cart into incomplete_orders
      */
     public function syncCart($cart, $extraInfo = []) {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-        $sessionId = session_id();
-        if (empty($sessionId)) return null;
-
-        $pdo = $this->db->getConnection();
-        $ip = self::getClientIp();
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-
-        // Calculate count & total
-        $itemsCount = 0;
-        $totalAmount = 0.00;
-        if (!empty($cart) && is_array($cart)) {
-            foreach ($cart as $item) {
-                $qty = intval($item['quantity'] ?? 1);
-                $price = floatval($item['price'] ?? 0);
-                $itemsCount += $qty;
-                $totalAmount += ($qty * $price);
+        try {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
             }
-        }
+            $sessionId = session_id();
+            if (empty($sessionId)) return null;
 
-        // Check if customer info available
-        $customerId = $extraInfo['customer_id'] ?? ($_SESSION['customer_id'] ?? null);
-        $customerName = $extraInfo['customer_name'] ?? null;
-        $customerPhone = $extraInfo['customer_phone'] ?? null;
-        $customerAddress = $extraInfo['customer_address'] ?? null;
+            $pdo = $this->db->getConnection();
+            $ip = self::getClientIp();
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-        if ($customerId && (empty($customerName) || empty($customerPhone))) {
-            $stmt = $this->db->query("SELECT name, phone, address_details FROM customers WHERE id = ?", [$customerId]);
-            if ($cust = $stmt->fetch()) {
-                if (empty($customerName)) $customerName = $cust['name'];
-                if (empty($customerPhone)) $customerPhone = $cust['phone'];
-                if (empty($customerAddress)) $customerAddress = $cust['address_details'];
+            // Calculate count & total
+            $itemsCount = 0;
+            $totalAmount = 0.00;
+            if (!empty($cart) && is_array($cart)) {
+                foreach ($cart as $item) {
+                    $qty = intval($item['quantity'] ?? 1);
+                    $price = floatval($item['price'] ?? 0);
+                    $itemsCount += $qty;
+                    $totalAmount += ($qty * $price);
+                }
             }
-        }
 
-        // If cart is empty, check if existing record needs updating
-        if (empty($cart)) {
-            // Keep existing record but set cart empty or leave it as abandoned
+            // Check if customer info available
+            $customerId = $extraInfo['customer_id'] ?? ($_SESSION['customer_id'] ?? null);
+            $customerName = $extraInfo['customer_name'] ?? null;
+            $customerPhone = $extraInfo['customer_phone'] ?? null;
+            $customerAddress = $extraInfo['customer_address'] ?? null;
+
+            if ($customerId && (empty($customerName) || empty($customerPhone))) {
+                $stmt = $this->db->query("SELECT name, phone, address_details FROM customers WHERE id = ?", [$customerId]);
+                if ($cust = $stmt->fetch()) {
+                    if (empty($customerName)) $customerName = $cust['name'];
+                    if (empty($customerPhone)) $customerPhone = $cust['phone'];
+                    if (empty($customerAddress)) $customerAddress = $cust['address_details'];
+                }
+            }
+
+            // If cart is empty, check if existing record needs updating
+            if (empty($cart)) {
+                return null;
+            }
+
+            // Check if active incomplete order exists for this session
+            $stmt = $this->db->query("SELECT id FROM incomplete_orders WHERE session_id = ? AND status = 'incomplete' ORDER BY id DESC LIMIT 1", [$sessionId]);
+            $existing = $stmt->fetch();
+
+            $cartJson = json_encode(array_values($cart), JSON_UNESCAPED_UNICODE);
+            $now = date('Y-m-d H:i:s');
+
+            if ($existing) {
+                $sql = "UPDATE incomplete_orders SET 
+                            customer_id = COALESCE(?, customer_id),
+                            customer_name = COALESCE(?, customer_name),
+                            customer_phone = COALESCE(?, customer_phone),
+                            customer_address = COALESCE(?, customer_address),
+                            ip_address = ?,
+                            user_agent = ?,
+                            cart_items = ?,
+                            items_count = ?,
+                            total_amount = ?,
+                            updated_at = ?
+                        WHERE id = ?";
+                $this->db->query($sql, [
+                    $customerId,
+                    $customerName,
+                    $customerPhone,
+                    $customerAddress,
+                    $ip,
+                    $userAgent,
+                    $cartJson,
+                    $itemsCount,
+                    $totalAmount,
+                    $now,
+                    $existing['id']
+                ]);
+                return $existing['id'];
+            } else {
+                $sql = "INSERT INTO incomplete_orders 
+                        (session_id, customer_id, customer_name, customer_phone, customer_address, ip_address, user_agent, cart_items, items_count, total_amount, status, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incomplete', ?, ?)";
+                $this->db->query($sql, [
+                    $sessionId,
+                    $customerId,
+                    $customerName,
+                    $customerPhone,
+                    $customerAddress,
+                    $ip,
+                    $userAgent,
+                    $cartJson,
+                    $itemsCount,
+                    $totalAmount,
+                    $now,
+                    $now
+                ]);
+                return $pdo->lastInsertId();
+            }
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::syncCart error: " . $e->getMessage());
             return null;
-        }
-
-        // Check if active incomplete order exists for this session
-        $stmt = $this->db->query("SELECT id FROM incomplete_orders WHERE session_id = ? AND status = 'incomplete' ORDER BY id DESC LIMIT 1", [$sessionId]);
-        $existing = $stmt->fetch();
-
-        $cartJson = json_encode(array_values($cart), JSON_UNESCAPED_UNICODE);
-        $now = date('Y-m-d H:i:s');
-
-        if ($existing) {
-            $sql = "UPDATE incomplete_orders SET 
-                        customer_id = COALESCE(?, customer_id),
-                        customer_name = COALESCE(?, customer_name),
-                        customer_phone = COALESCE(?, customer_phone),
-                        customer_address = COALESCE(?, customer_address),
-                        ip_address = ?,
-                        user_agent = ?,
-                        cart_items = ?,
-                        items_count = ?,
-                        total_amount = ?,
-                        updated_at = ?
-                    WHERE id = ?";
-            $this->db->query($sql, [
-                $customerId,
-                $customerName,
-                $customerPhone,
-                $customerAddress,
-                $ip,
-                $userAgent,
-                $cartJson,
-                $itemsCount,
-                $totalAmount,
-                $now,
-                $existing['id']
-            ]);
-            return $existing['id'];
-        } else {
-            $sql = "INSERT INTO incomplete_orders 
-                    (session_id, customer_id, customer_name, customer_phone, customer_address, ip_address, user_agent, cart_items, items_count, total_amount, status, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incomplete', ?, ?)";
-            $this->db->query($sql, [
-                $sessionId,
-                $customerId,
-                $customerName,
-                $customerPhone,
-                $customerAddress,
-                $ip,
-                $userAgent,
-                $cartJson,
-                $itemsCount,
-                $totalAmount,
-                $now,
-                $now
-            ]);
-            return $pdo->lastInsertId();
         }
     }
 
@@ -135,115 +176,150 @@ class IncompleteOrder {
      */
     public function markConverted($sessionId, $orderId) {
         if (empty($sessionId)) return false;
-        $now = date('Y-m-d H:i:s');
-        $this->db->query("UPDATE incomplete_orders 
-                          SET status = 'converted', converted_order_id = ?, updated_at = ? 
-                          WHERE session_id = ? AND status = 'incomplete'", [
-            $orderId, $now, $sessionId
-        ]);
-        return true;
+        try {
+            $now = date('Y-m-d H:i:s');
+            $this->db->query("UPDATE incomplete_orders 
+                              SET status = 'converted', converted_order_id = ?, updated_at = ? 
+                              WHERE session_id = ? AND status = 'incomplete'", [
+                $orderId, $now, $sessionId
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::markConverted error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * Get all incomplete orders with filter and pagination
      */
     public function all($status = 'incomplete', $limit = 50, $offset = 0) {
-        $params = [];
-        $sql = "SELECT io.*, 
-                       c.name as registered_customer_name, 
-                       c.phone as registered_customer_phone,
-                       c.address_details as registered_customer_address
-                FROM incomplete_orders io
-                LEFT JOIN customers c ON io.customer_id = c.id";
-        
-        if ($status !== 'all') {
-            $sql .= " WHERE io.status = ?";
-            $params[] = $status;
-        }
+        try {
+            $params = [];
+            $sql = "SELECT io.*, 
+                           c.name as registered_customer_name, 
+                           c.phone as registered_customer_phone,
+                           c.address_details as registered_customer_address
+                    FROM incomplete_orders io
+                    LEFT JOIN customers c ON io.customer_id = c.id";
+            
+            if ($status !== 'all') {
+                $sql .= " WHERE io.status = ?";
+                $params[] = $status;
+            }
 
-        $sql .= " ORDER BY io.updated_at DESC LIMIT " . intval($limit) . " OFFSET " . intval($offset);
-        
-        $stmt = $this->db->query($sql, $params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $sql .= " ORDER BY io.updated_at DESC LIMIT " . intval($limit) . " OFFSET " . intval($offset);
+            
+            $stmt = $this->db->query($sql, $params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Decode cart items for convenience
-        foreach ($rows as &$r) {
-            $r['items'] = json_decode($r['cart_items'] ?? '[]', true) ?: [];
-            if (empty($r['customer_name']) && !empty($r['registered_customer_name'])) {
-                $r['customer_name'] = $r['registered_customer_name'];
+            // Decode cart items for convenience
+            foreach ($rows as &$r) {
+                $r['items'] = json_decode($r['cart_items'] ?? '[]', true) ?: [];
+                if (empty($r['customer_name']) && !empty($r['registered_customer_name'])) {
+                    $r['customer_name'] = $r['registered_customer_name'];
+                }
+                if (empty($r['customer_phone']) && !empty($r['registered_customer_phone'])) {
+                    $r['customer_phone'] = $r['registered_customer_phone'];
+                }
+                if (empty($r['customer_address']) && !empty($r['registered_customer_address'])) {
+                    $r['customer_address'] = $r['registered_customer_address'];
+                }
             }
-            if (empty($r['customer_phone']) && !empty($r['registered_customer_phone'])) {
-                $r['customer_phone'] = $r['registered_customer_phone'];
-            }
-            if (empty($r['customer_address']) && !empty($r['registered_customer_address'])) {
-                $r['customer_address'] = $r['registered_customer_address'];
-            }
+            return $rows;
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::all error: " . $e->getMessage());
+            return [];
         }
-        return $rows;
     }
 
     /**
      * Count incomplete orders
      */
     public function count($status = 'incomplete') {
-        if ($status === 'all') {
-            return (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders")->fetchColumn();
+        try {
+            if ($status === 'all') {
+                return (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders")->fetchColumn();
+            }
+            return (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = ?", [$status])->fetchColumn();
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::count error: " . $e->getMessage());
+            return 0;
         }
-        return (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = ?", [$status])->fetchColumn();
     }
 
     /**
      * Find single record by ID
      */
     public function find($id) {
-        $stmt = $this->db->query("
-            SELECT io.*, 
-                   c.name as registered_customer_name, 
-                   c.phone as registered_customer_phone,
-                   c.address_details as registered_customer_address
-            FROM incomplete_orders io
-            LEFT JOIN customers c ON io.customer_id = c.id
-            WHERE io.id = ?
-        ", [$id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row) {
-            $row['items'] = json_decode($row['cart_items'] ?? '[]', true) ?: [];
-            if (empty($row['customer_name']) && !empty($row['registered_customer_name'])) {
-                $row['customer_name'] = $row['registered_customer_name'];
+        try {
+            $stmt = $this->db->query("
+                SELECT io.*, 
+                       c.name as registered_customer_name, 
+                       c.phone as registered_customer_phone,
+                       c.address_details as registered_customer_address
+                FROM incomplete_orders io
+                LEFT JOIN customers c ON io.customer_id = c.id
+                WHERE io.id = ?
+            ", [$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $row['items'] = json_decode($row['cart_items'] ?? '[]', true) ?: [];
+                if (empty($row['customer_name']) && !empty($r['registered_customer_name'])) {
+                    $row['customer_name'] = $row['registered_customer_name'];
+                }
+                if (empty($row['customer_phone']) && !empty($r['registered_customer_phone'])) {
+                    $row['customer_phone'] = $row['registered_customer_phone'];
+                }
+                if (empty($row['customer_address']) && !empty($r['registered_customer_address'])) {
+                    $row['customer_address'] = $row['registered_customer_address'];
+                }
             }
-            if (empty($row['customer_phone']) && !empty($row['registered_customer_phone'])) {
-                $row['customer_phone'] = $row['registered_customer_phone'];
-            }
-            if (empty($row['customer_address']) && !empty($row['registered_customer_address'])) {
-                $row['customer_address'] = $row['registered_customer_address'];
-            }
+            return $row;
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::find error: " . $e->getMessage());
+            return null;
         }
-        return $row;
     }
 
     /**
      * Delete an incomplete order
      */
     public function delete($id) {
-        return $this->db->query("DELETE FROM incomplete_orders WHERE id = ?", [$id]);
+        try {
+            return $this->db->query("DELETE FROM incomplete_orders WHERE id = ?", [$id]);
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::delete error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * Get statistics summary for admin dashboard
      */
     public function getStats() {
-        $today = date('Y-m-d');
-        $todayCount = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'incomplete' AND DATE(updated_at) = '{$today}'")->fetchColumn();
-        $totalIncomplete = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'incomplete'")->fetchColumn();
-        $totalAmount = (float)$this->db->query("SELECT COALESCE(SUM(total_amount), 0) FROM incomplete_orders WHERE status = 'incomplete'")->fetchColumn();
-        $convertedCount = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'converted'")->fetchColumn();
+        try {
+            $today = date('Y-m-d');
+            $todayCount = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'incomplete' AND DATE(updated_at) = '{$today}'")->fetchColumn();
+            $totalIncomplete = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'incomplete'")->fetchColumn();
+            $totalAmount = (float)$this->db->query("SELECT COALESCE(SUM(total_amount), 0) FROM incomplete_orders WHERE status = 'incomplete'")->fetchColumn();
+            $convertedCount = (int)$this->db->query("SELECT COUNT(*) FROM incomplete_orders WHERE status = 'converted'")->fetchColumn();
 
-        return [
-            'today_count' => $todayCount,
-            'total_incomplete' => $totalIncomplete,
-            'total_amount' => $totalAmount,
-            'converted_count' => $convertedCount
-        ];
+            return [
+                'today_count' => $todayCount,
+                'total_incomplete' => $totalIncomplete,
+                'total_amount' => $totalAmount,
+                'converted_count' => $convertedCount
+            ];
+        } catch (\Throwable $e) {
+            error_log("IncompleteOrder::getStats error: " . $e->getMessage());
+            return [
+                'today_count' => 0,
+                'total_incomplete' => 0,
+                'total_amount' => 0.0,
+                'converted_count' => 0
+            ];
+        }
     }
 
     /**
@@ -307,7 +383,7 @@ class IncompleteOrder {
 
             $pdo->commit();
             return $orderId;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }

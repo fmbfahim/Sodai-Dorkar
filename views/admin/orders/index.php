@@ -1,5 +1,9 @@
 <?php
-$incCount = (class_exists('\Models\IncompleteOrder')) ? (new \Models\IncompleteOrder())->count('incomplete') : 0;
+try {
+    $incCount = (class_exists('\Models\IncompleteOrder')) ? (new \Models\IncompleteOrder())->count('incomplete') : 0;
+} catch (\Throwable $e) {
+    $incCount = 0;
+}
 ?>
 
 <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
