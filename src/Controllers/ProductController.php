@@ -122,11 +122,12 @@ class ProductController extends Controller {
         return 'SKU-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
     }
 
-    private function processVariants($variantsInput) {
+    private function processVariants($variantsInput, $fallbackSellPrice = 0) {
         if (empty($variantsInput)) return null;
         if (is_string($variantsInput)) {
             $decoded = json_decode($variantsInput, true);
-            return is_array($decoded) ? json_encode($decoded, JSON_UNESCAPED_UNICODE) : null;
+            if (!is_array($decoded)) return null;
+            $variantsInput = $decoded;
         }
         if (is_array($variantsInput)) {
             $cleaned = [];
@@ -134,6 +135,9 @@ class ProductController extends Controller {
                 $title = trim($v['title'] ?? '');
                 $qty = floatval($v['qty'] ?? 1);
                 $price = floatval($v['price'] ?? 0);
+                if ($price <= 0 && $fallbackSellPrice > 0 && $qty > 0) {
+                    $price = round($fallbackSellPrice * $qty, 2);
+                }
                 if (!empty($title) && $price >= 0) {
                     $cleaned[] = [
                         'title' => $title,
@@ -210,7 +214,7 @@ class ProductController extends Controller {
         $purchase_unit = trim($_POST['purchase_unit'] ?? '');
         $purchase_unit_qty = floatval($_POST['purchase_unit_qty'] ?? 1.000);
         $selling_unit = trim($_POST['selling_unit'] ?? $base_unit);
-        $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null));
+        $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null), $sell_price);
         $addons_json = $this->processAddons($_POST['addons'] ?? ($_POST['addons_json'] ?? null));
         $special_badge = trim($_POST['special_badge'] ?? 'none');
 
@@ -376,7 +380,7 @@ class ProductController extends Controller {
         $purchase_unit = trim($_POST['purchase_unit'] ?? '');
         $purchase_unit_qty = floatval($_POST['purchase_unit_qty'] ?? 1.000);
         $selling_unit = trim($_POST['selling_unit'] ?? $base_unit);
-        $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null));
+        $unit_variants_json = $this->processVariants($_POST['variants'] ?? ($_POST['unit_variants_json'] ?? null), $sell_price);
         $addons_json = $this->processAddons($_POST['addons'] ?? ($_POST['addons_json'] ?? null));
         $special_badge = trim($_POST['special_badge'] ?? 'none');
 

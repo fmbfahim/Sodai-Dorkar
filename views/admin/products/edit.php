@@ -474,11 +474,19 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                 <p class="text-xs text-secondary-500 mt-0.5">Let shoppers pick different size packages (e.g. 500 gm, 1 kg, 5 kg sack) on storefront cards.</p>
                             </div>
                         </div>
-                        <button type="button" onclick="addVariantRow()" 
-                                class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md">
-                            <ion-icon name="add-circle" class="text-base"></ion-icon>
-                            Add Size Variant
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="syncVariantsWithSellPrice(null, null, true)" 
+                                    class="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
+                                    title="বিক্রয় মূল্যের সাথে সকল ভ্যারিয়েন্টের মূল্য সিঙ্ক করুন">
+                                <ion-icon name="sync-outline" class="text-base"></ion-icon>
+                                <span>Auto-Sync Prices</span>
+                            </button>
+                            <button type="button" onclick="addVariantRow()" 
+                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer">
+                                <ion-icon name="add-circle" class="text-base"></ion-icon>
+                                Add Size Variant
+                            </button>
+                        </div>
                     </div>
 
                     <div class="overflow-hidden border border-secondary-200 rounded-2xl bg-white shadow-2xs">
@@ -512,14 +520,15 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                                 <div class="relative">
                                                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-emerald-600 font-bold text-xs">Tk</span>
                                                     <input type="number" step="0.01" min="0" name="variants[<?php echo $idx; ?>][price]" value="<?php echo floatval($v['price']); ?>" 
-                                                           placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500" required>
+                                                           oninput="onVariantPriceChange(this)"
+                                                           placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500 transition-all variant-price-input" required>
                                                 </div>
                                             </td>
                                             <td class="px-4 py-2.5 text-center">
-                                                <input type="checkbox" name="variants[<?php echo $idx; ?>][is_default]" value="1" <?php echo !empty($v['is_default']) ? 'checked' : ''; ?> class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4">
+                                                <input type="checkbox" name="variants[<?php echo $idx; ?>][is_default]" value="1" <?php echo !empty($v['is_default']) ? 'checked' : ''; ?> onchange="onVariantDefaultChange(this)" class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 variant-default-cb">
                                             </td>
                                             <td class="px-3 py-2.5 text-center">
-                                                <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete Variant">
+                                                <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Delete Variant">
                                                     <ion-icon name="trash-outline" class="text-base"></ion-icon>
                                                 </button>
                                             </td>
@@ -532,6 +541,14 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <ion-icon name="layers-outline" class="text-3xl text-secondary-300 mb-1"></ion-icon>
                             <p class="text-xs font-medium">No custom size variants added. Product will sell in single base units.</p>
                         </div>
+                    </div>
+                    <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-secondary-500">
+                        <span class="flex items-center gap-1 text-emerald-700 font-medium">
+                            <ion-icon name="flash" class="text-xs"></ion-icon>
+                            পণ্যের মূল বিক্রয় মূল্য (Selling Price) পরিবর্তন করলে সকল সাইজের মূল্য স্বয়ংক্রিয়ভাবে আপডেট হবে।
+                        </span>
+                        <span class="text-secondary-400 text-[10px]">ডিফল্ট সাইজের মূল্য পরিবর্তন করলে মূল বিক্রয় মূল্যও সিঙ্ক হবে</span>
+                    </div>
                 <!-- 5. Processing, Cutting & Dressing Add-ons -->
                 <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/80 p-6">
                     <input type="hidden" name="addons_submitted" value="1">
@@ -736,6 +753,17 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         </div>
     </form>
 </div>
+
+<style>
+@keyframes variantPricePulse {
+    0% { background-color: #d1fae5; border-color: #059669; }
+    50% { background-color: #ecfdf5; border-color: #10b981; }
+    100% { background-color: #ffffff; border-color: #cbd5e1; }
+}
+.variant-price-updated {
+    animation: variantPricePulse 0.7s ease-in-out;
+}
+</style>
 
 <!-- Dynamic Calculator, Cascading Categories & Presets JavaScript -->
 <script>
@@ -1275,8 +1303,8 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
     const baseUnit = document.getElementById('base_unit').value;
     const currentSell = parseFloat(document.getElementById('sell_price').value) || 0;
     
-    if (!price && currentSell > 0) {
-        price = (currentSell * qty).toFixed(2);
+    if ((price === '' || price === undefined || price === null) && currentSell > 0) {
+        price = (Math.round(currentSell * qty * 100) / 100);
     }
 
     const rowHtml = `
@@ -1297,14 +1325,15 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-emerald-600 font-bold text-xs">Tk</span>
                     <input type="number" step="0.01" min="0" name="variants[${variantCount}][price]" value="${price}" 
-                           placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500" required>
+                           oninput="onVariantPriceChange(this)"
+                           placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500 transition-all variant-price-input" required>
                 </div>
             </td>
             <td class="px-4 py-2.5 text-center">
-                <input type="checkbox" name="variants[${variantCount}][is_default]" value="1" ${isDefault ? 'checked' : ''} class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4">
+                <input type="checkbox" name="variants[${variantCount}][is_default]" value="1" ${isDefault ? 'checked' : ''} onchange="onVariantDefaultChange(this)" class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 variant-default-cb">
             </td>
             <td class="px-3 py-2.5 text-center">
-                <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete Variant">
+                <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Delete Variant">
                     <ion-icon name="trash-outline" class="text-base"></ion-icon>
                 </button>
             </td>
@@ -1395,12 +1424,121 @@ function applyAddonPreset(type) {
 
 function onVariantQtyChange(input) {
     const row = input.closest('tr');
+    if (!row) return;
     const priceInput = row.querySelector('input[name*="[price]"]');
     const unitSell = parseFloat(document.getElementById('sell_price').value) || 0;
-    const qty = parseFloat(input.value) || 1;
-    if (unitSell > 0) {
-        priceInput.value = (unitSell * qty).toFixed(2);
+    const qty = parseFloat(input.value) || 0;
+    if (unitSell > 0 && qty > 0) {
+        priceInput.value = (Math.round(unitSell * qty * 100) / 100);
+        priceInput.classList.remove('variant-price-updated');
+        void priceInput.offsetWidth;
+        priceInput.classList.add('variant-price-updated');
     }
+}
+
+// When a variant price is directly edited
+function onVariantPriceChange(input) {
+    const row = input.closest('tr');
+    if (!row) return;
+
+    const qtyInput = row.querySelector('input[name*="[qty]"]');
+    const isDefaultCheck = row.querySelector('input[name*="[is_default]"]');
+    const val = parseFloat(input.value) || 0;
+    const qty = parseFloat(qtyInput ? qtyInput.value : 1) || 1;
+
+    // If this row is marked as default OR has qty == 1 (representing base unit)
+    if ((isDefaultCheck && isDefaultCheck.checked) || Math.abs(qty - 1.0) < 0.001) {
+        if (val > 0 && qty > 0) {
+            const derivedBase = Math.round((val / qty) * 100) / 100;
+            const sellInput = document.getElementById('sell_price');
+            if (sellInput && Math.abs(parseFloat(sellInput.value) - derivedBase) > 0.009) {
+                sellInput.value = derivedBase;
+                calculateUnitPricing();
+                // Sync other variant rows except the one currently being typed in
+                syncVariantsWithSellPrice(derivedBase, input);
+            }
+        }
+    }
+}
+
+// When default variant checkbox is changed
+function onVariantDefaultChange(checkbox) {
+    if (checkbox.checked) {
+        // Enforce single default variant
+        document.querySelectorAll('#variants-tbody input[name*="[is_default]"]').forEach(cb => {
+            if (cb !== checkbox) cb.checked = false;
+        });
+
+        // Sync main selling price with this variant's unit price
+        const row = checkbox.closest('tr');
+        const priceInput = row.querySelector('input[name*="[price]"]');
+        const qtyInput = row.querySelector('input[name*="[qty]"]');
+        const price = parseFloat(priceInput ? priceInput.value : 0) || 0;
+        const qty = parseFloat(qtyInput ? qtyInput.value : 1) || 1;
+        if (price > 0 && qty > 0) {
+            const derivedBase = Math.round((price / qty) * 100) / 100;
+            const sellInput = document.getElementById('sell_price');
+            if (sellInput) {
+                sellInput.value = derivedBase;
+                calculateUnitPricing();
+                syncVariantsWithSellPrice(derivedBase, priceInput);
+            }
+        }
+    }
+}
+
+// Synchronize all variant prices with current sell_price based on each variant's quantity ratio
+function syncVariantsWithSellPrice(targetPrice = null, skipInput = null, showNotification = false) {
+    const sellPrice = (targetPrice !== null && targetPrice !== undefined)
+        ? parseFloat(targetPrice)
+        : (parseFloat(document.getElementById('sell_price').value) || 0);
+
+    if (sellPrice <= 0) return;
+
+    const rows = document.querySelectorAll('#variants-tbody tr.variant-row');
+    if (!rows || rows.length === 0) return;
+
+    let updatedCount = 0;
+    rows.forEach(row => {
+        const qtyInput = row.querySelector('input[name*="[qty]"]');
+        const priceInput = row.querySelector('input[name*="[price]"]');
+        if (!qtyInput || !priceInput) return;
+
+        if (skipInput && priceInput === skipInput) return;
+
+        const qty = parseFloat(qtyInput.value) || 0;
+        if (qty <= 0) return;
+
+        const calculated = Math.round(sellPrice * qty * 100) / 100;
+        priceInput.value = calculated;
+        updatedCount++;
+
+        // Add visual flash animation
+        priceInput.classList.remove('variant-price-updated');
+        void priceInput.offsetWidth;
+        priceInput.classList.add('variant-price-updated');
+    });
+
+    if (showNotification && updatedCount > 0) {
+        showToastNotification(`বিক্রয় মূল্য ৳${sellPrice} অনুযায়ী ${updatedCount}টি ভ্যারিয়েন্টের মূল্য সফলভাবে আপডেট হয়েছে!`);
+    }
+}
+
+function showToastNotification(msg) {
+    let toast = document.getElementById('variant-sync-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'variant-sync-toast';
+        toast.className = 'fixed bottom-6 right-6 z-50 bg-emerald-800 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<ion-icon name="checkmark-circle" class="text-base text-emerald-300"></ion-icon> <span>${msg}</span>`;
+    toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+    }, 3000);
 }
 
 // Update UI Labels when Base Unit changes
@@ -1502,6 +1640,7 @@ function onUnitSellPriceChange() {
     }
 
     calculateUnitPricing();
+    syncVariantsWithSellPrice(currentSell);
 }
 
 function updateStockOverview() {
@@ -1569,14 +1708,14 @@ function updateDiscountButtonUI(type) {
 }
 
 function onRegularPriceInput() {
-    applyDiscountCalculation();
+    applyDiscountCalculation(true);
 }
 
 function onDiscountValueInput() {
-    applyDiscountCalculation();
+    applyDiscountCalculation(true);
 }
 
-function applyDiscountCalculation() {
+function applyDiscountCalculation(syncVariants = false) {
     const regularPrice = parseFloat(document.getElementById('regular_price').value) || 0;
     const discountType = document.getElementById('discount_type').value;
     let discountVal = parseFloat(document.getElementById('discount_value').value) || 0;
@@ -1614,6 +1753,10 @@ function applyDiscountCalculation() {
     }
 
     calculateUnitPricing();
+    if (syncVariants) {
+        const updatedSell = parseFloat(sellInput.value) || 0;
+        syncVariantsWithSellPrice(updatedSell);
+    }
 }
 
 function showDiscountBadge(title, subtitle, badgeClass) {
