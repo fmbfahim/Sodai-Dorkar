@@ -1,4 +1,5 @@
 <?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 try {
     $incCount = (class_exists('\Models\IncompleteOrder')) ? (new \Models\IncompleteOrder())->count('incomplete') : 0;
 } catch (\Throwable $e) {
@@ -12,14 +13,14 @@ try {
         <p class="text-xs text-secondary-500">Monitor and fulfill live customer consignments</p>
     </div>
     <div class="flex items-center gap-3">
-        <a href="/sodai-dorkar/public/admin/orders/incomplete" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
+        <a href="<?= $base ?>/admin/orders/incomplete" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
             <ion-icon name="alert-circle-outline" class="mr-2 text-lg"></ion-icon>
             <span>Incomplete Orders</span>
             <?php if ($incCount > 0): ?>
                 <span class="ml-2 px-1.5 py-0.5 rounded-full bg-white text-amber-700 text-xs font-black"><?= $incCount ?></span>
             <?php endif; ?>
         </a>
-        <a href="/sodai-dorkar/public/admin/orders/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
+        <a href="<?= $base ?>/admin/orders/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-xl flex items-center transition-colors shadow-xs text-sm">
             <ion-icon name="cart-outline" class="mr-2 text-lg"></ion-icon>
             <span>New Order</span>
         </a>
@@ -51,7 +52,7 @@ try {
         </a>
     <?php endforeach; ?>
 
-    <a href="/sodai-dorkar/public/admin/orders/incomplete" class="px-4 py-2 text-sm rounded-lg transition-colors bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 font-bold flex items-center gap-1.5 shadow-xs">
+    <a href="<?= $base ?>/admin/orders/incomplete" class="px-4 py-2 text-sm rounded-lg transition-colors bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 font-bold flex items-center gap-1.5 shadow-xs">
         <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
         <span>Incomplete Orders (<?= $incCount ?>)</span>
     </a>
@@ -82,11 +83,11 @@ try {
                     <?php foreach ($orders as $o): ?>
                         <tr class="hover:bg-secondary-50">
                             <td class="px-6 py-4 font-bold text-primary-600 hover:text-primary-800">
-                                <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $o['id']; ?>">#<?php echo $o['id']; ?></a>
+                                <a href="<?= $base ?>/admin/orders/show?id=<?php echo $o['id']; ?>">#<?php echo $o['id']; ?></a>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="font-medium text-primary-600 hover:text-primary-800">
-                                    <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $o['id']; ?>"><?php echo htmlspecialchars($o['customer_name']); ?></a>
+                                    <a href="<?= $base ?>/admin/orders/show?id=<?php echo $o['id']; ?>"><?php echo htmlspecialchars($o['customer_name']); ?></a>
                                 </div>
                                 <div class="text-xs text-secondary-500"><?php echo htmlspecialchars($o['customer_phone']); ?></div>
                             </td>
@@ -97,7 +98,8 @@ try {
                                         <?php echo htmlspecialchars($o['delivery_man_name']); ?>
                                     </div>
                                 <?php else: ?>
-                                    <form action="/sodai-dorkar/public/admin/orders/assign" method="POST" class="flex items-center">
+                                    <form action="<?= $base ?>/admin/orders/assign" method="POST" class="flex items-center">
+                                        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                         <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                         <select name="delivery_man_id" class="text-xs border border-secondary-300 rounded px-2 py-1 mr-1 focus:outline-none focus:border-primary-500 w-32">
                                             <option value="">Assign DM</option>
@@ -105,7 +107,7 @@ try {
                                                 <option value="<?php echo $dm['id']; ?>"><?php echo htmlspecialchars($dm['name']); ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button type="submit" class="text-primary-600 hover:text-primary-800 p-1">
+                                        <button type="submit" class="text-primary-600 hover:text-primary-800 p-1 cursor-pointer">
                                             <ion-icon name="arrow-forward-circle-outline" class="text-lg"></ion-icon>
                                         </button>
                                     </form>
@@ -153,26 +155,26 @@ try {
                             <td class="px-6 py-4 text-right">
                                 <?php if ($st === 'processing'): ?>
                                     <div class="flex items-center justify-end gap-2 mb-2">
-                                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline">
+                                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline">
                                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                             <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                             <input type="hidden" name="status" value="packaging">
                                             <button type="submit" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded shadow-sm">Confirm</button>
                                         </form>
-                                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Cancel this order?');">
+                                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Cancel this order?');">
                                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                             <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                             <input type="hidden" name="status" value="cancelled">
                                             <button type="submit" class="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded shadow-sm">Cancel</button>
                                         </form>
-                                        <a href="/sodai-dorkar/public/admin/orders/edit?id=<?php echo $o['id']; ?>" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded shadow-sm">Edit</a>
+                                        <a href="<?= $base ?>/admin/orders/edit?id=<?php echo $o['id']; ?>" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded shadow-sm">Edit</a>
                                     </div>
                                 <?php endif; ?>
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="/sodai-dorkar/public/admin/orders/pos-receipt?id=<?php echo $o['id']; ?>" target="_blank" class="p-1.5 text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors flex items-center" title="Print 3&quot; POS Receipt">
+                                    <a href="<?= $base ?>/admin/orders/pos-receipt?id=<?php echo $o['id']; ?>" target="_blank" class="p-1.5 text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors flex items-center" title="Print 3&quot; POS Receipt">
                                         <ion-icon name="receipt-outline" class="text-base"></ion-icon>
                                     </a>
-                                    <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $o['id']; ?>" class="text-primary-600 hover:text-primary-800 font-medium flex items-center">
+                                    <a href="<?= $base ?>/admin/orders/show?id=<?php echo $o['id']; ?>" class="text-primary-600 hover:text-primary-800 font-medium flex items-center">
                                         <ion-icon name="eye-outline" class="mr-1"></ion-icon> View
                                     </a>
                                 </div>

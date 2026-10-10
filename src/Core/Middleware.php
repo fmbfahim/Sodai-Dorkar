@@ -172,7 +172,49 @@ class Middleware {
                     ]);
                     exit;
                 }
-                die("419 Page Expired - CSRF token mismatch.");
+
+                if (session_status() === PHP_SESSION_NONE) session_start();
+                $_SESSION['error'] = 'নিরাপত্তা টোকেন মেয়াদোত্তীর্ণ বা অমিল (419 Page Expired)। অনুগ্রহ করে আবার চেষ্টা করুন।';
+                $_SESSION['flash_error'] = 'নিরাপত্তা টোকেন মেয়াদোত্তীর্ণ বা অমিল (419 Page Expired)। অনুগ্রহ করে আবার চেষ্টা করুন।';
+
+                $referer = $_SERVER['HTTP_REFERER'] ?? '';
+                $currentHost = $_SERVER['HTTP_HOST'] ?? '';
+                $refererHost = parse_url($referer, PHP_URL_HOST);
+
+                if (!empty($referer) && !empty($refererHost) && ($refererHost === $currentHost || (function_exists('str_ends_with') && str_ends_with($refererHost, $currentHost)))) {
+                    header("Location: {$referer}");
+                    exit;
+                }
+
+                echo '<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>419 Page Expired | সেশন মেয়াদোত্তীর্ণ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-200">
+        <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl font-black">
+            419
+        </div>
+        <h1 class="text-xl font-black text-slate-800 mb-2">পৃষ্ঠার মেয়াদ উত্তীর্ণ (Page Expired)</h1>
+        <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+            আপনার সেশন অথবা নিরাপত্তা টোকেনটি মেয়াদোত্তীর্ণ হয়েছে (CSRF token mismatch)। অনুগ্রহ করে আগের পেজে ফিরে যান বা পেজটি রিলোড করে আবার চেষ্টা করুন।
+        </p>
+        <div class="flex gap-3 justify-center">
+            <a href="javascript:history.back()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all">
+                আগের পৃষ্ঠায় ফিরে যান
+            </a>
+            <a href="/" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all">
+                হোম
+            </a>
+        </div>
+    </div>
+</body>
+</html>';
+                exit;
             }
         }
     }

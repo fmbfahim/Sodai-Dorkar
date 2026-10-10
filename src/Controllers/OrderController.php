@@ -88,16 +88,13 @@ class OrderController extends Controller {
                 $adminId = $_SESSION['user_id'] ?? null;
                 $orderId = $incModel->convertToRealOrder($id, $adminId);
                 $_SESSION['flash_success'] = "ইনকমপ্লিট অর্ডারটি সফলভাবে অর্ডার #{$orderId}-এ রূপান্তরিত হয়েছে!";
-                header('Location: /sodai-dorkar/public/admin/orders/show?id=' . $orderId);
-                exit;
+                $this->redirect('/admin/orders/show?id=' . $orderId);
             } catch (\Exception $e) {
                 $_SESSION['flash_error'] = "অর্ডার রূপান্তর ব্যর্থ হয়েছে: " . $e->getMessage();
-                header('Location: /sodai-dorkar/public/admin/orders/incomplete');
-                exit;
+                $this->redirect('/admin/orders/incomplete');
             }
         }
-        header('Location: /sodai-dorkar/public/admin/orders/incomplete');
-        exit;
+        $this->redirect('/admin/orders/incomplete');
     }
 
     public function deleteIncomplete() {
@@ -107,8 +104,7 @@ class OrderController extends Controller {
             $incModel->delete($id);
             $_SESSION['flash_success'] = "ইনকমপ্লিট অর্ডার মুছে ফেলা হয়েছে।";
         }
-        header('Location: /sodai-dorkar/public/admin/orders/incomplete');
-        exit;
+        $this->redirect('/admin/orders/incomplete');
     }
 
     public function packagingList() {
@@ -170,7 +166,7 @@ class OrderController extends Controller {
         }
         
         $_SESSION['success'] = "Selected orders received for packaging.";
-        header('Location: /sodai-dorkar/public/admin/orders/packaging?tab=picking');
+        $this->redirect('/admin/orders/packaging?tab=picking');
         exit;
     }
 
@@ -184,14 +180,14 @@ class OrderController extends Controller {
             $orderModel->updateStatus($order_id, $status);
         }
 
-        header('Location: ' . $redirect);
+        $this->redirect($redirect);
         exit;
     }
 
     public function show() {
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header('Location: /sodai-dorkar/public/admin/orders');
+            $this->redirect('/admin/orders');
             exit;
         }
 
@@ -199,7 +195,7 @@ class OrderController extends Controller {
         $order = $orderModel->find($id);
 
         if (!$order) {
-            header('Location: /sodai-dorkar/public/admin/orders');
+            $this->redirect('/admin/orders');
             exit;
         }
 
@@ -226,7 +222,7 @@ class OrderController extends Controller {
         }
         
         $redirect = $_POST['redirect'] ?? $_SERVER['HTTP_REFERER'] ?? '/sodai-dorkar/public/admin/orders';
-        header('Location: ' . $redirect);
+        $this->redirect($redirect);
         exit;
     }
 
@@ -329,7 +325,7 @@ class OrderController extends Controller {
     public function edit() {
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header('Location: /sodai-dorkar/public/admin/orders');
+            $this->redirect('/admin/orders');
             exit;
         }
 
@@ -337,7 +333,7 @@ class OrderController extends Controller {
         $order = $orderModel->find($id);
 
         if (!$order) {
-            header('Location: /sodai-dorkar/public/admin/orders');
+            $this->redirect('/admin/orders');
             exit;
         }
 
@@ -484,7 +480,7 @@ class OrderController extends Controller {
         }
 
         $redirect = $_POST['redirect'] ?? ('/sodai-dorkar/public/admin/orders/show?id=' . $orderId);
-        header('Location: ' . $redirect);
+        $this->redirect($redirect);
         exit;
     }
 
@@ -534,7 +530,7 @@ class OrderController extends Controller {
         }
 
         $redirect = $input['redirect'] ?? ('/sodai-dorkar/public/admin/orders/show?id=' . $orderId);
-        header('Location: ' . $redirect);
+        $this->redirect($redirect);
         exit;
     }
 
@@ -633,7 +629,7 @@ class OrderController extends Controller {
             }
         }
 
-        header('Location: /sodai-dorkar/public/admin/orders/returns');
+        $this->redirect('/admin/orders/returns');
         exit;
     }
 }

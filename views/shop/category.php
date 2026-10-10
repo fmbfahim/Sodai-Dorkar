@@ -295,7 +295,7 @@ if (!empty($search)) $activeFilterCount++;
                 <a href="<?= $base ?>/category?id=<?= $parentCategory['id'] ?? $currentCategory['id'] ?>&sub=<?= $sub['id'] ?>"
                    class="flex-shrink-0 w-36 sm:w-40 md:w-44 bg-white rounded-2xl border p-3 sm:p-4 flex flex-col items-center justify-between text-center transition-all duration-200 group hover:-translate-y-1 hover:shadow-lg <?= $isActiveSub ? 'border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/50 shadow-md font-bold' : 'border-gray-200/80 hover:border-emerald-300' ?>">
                     
-                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center mb-3 overflow-hidden shadow-2xs group-hover:scale-105 transition-all duration-300 <?= $vis['type'] === 'image' ? 'bg-gray-50 border border-gray-100 p-2' : $vis['bg'] ?>">
+                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center mb-3 overflow-hidden shadow-2xs group-hover:scale-105 transition-all duration-300 <?= $vis['type'] === 'image' ? 'bg-gray-50 border border-gray-100 p-1 sm:p-1.5' : $vis['bg'] ?>">
                         <?php if ($vis['type'] === 'image'): ?>
                             <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($sub['name']) ?>" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-xs" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                         <?php else: ?>

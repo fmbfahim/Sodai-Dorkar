@@ -120,7 +120,7 @@ $totalProductsCount = array_sum(array_map(function($c) { return $c['total_produc
                 <!-- Card Header with Visual & Title -->
                 <div class="p-5 pb-4 border-b border-gray-100 flex items-start gap-4">
                     <a href="<?= $base ?>/category?id=<?= $cat['id'] ?>" 
-                       class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl <?= $vis['type'] === 'image' ? 'bg-white border border-gray-100 p-1.5' : $vis['bg'] ?> flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                       class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl <?= $vis['type'] === 'image' ? 'bg-white border border-gray-100 p-1' : $vis['bg'] ?> flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 transition-transform duration-300 overflow-hidden">
                         <?php if ($vis['type'] === 'image'): ?>
                             <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($cat['name']) ?>" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                         <?php else: ?>

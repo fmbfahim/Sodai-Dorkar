@@ -1,4 +1,7 @@
-<?php if (session_status() === PHP_SESSION_NONE) session_start(); ?>
+<?php 
+if (session_status() === PHP_SESSION_NONE) session_start(); 
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <?php if (!empty($_SESSION['success'])): ?>
     <div class="max-w-4xl mx-auto mb-4 bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-2xl flex items-center justify-between text-sm shadow-sm print:hidden">
         <div class="flex items-center gap-2">
@@ -51,13 +54,13 @@
                 <!-- Action Buttons -->
                 <?php if ($st === 'processing' || $st === 'pending'): ?>
                     <div class="flex items-center justify-end gap-2 mt-2 print:hidden">
-                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline">
+                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline">
                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                             <input type="hidden" name="status" value="packaging">
                             <button type="submit" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg shadow-sm transition-colors">Confirm Order</button>
                         </form>
-                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Cancel this order?');">
+                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Cancel this order?');">
                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                             <input type="hidden" name="status" value="cancelled">
@@ -66,7 +69,7 @@
                     </div>
                 <?php elseif ($st === 'packaging'): ?>
                     <div class="flex items-center justify-end gap-2 mt-2 print:hidden">
-                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline">
+                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline">
                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                             <input type="hidden" name="status" value="dispatch">
@@ -75,7 +78,7 @@
                     </div>
                 <?php elseif ($st === 'cancelled'): ?>
                     <div class="flex items-center justify-end gap-2 mt-2 print:hidden">
-                        <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Mark this cancelled order as returned to process stock?');">
+                        <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="inline" onsubmit="return confirm('Mark this cancelled order as returned to process stock?');">
                             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                             <input type="hidden" name="status" value="returned">
@@ -101,9 +104,10 @@
              <div class="text-secondary-600 text-sm mt-1 flex items-center justify-end gap-2">
                  <span class="font-medium">Delivery:</span>
                  <?php if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled' && !empty($deliveryMen)): ?>
-                     <form action="/sodai-dorkar/public/admin/orders/assign" method="POST" class="inline-flex items-center gap-1">
+                     <form action="<?= $base ?>/admin/orders/assign" method="POST" class="inline-flex items-center gap-1">
+                         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                          <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                         <input type="hidden" name="redirect" value="/sodai-dorkar/public/admin/orders/show?id=<?php echo $order['id']; ?>">
+                         <input type="hidden" name="redirect" value="<?= $base ?>/admin/orders/show?id=<?php echo $order['id']; ?>">
                          <select name="delivery_man_id" onchange="this.form.submit()" class="text-xs font-bold border border-secondary-300 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer shadow-2xs">
                              <option value="">Unassigned</option>
                              <?php foreach ($deliveryMen as $dm): ?>
@@ -234,7 +238,7 @@
 
                 <!-- Admin Note Form -->
                 <div class="p-4 rounded-2xl bg-white border border-secondary-200 text-xs shadow-2xs print:hidden">
-                    <form id="adminNoteForm" action="/sodai-dorkar/public/admin/orders/update-notes" method="POST">
+                    <form id="adminNoteForm" action="<?= $base ?>/admin/orders/update-notes" method="POST">
                         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                         <div class="flex items-center justify-between mb-2">
@@ -374,7 +378,8 @@
             </button>
         </div>
 
-        <form action="/sodai-dorkar/public/admin/orders/adjust-amount" method="POST" class="space-y-4">
+        <form action="<?= $base ?>/admin/orders/adjust-amount" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
 
             <!-- Adjustment Type -->
@@ -420,11 +425,11 @@
 </div>
 
 <div class="max-w-4xl mx-auto mt-6 flex justify-end gap-3 print:hidden">
-    <a href="/sodai-dorkar/public/admin/orders" class="px-4 py-2 text-secondary-600 bg-white border border-secondary-200 rounded-lg font-medium hover:bg-secondary-50">Back to List</a>
-    <a href="/sodai-dorkar/public/admin/orders/edit?id=<?php echo $order['id']; ?>" class="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+    <a href="<?= $base ?>/admin/orders" class="px-4 py-2 text-secondary-600 bg-white border border-secondary-200 rounded-lg font-medium hover:bg-secondary-50">Back to List</a>
+    <a href="<?= $base ?>/admin/orders/edit?id=<?php echo $order['id']; ?>" class="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700 flex items-center">
         <ion-icon name="create-outline" class="mr-2"></ion-icon> Edit Order
     </a>
-    <a href="/sodai-dorkar/public/admin/orders/pos-receipt?id=<?php echo $order['id']; ?>" target="_blank" class="px-4 py-2 text-white bg-emerald-600 rounded-lg font-bold hover:bg-emerald-700 flex items-center shadow-sm">
+    <a href="<?= $base ?>/admin/orders/pos-receipt?id=<?php echo $order['id']; ?>" target="_blank" class="px-4 py-2 text-white bg-emerald-600 rounded-lg font-bold hover:bg-emerald-700 flex items-center shadow-sm">
         <ion-icon name="receipt-outline" class="mr-2 text-lg"></ion-icon> Print 3" POS Receipt (80mm)
     </a>
     <button onclick="window.print()" class="px-4 py-2 text-white bg-primary-600 rounded-lg font-medium hover:bg-primary-700 flex items-center">

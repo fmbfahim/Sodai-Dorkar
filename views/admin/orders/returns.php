@@ -1,6 +1,7 @@
-﻿<?php
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 // Layout handling
-$content = function() use ($returns) {
+$content = function() use ($returns, $base) {
 ?>
 <div class="space-y-6">
 
@@ -61,7 +62,7 @@ $content = function() use ($returns) {
                         <?php foreach ($returns as $order): ?>
                             <tr class="hover:bg-secondary-50 transition-colors">
                                 <td class="px-5 py-3.5">
-                                    <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $order['id']; ?>" class="font-black text-primary-600 hover:text-primary-700 hover:underline text-base">
+                                    <a href="<?= $base ?>/admin/orders/show?id=<?php echo $order['id']; ?>" class="font-black text-primary-600 hover:text-primary-700 hover:underline text-base">
                                         #<?php echo $order['id']; ?>
                                     </a>
                                     <div class="text-[11px] text-secondary-400 font-mono mt-0.5">
@@ -114,7 +115,7 @@ $content = function() use ($returns) {
         <h3 id="modalTitle" class="font-black text-lg mb-1 flex items-center gap-2"></h3>
         <p id="modalDesc" class="text-xs text-secondary-500 mb-4"></p>
         
-        <form action="/sodai-dorkar/public/admin/orders/process-return" method="POST">
+        <form action="<?= $base ?>/admin/orders/process-return" method="POST">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="order_id" id="processOrderId">
             <input type="hidden" name="action" id="processAction">

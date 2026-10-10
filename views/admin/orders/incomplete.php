@@ -1,6 +1,7 @@
 <?php 
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 $currentStatus = $currentStatus ?? 'incomplete';
+$csrfToken = \Core\CSRF::token();
 ?>
 
 <div class="space-y-6">
@@ -277,6 +278,7 @@ $currentStatus = $currentStatus ?? 'incomplete';
                                         <?php if ($inc['status'] !== 'converted'): ?>
                                             <!-- Convert to Real Order Form -->
                                             <form action="<?= $base ?>/admin/orders/incomplete/convert" method="POST" onsubmit="return confirm('আপনি কি নিশ্চিত যে এই ইনকমপ্লিট অর্ডারটিকে সরাসরি কনফার্মড অর্ডারে রূপান্তর করতে চান?');" class="inline">
+                                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                 <input type="hidden" name="id" value="<?= $inc['id'] ?>">
                                                 <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs" title="Convert to Active Order">
                                                     <ion-icon name="flash-outline"></ion-icon>
@@ -287,8 +289,9 @@ $currentStatus = $currentStatus ?? 'incomplete';
 
                                         <!-- Delete Form -->
                                         <form action="<?= $base ?>/admin/orders/incomplete/delete" method="POST" onsubmit="return confirm('মুছে ফেলতে চান?');" class="inline">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                             <input type="hidden" name="id" value="<?= $inc['id'] ?>">
-                                            <button type="submit" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors" title="Delete">
+                                            <button type="submit" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer" title="Delete">
                                                 <ion-icon name="trash-outline" class="text-base"></ion-icon>
                                             </button>
                                         </form>
@@ -407,8 +410,9 @@ function viewIncompleteModal(data) {
                 Close
             </button>
             <form action="<?= $base ?>/admin/orders/incomplete/convert" method="POST" onsubmit="return confirm('আপনি কি নিশ্চিত যে এই ইনকমপ্লিট অর্ডারটিকে সরাসরি কনফার্মড অর্ডারে রূপান্তর করতে চান?');">
+                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                 <input type="hidden" name="id" value="${data.id}">
-                <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5">
+                <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5 cursor-pointer">
                     <ion-icon name="flash-outline"></ion-icon>
                     <span>Convert to Confirmed Order</span>
                 </button>

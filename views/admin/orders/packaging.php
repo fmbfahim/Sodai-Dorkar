@@ -1,4 +1,7 @@
-<?php if (session_status() === PHP_SESSION_NONE) session_start(); ?>
+<?php 
+if (session_status() === PHP_SESSION_NONE) session_start(); 
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="mb-6 flex justify-between items-center">
     <h3 class="text-lg font-bold text-secondary-800">Packaging Department</h3>
 </div>
@@ -26,7 +29,7 @@
 </div>
 
 <?php if ($tab === 'new'): ?>
-    <form action="/sodai-dorkar/public/admin/orders/bulk-receive-packaging" method="POST">
+    <form action="<?= $base ?>/admin/orders/bulk-receive-packaging" method="POST">
         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         <div class="mb-4 print:hidden">
             <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-sm text-sm">
@@ -63,7 +66,7 @@
                                         <input type="checkbox" name="order_ids[]" value="<?php echo $o['id']; ?>" class="order-checkbox rounded border-secondary-300 text-primary-600 focus:ring-primary-500">
                                     </td>
                                     <td class="px-6 py-4 font-bold text-primary-600 hover:text-primary-800">
-                                        <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $o['id']; ?>" target="_blank">#<?php echo $o['id']; ?></a>
+                                        <a href="<?= $base ?>/admin/orders/show?id=<?php echo $o['id']; ?>" target="_blank">#<?php echo $o['id']; ?></a>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="font-medium text-secondary-900"><?php echo htmlspecialchars($o['customer_name']); ?></div>
@@ -157,7 +160,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                            <a href="/sodai-dorkar/public/admin/orders/show?id=<?php echo $o['id']; ?>" target="_blank" class="text-sm bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50 px-3 py-2 rounded-lg font-medium transition-colors">
+                            <a href="<?= $base ?>/admin/orders/show?id=<?php echo $o['id']; ?>" target="_blank" class="text-sm bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50 px-3 py-2 rounded-lg font-medium transition-colors">
                                 View Order
                             </a>
                             <!-- Arrow icon to indicate expansion -->
@@ -190,11 +193,11 @@
                         </ul>
                         
                         <div class="flex justify-end border-t border-secondary-100 pt-3">
-                            <form action="/sodai-dorkar/public/admin/orders/change-status" method="POST" class="m-0" id="form-<?php echo $o['id']; ?>">
+                            <form action="<?= $base ?>/admin/orders/change-status" method="POST" class="m-0" id="form-<?php echo $o['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                 <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                 <input type="hidden" name="status" value="dispatch">
-                                <input type="hidden" name="redirect" value="/sodai-dorkar/public/admin/orders/packaging?tab=picking">
+                                <input type="hidden" name="redirect" value="<?= $base ?>/admin/orders/packaging?tab=picking">
                                 <button type="submit" id="btn-<?php echo $o['id']; ?>" disabled class="text-sm bg-gray-300 text-gray-500 px-5 py-2.5 rounded-lg font-bold shadow-sm transition-colors flex items-center cursor-not-allowed">
                                     <ion-icon name="checkmark-circle-outline" class="mr-2 text-xl"></ion-icon> Match & Ready to Delivery
                                 </button>

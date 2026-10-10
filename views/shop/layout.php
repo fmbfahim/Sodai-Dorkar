@@ -110,21 +110,32 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.39);
         }
 
-        /* Mobile header auto-collapse on scroll (shrinks to only search bar) */
+        /* ── SLIM MOBILE HEADER ── */
         @media (max-width: 767px) {
-            #site-main-header.is-scrolled-mobile #header-top-row {
+            /* Hide top utility bar on mobile */
+            #top-utility-bar { display: none !important; }
+            /* Hide secondary nav on mobile */
+            #header-nav-row { display: none !important; }
+            /* Hide old desktop header row on mobile */
+            #header-top-row { display: none !important; }
+            /* Hide old separate mobile search bar */
+            #header-mobile-search { display: none !important; }
+
+            /* Show the new compact mobile header */
+            #mobile-slim-header { display: flex !important; }
+
+            /* Scroll collapse: hide logo section, keep only search + cart */
+            #site-main-header.is-scrolled-mobile #msh-brand {
                 display: none !important;
             }
-            #site-main-header.is-scrolled-mobile #header-nav-row {
-                display: none !important;
+            #site-main-header.is-scrolled-mobile #mobile-slim-header {
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+                gap: 0.5rem;
             }
-            #site-main-header.is-scrolled-mobile #header-mobile-search {
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
-                background-color: #ffffff;
-                border-top: none;
-                box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.08);
-            }
+        }
+        @media (min-width: 768px) {
+            #mobile-slim-header { display: none !important; }
         }
     </style>
     <!-- Meta / Facebook Pixel Integration -->
@@ -314,8 +325,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
     </style>
     <?php endif; ?>
 
-    <!-- 1. TOP UTILITY BAR (FreshMart Style) -->
-    <div class="bg-gray-50 border-b border-gray-200 text-xs text-gray-600">
+    <!-- 1. TOP UTILITY BAR (Hidden on mobile for slim header) -->
+    <div id="top-utility-bar" class="bg-gray-50 border-b border-gray-200 text-xs text-gray-600">
         <div class="container mx-auto px-4 py-2 flex flex-wrap justify-between items-center gap-2">
             <div class="flex items-center gap-4 sm:gap-6 flex-wrap">
                 <span class="flex items-center gap-1.5 text-gray-700">
@@ -368,6 +379,59 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
     <!-- 2. MAIN HEADER (Logo + Wide Search Bar + Account & Cart) -->
     <header class="bg-white sticky top-0 z-40 border-b border-gray-100 shadow-xs transition-all duration-200" id="site-main-header">
+
+        <!-- ═══ NEW SLIM MOBILE HEADER (Single compact row: Logo + Search + Cart) ═══ -->
+        <div id="mobile-slim-header" class="hidden items-center gap-2 px-3 py-2 bg-white transition-all duration-200">
+            <!-- Mini Brand -->
+            <a href="<?= $base ?>/" class="flex items-center gap-1.5 flex-shrink-0 group" id="msh-brand">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <?php
+                    $mshBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
+                    $mshParts = explode(' ', $mshBrand, 2);
+                ?>
+                <span class="text-sm font-black text-gray-900 leading-none tracking-tight">
+                    <?= htmlspecialchars($mshParts[0] ?? '') ?> <span class="text-emerald-600"><?= htmlspecialchars($mshParts[1] ?? '') ?></span>
+                </span>
+            </a>
+
+            <!-- Inline Search -->
+            <form action="<?= $base ?>/" method="GET" class="flex-1 min-w-0 relative" id="mobile-slim-search-form">
+                <?php if (!empty($isDeals)): ?>
+                    <input type="hidden" name="deals" value="1">
+                <?php endif; ?>
+                <div class="flex items-center bg-gray-100 border border-gray-200 rounded-xl overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white transition-all">
+                    <div class="pl-2.5 text-gray-400 pointer-events-none flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="search" id="mobile-slim-search-input" value="<?= htmlspecialchars($search ?? '') ?>" 
+                           placeholder="<?= $__('header_search_placeholder') ?>" 
+                           autocomplete="off"
+                           class="flex-1 min-w-0 px-2 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 transition-colors flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </button>
+                </div>
+                <!-- Mobile Slim Live Search Dropdown -->
+                <div id="mobile-slim-live-search-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 hidden max-h-80 overflow-y-auto"></div>
+            </form>
+
+            <!-- Cart Icon -->
+            <button type="button" onclick="openCartDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all" id="msh-cart-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span id="msh-cart-badge" class="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-600 text-white text-[9px] font-black rounded-full ring-1.5 ring-white flex items-center justify-center shadow-xs leading-none <?= $cartCount > 0 ? '' : 'hidden' ?>">
+                    <?= $cartCount ?>
+                </span>
+            </button>
+        </div>
+        <!-- ═══ END SLIM MOBILE HEADER ═══ -->
         <div class="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6 transition-all duration-200" id="header-top-row">
             
             <!-- Brand Logo -->
@@ -1279,6 +1343,17 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 }
             }
 
+            // Slim mobile header cart badge
+            const mshCartBadge = document.getElementById('msh-cart-badge');
+            if (mshCartBadge) {
+                if (count > 0) {
+                    mshCartBadge.textContent = count;
+                    mshCartBadge.classList.remove('hidden');
+                } else {
+                    mshCartBadge.classList.add('hidden');
+                }
+            }
+
             // 3. Drawer UI
             const drawerCount = document.getElementById('drawer-items-count');
             const drawerSubtotal = document.getElementById('drawer-subtotal-val');
@@ -2118,7 +2193,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             let debounceTimer = null;
             const searchInputs = [
                 { input: document.getElementById('desktop-search-input'), dropdown: document.getElementById('desktop-live-search-dropdown') },
-                { input: document.getElementById('mobile-search-input'), dropdown: document.getElementById('mobile-live-search-dropdown') }
+                { input: document.getElementById('mobile-search-input'), dropdown: document.getElementById('mobile-live-search-dropdown') },
+                { input: document.getElementById('mobile-slim-search-input'), dropdown: document.getElementById('mobile-slim-live-search-dropdown') }
             ];
 
             searchInputs.forEach(({ input, dropdown }) => {

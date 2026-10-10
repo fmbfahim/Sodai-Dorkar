@@ -277,16 +277,16 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
              LEFT VERTICAL CATEGORY RAIL ("All Category")
              Clean, Modern, Rounded-2xl Category Rail
              ============================================== -->
-        <aside class="w-20 sm:w-24 md:w-26 lg:w-28 flex-shrink-0 sticky top-16 md:top-20 z-20 self-start">
-            <div class="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
+        <aside class="w-[84px] sm:w-[94px] md:w-26 lg:w-28 flex-shrink-0 sticky top-16 md:top-20 z-20 self-start">
+            <div class="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl sm:rounded-3xl p-1 sm:p-1.5 flex flex-col items-center shadow-xs max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
                 
                 <!-- Rail Header: "All Category" -->
-                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-gray-800 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-2 pb-1.5 border-b border-gray-100 w-full select-none block transition-colors" title="<?= $locale === 'bn' ? 'হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য' : 'Home & Most Popular' ?>">
+                <a href="<?= $base ?>/" class="text-[9px] sm:text-[11px] md:text-xs font-black text-gray-800 hover:text-emerald-700 text-center uppercase tracking-tight sm:tracking-wider mb-1.5 pb-1.5 border-b border-gray-100 w-full select-none block transition-colors" title="<?= $locale === 'bn' ? 'হোম পেজ ও সব চেয়ে জনপ্রিয় পণ্য' : 'Home & Most Popular' ?>">
                     <?= $locale === 'bn' ? 'সকল ক্যাটাগরি' : 'All Categories' ?>
                 </a>
 
                 <!-- Vertical Category List with Crisp Squircle Badges -->
-                <div class="flex flex-col items-center gap-2.5 sm:gap-3.5 w-full py-1">
+                <div class="flex flex-col items-center gap-2 sm:gap-2.5 w-full py-0.5">
                     <?php foreach ($railCategories as $rc): ?>
                         <?php
                             $isRcActive = false;
@@ -312,22 +312,22 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                            class="flex flex-col items-center group text-center w-full transition-transform active:scale-95 cursor-pointer"
                            title="<?= htmlspecialchars($rc['name']) ?>">
                             
-                            <!-- Squircle / Circle Badge with High-Quality Contrast -->
-                            <div class="w-14 h-14 sm:w-16 sm:h-16 md:w-17 md:h-17 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-2xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/20 scale-105 shadow-md bg-emerald-50/40' : 'border-gray-100 group-hover:border-emerald-400 group-hover:shadow-xs group-hover:scale-105' ?>">
+                            <!-- Squircle / Circle Badge with Bigger Visual & Minimal Padding -->
+                            <div class="w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] md:w-[78px] md:h-[78px] rounded-2xl flex items-center justify-center transition-all duration-300 shadow-2xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/20 scale-105 shadow-md bg-emerald-50/40' : 'border-gray-100 group-hover:border-emerald-400 group-hover:shadow-xs group-hover:scale-105' ?>">
                                 <?php if ($vis['type'] === 'image'): ?>
                                     <img src="<?= htmlspecialchars($vis['val']) ?>" 
                                          alt="<?= htmlspecialchars($rc['name']) ?>" 
-                                         class="w-full h-full object-contain p-1.5 sm:p-2 transition-transform duration-300 group-hover:scale-110" 
+                                         class="w-full h-full object-contain p-0.5 sm:p-1 transition-transform duration-300 group-hover:scale-110" 
                                          loading="lazy"
                                          onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                                 <?php else: ?>
-                                    <span class="text-2xl sm:text-3xl md:text-3xl select-none leading-none"><?= $vis['val'] ?></span>
+                                    <span class="text-3xl sm:text-4xl select-none leading-none"><?= $vis['val'] ?></span>
                                 <?php endif; ?>
                             </div>
 
                             <!-- Bengali Category Label -->
-                            <div class="w-full mt-1.5 px-0.5 flex flex-col items-center">
-                                <span class="text-[10px] sm:text-[11px] font-bold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-gray-700 group-hover:text-emerald-800' ?>">
+                            <div class="w-full mt-1 px-0.5 flex flex-col items-center">
+                                <span class="text-[10px] sm:text-[11px] font-bold sm:font-extrabold block leading-tight text-center line-clamp-2 transition-colors <?= $isRcActive ? 'text-emerald-950 font-black' : 'text-gray-700 group-hover:text-emerald-800' ?>">
                                     <?= htmlspecialchars($rc['name']) ?>
                                 </span>
                                 <?php if ($isRcActive): ?>
