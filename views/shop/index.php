@@ -308,12 +308,32 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                             }
                             $vis = getCategoryVisual($rc, $base);
                         ?>
+                        <?php
+                            $cName = mb_strtolower($rc['name'] ?? '');
+                            $catBadge = null;
+                            if (mb_strpos($cName, 'রান্না') !== false || mb_strpos($cName, 'তেল') !== false || mb_strpos($cName, 'মুদি') !== false) {
+                                $catBadge = ['text' => '১০% ছাড়', 'cls' => 'bg-rose-500 text-white'];
+                            } elseif (mb_strpos($cName, 'মাছ') !== false || mb_strpos($cName, 'মাংস') !== false) {
+                                $catBadge = ['text' => 'তাজা', 'cls' => 'bg-sky-500 text-white'];
+                            } elseif (mb_strpos($cName, 'শাক') !== false || mb_strpos($cName, 'সবজি') !== false || mb_strpos($cName, 'ফল') !== false) {
+                                $catBadge = ['text' => 'ফার্ম তাজা', 'cls' => 'bg-emerald-600 text-white'];
+                            } elseif (mb_strpos($cName, 'দুধ') !== false || mb_strpos($cName, 'ডিম') !== false || mb_strpos($cName, 'ডেইরি') !== false) {
+                                $catBadge = ['text' => 'জনপ্রিয়', 'cls' => 'bg-amber-500 text-white'];
+                            } elseif (mb_strpos($cName, 'স্ন্যাকস') !== false || mb_strpos($cName, 'বিস্কুট') !== false) {
+                                $catBadge = ['text' => 'অফার', 'cls' => 'bg-purple-600 text-white'];
+                            }
+                        ?>
                         <a href="<?= $base ?>/?category=<?= $rc['id'] ?>" 
                            class="flex flex-col items-center group text-center w-full transition-transform active:scale-95 cursor-pointer"
                            title="<?= htmlspecialchars($rc['name']) ?>">
                             
                             <!-- Squircle / Circle Badge with Bigger Visual & Minimal Padding -->
                             <div class="w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] md:w-[78px] md:h-[78px] rounded-2xl flex items-center justify-center transition-all duration-300 shadow-2xs relative overflow-hidden bg-white border-2 <?= $isRcActive ? 'border-emerald-600 ring-4 ring-emerald-500/20 scale-105 shadow-md bg-emerald-50/40' : 'border-gray-100 group-hover:border-emerald-400 group-hover:shadow-xs group-hover:scale-105' ?>">
+                                <?php if ($catBadge): ?>
+                                    <span class="absolute top-1 right-1 <?= $catBadge['cls'] ?> font-black text-[7.5px] sm:text-[8px] px-1 py-0.2 rounded-full shadow-2xs leading-none z-10 tracking-tight">
+                                        <?= $catBadge['text'] ?>
+                                    </span>
+                                <?php endif; ?>
                                 <?php if ($vis['type'] === 'image'): ?>
                                     <img src="<?= htmlspecialchars($vis['val']) ?>" 
                                          alt="<?= htmlspecialchars($rc['name']) ?>" 
@@ -404,9 +424,9 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                         </div>
                     </div>
 
-                    <!-- Right Accent Block: Glassmorphic Spotlight Card -->
+                    <!-- Right Accent Block: Glassmorphic Spotlight Card (Desktop Only for Clean Mobile View) -->
                     <?php if (!$isFiltered && !empty($topPopularProduct)): ?>
-                        <div class="w-full lg:w-auto flex items-center justify-between lg:justify-start gap-3 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-3 shadow-lg backdrop-blur-md flex-shrink-0 group hover:border-amber-400/50 transition-all">
+                        <div class="hidden lg:flex items-center justify-start gap-3 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-3 shadow-lg backdrop-blur-md flex-shrink-0 group hover:border-amber-400/50 transition-all">
                             <div class="relative w-16 h-16 bg-white rounded-xl p-1 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
                                 <span class="absolute top-0 left-0 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg shadow-2xs z-10">👑 #১</span>
                                 <img src="<?= htmlspecialchars(\Models\Product::getImageUrl($topPopularProduct['image_path'] ?? '', $base)) ?>" 

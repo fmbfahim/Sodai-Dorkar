@@ -77,19 +77,39 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         /* Sticky Cart Pulse / Bump Animation */
         @keyframes cartBumpMobile {
             0% { transform: scale(1); }
-            40% { transform: scale(1.05); }
-            70% { transform: scale(0.98); }
+            35% { transform: scale(1.08); }
+            65% { transform: scale(0.96); }
+            85% { transform: scale(1.02); }
             100% { transform: scale(1); }
         }
         @keyframes cartBumpDesktop {
             0% { transform: translateY(-50%) scale(1); }
-            40% { transform: translateY(-50%) translateX(-8px) scale(1.12); }
-            70% { transform: translateY(-50%) translateX(-4px) scale(0.96); }
+            35% { transform: translateY(-50%) translateX(-12px) scale(1.12); }
+            65% { transform: translateY(-50%) translateX(-2px) scale(0.96); }
+            85% { transform: translateY(-50%) translateX(-6px) scale(1.02); }
             100% { transform: translateY(-50%) scale(1); }
         }
         .cart-bump { animation: cartBumpMobile 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @media (min-width: 768px) {
             .cart-bump { animation: cartBumpDesktop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        }
+
+        /* Sticky Cart Show/Hide Transitions (Empty Cart Auto-Hide) */
+        #sticky-cart-btn {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, visibility 0.35s ease;
+            will-change: transform, opacity;
+        }
+        #sticky-cart-btn.sticky-cart-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(140%) scale(0.9) !important;
+            visibility: hidden !important;
+        }
+        @media (min-width: 768px) {
+            #sticky-cart-btn.sticky-cart-hidden {
+                transform: translateY(-50%) translateX(140%) !important;
+                visibility: hidden !important;
+            }
         }
 
         /* Custom scrollbar */
@@ -413,6 +433,11 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                            placeholder="<?= $__('header_search_placeholder') ?>" 
                            autocomplete="off"
                            class="flex-1 min-w-0 px-2 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
+                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-2 py-2 transition-colors flex-shrink-0 cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
                     <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 transition-colors flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </button>
@@ -473,6 +498,12 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                            autocomplete="off"
                            class="flex-1 px-2.5 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
                     
+                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 p-2 transition-colors cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
+
                     <div class="h-6 w-px bg-gray-200"></div>
                     
                     <select name="category" class="px-3 py-2 text-xs font-semibold text-gray-600 bg-transparent focus:outline-none cursor-pointer border-none max-w-[150px] truncate">
@@ -630,6 +661,11 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
         <div class="md:hidden px-4 py-2.5 bg-gray-50 border-t border-gray-100 transition-all duration-200 relative" id="header-mobile-search">
             <form action="<?= $base ?>/" method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20" id="mobile-search-form">
                 <input type="text" name="search" id="mobile-search-input" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="<?= $__('header_search_placeholder') ?>" autocomplete="off" class="flex-1 px-3 py-2 text-xs text-gray-800 focus:outline-none bg-transparent">
+                <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-2.5 py-2 transition-colors cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
                 <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </button>
@@ -647,7 +683,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
     <!-- STICKY FLOATING CART WIDGET (Bottom Bar on Mobile floating above bottom nav, Right-Side Pill on Desktop) -->
     <aside id="sticky-cart-btn" onclick="openCartDrawer()" 
-           class="fixed z-40 cursor-pointer select-none group transition-all duration-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-400 bottom-[70px] inset-x-3 sm:inset-x-6 max-w-lg mx-auto flex flex-row items-center justify-between bg-gray-950/95 hover:bg-black text-white rounded-2xl shadow-2xl border border-emerald-500/50 p-2.5 px-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-0 md:left-auto md:inset-x-auto md:w-auto md:max-w-none md:flex-col md:rounded-l-2xl md:rounded-r-none md:border-l-2 md:border-y md:border-r-0 md:min-w-[84px] md:p-2.5 md:text-center md:hover:-translate-x-1.5"
+           class="fixed z-40 cursor-pointer select-none group transition-all duration-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-400 bottom-[70px] inset-x-3 sm:inset-x-6 max-w-lg mx-auto flex flex-row items-center justify-between bg-gray-950/95 hover:bg-black text-white rounded-2xl shadow-2xl border border-emerald-500/50 p-2.5 px-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-0 md:left-auto md:inset-x-auto md:w-auto md:max-w-none md:flex-col md:rounded-l-2xl md:rounded-r-none md:border-l-2 md:border-y md:border-r-0 md:min-w-[84px] md:p-2.5 md:text-center md:hover:-translate-x-1.5 <?= ($cartCount == 0 ? 'sticky-cart-hidden' : '') ?>"
            title="<?= $__('drawer_title') ?>">
         
         <!-- Bag Icon & Item Count -->
@@ -793,10 +829,19 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 <span class="text-xl font-black text-gray-900" id="drawer-subtotal-val"><?= $__('currency') ?><?= number_format($cartTotal, 2) ?></span>
             </div>
             <p class="text-xs text-gray-400 text-center"><?= $__('drawer_delivery_note') ?></p>
-            <a href="/sodai-dorkar/public/checkout" id="drawer-checkout-btn" class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white text-center font-bold py-3.5 px-4 rounded-xl shadow-md hover:shadow-lg transition-all <?= $cartCount > 0 ? '' : 'pointer-events-none opacity-50' ?>">
+            <button type="button" 
+                    id="drawer-fast-order-btn"
+                    onclick="openFastOrderModal()" 
+                    class="block w-full bg-gradient-to-r from-amber-500 via-amber-600 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white text-center font-black py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer <?= $cartCount > 0 ? '' : 'pointer-events-none opacity-50' ?>">
+                <span class="flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                    <span class="text-base animate-pulse">⚡</span>
+                    <span><?= $locale === 'bn' ? '১-ক্লিকে দ্রুত অর্ডার (ক্যাশ অন ডেলিভারি)' : '1-Click Fast Order (COD)' ?></span>
+                </span>
+            </button>
+            <a href="<?= $base ?>/checkout" id="drawer-checkout-btn" class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white text-center font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all <?= $cartCount > 0 ? '' : 'pointer-events-none opacity-50' ?>">
                 <?= $__('drawer_checkout') ?>
             </a>
-            <a href="/sodai-dorkar/public/cart" class="block w-full text-center text-xs font-semibold text-gray-500 hover:text-emerald-700 py-1 transition-colors">
+            <a href="<?= $base ?>/cart" class="block w-full text-center text-xs font-semibold text-gray-500 hover:text-emerald-700 py-0.5 transition-colors">
                 <?= $__('drawer_view_cart') ?> →
             </a>
         </div>
@@ -1325,11 +1370,20 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 stickyTotal.textContent = `${window.SODAI_STATE.currency}${parseFloat(total).toFixed(2)}`;
             }
 
-            // Animate bump on sticky cart
+            // Auto-hide when empty, show with bounce animation when items added
             if (stickyBtn) {
-                stickyBtn.classList.remove('cart-bump');
-                void stickyBtn.offsetWidth; // Trigger reflow
-                stickyBtn.classList.add('cart-bump');
+                if (count > 0) {
+                    const wasHidden = stickyBtn.classList.contains('sticky-cart-hidden');
+                    stickyBtn.classList.remove('sticky-cart-hidden');
+                    
+                    // Trigger bump/pop animation
+                    stickyBtn.classList.remove('cart-bump');
+                    void stickyBtn.offsetWidth; // Trigger reflow
+                    stickyBtn.classList.add('cart-bump');
+                } else {
+                    stickyBtn.classList.add('sticky-cart-hidden');
+                    stickyBtn.classList.remove('cart-bump');
+                }
             }
 
             // Mobile center floating button badge
@@ -1361,6 +1415,15 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             if (drawerCount) drawerCount.textContent = count;
             if (drawerSubtotal) drawerSubtotal.textContent = `${window.SODAI_STATE.currency}${parseFloat(total).toFixed(2)}`;
+            const drawerFastOrderBtn = document.getElementById('drawer-fast-order-btn');
+            if (drawerFastOrderBtn) {
+                if (count > 0) {
+                    drawerFastOrderBtn.classList.remove('pointer-events-none', 'opacity-50');
+                } else {
+                    drawerFastOrderBtn.classList.add('pointer-events-none', 'opacity-50');
+                }
+            }
+
             if (drawerCheckoutBtn) {
                 if (count > 0) {
                     drawerCheckoutBtn.classList.remove('pointer-events-none', 'opacity-50');
@@ -2283,6 +2346,319 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 });
             });
         })();
+
+        // ── Animated Typewriter Search Placeholder ──
+        (function initTypewriterPlaceholder() {
+            const isBn = (window.SODAI_STATE?.locale === 'bn');
+            const phrases = isBn ? [
+                'খুঁজুন "সয়াবিন তেল"...',
+                'খুঁজুন "ফার্মের তাজা ডিম"...',
+                'খুঁজুন "মিনিকেট চাল"...',
+                'খুঁজুন "দেশি আলু ও পেঁয়াজ"...',
+                'খুঁজুন "তাজা রুই মাছ"...',
+                'খুঁজুন "খাঁটি সরিষার তেল"...',
+                'খুঁজুন "গরুর মাংস ও মুরগি"...',
+                'খুঁজুন "আটা, ময়দা ও সুজি"...'
+            ] : [
+                'Search "Soyabean Oil"...',
+                'Search "Farm Fresh Eggs"...',
+                'Search "Miniket Rice"...',
+                'Search "Potato & Onion"...',
+                'Search "Fresh Rui Fish"...',
+                'Search "Pure Mustard Oil"...'
+            ];
+
+            const inputs = [
+                document.getElementById('desktop-search-input'),
+                document.getElementById('mobile-search-input'),
+                document.getElementById('mobile-slim-search-input')
+            ].filter(Boolean);
+
+            if (inputs.length === 0) return;
+
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let isPaused = false;
+
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => { isPaused = true; });
+                input.addEventListener('blur', () => { if (!input.value) isPaused = false; });
+                input.addEventListener('input', () => { if (input.value) isPaused = true; });
+            });
+
+            function typeLoop() {
+                if (!isPaused) {
+                    const currentPhrase = phrases[phraseIndex];
+                    let text = isDeleting 
+                        ? currentPhrase.substring(0, charIndex--) 
+                        : currentPhrase.substring(0, charIndex++);
+
+                    inputs.forEach(input => {
+                        if (document.activeElement !== input && !input.value) {
+                            input.setAttribute('placeholder', text);
+                        }
+                    });
+
+                    if (!isDeleting && charIndex > currentPhrase.length) {
+                        isDeleting = true;
+                        setTimeout(typeLoop, 1800);
+                        return;
+                    } else if (isDeleting && charIndex === 0) {
+                        isDeleting = false;
+                        phraseIndex = (phraseIndex + 1) % phrases.length;
+                        setTimeout(typeLoop, 350);
+                        return;
+                    }
+                }
+                const speed = isDeleting ? 35 : 75;
+                setTimeout(typeLoop, speed);
+            }
+            setTimeout(typeLoop, 500);
+        })();
+
+        // ── Voice Search (Speech Recognition) ──
+        (function initVoiceSearch() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            document.querySelectorAll('.voice-search-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (!SpeechRec) {
+                        showToast('আপনার ব্রাউজারে ভয়েস সার্চ সক্রিয় নয়', 'error');
+                        return;
+                    }
+                    const form = this.closest('form');
+                    const input = form ? form.querySelector('input[name="search"]') : null;
+                    if (!input) return;
+
+                    try {
+                        const recognition = new SpeechRec();
+                        recognition.lang = (window.SODAI_STATE?.locale === 'bn') ? 'bn-BD' : 'en-US';
+                        recognition.interimResults = false;
+                        recognition.maxAlternatives = 1;
+
+                        const originalSvg = btn.innerHTML;
+                        btn.innerHTML = `<span class="inline-block w-3.5 h-3.5 rounded-full bg-red-500 animate-ping"></span>`;
+                        showToast('🎙️ শুনছি... পণ্যের নাম বলুন (যেমন: ডিম, তেল)');
+
+                        recognition.onresult = function(event) {
+                            const transcript = event.results[0][0].transcript;
+                            input.value = transcript;
+                            input.dispatchEvent(new Event('input'));
+                            showToast(`খোঁজা হচ্ছে: "${transcript}"`);
+                            btn.innerHTML = originalSvg;
+                            setTimeout(() => {
+                                form.submit();
+                            }, 500);
+                        };
+
+                        recognition.onerror = function() {
+                            btn.innerHTML = originalSvg;
+                            showToast('ভয়েস শনাক্ত করা যায়নি, আবার বলুন', 'error');
+                        };
+
+                        recognition.onend = function() {
+                            btn.innerHTML = originalSvg;
+                        };
+
+                        recognition.start();
+                    } catch(err) {
+                        showToast('ভয়েস মাইক্রোফোন সক্রিয় করা যায়নি', 'error');
+                    }
+                });
+            });
+        })();
+
+        // ── Fast 1-Click Order Modal Handlers ──
+        window.openFastOrderModal = function() {
+            const count = window.SODAI_STATE?.cartCount || 0;
+            if (count === 0) {
+                showToast(window.SODAI_STATE?.locale === 'bn' ? 'আপনার কার্ট ফাঁকা রয়েছে' : 'Your cart is empty', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('fast-order-modal');
+            const dialog = document.getElementById('fast-order-dialog');
+            const itemsCountEl = document.getElementById('fo-items-count');
+            const totalValEl = document.getElementById('fo-total-val');
+
+            if (itemsCountEl) {
+                const isBn = (window.SODAI_STATE?.locale === 'bn');
+                itemsCountEl.textContent = `${count} ${isBn ? 'টি পণ্য' : 'Items'}`;
+            }
+            if (totalValEl) {
+                totalValEl.textContent = `${window.SODAI_STATE.currency}${parseFloat(window.SODAI_STATE.cartTotal || 0).toFixed(2)}`;
+            }
+
+            if (modal && dialog) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+                dialog.classList.remove('translate-y-full', 'sm:translate-y-4', 'sm:scale-95');
+                dialog.classList.add('translate-y-0', 'sm:translate-y-0', 'sm:scale-100');
+            }
+        };
+
+        window.closeFastOrderModal = function() {
+            const modal = document.getElementById('fast-order-modal');
+            const dialog = document.getElementById('fast-order-dialog');
+            if (!modal || !dialog) return;
+
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            dialog.classList.remove('translate-y-0', 'sm:translate-y-0', 'sm:scale-100');
+            dialog.classList.add('translate-y-full', 'sm:translate-y-4', 'sm:scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        };
+
+        window.submitFastOrder = function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('fo-submit-btn');
+            const name = document.getElementById('fo-name')?.value?.trim() || '';
+            const phone = document.getElementById('fo-phone')?.value?.trim() || '';
+            const address = document.getElementById('fo-address')?.value?.trim() || '';
+            const note = document.getElementById('fo-note')?.value?.trim() || '';
+
+            if (!name || !phone || !address) {
+                showToast('অনুগ্রহ করে নাম, ফোন ও ঠিকানা দিন', 'error');
+                return;
+            }
+
+            const originalBtn = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+            fetch((window.APP_BASE || '') + '/checkout/fast-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ name, phone, address, note })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(data.message || 'অর্ডার সফল হয়েছে!');
+                    closeFastOrderModal();
+                    setTimeout(() => {
+                        window.location.href = data.redirect || ((window.APP_BASE || '') + '/order/success?order_id=' + data.order_id);
+                    }, 500);
+                } else {
+                    showToast(data.message || 'অর্ডার ব্যর্থ হয়েছে', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
+                }
+            })
+            .catch(() => {
+                showToast('সার্ভারে সমস্যা হয়েছে, আবার চেষ্টা করুন', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalBtn;
+            });
+        };
     </script>
+
+    <!-- ══════════════════════════════════════════════
+         FAST 1-CLICK ORDER MODAL (ক্যাশ অন ডেলিভারি)
+         ══════════════════════════════════════════════ -->
+    <div id="fast-order-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs hidden opacity-0 transition-opacity duration-300">
+        <div id="fast-order-dialog" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-100 overflow-hidden transform translate-y-full sm:translate-y-4 sm:scale-95 transition-all duration-300 max-h-[90vh] flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="px-5 py-4 bg-gradient-to-r from-emerald-800 to-teal-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-400 text-gray-950 flex items-center justify-center font-black text-sm shadow-xs">
+                        ⚡
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-black leading-tight">
+                            <?= $locale === 'bn' ? '১-ক্লিকে দ্রুত অর্ডার' : '1-Click Fast Order' ?>
+                        </h3>
+                        <p class="text-[10px] text-emerald-200">
+                            <?= $locale === 'bn' ? 'ক্যাশ অন ডেলিভারি • কোনো পাসওয়ার্ড প্রয়োজন নেই' : 'Cash on Delivery • No password required' ?>
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeFastOrderModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Modal Body Form -->
+            <form id="fast-order-form" onsubmit="submitFastOrder(event)" class="p-5 overflow-y-auto space-y-3.5 flex-1 text-left">
+                
+                <!-- Cart Summary Mini Bar -->
+                <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold text-gray-500 block leading-tight">
+                            <?= $locale === 'bn' ? 'অর্ডারের মোট মূল্য' : 'Order Total' ?>
+                        </span>
+                        <span class="text-xs font-semibold text-gray-700" id="fo-items-count">
+                            <?= $cartCount ?> <?= $locale === 'bn' ? 'টি পণ্য' : 'Items' ?>
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-base sm:text-lg font-black text-emerald-800" id="fo-total-val">
+                            <?= $__('currency') ?><?= number_format($cartTotal, 2) ?>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Input 1: Name -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <?= $locale === 'bn' ? 'আপনার নাম *' : 'Your Name *' ?>
+                    </label>
+                    <input type="text" id="fo-name" required placeholder="<?= $locale === 'bn' ? 'যেমন: মোঃ ফাহিম' : 'e.g. John Doe' ?>" 
+                           value="<?= htmlspecialchars($_SESSION['customer_name'] ?? '') ?>"
+                           class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium">
+                </div>
+
+                <!-- Input 2: Mobile Number -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <?= $locale === 'bn' ? 'মোবাইল নম্বর *' : 'Phone Number *' ?>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">🇧🇩 +88</span>
+                        <input type="tel" id="fo-phone" required placeholder="01XXXXXXXXX" 
+                               value="<?= htmlspecialchars($_SESSION['customer_phone'] ?? '') ?>"
+                               class="w-full pl-17 pr-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-semibold tracking-wide">
+                    </div>
+                </div>
+
+                <!-- Input 3: Delivery Address -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
+                        <?= $locale === 'bn' ? 'সম্পূর্ণ ডেলিভারি ঠিকানা *' : 'Delivery Address *' ?>
+                    </label>
+                    <textarea id="fo-address" required rows="2" placeholder="<?= $locale === 'bn' ? 'যেমন: বাড়ি নং ৪, রোড নং ২, চাঁদপুর সদর' : 'e.g. House 4, Road 2, Area...' ?>"
+                              class="w-full px-3.5 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"><?= htmlspecialchars($_SESSION['customer_address'] ?? '') ?></textarea>
+                </div>
+
+                <!-- Optional Note -->
+                <div>
+                    <input type="text" id="fo-note" placeholder="<?= $locale === 'bn' ? 'বিশেষ কোনো নির্দেশনা (ঐচ্ছিক)' : 'Delivery note (optional)' ?>"
+                           class="w-full px-3.5 py-2 text-[11px] bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:bg-white transition-all text-gray-600">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="fo-submit-btn" 
+                        class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white rounded-xl font-black text-sm shadow-lg shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                    <span>⚡ <?= $locale === 'bn' ? 'অর্ডার নিশ্চিত করুন (ক্যাশ অন ডেলিভারি)' : 'Confirm Order (Cash on Delivery)' ?></span>
+                </button>
+
+                <p class="text-[10px] text-gray-400 text-center leading-tight">
+                    <?= $locale === 'bn' ? 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করবেন। ডেলিভারি চার্জ এলাকায় প্রযোজ্য হারে যোগ হবে।' : 'Pay in cash upon delivery. Standard delivery rates apply.' ?>
+                </p>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

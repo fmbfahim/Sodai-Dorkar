@@ -387,6 +387,21 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
       <!-- ── Form Panel ─────────────────────────── -->
       <div class="auth-panel">
 
+        <?php if (!empty($_SESSION['cart'])): ?>
+          <div class="mb-5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-emerald-50 border border-emerald-200/80 flex items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">⚡</span>
+              <div>
+                <div class="text-xs font-black text-gray-900 leading-tight">পাসওয়ার্ড ছাড়াই সরাসরি অর্ডার করতে চান?</div>
+                <div class="text-[10px] text-gray-500 font-medium">নাম, ফোন ও ঠিকানা দিয়ে ১-ক্লিকে ক্যাশ অন ডেলিভারিতে অর্ডার কনফার্ম করুন</div>
+              </div>
+            </div>
+            <button type="button" onclick="openFastOrderModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition-all shrink-0 cursor-pointer active:scale-95">
+              ১-ক্লিকে অর্ডার ➔
+            </button>
+          </div>
+        <?php endif; ?>
+
         <!-- ╔══════════════════════════════════════════╗ -->
         <!-- ║               LOGIN FORM                 ║ -->
         <!-- ╚══════════════════════════════════════════╝ -->

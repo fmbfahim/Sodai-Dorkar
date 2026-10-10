@@ -58,6 +58,8 @@ $router->post('/cart/remove', 'ShopController@removeFromCart');
 $router->post('/cart/update', 'ShopController@updateCart');
 $router->get('/checkout', 'ShopController@checkout');
 $router->post('/checkout/place-order', 'ShopController@placeOrder');
+$router->post('/checkout/fast-order', 'ShopController@fastOrder');
+$router->post('/api/fast-order', 'ShopController@fastOrder');
 $router->get('/order/success', 'ShopController@success');
 $router->get('/set-language', 'ShopController@setLanguage');
 $router->post('/set-language', 'ShopController@setLanguage');

@@ -205,11 +205,14 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
-            $params['search'] = "%{$search}%";
-            $params['search2'] = "%{$search}%";
-            $params['search3'] = "%{$search}%";
-            $params['search4'] = "%{$search}%";
+            $terms = self::expandSearchTerms($search);
+            $searchClauses = [];
+            foreach ($terms as $idx => $t) {
+                $k = 's_' . $idx;
+                $searchClauses[] = "(products.name LIKE :{$k} OR products.sku LIKE :{$k} OR products.description LIKE :{$k} OR products.tags LIKE :{$k})";
+                $params[$k] = "%{$t}%";
+            }
+            $sql .= " AND (" . implode(' OR ', $searchClauses) . ")";
         }
 
         if ($isDeals) {
@@ -459,11 +462,14 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
-            $params['search'] = "%{$search}%";
-            $params['search2'] = "%{$search}%";
-            $params['search3'] = "%{$search}%";
-            $params['search4'] = "%{$search}%";
+            $terms = self::expandSearchTerms($search);
+            $searchClauses = [];
+            foreach ($terms as $idx => $t) {
+                $k = 's_' . $idx;
+                $searchClauses[] = "(products.name LIKE :{$k} OR products.sku LIKE :{$k} OR products.description LIKE :{$k} OR products.tags LIKE :{$k})";
+                $params[$k] = "%{$t}%";
+            }
+            $sql .= " AND (" . implode(' OR ', $searchClauses) . ")";
         }
 
         switch ($sort) {
@@ -614,11 +620,14 @@ class ShopController {
         }
 
         if ($search) {
-            $sql .= " AND (products.name LIKE :search OR products.sku LIKE :search2 OR products.description LIKE :search3 OR products.tags LIKE :search4)";
-            $params['search'] = "%{$search}%";
-            $params['search2'] = "%{$search}%";
-            $params['search3'] = "%{$search}%";
-            $params['search4'] = "%{$search}%";
+            $terms = self::expandSearchTerms($search);
+            $searchClauses = [];
+            foreach ($terms as $idx => $t) {
+                $k = 's_' . $idx;
+                $searchClauses[] = "(products.name LIKE :{$k} OR products.sku LIKE :{$k} OR products.description LIKE :{$k} OR products.tags LIKE :{$k})";
+                $params[$k] = "%{$t}%";
+            }
+            $sql .= " AND (" . implode(' OR ', $searchClauses) . ")";
         }
 
         // Sorting
@@ -1367,6 +1376,155 @@ class ShopController {
             }
         }
     }
+
+    public function fastOrder() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        header('Content-Type: application/json');
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $cart = $_SESSION['cart'] ?? [];
+
+        if (empty($cart)) {
+            echo json_encode(['status' => 'error', 'message' => 'আপনার কার্ট ফাঁকা রয়েছে। পণ্য যোগ করে অর্ডার করুন।']);
+            exit;
+        }
+
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true) ?: $_POST;
+
+        $name = trim($input['name'] ?? '');
+        $phone = trim($input['phone'] ?? '');
+        $address = trim($input['address'] ?? '');
+        $note = trim($input['note'] ?? '');
+
+        if (empty($name) || empty($phone) || empty($address)) {
+            echo json_encode(['status' => 'error', 'message' => 'অনুগ্রহ করে আপনার নাম, মোবাইল নম্বর এবং সম্পূর্ণ ডেলিভারি ঠিকানা লিখুন।']);
+            exit;
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (strlen($cleanPhone) < 11) {
+            echo json_encode(['status' => 'error', 'message' => 'অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।']);
+            exit;
+        }
+
+        try {
+            $pdo = $this->db->getConnection();
+            $pdo->beginTransaction();
+
+            $customerId = $_SESSION['customer_id'] ?? null;
+            $customer = null;
+
+            if ($customerId) {
+                $stmt = $this->db->query("SELECT * FROM customers WHERE id = ?", [$customerId]);
+                $customer = $stmt->fetch();
+            }
+
+            if (!$customer) {
+                $stmt = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$cleanPhone]);
+                $customer = $stmt->fetch();
+
+                if ($customer) {
+                    $customerId = $customer['id'];
+                    $_SESSION['customer_id'] = $customerId;
+                    if (empty($customer['address_details'])) {
+                        $this->db->query("UPDATE customers SET address_details = ?, name = COALESCE(NULLIF(name, ''), ?) WHERE id = ?", [$address, $name, $customerId]);
+                    }
+                } else {
+                    $dummyPass = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
+                    $this->db->query("INSERT INTO customers (name, phone, address_details, password, created_at) VALUES (?, ?, ?, ?, NOW())",
+                        [$name, $cleanPhone, $address, $dummyPass]);
+                    $customerId = $pdo->lastInsertId();
+                    $_SESSION['customer_id'] = $customerId;
+                }
+            } else {
+                $customerId = $customer['id'];
+                $this->db->query("UPDATE customers SET address_details = ?, name = ? WHERE id = ?", [$address, $name, $customerId]);
+            }
+
+            $subtotal = 0;
+            $totalWeightKg = 0;
+            foreach ($cart as $item) {
+                $subtotal += floatval($item['price']) * intval($item['quantity']);
+                $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+            }
+
+            $areaId = $customer['area_id'] ?? null;
+            $zoneId = $customer['zone_id'] ?? null;
+            $pointId = $customer['point_id'] ?? null;
+
+            $deliveryCalc = \Models\Setting::calculateDeliveryCharge(
+                $subtotal,
+                $areaId,
+                $pointId,
+                ['is_cod' => true, 'weight_kg' => $totalWeightKg]
+            );
+
+            $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($subtotal, Lang::locale());
+            $milestoneDiscount = floatval($spendMoreOffers['discount_amount'] ?? 0);
+
+            $deliveryCharge = $deliveryCalc['final_charge'] ?? 0.00;
+            $deliveryDiscount = ($deliveryCalc['discount'] ?? 0.00) + $milestoneDiscount;
+            $originalAmount = $subtotal + floatval($deliveryCalc['base_charge'] ?? $deliveryCharge);
+            $totalAmount = max(0, round($subtotal - $milestoneDiscount + $deliveryCharge, 2));
+
+            $riderNote = "⚡ 1-CLICK FAST COD. " . ($note ? "Note: {$note}. " : "");
+            $adminNote = "⚡ 1-Click Fast Cash on Delivery";
+            if (!empty($spendMoreOffers['unlocked_gifts'])) {
+                $giftText = "🎁 FREE GIFT: " . implode(', ', $spendMoreOffers['unlocked_gifts']);
+                $riderNote = $giftText . ". " . $riderNote;
+                $adminNote .= " | " . $giftText;
+            }
+
+            $this->db->query("INSERT INTO orders (customer_id, area_id, zone_id, point_id, status, total_amount, original_amount, delivery_charge, delivery_discount, amount_changed_by, amount_change_reason, payment_method, rider_note, admin_note, delivery_address, contact_number) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, 'system', ?, 'cash', ?, ?, ?, ?)",
+                [$customerId, $areaId, $zoneId, $pointId, $totalAmount, $originalAmount, $deliveryCharge, $deliveryDiscount, '1-Click Fast Order', $riderNote, $adminNote, $address, $cleanPhone]);
+            $orderId = $pdo->lastInsertId();
+
+            $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, unit_title, base_qty, quantity, price) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtStock = $pdo->prepare("UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?");
+
+            foreach ($cart as $key => $item) {
+                $pid = $item['product_id'] ?? $key;
+                $qty = intval($item['quantity'] ?? 1);
+                $price = floatval($item['price'] ?? 0);
+                $unitTitle = $item['variant_title'] ?? ($item['unit_title'] ?? ($item['selling_unit'] ?? ''));
+                $baseQty = floatval($item['base_qty'] ?? 1.0);
+
+                if (!empty($item['addon_title'])) {
+                    $unitTitle = ($unitTitle ? $unitTitle . ' ' : '') . "[🔪 {$item['addon_title']}]";
+                }
+                if (!empty($item['is_bogo'])) {
+                    $unitTitle = ($unitTitle ? $unitTitle . ' ' : '') . "[🎁 BOGO 1+1]";
+                }
+
+                $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qty, $price]);
+                $stmtStock->execute([$qty * $baseQty, $pid]);
+            }
+
+            try {
+                $incOrderModel = new \Models\IncompleteOrder();
+                $incOrderModel->markAsConverted($customerId, $orderId);
+            } catch (\Exception $ex) {}
+
+            $pdo->commit();
+            unset($_SESSION['cart']);
+
+            echo json_encode([
+                'status' => 'success',
+                'order_id' => $orderId,
+                'message' => 'আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে!',
+                'redirect' => $base . '/order/success?order_id=' . $orderId
+            ]);
+            exit;
+
+        } catch (\Exception $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo json_encode(['status' => 'error', 'message' => 'অর্ডার করতে সমস্যা হয়েছে: ' . $e->getMessage()]);
+            exit;
+        }
+    }
     
     public function success() {
         $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : null;
@@ -1498,6 +1656,58 @@ class ShopController {
         exit;
     }
 
+    public static function expandSearchTerms(string $q): array {
+        $q = trim($q);
+        if ($q === '') return [];
+        $terms = [$q];
+        $lower = mb_strtolower($q);
+
+        $dictionary = [
+            'dim' => 'ডিম', 'deem' => 'ডিম', 'egg' => 'ডিম', 'ডিম' => 'dim',
+            'tel' => 'তেল', 'oil' => 'তেল', 'soyabean' => 'সয়াবিন', 'সয়াবিন' => 'soyabean', 'সরিষা' => 'mustard',
+            'peyaj' => 'পেঁয়াজ', 'piyaj' => 'পেঁয়াজ', 'peaj' => 'পেঁয়াজ', 'onion' => 'পেঁয়াজ', 'পেঁয়াজ' => 'onion', 'পিঁয়াজ' => 'onion',
+            'alu' => 'আলু', 'aloo' => 'আলু', 'potato' => 'আলু', 'আলু' => 'potato',
+            'chal' => 'চাল', 'chaal' => 'চাল', 'chawl' => 'চাল', 'rice' => 'চাল', 'চাল' => 'rice',
+            'roshun' => 'রসুন', 'roshon' => 'রসুন', 'garlic' => 'রসুন', 'রসুন' => 'garlic',
+            'ada' => 'আদা', 'ginger' => 'আদা', 'আদা' => 'ginger',
+            'dal' => 'ডাল', 'daal' => 'ডাল', 'lentil' => 'ডাল', 'ডাল' => 'dal',
+            'chini' => 'চিনি', 'sugar' => 'চিনি', 'চিনি' => 'sugar',
+            'lobon' => 'লবণ', 'nobon' => 'লবণ', 'salt' => 'লবণ', 'লবণ' => 'salt',
+            'mach' => 'মাছ', 'maach' => 'মাছ', 'fish' => 'মাছ', 'মাছ' => 'fish',
+            'mangsho' => 'মাংস', 'goru' => 'গরু', 'beef' => 'গরু', 'meat' => 'মাংস', 'মাংস' => 'meat',
+            'murgi' => 'মুরগি', 'chicken' => 'মুরগি', 'মুরগি' => 'chicken',
+            'dudh' => 'দুধ', 'dud' => 'দুধ', 'milk' => 'দুধ', 'দুধ' => 'milk',
+            'ata' => 'আটা', 'aata' => 'আটা', 'flour' => 'আটা', 'আটা' => 'flour',
+            'moyda' => 'ময়দা', 'maida' => 'ময়দা', 'ময়দা' => 'flour',
+            'morich' => 'মরিচ', 'chili' => 'মরিচ', 'chilli' => 'মরিচ', 'মরিচ' => 'chili',
+            'holud' => 'হলুদ', 'haldi' => 'হলুদ', 'turmeric' => 'হলুদ', 'হলুদ' => 'turmeric',
+            'dhonia' => 'ধনিয়া', 'coriander' => 'ধনিয়া', 'ধনিয়া' => 'coriander',
+            'jira' => 'জিরা', 'zeera' => 'জিরা', 'cumin' => 'জিরা', 'জিরা' => 'cumin',
+            'sabun' => 'সাবান', 'soap' => 'সাবান', 'সাবান' => 'soap',
+            'shampoo' => 'শ্যাম্পু', 'শ্যাম্পু' => 'shampoo',
+            'cha' => 'চা', 'tea' => 'চা', 'চা' => 'tea',
+            'pani' => 'পানি', 'water' => 'পানি', 'পানি' => 'water',
+            'biscuit' => 'বিস্কুট', 'cookies' => 'বিস্কুট', 'বিস্কুট' => 'biscuit',
+            'ghee' => 'ঘি', 'ঘি' => 'ghee',
+            'modhu' => 'মধু', 'honey' => 'মধু', 'মধু' => 'honey',
+        ];
+
+        $words = preg_split('/\s+/u', $lower);
+        foreach ($words as $w) {
+            if (isset($dictionary[$w])) {
+                $terms[] = $dictionary[$w];
+            }
+        }
+        foreach ($dictionary as $enKey => $bnVal) {
+            if (mb_strlen($enKey) >= 4) {
+                if (mb_strpos($lower, $enKey) !== false && !in_array($bnVal, $terms)) {
+                    $terms[] = $bnVal;
+                }
+            }
+        }
+        return array_values(array_unique(array_filter($terms)));
+    }
+
     public function apiSearch() {
         header('Content-Type: application/json');
         $q = trim($_GET['q'] ?? '');
@@ -1507,15 +1717,25 @@ class ShopController {
         }
 
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $terms = self::expandSearchTerms($q);
+        $clauses = [];
+        $params = [];
+        foreach ($terms as $t) {
+            $clauses[] = "(p.name LIKE ? OR p.sku LIKE ? OR p.tags LIKE ?)";
+            $params[] = "%{$t}%";
+            $params[] = "%{$t}%";
+            $params[] = "%{$t}%";
+        }
+        $whereSql = !empty($clauses) ? "(" . implode(' OR ', $clauses) . ")" : "1=1";
+
         $sql = "SELECT p.id, p.name, p.sell_price, p.regular_price, p.image_path, p.base_unit, c.name as category_name
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.id
                 WHERE p.availability_status IN ('in_stock', 'available')
-                AND (p.name LIKE ? OR p.sku LIKE ? OR p.tags LIKE ?)
+                AND {$whereSql}
                 ORDER BY p.name ASC
                 LIMIT 8";
-        $term = "%{$q}%";
-        $stmt = $this->db->query($sql, [$term, $term, $term]);
+        $stmt = $this->db->query($sql, $params);
         $rows = $stmt->fetchAll();
 
         $results = [];
