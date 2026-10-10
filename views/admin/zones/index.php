@@ -138,7 +138,22 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
                     <!-- Mode A: Dynamic Rows -->
                     <div id="rowModeContainer" class="space-y-2">
                         <div id="zoneRowsList" class="space-y-2">
-                            <!-- Rows will be injected here via JS -->
+                            <div class="flex items-center gap-2 zone-row-item">
+                                <div class="relative flex-1">
+                                    <input type="text" name="names[]" placeholder="ওয়ার্ডের নাম লিখুন (যেমন: ১ নং ওয়ার্ড)..." class="zone-input-field w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-secondary-800 font-medium placeholder-secondary-400">
+                                </div>
+                                <button type="button" onclick="removeZoneRow(this)" class="p-2 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer" title="এই ঘরটি মুছুন">
+                                    <ion-icon name="close-circle-outline" class="text-xl"></ion-icon>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 zone-row-item">
+                                <div class="relative flex-1">
+                                    <input type="text" name="names[]" placeholder="ওয়ার্ডের নাম লিখুন (যেমন: ২ নং ওয়ার্ড)..." class="zone-input-field w-full px-3.5 py-2 text-sm border border-secondary-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-secondary-800 font-medium placeholder-secondary-400">
+                                </div>
+                                <button type="button" onclick="removeZoneRow(this)" class="p-2 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer" title="এই ঘরটি মুছুন">
+                                    <ion-icon name="close-circle-outline" class="text-xl"></ion-icon>
+                                </button>
+                            </div>
                         </div>
                         <button type="button" onclick="addZoneRow()" 
                                 class="w-full py-2 px-3 border border-dashed border-secondary-300 hover:border-primary-500 hover:bg-primary-50/50 text-secondary-600 hover:text-primary-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
@@ -299,6 +314,11 @@ $selectedAreaId = $_GET['area_id'] ?? $_SESSION['last_zone_area_id'] ?? ($areas[
 </div>
 
 <script>
+// Expose functions globally immediately
+window.switchInputMode = function() {};
+window.addZoneRow = function() {};
+window.removeZoneRow = function() {};
+
 document.addEventListener('DOMContentLoaded', function() {
     const APP_BASE = '<?= $base ?>';
     const areaIdInput = document.getElementById('area_id_input');
@@ -323,6 +343,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const zoneSearch = document.getElementById('zoneSearch');
     const filteredCountBadge = document.getElementById('filteredCountBadge');
     const zonesTbody = document.getElementById('zonesTbody');
+
+    // Bulk selection elements
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const bulkActionBar = document.getElementById('bulkActionBar');
+    const selectedCountText = document.getElementById('selectedCountText');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const cancelBulkBtn = document.getElementById('cancelBulkBtn');
+    const cleanCorruptedBtn = document.getElementById('cleanCorruptedBtn');
 
     let currentInputMode = 'rows'; // 'rows' or 'bulk'
 
@@ -429,22 +457,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize Area selection from LocalStorage / URL / Default
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlAreaId = urlParams.get('area_id');
-    const savedAreaId = localStorage.getItem('admin_last_zone_area_id');
-
-    let initAreaId = urlAreaId || areaIdInput.value || savedAreaId;
-    let targetOpt = document.querySelector(`.area-option[data-id="${initAreaId}"]`);
-    if (!targetOpt && areaOptions.length > 0) {
-        targetOpt = areaOptions[0];
-    }
-    if (targetOpt) {
-        setAreaSelected(
-            targetOpt.getAttribute('data-id'),
-            targetOpt.getAttribute('data-name'),
-            true
-        );
+    function attachRowEvents(row) {
+        if (!row) return;
+        const input = row.querySelector('.zone-input-field');
+        if (!input) return;
+        input.addEventListener('input', updateZonesPreview);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                window.addZoneRow();
+            }
+        });
     }
 
     // ==========================================
@@ -476,6 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.addZoneRow = function(value = '') {
+        if (!zoneRowsList) return;
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 zone-row-item animate-fade-in';
         row.innerHTML = `
@@ -490,23 +514,18 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
         `;
         zoneRowsList.appendChild(row);
+        attachRowEvents(row);
 
         const input = row.querySelector('.zone-input-field');
-        input.addEventListener('input', updateZonesPreview);
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addZoneRow();
-            }
-        });
-
-        if (!value) {
+        if (!value && input) {
             setTimeout(() => input.focus(), 50);
         }
         updateZonesPreview();
+        return row;
     };
 
     window.removeZoneRow = function(btn) {
+        if (!zoneRowsList) return;
         const rows = zoneRowsList.querySelectorAll('.zone-row-item');
         if (rows.length > 1) {
             btn.closest('.zone-row-item').remove();
@@ -518,9 +537,16 @@ document.addEventListener('DOMContentLoaded', function() {
         updateZonesPreview();
     };
 
-    // Initialize 2 default rows
-    addZoneRow();
-    addZoneRow();
+    // Attach listeners to server-rendered rows or create defaults
+    if (zoneRowsList) {
+        const initialRows = zoneRowsList.querySelectorAll('.zone-row-item');
+        if (initialRows.length === 0) {
+            window.addZoneRow();
+            window.addZoneRow();
+        } else {
+            initialRows.forEach(row => attachRowEvents(row));
+        }
+    }
 
     bulkTextarea.addEventListener('input', updateZonesPreview);
 
@@ -764,13 +790,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     // 5. BULK SELECTION & BULK DELETE
     // ==========================================
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const bulkActionBar = document.getElementById('bulkActionBar');
-    const selectedCountText = document.getElementById('selectedCountText');
-    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-    const cancelBulkBtn = document.getElementById('cancelBulkBtn');
-    const cleanCorruptedBtn = document.getElementById('cleanCorruptedBtn');
-
     function getSelectedCheckboxes() {
         return Array.from(document.querySelectorAll('.zone-row-checkbox:checked'));
     }
@@ -971,7 +990,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.delete-form').forEach(form => attachDeleteHandler(form));
 
-    // Trigger initial filter on load
-    filterTable();
+    // Initialize Area selection
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlAreaId = urlParams.get('area_id');
+    const savedAreaId = localStorage.getItem('admin_last_zone_area_id');
+
+    let initAreaId = urlAreaId || (areaIdInput ? areaIdInput.value : '') || savedAreaId;
+    let targetOpt = document.querySelector(`.area-option[data-id="${initAreaId}"]`);
+    if (!targetOpt && areaOptions.length > 0) {
+        targetOpt = areaOptions[0];
+    }
+    if (targetOpt) {
+        setAreaSelected(
+            targetOpt.getAttribute('data-id'),
+            targetOpt.getAttribute('data-name'),
+            true
+        );
+    } else {
+        filterTable();
+    }
 });
 </script>

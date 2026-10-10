@@ -8,6 +8,7 @@ $activeTab  = $tab ?? ($_GET['tab'] ?? 'login');
 $otpEnabled = ($settings['otp_required_signup'] ?? '0') === '1';
 $fbEnabled  = ($settings['auth_firebase_otp_enabled'] ?? '0') === '1';
 $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
+$hideFooter = true;
 ?>
 
 <!-- Ionicons for Modern Icons -->
@@ -32,9 +33,6 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
   overflow: hidden;
   display: grid;
   grid-template-columns: 280px 1fr;
-}
-@media (max-width:768px) {
-  .auth-card { grid-template-columns: 1fr; }
 }
 
 /* Sidebar */
@@ -80,7 +78,71 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
 
 /* Form Panel */
 .auth-panel { padding: 2.5rem 2.5rem; position: relative; }
-@media (max-width:640px) { .auth-panel { padding: 1.75rem 1.25rem; } }
+
+/* Mobile Adaptations */
+@media (max-width:768px) {
+  .auth-wrap {
+    padding: 0.75rem 0.5rem;
+    min-height: auto;
+    background: #f8fafc;
+  }
+  .auth-card {
+    grid-template-columns: 1fr;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+  }
+  .auth-sidebar {
+    padding: 1.25rem 1rem 0.85rem;
+    gap: 0.5rem;
+  }
+  .auth-sidebar .auth-logo-box {
+    margin-bottom: 0.65rem !important;
+    text-align: center;
+  }
+  .auth-sidebar .auth-logo-box a > div:first-child {
+    font-size: 1.25rem !important;
+  }
+  .auth-sidebar .auth-tabs-wrap {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 5px !important;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 4px;
+    border-radius: 12px;
+  }
+  .auth-tab-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 10px;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.82rem;
+    gap: 5px;
+  }
+  .auth-tab-btn .tab-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 1rem;
+    border-radius: 7px;
+  }
+  .auth-tab-btn .tab-sub {
+    display: none !important;
+  }
+  .auth-sidebar .auth-security-note {
+    display: none !important;
+  }
+  .auth-panel {
+    padding: 1.25rem 1rem !important;
+  }
+  .auth-input, .select-styled {
+    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+    padding: 11px 14px;
+  }
+  .auth-geo-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 .form-section { display: none; }
 .form-section.active { display: block; animation: slideIn .3s ease; }
@@ -328,7 +390,7 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
       <div class="auth-sidebar">
         <div>
           <!-- Logo -->
-          <div class="mb-8" style="position:relative;z-index:1">
+          <div class="auth-logo-box mb-8" style="position:relative;z-index:1">
             <a href="<?= $base ?>/" style="text-decoration:none;">
               <div style="font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.02em;">
                 🛒 <?= htmlspecialchars($siteName) ?>
@@ -340,13 +402,13 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
           </div>
 
           <!-- Tab Buttons -->
-          <div class="space-y-3" style="position:relative;z-index:1">
+          <div class="auth-tabs-wrap space-y-3" style="position:relative;z-index:1">
             <button onclick="switchTab('login')" id="tab-login"
                     class="auth-tab-btn <?= $activeTab === 'login' ? 'active' : '' ?>">
               <span class="tab-icon"><ion-icon name="log-in-outline"></ion-icon></span>
               <div>
-                <div style="font-size:.95rem;">লগইন করুন</div>
-                <div style="font-size:.72rem;font-weight:500;opacity:.75">আগের অ্যাকাউন্ট আছে</div>
+                <div style="font-size:.95rem;">লগইন</div>
+                <div class="tab-sub" style="font-size:.72rem;font-weight:500;opacity:.75">আগের অ্যাকাউন্ট আছে</div>
               </div>
             </button>
 
@@ -355,7 +417,7 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
               <span class="tab-icon"><ion-icon name="person-add-outline"></ion-icon></span>
               <div>
                 <div style="font-size:.95rem;">রেজিস্ট্রেশন</div>
-                <div style="font-size:.72rem;font-weight:500;opacity:.75">
+                <div class="tab-sub" style="font-size:.72rem;font-weight:500;opacity:.75">
                   নতুন অ্যাকাউন্ট খুলুন
                   <?php if ($otpEnabled): ?>
                   &nbsp;<span class="otp-badge">🔐 OTP</span>
@@ -368,15 +430,15 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
                     class="auth-tab-btn <?= $activeTab === 'forgot' ? 'active' : '' ?>">
               <span class="tab-icon"><ion-icon name="key-outline"></ion-icon></span>
               <div>
-                <div style="font-size:.95rem;">পাসওয়ার্ড রিসেট</div>
-                <div style="font-size:.72rem;font-weight:500;opacity:.75">ভুলে গেছেন? উদ্ধার করুন</div>
+                <div style="font-size:.95rem;">রিসেট</div>
+                <div class="tab-sub" style="font-size:.72rem;font-weight:500;opacity:.75">ভুলে গেছেন? উদ্ধার করুন</div>
               </div>
             </button>
           </div>
         </div>
 
         <!-- Security note -->
-        <div style="position:relative;z-index:1;margin-top:2.5rem;">
+        <div class="auth-security-note" style="position:relative;z-index:1;margin-top:2.5rem;">
           <div style="display:flex;align-items:center;gap:8px;font-size:.76rem;color:rgba(255,255,255,.65);">
             <ion-icon name="shield-checkmark-outline" style="font-size:1.1rem;color:#6ee7b7;"></ion-icon>
             SSL সুরক্ষিত · আপনার তথ্য সম্পূর্ণ নিরাপদ
@@ -693,7 +755,7 @@ $preFillPhone = htmlspecialchars($_GET['phone'] ?? '');
               <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:1.75rem;">
 
                 <!-- Cascading Area / Zone / Point -->
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div class="auth-geo-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                   <div>
                     <label class="form-label" for="reg_area_id">এরিয়া (Area) *</label>
                     <select id="reg_area_id" name="area_id" class="select-styled" required>

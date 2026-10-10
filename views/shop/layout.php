@@ -676,11 +676,32 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
         </div>
     </header>
 
+    <?php
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
+    $isAuthPage = (
+        !empty($hideFooter) ||
+        strpos($cleanPath, '/checkout/auth') === 0 ||
+        strpos($cleanPath, '/customer/login') === 0 ||
+        strpos($cleanPath, '/customer/register') === 0 ||
+        strpos($cleanPath, '/register') === 0 ||
+        strpos($cleanPath, '/customer/forgot-password') === 0 ||
+        strpos($cleanPath, '/checkout/forgot-password') === 0 ||
+        strpos($cleanPath, '/checkout/otp-verify') === 0 ||
+        strpos($cleanPath, '/checkout/reset-password') === 0
+    );
+    $isHomePage = ($cleanPath === '' || $cleanPath === '/');
+    $isCategoryPage = (strpos($cleanPath, '/category') === 0);
+    $isShopPage = (strpos($cleanPath, '/shop') === 0);
+    $isAccountPage = (strpos($cleanPath, '/account') === 0 || strpos($cleanPath, '/checkout/auth') === 0);
+    ?>
+
     <!-- Main Content (with bottom padding on mobile so bottom nav and sticky cart never cover content) -->
-    <main class="flex-grow pb-28 md:pb-0">
+    <main class="flex-grow <?= $isAuthPage ? 'pb-0' : 'pb-28 md:pb-0' ?>">
         <?= $content ?? '' ?>
     </main>
 
+    <?php if (!$isAuthPage): ?>
     <!-- STICKY FLOATING CART WIDGET (Bottom Bar on Mobile floating above bottom nav, Right-Side Pill on Desktop) -->
     <aside id="sticky-cart-btn" onclick="openCartDrawer()" 
            class="fixed z-40 cursor-pointer select-none group transition-all duration-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-400 bottom-[70px] inset-x-3 sm:inset-x-6 max-w-lg mx-auto flex flex-row items-center justify-between bg-gray-950/95 hover:bg-black text-white rounded-2xl shadow-2xl border border-emerald-500/50 p-2.5 px-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-0 md:left-auto md:inset-x-auto md:w-auto md:max-w-none md:flex-col md:rounded-l-2xl md:rounded-r-none md:border-l-2 md:border-y md:border-r-0 md:min-w-[84px] md:p-2.5 md:text-center md:hover:-translate-x-1.5 <?= ($cartCount == 0 ? 'sticky-cart-hidden' : '') ?>"
@@ -715,14 +736,6 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
     </aside>
 
     <!-- MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on Mobile with Elevated Floating Center Button) -->
-    <?php
-    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
-    $isHomePage = ($cleanPath === '' || $cleanPath === '/');
-    $isCategoryPage = (strpos($cleanPath, '/category') === 0);
-    $isShopPage = (strpos($cleanPath, '/shop') === 0);
-    $isAccountPage = (strpos($cleanPath, '/account') === 0 || strpos($cleanPath, '/checkout/auth') === 0);
-    ?>
     <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.1)] px-2 py-1 transition-all">
         <div class="flex items-center justify-between max-w-md mx-auto relative">
             
@@ -785,6 +798,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
         </div>
     </nav>
+    <?php endif; ?>
 
     <!-- SLIDE-OVER SIDE CART DRAWER -->
     <!-- Backdrop -->
@@ -1028,6 +1042,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
         </div>
     </div>
 
+    <?php if (!$isAuthPage): ?>
     <!-- 4. RICH MEGA FOOTER (FreshMart Style Dark Forest Theme) -->
     <footer class="bg-[#0f2819] text-white pt-16 pb-8 mt-16 border-t border-emerald-950" id="footer">
         <div class="container mx-auto px-4">
@@ -1124,6 +1139,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             </div>
         </div>
     </footer>
+    <?php endif; ?>
     
     <script>
         // Global State & Language

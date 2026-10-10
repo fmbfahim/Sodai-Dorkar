@@ -5,14 +5,20 @@ $siteName = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_ti
 $purpose  = $purpose ?? 'signup';
 $phone    = $phone ?? '';
 $resent   = ($_GET['resent'] ?? '') === '1';
+$hideFooter = true;
 ?>
 
 <style>
-  .otp-input-group { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
+  .otp-input-group { display: flex; gap: 8px; justify-content: center; margin: 24px 0; }
   .otp-digit {
-    width: 52px; height: 60px; border: 2px solid #d1fae5; border-radius: 14px;
-    font-size: 1.6rem; font-weight: 700; text-align: center; background: #f0fdf4;
+    width: 48px; height: 56px; max-width: 13.5vw; border: 2px solid #d1fae5; border-radius: 14px;
+    font-size: 1.5rem; font-weight: 700; text-align: center; background: #f0fdf4;
     color: #064e3b; outline: none; transition: all .2s; caret-color: #10b981;
+  }
+  @media (max-width: 400px) {
+    .otp-digit {
+      width: 40px; height: 48px; font-size: 1.25rem; border-radius: 10px;
+    }
   }
   .otp-digit:focus { border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
   .otp-digit.filled { border-color: #10b981; background: #ecfdf5; }
