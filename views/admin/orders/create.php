@@ -310,7 +310,10 @@ function getPosProductVariants($product) {
                     <div class="flex items-center gap-1.5 shrink-0">
                         <div class="flex flex-col items-end mr-1">
                              <span class="text-[9px] text-secondary-400 font-bold uppercase">Success</span>
-                             <span class="text-xs font-black text-emerald-600 leading-none" id="statRatio">-%</span>
+                             <div class="flex items-center gap-1">
+                                 <span id="statOrders" class="hidden">0</span>
+                                 <span class="text-xs font-black text-emerald-600 leading-none" id="statRatio">-%</span>
+                             </div>
                         </div>
                         <button type="button" onclick="clearCustomer()" class="text-[9px] sm:text-[10px] text-red-600 font-bold px-2 py-0.5 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors cursor-pointer">CHANGE</button>
                     </div>
@@ -334,6 +337,10 @@ function getPosProductVariants($product) {
                     <ion-icon name="cart-outline" class="text-sm text-primary-600"></ion-icon>
                     <span>কার্ট আইটেম</span>
                     <span id="cartHeaderBadge" class="ml-1 px-1.5 py-0.2 rounded-full bg-primary-100 text-primary-700 font-bold text-[10px]">0</span>
+                    <span id="posDraftSavedBadge" class="hidden ml-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md items-center gap-1" title="পেজ রিফ্রেশ করলেও কার্ট এবং তথ্য সংরক্ষিত থাকবে">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>অটো-সেভড</span>
+                    </span>
                 </div>
                 <button type="button" onclick="clearEntireCart()" class="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer transition-colors" title="কার্ট খালি করুন">
                     <ion-icon name="trash-outline"></ion-icon>
@@ -416,7 +423,7 @@ function getPosProductVariants($product) {
                 </div>
                 <div class="flex items-center w-22 sm:w-24">
                     <span class="text-secondary-500 mr-1 text-xs">৳</span>
-                    <input type="number" id="deliveryCharge" value="0" min="0" oninput="calculateTotal()" 
+                    <input type="number" id="deliveryCharge" value="0" min="0" oninput="userCustomDelivery = true; calculateTotal()" 
                            class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
                 </div>
             </div>
@@ -577,6 +584,9 @@ function getPosProductVariants($product) {
 <script>
     // Global Constants & Path Base
     const baseUrl = '<?= $base ?>';
+    const POS_DRAFT_KEY = 'freshmart_pos_draft_state_v1';
+    let isRestoringDraft = false;
+    let userCustomDelivery = false;
 
     // Global Data & Cart State
     let cart = [];
@@ -590,6 +600,157 @@ function getPosProductVariants($product) {
     // Settings
     const defaultDeliveryCharge = <?= floatval($settings['delivery_charge_default'] ?? 60) ?>;
     const freeDeliveryThreshold = <?= floatval($settings['delivery_free_threshold'] ?? 5000) ?>;
+
+    // --- LocalStorage Draft Persistence for POS ---
+    function savePosDraft() {
+        if (isRestoringDraft) return;
+
+        // If cart is empty and no customer is selected, clear storage
+        if (cart.length === 0 && !selectedCustId) {
+            localStorage.removeItem(POS_DRAFT_KEY);
+            updateDraftBadge(false);
+            return;
+        }
+
+        const state = {
+            timestamp: Date.now(),
+            cart: cart,
+            customer: selectedCustId ? {
+                id: selectedCustId,
+                name: document.getElementById('dispName') ? document.getElementById('dispName').innerText : '',
+                phone: document.getElementById('dispPhone') ? document.getElementById('dispPhone').innerText : ''
+            } : null,
+            discount: parseFloat(document.getElementById('orderDiscount')?.value) || 0,
+            coupon: document.getElementById('orderCouponCode')?.value || '',
+            isPosExpressActive: typeof isPosExpressActive !== 'undefined' ? isPosExpressActive : false,
+            deliveryCharge: parseFloat(document.getElementById('deliveryCharge')?.value) || 0,
+            userCustomDelivery: userCustomDelivery,
+            markDelivered: document.getElementById('markDeliveredCheck')?.checked ?? true
+        };
+
+        try {
+            localStorage.setItem(POS_DRAFT_KEY, JSON.stringify(state));
+            updateDraftBadge(true);
+        } catch (e) {
+            console.warn('POS Draft save failed:', e);
+        }
+    }
+
+    function clearPosDraft() {
+        try {
+            localStorage.removeItem(POS_DRAFT_KEY);
+            updateDraftBadge(false);
+        } catch(e) {}
+    }
+
+    function updateDraftBadge(isSaved) {
+        const badge = document.getElementById('posDraftSavedBadge');
+        if (!badge) return;
+        if (isSaved && (cart.length > 0 || selectedCustId)) {
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+        }
+    }
+
+    function showPosToast(message) {
+        let toast = document.getElementById('posToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'posToast';
+            toast.className = 'fixed bottom-4 right-4 z-50 bg-secondary-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 border border-secondary-700 transition-all duration-300 opacity-0 translate-y-2 pointer-events-none';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<ion-icon name="checkmark-circle" class="text-base text-emerald-400"></ion-icon> <span>${message}</span>`;
+        toast.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none');
+        }, 2800);
+    }
+
+    function loadPosDraft() {
+        try {
+            const raw = localStorage.getItem(POS_DRAFT_KEY);
+            if (!raw) return;
+
+            const draft = JSON.parse(raw);
+            if (!draft || typeof draft !== 'object') return;
+
+            // Discard drafts older than 24 hours
+            if (draft.timestamp && (Date.now() - draft.timestamp > 24 * 60 * 60 * 1000)) {
+                clearPosDraft();
+                return;
+            }
+
+            isRestoringDraft = true;
+
+            // Restore Cart
+            if (Array.isArray(draft.cart) && draft.cart.length > 0) {
+                cart = draft.cart;
+            }
+
+            // Restore Express Delivery Toggle
+            const expCheck = document.getElementById('posExpressCheck');
+            if (expCheck && typeof draft.isPosExpressActive === 'boolean') {
+                isPosExpressActive = draft.isPosExpressActive;
+                expCheck.checked = isPosExpressActive;
+            }
+
+            // Restore Custom Delivery Setting
+            if (draft.userCustomDelivery) {
+                userCustomDelivery = true;
+            }
+
+            // Restore Delivery Charge
+            if (draft.deliveryCharge !== undefined) {
+                const delivInput = document.getElementById('deliveryCharge');
+                if (delivInput) delivInput.value = draft.deliveryCharge;
+            }
+
+            // Restore Counter Discount
+            if (draft.discount !== undefined) {
+                const discInput = document.getElementById('orderDiscount');
+                if (discInput) discInput.value = draft.discount;
+            }
+
+            // Restore Coupon Code
+            if (draft.coupon) {
+                const couponInput = document.getElementById('orderCouponCode');
+                if (couponInput) couponInput.value = draft.coupon;
+            }
+
+            // Restore Mark Delivered Checkbox
+            const mdCheck = document.getElementById('markDeliveredCheck');
+            if (mdCheck && typeof draft.markDelivered === 'boolean') {
+                mdCheck.checked = draft.markDelivered;
+            }
+
+            // Render Cart with restored items
+            renderCart();
+
+            // Restore Customer (only if not passed via URL ?customer_id=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlCustId = urlParams.get('customer_id');
+
+            if (!urlCustId && draft.customer && draft.customer.id) {
+                selectCustomer(draft.customer.id, draft.customer.name, draft.customer.phone);
+            }
+
+            isRestoringDraft = false;
+            updateDraftBadge(true);
+
+            if (cart.length > 0 || (draft.customer && draft.customer.id)) {
+                showPosToast('পূর্ববর্তী অর্ডার ড্রাফট পুনরুদ্ধার করা হয়েছে');
+            }
+        } catch (e) {
+            console.error('Failed to restore POS draft:', e);
+            isRestoringDraft = false;
+        }
+    }
 
     // --- Mobile Tab Switching ---
     function switchToMobileTab(tab) {
@@ -766,9 +927,20 @@ function getPosProductVariants($product) {
         }
     }
 
-    // Initialize Categories on Load
+    // Initialize Categories & Load Saved POS Draft on Load
     document.addEventListener('DOMContentLoaded', () => {
         renderCategories(null);
+        loadPosDraft();
+
+        const couponInput = document.getElementById('orderCouponCode');
+        if (couponInput) {
+            couponInput.addEventListener('input', () => savePosDraft());
+        }
+
+        const markDeliveredCheck = document.getElementById('markDeliveredCheck');
+        if (markDeliveredCheck) {
+            markDeliveredCheck.addEventListener('change', () => savePosDraft());
+        }
     });
 
     // Search and Filter Products
@@ -958,11 +1130,21 @@ function getPosProductVariants($product) {
         if (cart.length === 0) return;
         if (confirm('আপনি কি নিশ্চিত যে সম্পূর্ণ কার্ট খালি করতে চান?')) {
             cart = [];
+            userCustomDelivery = false;
             const floatPreview = document.getElementById('mobileFloatImgPreview');
             if (floatPreview) {
                 floatPreview.innerHTML = '<ion-icon name="cart" class="text-xl text-primary-400"></ion-icon>';
             }
+            const discInput = document.getElementById('orderDiscount');
+            if (discInput) discInput.value = 0;
+            const couponInput = document.getElementById('orderCouponCode');
+            if (couponInput) couponInput.value = '';
+            const expCheck = document.getElementById('posExpressCheck');
+            if (expCheck) expCheck.checked = false;
+            isPosExpressActive = false;
+
             renderCart();
+            savePosDraft();
         }
     }
 
@@ -1039,11 +1221,16 @@ function getPosProductVariants($product) {
         
         // Auto-apply delivery fee logic
         const deliveryInput = document.getElementById('deliveryCharge');
-        let charge = defaultDeliveryCharge;
-        if (subtotal >= freeDeliveryThreshold || subtotal === 0) {
-            charge = 0;
+        if (!userCustomDelivery) {
+            let charge = defaultDeliveryCharge;
+            if (subtotal >= freeDeliveryThreshold || subtotal === 0) {
+                charge = 0;
+            }
+            if (isPosExpressActive) {
+                charge += posExpressFee;
+            }
+            deliveryInput.value = charge;
         }
-        deliveryInput.value = charge;
 
         document.getElementById('cartSubtotal').innerText = '৳ ' + subtotal.toFixed(2);
         calculateTotal();
@@ -1102,6 +1289,8 @@ function getPosProductVariants($product) {
         
         const total = Math.max(0, subtotal - discount + delivery);
         document.getElementById('cartTotal').innerText = '৳ ' + total.toFixed(2);
+
+        savePosDraft();
     }
 
     const posExpressFee = <?= floatval($settings['express_delivery_charge'] ?? 60) ?>;
@@ -1110,11 +1299,21 @@ function getPosProductVariants($product) {
     function togglePosExpress(cb) {
         isPosExpressActive = cb.checked;
         const delivInput = document.getElementById('deliveryCharge');
-        let currentDeliv = parseFloat(delivInput.value) || 0;
-        if (isPosExpressActive) {
-            delivInput.value = currentDeliv + posExpressFee;
+        if (!userCustomDelivery) {
+            const subText = document.getElementById('cartSubtotal').innerText.replace(/[^\d.-]/g, '');
+            const subtotal = parseFloat(subText) || 0;
+            let charge = (subtotal >= freeDeliveryThreshold || subtotal === 0) ? 0 : defaultDeliveryCharge;
+            if (isPosExpressActive) {
+                charge += posExpressFee;
+            }
+            delivInput.value = charge;
         } else {
-            delivInput.value = Math.max(0, currentDeliv - posExpressFee);
+            let currentDeliv = parseFloat(delivInput.value) || 0;
+            if (isPosExpressActive) {
+                delivInput.value = currentDeliv + posExpressFee;
+            } else {
+                delivInput.value = Math.max(0, currentDeliv - posExpressFee);
+            }
         }
         calculateTotal();
     }
@@ -1203,8 +1402,10 @@ function getPosProductVariants($product) {
         custResults.classList.add('hidden'); 
         
         // Reset Stats
-        document.getElementById('statRatio').innerText = '...';
-        document.getElementById('statOrders').innerText = '...';
+        const ratioEl = document.getElementById('statRatio');
+        if (ratioEl) ratioEl.innerText = '...';
+        const ordersEl = document.getElementById('statOrders');
+        if (ordersEl) ordersEl.innerText = '...';
 
         try {
             const res = await fetch(`${baseUrl}/admin/orders/check-pending?customer_id=${id}`);
@@ -1212,17 +1413,17 @@ function getPosProductVariants($product) {
             
             if (data.success) {
                 if (data.stats) {
-                    document.getElementById('statRatio').innerText = data.stats.success_ratio + '%';
-                    document.getElementById('statOrders').innerText = data.stats.total_orders;
-                    
-                    const ratioEl = document.getElementById('statRatio');
-                    if (data.stats.success_ratio < 50 && data.stats.total_orders > 2) {
-                         ratioEl.className = "text-base font-black text-red-600 leading-none";
-                    } else if (data.stats.success_ratio > 90) {
-                         ratioEl.className = "text-base font-black text-emerald-600 leading-none";
-                    } else {
-                         ratioEl.className = "text-base font-black text-amber-600 leading-none";
+                    if (ratioEl) {
+                        ratioEl.innerText = data.stats.success_ratio + '%';
+                        if (data.stats.success_ratio < 50 && data.stats.total_orders > 2) {
+                             ratioEl.className = "text-base font-black text-red-600 leading-none";
+                        } else if (data.stats.success_ratio > 90) {
+                             ratioEl.className = "text-base font-black text-emerald-600 leading-none";
+                        } else {
+                             ratioEl.className = "text-base font-black text-amber-600 leading-none";
+                        }
                     }
+                    if (ordersEl) ordersEl.innerText = data.stats.total_orders;
                 }
 
                 if (data.exists) {
@@ -1233,6 +1434,8 @@ function getPosProductVariants($product) {
                 }
             }
         } catch(e) {}
+
+        savePosDraft();
     }
     
     // Clear Selected Customer
@@ -1245,6 +1448,7 @@ function getPosProductVariants($product) {
         document.getElementById('btnText').innerText = 'Confirm Order';
         document.getElementById('customerSearchInput').focus();
         renderCart();
+        savePosDraft();
     }
 
     // Quick Customer Modal
@@ -1390,6 +1594,9 @@ function getPosProductVariants($product) {
             }
 
             if (data.success) {
+                // Clear POS draft on successful order placement
+                clearPosDraft();
+
                 // If marked delivered from POS, offer immediate 3" receipt popup or redirect to invoice
                 if (markDelivered) {
                     window.open(baseUrl + '/admin/orders/pos-receipt?id=' + data.order_id, '_blank', 'width=400,height=600');
