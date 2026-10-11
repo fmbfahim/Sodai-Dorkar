@@ -62,40 +62,13 @@ class MarketingController extends Controller {
 
         $gemini = new GeminiService();
         $facebook = new FacebookService();
-
-        // Handle return from Journal Automation Facebook OAuth portal
-        if (isset($_GET['ja_fb'])) {
-            $state = $_GET['ja_fb'];
-            if ($state === 'ok') {
-                $status = $facebook->getPortalStatus();
-                if (!empty($status['connected'])) {
-                    Setting::set('facebook_page_id', $status['page_id'] ?? '');
-                    Setting::set('facebook_page_name', $status['page_name'] ?? 'Facebook Page');
-                    Setting::set('facebook_connected_provider', 'portal');
-                    $_SESSION['success'] = "🎉 ফেসবুক পেজ '{$status['page_name']}' সফলভাবে সংযুক্ত হয়েছে! কোনো Access Token বা App ID লাগবে না।";
-                } else {
-                    $_SESSION['error'] = 'ফেসবুক পেজ সংযোগ নিশ্চিত করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।';
-                }
-            } else {
-                $_SESSION['error'] = 'ফেসবুক লগইন বা পেজ নির্বাচন বাতিল করা হয়েছে।';
-            }
-            $this->redirect('/admin/marketing/settings');
-            return;
-        }
-
         $settings = Setting::getAll();
-
-        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
-        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-        $returnUrl = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $base . '/admin/marketing/settings';
-        $portalConnectUrl = $facebook->getPortalConnectUrl($returnUrl);
 
         return $this->view('admin/marketing/settings', [
             'title' => 'Marketing & Facebook Settings',
             'settings' => $settings,
             'isGeminiConfigured' => $gemini->isConfigured(),
             'isFacebookConfigured' => $facebook->isConfigured(),
-            'portalConnectUrl' => $portalConnectUrl,
             'oauthPages' => $_SESSION['fb_oauth_pages'] ?? []
         ]);
     }
@@ -701,14 +674,12 @@ class MarketingController extends Controller {
     public function disconnectFacebookPage() {
         $this->requireAdmin();
 
-        $facebook = new FacebookService();
-        $facebook->disconnectPortal();
-
         Setting::set('facebook_page_id', '');
         Setting::set('facebook_page_name', '');
         Setting::set('facebook_page_access_token', '');
         Setting::set('facebook_page_picture', '');
         Setting::set('facebook_connected_provider', '');
+        Setting::set('facebook_portal_key', '');
         unset($_SESSION['fb_oauth_pages']);
 
         $_SESSION['success'] = 'ফেসবুক পেজ সংযোগ বিচ্ছিন্ন করা হয়েছে।';
