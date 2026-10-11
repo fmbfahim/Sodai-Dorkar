@@ -150,8 +150,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         <div class="text-xs text-secondary-400 font-mono"><?php echo htmlspecialchars($item['sku'] ?? ''); ?></div>
                     </td>
                     <td class="py-4 text-center"><?php echo $item['quantity']; ?></td>
-                    <td class="py-4 text-right">৳ <?php echo number_format($item['price']); ?></td>
-                    <td class="py-4 text-right font-medium text-secondary-900">৳ <?php echo number_format($item['price'] * $item['quantity']); ?></td>
+                    <td class="py-4 text-right">৳ <?php echo formatPrice($item['price']); ?></td>
+                    <td class="py-4 text-right font-medium text-secondary-900">৳ <?php echo formatPrice($item['price'] * $item['quantity']); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

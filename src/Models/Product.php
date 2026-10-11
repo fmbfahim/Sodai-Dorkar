@@ -593,6 +593,19 @@ class Product {
         return $display;
     }
 
+    /**
+     * Helper to format price display.
+     * Whole numbers: no decimals (e.g. 25 -> "25")
+     * Decimals: 2 decimal places (e.g. 12.50 -> "12.50")
+     */
+    public static function formatPrice($price) {
+        $val = floatval($price);
+        if (floor($val) == $val) {
+            return number_format($val, 0);
+        }
+        return number_format($val, 2);
+    }
+
     public static function hasDiscount($product) {
         $regular = floatval($product['regular_price'] ?? 0);
         $sell = floatval($product['sell_price'] ?? 0);

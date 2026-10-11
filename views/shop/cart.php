@@ -69,7 +69,7 @@ $__ = function($key, $r = []) { return Lang::get($key, $r); };
                                             <?php endif; ?>
                                         </div>
 
-                                        <p class="text-green-600 font-semibold mt-1"><?= $__('currency') ?><?= number_format($item['price'], 2) ?></p>
+                                        <p class="text-green-600 font-semibold mt-1"><?= $__('currency') ?><?= formatPrice($item['price']) ?></p>
                                     </div>
                                     
                                     <div class="flex items-center gap-3 sm:gap-4">
@@ -82,7 +82,7 @@ $__ = function($key, $r = []) { return Lang::get($key, $r); };
                                         </div>
                                         
                                         <div class="w-20 sm:w-24 text-right font-black text-gray-800" id="item-total-<?= $productId ?>">
-                                            <?= $__('currency') ?><?= number_format($itemTotal, 2) ?>
+                                            <?= $__('currency') ?><?= formatPrice($itemTotal) ?>
                                         </div>
                                         
                                         <button type="button" onclick="removeFromCart(<?= $productId ?>)" 

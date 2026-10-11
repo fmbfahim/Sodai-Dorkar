@@ -443,11 +443,11 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                 </a>
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="text-xs sm:text-sm font-black text-amber-300">
-                                        ৳<?= number_format($topPopularProduct['sell_price']) ?>
+                                        ৳<?= formatPrice($topPopularProduct['sell_price']) ?>
                                     </span>
                                     <?php if (\Models\Product::hasDiscount($topPopularProduct)): ?>
                                         <span class="text-[10px] text-emerald-300/70 line-through">
-                                            ৳<?= number_format($topPopularProduct['regular_price']) ?>
+                                            ৳<?= formatPrice($topPopularProduct['regular_price']) ?>
                                         </span>
                                     <?php endif; ?>
                                     <a href="<?= $base ?>/product?id=<?= $topPopularProduct['id'] ?>" class="ml-auto text-[10px] font-black bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-0.5 rounded-lg transition-colors">
@@ -806,16 +806,16 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                     <div class="flex items-baseline gap-0.5">
                                         <span class="text-xs font-bold text-emerald-800 leading-none">৳</span>
                                         <span class="card-price text-sm sm:text-base font-black text-gray-900 leading-none">
-                                            <?= number_format($initialPrice) ?>
+                                            <?= formatPrice($initialPrice) ?>
                                         </span>
                                     </div>
 
                                     <?php if ($hasDiscount): ?>
                                         <span class="card-regular-price text-[10px] sm:text-[11px] text-gray-400 line-through font-medium leading-none">
-                                            ৳<?= number_format($product['regular_price']) ?>
+                                            ৳<?= formatPrice($product['regular_price']) ?>
                                         </span>
                                         <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80 leading-none">
-                                            ৳<?= number_format($discountSavings) ?> <?= $locale === 'bn' ? 'সাশ্রয়' : 'Save' ?>
+                                            ৳<?= formatPrice($discountSavings) ?> <?= $locale === 'bn' ? 'সাশ্রয়' : 'Save' ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>

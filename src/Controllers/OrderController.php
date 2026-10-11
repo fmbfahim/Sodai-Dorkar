@@ -369,21 +369,33 @@ class OrderController extends Controller {
             exit;
         }
 
-        // 1. Restore Stock for Old Items
+        // 1. Restore Stock for Old Items and update order
         $orderModel = new Order();
         $oldOrder = $orderModel->find($id);
         
+        $discount = floatval($input['discount_amount'] ?? 0);
+        $deliveryCharge = floatval($input['delivery_charge'] ?? ($oldOrder['delivery_charge'] ?? 0));
+        $total = floatval($input['total'] ?? 0);
+        $subtotal = floatval($input['subtotal'] ?? ($total + $discount - $deliveryCharge));
+        $originalAmount = $subtotal + $deliveryCharge;
+
         try {
             $orderModel->updateTransaction($id, [
                 'customer_id' => $input['customer_id'],
-                'total_amount' => $input['total'],
+                'total_amount' => $total,
+                'original_amount' => $originalAmount,
+                'delivery_charge' => $deliveryCharge,
+                'delivery_discount' => $discount,
+                'amount_changed_by' => 'admin',
+                'amount_change_reason' => 'Admin Order Edit',
                 'delivery_address' => $input['address'] ?? ($oldOrder['delivery_address'] ?? ''), 
                 'contact_number' => $input['phone'] ?? ($oldOrder['contact_number'] ?? '')
             ], $input['items']);
 
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
             if (ob_get_length()) ob_clean();
             header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'Order Updated', 'redirect' => '/sodai-dorkar/public/admin/orders']);
+            echo json_encode(['success' => true, 'message' => 'Order Updated', 'redirect' => $base . '/admin/orders']);
 
         } catch (\Exception $e) {
             if (ob_get_length()) ob_clean();

@@ -205,17 +205,17 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                             <div class="flex items-baseline gap-1 text-emerald-700">
                                 <span class="text-xl sm:text-2xl font-bold">৳</span>
                                 <span id="detail-current-price" class="text-3xl sm:text-4xl font-black">
-                                    <?= number_format($initialTotalPrice) ?>
+                                    <?= formatPrice($initialTotalPrice) ?>
                                 </span>
                             </div>
 
                             <?php if ($hasDiscount): ?>
                                 <div class="flex items-center gap-2">
                                     <span id="detail-regular-price" class="text-base sm:text-lg text-gray-400 line-through font-semibold">
-                                        ৳<?= number_format($regularPrice) ?>
+                                        ৳<?= formatPrice($regularPrice) ?>
                                     </span>
                                     <span class="bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold px-2.5 py-0.5 rounded-md">
-                                        <?= $locale === 'bn' ? "সাশ্রয় ৳" . number_format($discountAmount) : "Save ৳" . number_format($discountAmount) ?>
+                                        <?= $locale === 'bn' ? "সাশ্রয় ৳" . formatPrice($discountAmount) : "Save ৳" . formatPrice($discountAmount) ?>
                                     </span>
                                 </div>
                             <?php endif; ?>
@@ -460,9 +460,9 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
 
                                 <div class="flex items-baseline gap-1.5 mb-3 mt-auto">
                                     <span class="text-xs font-bold text-emerald-700">৳</span>
-                                    <span class="text-base font-black text-gray-900"><?= number_format($relSellPrice) ?></span>
+                                    <span class="text-base font-black text-gray-900"><?= formatPrice($relSellPrice) ?></span>
                                     <?php if ($relHasDisc): ?>
-                                        <span class="text-[11px] text-gray-400 line-through">৳<?= number_format($relRegPrice) ?></span>
+                                        <span class="text-[11px] text-gray-400 line-through">৳<?= formatPrice($relRegPrice) ?></span>
                                     <?php endif; ?>
                                 </div>
 
@@ -518,7 +518,7 @@ function updateDetailPriceDisplay() {
     const totalP = baseP + addonP;
     const priceEl = document.getElementById('detail-current-price');
     if (priceEl) {
-        priceEl.textContent = totalP.toLocaleString();
+        priceEl.textContent = (totalP % 1 === 0) ? totalP.toLocaleString('en-US') : totalP.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 }
 

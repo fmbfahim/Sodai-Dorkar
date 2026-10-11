@@ -302,9 +302,9 @@ if (!empty($search)) $activeFilterCount++;
                             <!-- Price Row -->
                             <div class="flex items-baseline gap-1.5 mb-3.5 mt-auto">
                                 <span class="text-xs font-bold text-emerald-700">৳</span>
-                                <span class="text-base sm:text-lg font-black text-gray-900"><?= number_format($pSell, 2) ?></span>
+                                <span class="text-base sm:text-lg font-black text-gray-900"><?= formatPrice($pSell) ?></span>
                                 <?php if ($pHasDisc): ?>
-                                    <span class="text-[11px] text-gray-400 line-through">৳<?= number_format($pReg, 2) ?></span>
+                                    <span class="text-[11px] text-gray-400 line-through">৳<?= formatPrice($pReg) ?></span>
                                 <?php endif; ?>
                             </div>
 

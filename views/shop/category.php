@@ -758,13 +758,13 @@ if (!empty($search)) $activeFilterCount++;
                                         <div class="flex items-baseline gap-0.5">
                                             <span class="text-xs font-bold text-gray-700 leading-none">৳</span>
                                             <span class="card-price text-base sm:text-lg font-black text-gray-900 leading-none">
-                                                <?= number_format($initialPrice) ?>
+                                                <?= formatPrice($initialPrice) ?>
                                             </span>
                                         </div>
 
                                         <?php if ($hasDiscount): ?>
                                             <span class="card-regular-price text-[11px] text-gray-400 line-through font-medium leading-none">
-                                                ৳<?= number_format($product['regular_price']) ?>
+                                                ৳<?= formatPrice($product['regular_price']) ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>

@@ -90,3 +90,18 @@ class Lang {
 function __($key, $replacements = []) {
     return Lang::get($key, $replacements);
 }
+
+/**
+ * Global price formatter.
+ * If price is integer (e.g. 25.00), returns integer string ('25').
+ * If price has decimals (e.g. 12.50), returns 2 decimal string ('12.50').
+ */
+if (!function_exists('formatPrice')) {
+    function formatPrice($price) {
+        $val = floatval($price);
+        if (floor($val) == $val) {
+            return number_format($val, 0);
+        }
+        return number_format($val, 2);
+    }
+}

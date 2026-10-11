@@ -1,6 +1,9 @@
 <?php
 // views/admin/orders/edit.php
 // Clone of create.php with Pre-population logic
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$existingDiscount = floatval($order['delivery_discount'] ?? 0);
+$existingDelivery = floatval($order['delivery_charge'] ?? 0);
 ?>
 
 <div class="h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6">
@@ -51,7 +54,7 @@
                                      <span class="text-xs font-bold text-secondary-700"><?php echo $p['stock_qty']; ?></span>
                                  <?php endif; ?>
                              </div>
-                             <span class="font-bold text-primary-600">৳ <?php echo number_format($p['sell_price']); ?></span>
+                             <span class="font-bold text-primary-600">৳ <?php echo formatPrice($p['sell_price']); ?></span>
                         </div>
                     </div>
                 <?php endforeach; endif; ?>
@@ -107,10 +110,40 @@
             </div>
         </div>
 
-        <div class="p-4 border-t border-secondary-100 bg-secondary-50">
-            <div class="flex justify-between items-center mb-4">
-                <span class="text-secondary-800 font-bold text-lg">Total</span>
-                <span class="font-bold text-primary-600 text-xl" id="cartTotal">৳ <?php echo number_format($order['total_amount']); ?></span>
+        <div class="p-4 border-t border-secondary-100 bg-secondary-50 space-y-2">
+            <!-- Subtotal -->
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-secondary-600 font-semibold">Subtotal</span>
+                <span class="font-bold text-secondary-900 text-sm" id="cartSubtotal">৳ 0</span>
+            </div>
+
+            <!-- Discount -->
+            <div class="flex justify-between items-center text-xs">
+                <div class="flex items-center gap-1">
+                    <span class="text-secondary-600 font-medium">ডিসকাউন্ট</span>
+                    <span class="text-[9px] text-red-500 font-bold bg-red-50 px-1 py-0.2 rounded border border-red-100">DISCOUNT</span>
+                </div>
+                <div class="flex items-center w-24">
+                    <span class="text-secondary-500 mr-1 text-xs">৳</span>
+                    <input type="number" id="orderDiscount" value="<?= $existingDiscount ?>" min="0" step="any" oninput="calculateTotal()" 
+                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                </div>
+            </div>
+
+            <!-- Delivery Charge -->
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-secondary-600 font-medium">Delivery Charge</span>
+                <div class="flex items-center w-24">
+                    <span class="text-secondary-500 mr-1 text-xs">৳</span>
+                    <input type="number" id="deliveryCharge" value="<?= $existingDelivery ?>" min="0" step="any" oninput="calculateTotal()" 
+                           class="w-full text-right px-2 py-1 text-xs font-bold border border-secondary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white">
+                </div>
+            </div>
+
+            <!-- Grand Total -->
+            <div class="flex justify-between items-center pt-2 border-t border-secondary-200">
+                <span class="text-secondary-800 font-bold text-base">Grand Total</span>
+                <span class="font-bold text-primary-600 text-xl" id="cartTotal">৳ <?= number_format($order['total_amount']) ?></span>
             </div>
             <button onclick="updateOrder()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-lg flex justify-center items-center transition-colors shadow-md">
                 <span id="btnText">Update Order</span>
@@ -163,6 +196,7 @@
         };
     });
 
+    const baseUrl = '<?= $base ?>';
     let selectedCustId = <?php echo $order['customer_id']; ?>;
     let orderId = <?php echo $order['id']; ?>;
     let filterCatId = 'all';
@@ -264,33 +298,60 @@
         renderCart();
     }
 
+    function calculateTotal() {
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const subEl = document.getElementById('cartSubtotal');
+        if (subEl) {
+            subEl.innerText = '৳ ' + (subtotal % 1 === 0 ? subtotal : subtotal.toFixed(2));
+        }
+        const discount = parseFloat(document.getElementById('orderDiscount')?.value) || 0;
+        const delivery = parseFloat(document.getElementById('deliveryCharge')?.value) || 0;
+        const total = Math.max(0, subtotal - discount + delivery);
+        const totEl = document.getElementById('cartTotal');
+        if (totEl) {
+            totEl.innerText = '৳ ' + (total % 1 === 0 ? total : total.toFixed(2));
+        }
+    }
+
     function renderCart() {
         const container = document.getElementById('cartItems');
         if (cart.length === 0) {
             container.innerHTML = '';
             document.getElementById('emptyCartMsg').classList.remove('hidden'); // Show empty
-            document.getElementById('cartTotal').innerText = '৳ 0.00';
+            calculateTotal();
             return;
         }
         document.getElementById('emptyCartMsg').classList.add('hidden');
-        container.innerHTML = cart.map(item => `
+        container.innerHTML = cart.map(item => {
+            const lineTotal = item.price * item.qty;
+            const lineFormatted = (lineTotal % 1 === 0) ? lineTotal : lineTotal.toFixed(2);
+            return `
             <tr class="group hover:bg-secondary-50">
                 <td class="px-3 py-2 align-middle text-xs font-medium text-secondary-800 line-clamp-2">${item.name}</td>
                 <td class="px-1 py-1 align-middle">
                     <div class="flex items-center justify-center border border-secondary-200 rounded-md overflow-hidden h-7 w-20">
                         <button onclick="changeQty(${item.id}, -1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600"><ion-icon name="remove" class="text-xs"></ion-icon></button>
-                        <input type="number" readonly value="${item.qty}" class="w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-800 font-bold bg-white">
+                        <input type="number" min="1" value="${item.qty}" onchange="manualQty(${item.id}, this.value)" class="w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-800 font-bold bg-white">
                         <button onclick="changeQty(${item.id}, 1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600"><ion-icon name="add" class="text-xs"></ion-icon></button>
                     </div>
                 </td>
-                <td class="px-2 py-2 text-right text-xs align-middle font-medium text-secondary-700">৳ ${(item.price * item.qty).toFixed(0)}</td>
+                <td class="px-2 py-2 text-right text-xs align-middle font-medium text-secondary-700">৳ ${lineFormatted}</td>
                 <td class="px-1 py-1 text-center align-middle"><button onclick="removeItem(${item.id})" class="text-secondary-400 hover:text-red-500 rounded-full p-1"><ion-icon name="trash-outline"></ion-icon></button></td>
             </tr>
-        `).join('');
-        const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        document.getElementById('cartTotal').innerText = '৳ ' + total.toFixed(2);
+        `;
+        }).join('');
+        calculateTotal();
     }
     
+    function manualQty(id, val) {
+        const item = cart.find(i => i.id === id);
+        if (item) {
+            const parsed = parseInt(val) || 1;
+            item.qty = Math.max(1, parsed);
+            renderCart();
+        }
+    }
+
     function changeQty(id, delta) {
         const item = cart.find(i => i.id === id);
         if(item) {
@@ -327,9 +388,16 @@
 
     async function updateOrder() {
         if(!selectedCustId) return alert('Select Customer');
-        const total = parseFloat(document.getElementById('cartTotal').innerText.replace(/[^\d.-]/g, ''));
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const discount = parseFloat(document.getElementById('orderDiscount')?.value) || 0;
+        const delivery = parseFloat(document.getElementById('deliveryCharge')?.value) || 0;
+        const total = Math.max(0, subtotal - discount + delivery);
+
         const payload = {
             customer_id: selectedCustId,
+            subtotal: subtotal,
+            discount_amount: discount,
+            delivery_charge: delivery,
             total: total,
             items: cart.map(i => ({ product_id: i.id, quantity: i.qty, price: i.price }))
         };
@@ -338,7 +406,7 @@
         btn.disabled = true; btn.innerText = 'Updating...';
 
         try {
-            const res = await fetch(`/sodai-dorkar/public/admin/orders/update?id=${orderId}`, {
+            const res = await fetch(`${baseUrl}/admin/orders/update?id=${orderId}`, {
                 method: 'POST', 
                 headers: {
                     'Content-Type': 'application/json',

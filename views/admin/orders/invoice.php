@@ -67,8 +67,8 @@
                     <td class="py-2 text-gray-500"><?php echo $index + 1; ?></td>
                     <td class="py-2 text-gray-800"><?php echo htmlspecialchars($item['product_name']); ?></td>
                     <td class="py-2 text-center text-gray-600"><?php echo $item['quantity']; ?></td>
-                    <td class="py-2 text-right text-gray-600"><?php echo number_format($item['price'], 2); ?></td>
-                    <td class="py-2 text-right text-gray-800 font-medium"><?php echo number_format($lineTotal, 2); ?></td>
+                    <td class="py-2 text-right text-gray-600"><?php echo formatPrice($item['price']); ?></td>
+                    <td class="py-2 text-right text-gray-800 font-medium"><?php echo formatPrice($lineTotal); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -79,15 +79,21 @@
             <div class="w-48">
                 <div class="flex justify-between py-1 text-gray-600">
                     <span>Subtotal:</span>
-                    <span>৳ <?php echo number_format($subtotal, 2); ?></span>
+                    <span>৳ <?php echo formatPrice($subtotal); ?></span>
                 </div>
+                <?php if (!empty($order['delivery_discount']) && floatval($order['delivery_discount']) > 0): ?>
+                <div class="flex justify-between py-1 text-emerald-600 font-medium">
+                    <span>Discount:</span>
+                    <span>- ৳ <?php echo formatPrice($order['delivery_discount']); ?></span>
+                </div>
+                <?php endif; ?>
                 <div class="flex justify-between py-1 text-gray-600">
                     <span>Delivery Charge:</span>
-                    <span>৳ <?php echo number_format($order['delivery_charge'] ?? 0, 2); ?></span>
+                    <span>৳ <?php echo formatPrice($order['delivery_charge'] ?? 0); ?></span>
                 </div>
                 <div class="flex justify-between py-2 border-t border-gray-200 mt-2 font-bold text-lg text-gray-800">
                     <span>Total:</span>
-                    <span>৳ <?php echo number_format($order['total_amount'], 2); ?></span>
+                    <span>৳ <?php echo formatPrice($order['total_amount']); ?></span>
                 </div>
             </div>
         </div>

@@ -1158,6 +1158,14 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             spendMoreOffers: <?= json_encode($spendMoreOffers) ?>
         };
 
+        window.formatPrice = function(val) {
+            const num = parseFloat(val) || 0;
+            if (num % 1 === 0) {
+                return num.toLocaleString('en-US');
+            }
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
         // Render Spend More & Promotional Offers Progress Bar
         function renderSpendMoreOffersUI(containerId, offers) {
             const container = document.getElementById(containerId);
@@ -1321,9 +1329,9 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                                 </div>
                             ` : ''}
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="text-xs font-black text-emerald-600">${window.SODAI_STATE.currency}${parseFloat(item.price).toFixed(2)}</span>
+                                <span class="text-xs font-black text-emerald-600">${window.SODAI_STATE.currency}${formatPrice(item.price)}</span>
                                 ${item.regular_price && parseFloat(item.regular_price) > parseFloat(item.price) ? `
-                                    <span class="text-[11px] text-gray-400 line-through font-medium">${window.SODAI_STATE.currency}${parseFloat(item.regular_price).toFixed(2)}</span>
+                                    <span class="text-[11px] text-gray-400 line-through font-medium">${window.SODAI_STATE.currency}${formatPrice(item.regular_price)}</span>
                                 ` : ''}
                             </div>
                             
@@ -1335,7 +1343,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                                     <button type="button" onclick='drawerUpdateQty(${itemKeyStr}, ${parseInt(item.quantity) + 1})' 
                                             class="px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-100 font-bold transition-colors">+</button>
                                 </div>
-                                <span class="text-xs font-bold text-gray-800 ml-auto">${window.SODAI_STATE.currency}${itemTotal}</span>
+                                <span class="text-xs font-bold text-gray-800 ml-auto">${window.SODAI_STATE.currency}${formatPrice(parseFloat(item.price) * parseInt(item.quantity))}</span>
                             </div>
                         </div>
                         <button type="button" onclick='drawerUpdateQty(${itemKeyStr}, 0)' class="text-gray-300 hover:text-red-500 p-1.5 transition-colors" title="<?= $__('cart_remove') ?>">
@@ -1562,7 +1570,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             const priceEl = card.querySelector('.card-price');
             if (priceEl) {
-                priceEl.textContent = Number(price).toLocaleString('en-US');
+                priceEl.textContent = formatPrice(price);
             }
 
             card.querySelectorAll('.variant-pill').forEach(btn => {
@@ -1716,7 +1724,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             if (regEl) {
                 if (regPrice > baseSellPrice) {
-                    regEl.textContent = '৳' + Number(regPrice).toLocaleString();
+                    regEl.textContent = '৳' + formatPrice(regPrice);
                     regEl.classList.remove('hidden');
                 } else {
                     regEl.classList.add('hidden');
@@ -1754,7 +1762,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                                 onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, this)" 
                                 class="qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${activeCls}">
                             <span>${escapeHtml(v.title)}</span>
-                            <span class="ml-1 text-emerald-600">৳${Number(v.price).toLocaleString()}</span>
+                            <span class="ml-1 text-emerald-600">৳${formatPrice(v.price)}</span>
                         </button>
                     `;
                 }).join('');
@@ -1921,8 +1929,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             const totalEl = document.getElementById('qc-total-price');
             const bogoCountEl = document.getElementById('qc-bogo-total-count');
 
-            if (unitEl) unitEl.textContent = unitTotal.toLocaleString();
-            if (totalEl) totalEl.textContent = fullTotal.toLocaleString();
+            if (unitEl) unitEl.textContent = formatPrice(unitTotal);
+            if (totalEl) totalEl.textContent = formatPrice(fullTotal);
 
             if (bogoCountEl && window.QC_STATE.isBogo) {
                 const totalReceive = window.QC_STATE.quantity * 2;
@@ -2323,8 +2331,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                                                 <div class="text-[10px] text-gray-400 truncate">${escapeHtml(item.category || '')}</div>
                                             </div>
                                             <div class="text-right shrink-0">
-                                                <span class="text-xs font-black text-emerald-700">৳${Number(item.sell_price).toLocaleString()}</span>
-                                                ${item.regular_price && item.regular_price > item.sell_price ? `<div class="text-[10px] text-gray-400 line-through">৳${Number(item.regular_price).toLocaleString()}</div>` : ''}
+                                                <span class="text-xs font-black text-emerald-700">৳${formatPrice(item.sell_price)}</span>
+                                                ${item.regular_price && item.regular_price > item.sell_price ? `<div class="text-[10px] text-gray-400 line-through">৳${formatPrice(item.regular_price)}</div>` : ''}
                                             </div>
                                         </a>
                                     `;

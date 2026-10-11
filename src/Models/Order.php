@@ -503,10 +503,28 @@ class Order {
             $pdo->prepare("DELETE FROM order_items WHERE order_id = :order_id")->execute(['order_id' => $orderId]);
 
             // 3. Update order record
-            $stmtUpdateOrder = $pdo->prepare("UPDATE orders SET customer_id = :customer_id, total_amount = :total_amount, delivery_address = :delivery_address, contact_number = :contact_number, latitude = :latitude, longitude = :longitude, updated_at = NOW() WHERE id = :id");
+            $stmtUpdateOrder = $pdo->prepare("UPDATE orders SET 
+                customer_id = :customer_id, 
+                total_amount = :total_amount, 
+                original_amount = :original_amount,
+                delivery_charge = :delivery_charge,
+                delivery_discount = :delivery_discount,
+                amount_changed_by = :amount_changed_by,
+                amount_change_reason = :amount_change_reason,
+                delivery_address = :delivery_address, 
+                contact_number = :contact_number, 
+                latitude = :latitude, 
+                longitude = :longitude, 
+                updated_at = NOW() 
+                WHERE id = :id");
             $stmtUpdateOrder->execute([
                 'customer_id' => $orderData['customer_id'],
                 'total_amount' => $orderData['total_amount'],
+                'original_amount' => $orderData['original_amount'] ?? $orderData['total_amount'],
+                'delivery_charge' => $orderData['delivery_charge'] ?? 0,
+                'delivery_discount' => $orderData['delivery_discount'] ?? 0,
+                'amount_changed_by' => $orderData['amount_changed_by'] ?? 'admin',
+                'amount_change_reason' => $orderData['amount_change_reason'] ?? 'Admin Order Edit',
                 'delivery_address' => $orderData['delivery_address'] ?? '',
                 'contact_number' => $orderData['contact_number'] ?? '',
                 'latitude' => $orderData['latitude'] ?? null,
@@ -515,18 +533,25 @@ class Order {
             ]);
 
             // 4. Insert new items and deduct stock
-            $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (:order_id, :product_id, :quantity, :price)");
+            $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, unit_title, base_qty, quantity, price) VALUES (:order_id, :product_id, :unit_title, :base_qty, :quantity, :price)");
             $stmtDeduct = $pdo->prepare("UPDATE products SET stock_qty = stock_qty - :qty WHERE id = :id");
 
             foreach ($items as $item) {
+                $baseQty = floatval($item['base_qty'] ?? 1.000);
+                $qtyOrdered = intval($item['quantity']);
+                $deductStock = $baseQty * $qtyOrdered;
+                $unitTitle = !empty($item['unit_title']) ? $item['unit_title'] : null;
+
                 $stmtItem->execute([
                     'order_id' => $orderId,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
+                    'unit_title' => $unitTitle,
+                    'base_qty' => $baseQty,
+                    'quantity' => $qtyOrdered,
                     'price' => $item['price']
                 ]);
                 $stmtDeduct->execute([
-                    'qty' => $item['quantity'],
+                    'qty' => $deductStock,
                     'id' => $item['product_id']
                 ]);
             }
