@@ -490,6 +490,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             
             <!-- Left Column: Live Canvas Preview & Facebook Post Card (5 Cols) -->
             <div class="lg:col-span-5 flex flex-col items-center">
+                <!-- Poster Display Mode Switcher (Full AI Poster vs Combo Cards) -->
+                <div class="w-full max-w-[420px] mb-2.5">
+                    <div class="grid grid-cols-2 gap-1 bg-secondary-100 p-1 rounded-xl border border-secondary-200 text-center">
+                        <button type="button" onclick="setPosterLayout('full_ai')" id="layout-btn-full_ai" 
+                                class="py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer">
+                            <span>🌟 সম্পূর্ণ AI ফটো পোস্টার</span>
+                        </button>
+                        <button type="button" onclick="setPosterLayout('combo_cards')" id="layout-btn-combo_cards" 
+                                class="py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer">
+                            <span>📋 প্রডাক্ট কম্বো কার্ড</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Canvas Stage -->
                 <div class="w-full max-w-[420px] aspect-square rounded-2xl overflow-hidden shadow-xl border-2 border-secondary-200 bg-secondary-900 relative">
                     <canvas id="bannerCanvas" width="1080" height="1080" class="w-full h-full block object-contain"></canvas>
@@ -701,29 +715,79 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     </div>
                 </div>
 
-                <!-- 3. Gemini AI Creative Assistant Bar -->
-                <div class="p-3 bg-gradient-to-r from-purple-50 via-indigo-50 to-emerald-50 rounded-2xl border border-purple-200 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-1.5 text-purple-900 font-bold text-xs">
-                            <ion-icon name="hardware-chip-outline" class="text-base text-purple-600"></ion-icon>
-                            <span>🤖 Gemini AI ক্রিয়েটিভ অ্যাসিস্ট্যান্ট</span>
+                <!-- 3. Full AI Image Generator & Creative Assistant -->
+                <div class="space-y-2.5">
+                    <!-- A. Direct Photorealistic AI Poster Image Generator (FLUX.1 / Google Imagen 3) -->
+                    <div class="p-3 bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 rounded-2xl border border-purple-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5 text-purple-900 font-bold text-xs">
+                                <ion-icon name="image-outline" class="text-base text-purple-600"></ion-icon>
+                                <span>🎨 সম্পূর্ণ এআই বিজ্ঞাপন ছবি বানান (Meena Bazar Style Full AI)</span>
+                            </div>
+                            <span class="text-[10px] text-purple-700 font-bold bg-purple-100 px-2 py-0.5 rounded-full">FLUX.1 • 1080x1080 HD</span>
                         </div>
-                        <label class="flex items-center gap-1.5 text-[10px] text-secondary-600 font-semibold cursor-pointer">
-                            <input type="checkbox" id="ai-generate-image-toggle" class="rounded text-purple-600 focus:ring-purple-500">
-                            <span>Google Imagen 3 ব্যাকড্রপ জেনারেট করুন</span>
-                        </label>
+                        
+                        <!-- 1-Click Meena Bazar Reference Presets -->
+                        <div class="flex flex-wrap gap-1">
+                            <button type="button" onclick="generateAiPosterImage('Bangladeshi happy smiling homemaker in modern kitchen cooking delicious curry with pure golden ghee in cooking pot, Meena Bazar retail advertising photography style, warm soft kitchen lighting, 8k, photorealistic')" 
+                                    class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-[10px] font-bold text-purple-900 cursor-pointer transition-colors shadow-2xs">
+                                🍳 খাঁটি ঘিয়ে রান্না (Ref 4)
+                            </button>
+                            <button type="button" onclick="generateAiPosterImage('Bangladeshi caring father and young child smiling together at dining table with healthy fresh colorful salad bowl and fruits, World Heart Day healthy diet grocery theme, bright pleasant morning sunlight, commercial retail photography')" 
+                                    class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-[10px] font-bold text-purple-900 cursor-pointer transition-colors shadow-2xs">
+                                🥗 সুস্থ পরিবার ও হার্ট দিবস (Ref 3)
+                            </button>
+                            <button type="button" onclick="generateAiPosterImage('Modern premium Bangladeshi supermarket grocery store aisle, clean shopping cart full of fresh colorful vegetables, dairy and fruits, gleaming floor, Meena Bazar flagship store aesthetic, 8k photorealistic')" 
+                                    class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-[10px] font-bold text-purple-900 cursor-pointer transition-colors shadow-2xs">
+                                🛒 সুপারমার্কেটে ট্রলি ভর্তি বাজার (Ref 2)
+                            </button>
+                            <button type="button" onclick="generateAiPosterImage('Artistic rustic wooden crate overflowing with farm fresh crisp green vegetables, red tomatoes, garlic, broccoli, dewdrops, commercial food advertising photography, vibrant colors')" 
+                                    class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-[10px] font-bold text-purple-900 cursor-pointer transition-colors shadow-2xs">
+                                🌿 ফার্ম-ফ্রেশ শাকসবজি
+                            </button>
+                            <button type="button" onclick="generateAiPosterImage('Bangladeshi family celebrating Eid festival together around a festive dining table with delicious homemade food and sweets, warm celebration lighting, commercial photography')" 
+                                    class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-[10px] font-bold text-purple-900 cursor-pointer transition-colors shadow-2xs">
+                                🕌 ঈদ ও উৎসবের আনন্দ
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="ai_image_prompt_custom" 
+                                   placeholder="আপনার ইচ্ছেমতো প্রম্পট লিখুন (যেমন: হাসিমুখ ক্রেতা, রান্নার দৃশ্য, তাজা মাছ-মাংস...)" 
+                                   class="flex-1 px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500">
+                            <button type="button" onclick="generateAiPosterImage()" 
+                                    class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0 flex items-center gap-1.5 cursor-pointer">
+                                <ion-icon name="color-wand-outline"></ion-icon>
+                                <span>ছবি বানান</span>
+                            </button>
+                        </div>
+                        <span id="ai-image-gen-status" class="text-[10px] font-bold block"></span>
                     </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="ai_campaign_prompt" placeholder="যেমন: বিশ্ব হার্ট দিবসের জন্য তাজা সবজির অফার অথবা ডিমের মিমস..." 
-                               class="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500">
-                        <button type="button" onclick="generateAiCampaignConcept()" 
-                                class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer">
-                            <ion-icon name="sparkles"></ion-icon>
-                            <span>ম্যাজিক কন্টেন্ট বানান</span>
-                        </button>
+
+                    <!-- B. Gemini AI Magic Content & Caption Assistant -->
+                    <div class="p-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 rounded-2xl border border-emerald-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5 text-emerald-900 font-bold text-xs">
+                                <ion-icon name="sparkles" class="text-base text-emerald-600"></ion-icon>
+                                <span>🤖 Gemini AI হেডলাইন ও ফেসবুক ক্যাপশন অ্যাসিস্ট্যান্ট</span>
+                            </div>
+                            <label class="flex items-center gap-1.5 text-[10px] text-secondary-600 font-semibold cursor-pointer">
+                                <input type="checkbox" id="ai-generate-image-toggle" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+                                <span>একসাথে সম্পূর্ণ AI ছবিও তৈরি করুন</span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="ai_campaign_prompt" placeholder="যেমন: বিশ্ব হার্ট দিবসের জন্য তাজা সবজির অফার অথবা ডিমের মিমস..." 
+                                   class="flex-1 px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500">
+                            <button type="button" onclick="generateAiCampaignConcept()" 
+                                    class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer">
+                                <ion-icon name="sparkles"></ion-icon>
+                                <span>ম্যাজিক কন্টেন্ট বানান</span>
+                            </button>
+                        </div>
+                        <span id="ai-campaign-status" class="text-[10px] font-bold block"></span>
                     </div>
-                    <span id="ai-campaign-status" class="text-[10px] font-bold block"></span>
                 </div>
 
                 <!-- 4. Text & Badges Customization Form -->
@@ -934,6 +998,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 <script>
 let currentStudioTheme = 'emerald';
 let currentCampaignMode = 'observance';
+let currentPosterLayout = 'full_ai'; // 🌟 'full_ai' (Meena Bazar Full Visual) or 'combo_cards'
 let selectedProductIds = [];
 let studioBackdropImgElement = null;
 let studioProductImgElements = {};
@@ -1326,6 +1391,86 @@ function loadSelectedProductImages() {
 }
 
 // -------------------------------------------------------------------------
+// Poster Layout Switcher (Full AI Visual vs Combo Deal Cards)
+// -------------------------------------------------------------------------
+function setPosterLayout(layout) {
+    currentPosterLayout = layout;
+    const btnFull = document.getElementById('layout-btn-full_ai');
+    const btnCombo = document.getElementById('layout-btn-combo_cards');
+    if (btnFull && btnCombo) {
+        if (layout === 'full_ai') {
+            btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
+            btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+        } else {
+            btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
+            btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+        }
+    }
+    drawBannerCanvas();
+}
+
+/**
+ * Intelligent Bengali & English text wrapping with auto-scaling font (100% prevents text cutting)
+ */
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2, align = 'left', baseFontSize = 24) {
+    if (!text) return 0;
+    ctx.save();
+    ctx.textAlign = align;
+    ctx.textBaseline = 'top';
+
+    // Auto-scale font size if text is long to prevent cutting or overflow
+    let fontSize = baseFontSize;
+    if (text.length > 22 && baseFontSize >= 24) fontSize = Math.max(18, baseFontSize - 4);
+    if (text.length > 36 && fontSize >= 20) fontSize = Math.max(16, fontSize - 3);
+    ctx.font = `bold ${fontSize}px "Hind Siliguri", sans-serif`;
+
+    const words = text.trim().split(/\s+/);
+    let lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine ? (currentLine + ' ' + word) : word;
+        const testWidth = ctx.measureText(testLine).width;
+
+        if (testWidth <= maxWidth) {
+            currentLine = testLine;
+        } else {
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            if (lines.length >= maxLines - 1) {
+                const remaining = words.slice(i).join(' ');
+                lines.push(remaining);
+                currentLine = '';
+                break;
+            } else {
+                currentLine = word;
+            }
+        }
+    }
+    if (currentLine && lines.length < maxLines) {
+        lines.push(currentLine);
+    }
+
+    lines = lines.slice(0, maxLines);
+
+    lines.forEach((line, idx) => {
+        let drawStr = line;
+        if (ctx.measureText(drawStr).width > maxWidth) {
+            while (ctx.measureText(drawStr + '..').width > maxWidth && drawStr.length > 3) {
+                drawStr = drawStr.slice(0, -1);
+            }
+            drawStr += '..';
+        }
+        ctx.fillText(drawStr, x, y + (idx * lineHeight));
+    });
+
+    ctx.restore();
+    return lines.length;
+}
+
+// -------------------------------------------------------------------------
 // Core 1080x1080 HTML5 Canvas Rendering Engine (Meena Bazar Agency Grade)
 // -------------------------------------------------------------------------
 function drawBannerCanvas() {
@@ -1356,14 +1501,25 @@ function drawBannerCanvas() {
         const ny = (height - nh) / 2;
         ctx.drawImage(studioBackdropImgElement, nx, ny, nw, nh);
 
-        // Dark gradient vignette overlay for readability & brand contrast
-        const vig = ctx.createLinearGradient(0, 0, 0, height);
-        vig.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
-        vig.addColorStop(0.3, 'rgba(0, 0, 0, 0.4)');
-        vig.addColorStop(0.7, 'rgba(0, 0, 0, 0.5)');
-        vig.addColorStop(1, 'rgba(0, 0, 0, 0.88)');
-        ctx.fillStyle = vig;
-        ctx.fillRect(0, 0, width, height);
+        // Soft contrast vignette: Full AI mode keeps center 70% crystal clear and vibrant
+        if (currentPosterLayout === 'full_ai') {
+            const vig = ctx.createLinearGradient(0, 0, 0, height);
+            vig.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+            vig.addColorStop(0.22, 'rgba(0, 0, 0, 0.05)');
+            vig.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+            vig.addColorStop(0.76, 'rgba(0, 0, 0, 0.08)');
+            vig.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+            ctx.fillStyle = vig;
+            ctx.fillRect(0, 0, width, height);
+        } else {
+            const vig = ctx.createLinearGradient(0, 0, 0, height);
+            vig.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+            vig.addColorStop(0.3, 'rgba(0, 0, 0, 0.35)');
+            vig.addColorStop(0.7, 'rgba(0, 0, 0, 0.35)');
+            vig.addColorStop(1, 'rgba(0, 0, 0, 0.82)');
+            ctx.fillStyle = vig;
+            ctx.fillRect(0, 0, width, height);
+        }
     } else {
         // Rich Multi-stop Supermarket Gradient
         const bgGrad = ctx.createLinearGradient(0, 0, width, height);
@@ -1483,10 +1639,12 @@ function drawBannerCanvas() {
     ctx.fillText(headline, width / 2, 180);
     ctx.restore();
 
-    // 4. Center Stage (Based on Campaign Mode & Selected Products)
+    // 4. Center Stage (Based on Layout Mode: Full AI Visual vs Combo Cards)
     const selectedProds = ALL_PRODUCTS.filter(p => selectedProductIds.includes(p.id));
 
-    if (currentCampaignMode === 'product_offer' || selectedProds.length > 0) {
+    if (currentPosterLayout === 'full_ai') {
+        renderFullAiPosterStage(ctx, selectedProds, currentCampaignMode, theme, width, height);
+    } else {
         if (selectedProds.length === 1) {
             renderSingleProductHero(ctx, selectedProds[0], theme, width, height);
         } else if (selectedProds.length === 2) {
@@ -1494,9 +1652,6 @@ function drawBannerCanvas() {
         } else {
             renderMultiProductsGrid(ctx, selectedProds, theme, width, height);
         }
-    } else {
-        // Observance, Meme or Lifestyle Center Stage without products
-        renderCreativeSceneStage(ctx, currentCampaignMode, theme, width, height);
     }
 
     // 5. Automated Brand Capsules (Hotline at Bottom-Left & Website at Bottom-Right - Meena Bazar Ref 4 Style)
@@ -1559,7 +1714,213 @@ function drawBannerCanvas() {
     ctx.restore();
 }
 
-// Sub-renderers for Product Stages
+// -------------------------------------------------------------------------
+// Sub-renderers: Meena Bazar Full AI Stage & Product Deal Cards
+// -------------------------------------------------------------------------
+function renderFullAiPosterStage(ctx, prods, mode, theme, width, height) {
+    // If no backdrop/AI image is loaded yet, show inviting guidance on canvas
+    if (!studioBackdropImgElement || !studioBackdropImgElement.complete || studioBackdropImgElement.naturalWidth === 0) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 2;
+        roundRect(ctx, 150, 410, width - 300, 260, 28, true, true);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎨 সম্পূর্ণ এআই বিজ্ঞাপন ছবি মোড (Meena Bazar Style)', width / 2, 500);
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+        ctx.fillText('ডানপাশের "ছবি বানান" বাটনে ক্লিক করুন অথবা প্রিসেট থেকে ছবি বাছুন', width / 2, 560);
+        ctx.restore();
+    }
+
+    // Floating Meena Bazar Style Product Offer Badges / Capsules at bottom (Leaves 85% of visual unobstructed)
+    if (prods && prods.length > 0) {
+        if (prods.length === 1) {
+            const p = prods[0];
+            const cardX = 120;
+            const cardY = 745;
+            const cardW = width - 240; // 840px
+            const cardH = 135;
+
+            // Glassmorphism Floating Pill
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+            ctx.shadowBlur = 24;
+            ctx.shadowOffsetY = 6;
+            roundRect(ctx, cardX, cardY, cardW, cardH, 28, true, true);
+            ctx.restore();
+
+            // Product thumbnail (Left)
+            const pImg = studioProductImgElements[p.id];
+            const thumbSize = 100;
+            const thumbX = cardX + 18;
+            const thumbY = cardY + 17;
+
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            roundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 18, true, false);
+            if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+                roundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 18, false, false);
+                ctx.clip();
+                const ratio = Math.min((thumbSize - 8) / pImg.naturalWidth, (thumbSize - 8) / pImg.naturalHeight);
+                const nw = pImg.naturalWidth * ratio;
+                const nh = pImg.naturalHeight * ratio;
+                ctx.drawImage(pImg, thumbX + (thumbSize - nw) / 2, thumbY + (thumbSize - nh) / 2, nw, nh);
+            } else {
+                ctx.fillStyle = '#64748b';
+                ctx.font = '36px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🛍️', thumbX + thumbSize / 2, thumbY + thumbSize / 2);
+            }
+            ctx.restore();
+
+            // Product Name (Middle) - Wrapped & Never cut!
+            const textX = thumbX + thumbSize + 22;
+            const textMaxW = 410;
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            const linesDrawn = drawWrappedText(ctx, p.name, textX, cardY + 24, textMaxW, 30, 2, 'left', 26);
+
+            // MRP / Savings tag
+            if (p.has_discount) {
+                const subY = (linesDrawn > 1) ? (cardY + 88) : (cardY + 68);
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = 'bold 18px "Hind Siliguri", sans-serif';
+                ctx.fillText(`MRP ৳${p.regular_price.toFixed(0)}  •  সাশ্রয় ৳${p.savings.toFixed(0)}`, textX, subY);
+            }
+            ctx.restore();
+
+            // Price & Discount Badge (Right)
+            const rightX = cardX + cardW - 25;
+            ctx.save();
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            if (p.has_discount) {
+                // Red Floating Discount Tag
+                ctx.fillStyle = '#ef4444';
+                roundRect(ctx, rightX - 165, cardY + 16, 165, 36, 18, true, false);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'black 19px "Hind Siliguri", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`⚡ ${p.discount_percent}% ছাড়!`, rightX - 82, cardY + 34);
+
+                // Price
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '900 52px "Outfit", sans-serif';
+                ctx.fillText(`৳${p.sell_price.toFixed(0)}`, rightX, cardY + 80);
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 18px "Hind Siliguri", sans-serif';
+                ctx.fillText(`প্রতি ${p.unit}`, rightX, cardY + 112);
+            } else {
+                ctx.fillStyle = '#34d399';
+                ctx.font = '900 58px "Outfit", sans-serif';
+                ctx.fillText(`৳${p.sell_price.toFixed(0)}`, rightX, cardY + 56);
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 20px "Hind Siliguri", sans-serif';
+                ctx.fillText(`প্রতি ${p.unit}`, rightX, cardY + 98);
+            }
+            ctx.restore();
+
+        } else {
+            // 2 to 4 Products in Sleek Floating Bottom Glass Cards
+            const count = Math.min(4, prods.length);
+            const cardH = 135;
+            const cardY = 745;
+
+            if (count === 2) {
+                const cardW = 460;
+                [0, 1].forEach(idx => {
+                    const p = prods[idx];
+                    const cardX = (idx === 0) ? 60 : width - cardW - 60;
+
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+                    ctx.shadowBlur = 20;
+                    roundRect(ctx, cardX, cardY, cardW, cardH, 24, true, true);
+                    ctx.restore();
+
+                    // Thumb
+                    const pImg = studioProductImgElements[p.id];
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    roundRect(ctx, cardX + 15, cardY + 17, 100, 100, 16, true, false);
+                    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+                        roundRect(ctx, cardX + 15, cardY + 17, 100, 100, 16, false, false);
+                        ctx.clip();
+                        const ratio = Math.min(90 / pImg.naturalWidth, 90 / pImg.naturalHeight);
+                        const nw = pImg.naturalWidth * ratio;
+                        const nh = pImg.naturalHeight * ratio;
+                        ctx.drawImage(pImg, cardX + 15 + (100 - nw) / 2, cardY + 17 + (100 - nh) / 2, nw, nh);
+                    }
+                    ctx.restore();
+
+                    // Text
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    drawWrappedText(ctx, p.name, cardX + 128, cardY + 22, cardW - 145, 28, 2, 'left', 22);
+
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.font = '900 40px "Outfit", sans-serif';
+                    ctx.fillText(`৳${p.sell_price.toFixed(0)}`, cardX + 128, cardY + 84);
+
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = 'bold 16px "Hind Siliguri", sans-serif';
+                    ctx.fillText(`প্রতি ${p.unit} ${p.has_discount ? `(${p.discount_percent}% ছাড়)` : ''}`, cardX + 130 + ctx.measureText(`৳${p.sell_price.toFixed(0)} `).width + 20, cardY + 98);
+                    ctx.restore();
+                });
+            } else {
+                // 3 or 4 products: Compact horizontal floating cards
+                const cardW = Math.floor((width - 120 - ((count - 1) * 16)) / count);
+                prods.slice(0, count).forEach((p, idx) => {
+                    const cardX = 60 + idx * (cardW + 16);
+
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                    ctx.shadowBlur = 16;
+                    roundRect(ctx, cardX, cardY, cardW, cardH, 20, true, true);
+                    ctx.restore();
+
+                    // Product title
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    drawWrappedText(ctx, p.name, cardX + cardW / 2, cardY + 16, cardW - 20, 24, 2, 'center', 19);
+
+                    // Price
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.font = '900 36px "Outfit", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`৳${p.sell_price.toFixed(0)}`, cardX + cardW / 2, cardY + 80);
+
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.font = 'bold 15px "Hind Siliguri", sans-serif';
+                    ctx.fillText(`প্রতি ${p.unit} ${p.has_discount ? `⚡${p.discount_percent}%` : ''}`, cardX + cardW / 2, cardY + 110);
+                    ctx.restore();
+                });
+            }
+        }
+    }
+}
+
 function renderSingleProductHero(ctx, prod, theme, width, height) {
     const cardX = 160;
     const cardY = 250;
@@ -1633,15 +1994,12 @@ function renderSingleProductHero(ctx, prod, theme, width, height) {
         ctx.restore();
     }
 
-    // Product Title
+    // Product Title (Wrapped & Never cut!)
     ctx.save();
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 44px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
     ctx.shadowBlur = 12;
-    ctx.fillText(prod.name, width / 2, 735);
+    drawWrappedText(ctx, prod.name, width / 2, 715, 820, 46, 2, 'center', 42);
     ctx.restore();
 
     // Price Box (Y: 775 to 885)
@@ -1733,13 +2091,10 @@ function renderDualProductsStage(ctx, prods, theme, width, height) {
             ctx.restore();
         }
 
-        // Product Name
+        // Product Name (Wrapped & Never cut!)
         ctx.save();
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 30px "Hind Siliguri", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(prod.name, cardX + cardW / 2, startY + 380);
+        drawWrappedText(ctx, prod.name, cardX + cardW / 2, startY + 365, cardW - 30, 32, 2, 'center', 26);
         ctx.restore();
 
         // Price Pill inside card
@@ -1773,45 +2128,74 @@ function renderMultiProductsGrid(ctx, prods, theme, width, height) {
     prods.slice(0, 4).forEach((prod, i) => {
         const pos = positions[i];
         ctx.save();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
+        ctx.lineWidth = 2;
         ctx.shadowColor = 'rgba(0,0,0,0.35)';
         ctx.shadowBlur = 18;
-        roundRect(ctx, pos.x, pos.y, boxW, boxH, 24, true, false);
+        roundRect(ctx, pos.x, pos.y, boxW, boxH, 24, true, true);
         ctx.restore();
 
-        // Product thumbnail
+        // Product thumbnail (140px wide, leaves 276px for text column)
+        const thumbW = 140;
+        const thumbH = 244;
+        const thumbX = pos.x + 14;
+        const thumbY = pos.y + 18;
+
+        ctx.save();
+        ctx.fillStyle = '#f8fafc';
+        roundRect(ctx, thumbX, thumbY, thumbW, thumbH, 16, true, false);
+        ctx.restore();
+
         const pImg = studioProductImgElements[prod.id];
         if (pImg && pImg.complete && pImg.naturalWidth > 0) {
             ctx.save();
-            roundRect(ctx, pos.x + 15, pos.y + 15, 180, 250, 18, false, false);
+            roundRect(ctx, thumbX, thumbY, thumbW, thumbH, 16, false, false);
             ctx.clip();
-            const ratio = Math.min(180 / pImg.naturalWidth, 250 / pImg.naturalHeight);
+            const ratio = Math.min((thumbW - 8) / pImg.naturalWidth, (thumbH - 8) / pImg.naturalHeight);
             const nw = pImg.naturalWidth * ratio;
             const nh = pImg.naturalHeight * ratio;
-            ctx.drawImage(pImg, pos.x + 15 + (180 - nw) / 2, pos.y + 15 + (250 - nh) / 2, nw, nh);
+            ctx.drawImage(pImg, thumbX + (thumbW - nw) / 2, thumbY + (thumbH - nh) / 2, nw, nh);
+            ctx.restore();
+        } else {
+            ctx.save();
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '36px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🛍️', thumbX + thumbW / 2, thumbY + thumbH / 2);
             ctx.restore();
         }
 
-        // Details on Right
+        // Details on Right (X: pos.x + 168, width: 276px)
+        const textX = pos.x + 168;
+        const textMaxW = 276;
+
+        // 1. Full Product Name with wrapping (NEVER truncate!)
         ctx.save();
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 26px "Hind Siliguri", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(prod.name.substring(0, 22), pos.x + 210, pos.y + 40);
+        const linesDrawn = drawWrappedText(ctx, prod.name, textX, pos.y + 24, textMaxW, 28, 2, 'left', 23);
+        ctx.restore();
 
+        // 2. Offer Price
+        const priceY = (linesDrawn > 1) ? (pos.y + 88) : (pos.y + 76);
+        ctx.save();
         ctx.fillStyle = '#059669';
         ctx.font = '900 46px "Outfit", sans-serif';
-        ctx.fillText(`৳${prod.sell_price.toFixed(0)}`, pos.x + 210, pos.y + 90);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`৳${prod.sell_price.toFixed(0)}`, textX, priceY);
 
+        // 3. Unit
         ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 20px "Hind Siliguri", sans-serif';
-        ctx.fillText(`প্রতি ${prod.unit}`, pos.x + 210, pos.y + 150);
+        ctx.font = 'bold 18px "Hind Siliguri", sans-serif';
+        ctx.fillText(`প্রতি ${prod.unit}`, textX, priceY + 54);
 
+        // 4. MRP & Discount
         if (prod.has_discount) {
             ctx.fillStyle = '#ef4444';
-            ctx.font = 'bold 18px "Hind Siliguri", sans-serif';
-            ctx.fillText(`MRP ৳${prod.regular_price.toFixed(0)} (${prod.discount_percent}% ছাড়)`, pos.x + 210, pos.y + 185);
+            ctx.font = 'bold 17px "Hind Siliguri", sans-serif';
+            ctx.fillText(`MRP ৳${prod.regular_price.toFixed(0)}  •  ${prod.discount_percent}% ছাড়`, textX, priceY + 86);
         }
         ctx.restore();
     });
@@ -1894,6 +2278,68 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
 }
 
 // -------------------------------------------------------------------------
+// Direct Photorealistic AI Poster Image Generator (FLUX.1 / Imagen 3)
+// -------------------------------------------------------------------------
+async function generateAiPosterImage(customPrompt = null) {
+    const promptInput = document.getElementById('ai_image_prompt_custom');
+    const statusEl = document.getElementById('ai-image-gen-status');
+    const prompt = customPrompt || (promptInput ? promptInput.value.trim() : '');
+
+    if (!prompt) {
+        if (statusEl) statusEl.innerHTML = '<span class="text-amber-600 font-bold">⚠️ অনুগ্রহ করে ছবির একটি বিবরণ লিখুন বা উপরের বাটনে ক্লিক করুন!</span>';
+        return;
+    }
+
+    if (promptInput && !customPrompt) promptInput.value = prompt;
+
+    if (statusEl) statusEl.innerHTML = '<span class="text-purple-600 animate-pulse">🎨 AI দিয়ে সম্পূর্ণ ছবি জেনারেট হচ্ছে (FLUX.1 / Imagen 3)...</span>';
+    const overlay = document.getElementById('canvas-loading-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    const loadText = document.getElementById('canvas-loading-text');
+    if (loadText) loadText.innerText = '🎨 হাই-কোয়ালিটি সম্পূর্ণ এআই ছবি তৈরি হচ্ছে...';
+
+    try {
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('prompt', prompt);
+        formData.append('aspect_ratio', '1:1');
+
+        const res = await fetch('<?= $base ?>/admin/marketing/api/generate-ai-image', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success && (data.image_url || data.base64)) {
+            const aiImg = new Image();
+            aiImg.onload = () => {
+                studioBackdropImgElement = aiImg;
+                setPosterLayout('full_ai'); // Automatically switch to full visual poster mode!
+                if (overlay) overlay.classList.add('hidden');
+                drawBannerCanvas();
+                if (statusEl) statusEl.innerHTML = '<span class="text-emerald-700 font-bold">✅ সম্পূর্ণ এআই ছবি সফলভাবে তৈরি ও ক্যানভাসে যুক্ত হয়েছে!</span>';
+            };
+            aiImg.onerror = () => {
+                if (overlay) overlay.classList.add('hidden');
+                if (statusEl) statusEl.innerHTML = '<span class="text-red-600 font-bold">❌ ছবি ক্যানভাসে লোড করতে সমস্যা হয়েছে।</span>';
+            };
+            aiImg.src = data.base64 || data.image_url;
+        } else {
+            if (overlay) overlay.classList.add('hidden');
+            if (statusEl) statusEl.innerHTML = `<span class="text-red-600 font-bold">❌ ${data.message || 'ছবি তৈরি ব্যর্থ'}</span>`;
+        }
+    } catch (err) {
+        if (overlay) overlay.classList.add('hidden');
+        if (statusEl) statusEl.innerHTML = `<span class="text-red-600 font-bold">❌ এরর: ${err.message}</span>`;
+    }
+}
+
+// -------------------------------------------------------------------------
 // Gemini AI Creative Assistant Integration
 // -------------------------------------------------------------------------
 async function generateAiCampaignConcept() {
@@ -1907,7 +2353,7 @@ async function generateAiCampaignConcept() {
     // Show loading on canvas if image generation requested
     if (generateImage) {
         document.getElementById('canvas-loading-overlay').classList.remove('hidden');
-        document.getElementById('canvas-loading-text').innerText = 'Google Imagen 3 ব্যাকড্রপ জেনারেট হচ্ছে...';
+        document.getElementById('canvas-loading-text').innerText = '🎨 সম্পূর্ণ এআই ছবি জেনারেট হচ্ছে...';
     }
 
     try {
@@ -1935,11 +2381,12 @@ async function generateAiCampaignConcept() {
             if (data.caption) document.getElementById('studio_fb_caption').value = data.caption;
             if (data.theme && THEMES[data.theme]) setStudioTheme(data.theme);
 
-            // Handle AI generated image from Imagen 3
+            // Handle AI generated image from FLUX.1 / Imagen 3
             if (data.image_base64 || data.image_url) {
                 const aiImg = new Image();
                 aiImg.onload = () => {
                     studioBackdropImgElement = aiImg;
+                    setPosterLayout('full_ai'); // Unobstructed full visual!
                     document.getElementById('canvas-loading-overlay').classList.add('hidden');
                     drawBannerCanvas();
                 };

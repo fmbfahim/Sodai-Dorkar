@@ -261,17 +261,17 @@ class MarketingController extends Controller {
 
         if ($mode === 'ai_gemini') {
             $gemini = new GeminiService();
-            if (!$gemini->isConfigured()) {
-                echo json_encode(['success' => false, 'message' => 'Gemini API Key সেট করা নেই! দয়া করে সেটিংস পেজে আপনার API Key দিন।']);
-                exit;
+            if ($gemini->isConfigured()) {
+                $capRes = $gemini->generateCaption($product, $slotType, $customNotes);
+                if ($capRes['success']) {
+                    $caption = $capRes['text'];
+                    $headline = $gemini->generateBannerHeadline($product, $slotType);
+                }
             }
-            $capRes = $gemini->generateCaption($product, $slotType, $customNotes);
-            if (!$capRes['success']) {
-                echo json_encode(['success' => false, 'message' => $capRes['message']]);
-                exit;
+            if (empty($caption)) {
+                $caption = MarketingTemplateService::generateCaption($product, $slotType);
+                $headline = MarketingTemplateService::getBannerHeadline($product, $slotType);
             }
-            $caption = $capRes['text'];
-            $headline = $gemini->generateBannerHeadline($product, $slotType);
         } else {
             $caption = MarketingTemplateService::generateCaption($product, $slotType);
             $headline = MarketingTemplateService::getBannerHeadline($product, $slotType);
@@ -344,14 +344,6 @@ class MarketingController extends Controller {
         $generateImage = !empty($_POST['generate_image']);
 
         $gemini = new GeminiService();
-        if (!$gemini->isConfigured()) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Gemini API Key সেট করা নেই! দয়া করে মার্কেটিং সেটিংস পেজে আপনার API Key দিন।'
-            ]);
-            exit;
-        }
-
         $res = $gemini->generateCreativeCampaign($type, [
             'event_name' => $eventName,
             'user_prompt' => $userPrompt,
@@ -363,7 +355,7 @@ class MarketingController extends Controller {
             exit;
         }
 
-        // If requested to also generate image using Google Imagen 3
+        // If requested to also generate image
         if ($generateImage && !empty($res['visual_prompt'])) {
             $imgRes = $gemini->generateImage($res['visual_prompt']);
             if ($imgRes['success']) {
@@ -379,7 +371,7 @@ class MarketingController extends Controller {
     }
 
     /**
-     * API: Generate AI Image directly using Google Imagen 3
+     * API: Generate AI Image directly using Google Imagen 3 or FLUX.1
      */
     public function apiGenerateAiImage() {
         $this->requireAdmin();
@@ -395,11 +387,6 @@ class MarketingController extends Controller {
         }
 
         $gemini = new GeminiService();
-        if (!$gemini->isConfigured()) {
-            echo json_encode(['success' => false, 'message' => 'Gemini API Key সেট করা নেই!']);
-            exit;
-        }
-
         $res = $gemini->generateImage($prompt, $aspectRatio);
         echo json_encode($res);
         exit;
