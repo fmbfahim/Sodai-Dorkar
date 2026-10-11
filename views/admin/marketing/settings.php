@@ -160,15 +160,16 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                 </div>
 
                 <!-- 1-Minute Helper Callout -->
-                <div class="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs space-y-2">
+                <div class="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs space-y-2.5">
                     <div class="font-bold text-blue-900 flex items-center gap-1.5">
                         <ion-icon name="information-circle" class="text-base text-blue-600 shrink-0"></ion-icon>
-                        <span>মাত্র ১ মিনিটে ফেসবুক পেজের Access Token নেওয়ার নিয়ম:</span>
+                        <span>মাত্র ১ মিনিটে ফেসবুক পেজের Access Token নেওয়ার সঠিক নিয়ম:</span>
                     </div>
                     <ol class="list-decimal list-inside space-y-1.5 text-blue-800 leading-relaxed pl-1">
                         <li>মেটার অফিসিয়াল <a href="https://developers.facebook.com/tools/explorer" target="_blank" class="underline font-bold text-blue-950">Graph API Explorer</a> লিংকে যান।</li>
-                        <li>উপরে <b>User or Page</b> ড্রপডাউন থেকে আপনার কাঙ্ক্ষিত ফেসবুক পেজটি নির্বাচন করুন।</li>
-                        <li><b>Generate Access Token</b> বাটনে চাপ দিন এবং উৎপন্ন হওয়া টোকেনটি কপি করে উপরের বক্সে পেস্ট করে দিন।</li>
+                        <li>ডানপাশে <b>Permissions</b> সেকশনে <b>Add a Permission</b> থেকে <b>pages_manage_posts</b> ও <b>pages_read_engagement</b> পারমিশন দুটি যোগ করুন।</li>
+                        <li><b>Generate Access Token</b> বাটনে চাপ দিয়ে ফেসবুক পপ-আপে আপনার পেজটি নির্বাচন করে Confirm করুন।</li>
+                        <li>উপরে <b>User or Page</b> ড্রপডাউন থেকে আপনার <b>Page</b> টি (যেমন: Sohozsodai.com) সিলেক্ট করে উৎপন্ন হওয়া পেজ টোকেনটি কপি করে উপরের বক্সে পেস্ট করুন।</li>
                     </ol>
                 </div>
 
@@ -530,11 +531,16 @@ async function testFacebookConnection() {
         }
 
         if (data.success) {
-            setHtml(`<span class="text-emerald-700 font-bold">✅ ${data.message} (${data.followers || 0} ফলোয়ার্স)</span>`);
+            setHtml(`<span class="text-emerald-700 font-bold">✅ ${data.message}</span>`);
             // Auto fill Page Name if empty
             const nameInput = document.getElementById('facebook_page_name');
             if (nameInput && (!nameInput.value.trim() || nameInput.value === 'Facebook Page') && data.page_name) {
                 nameInput.value = data.page_name;
+            }
+            // If token was auto-converted from User token to Page Access Token, auto update the input!
+            if (data.page_access_token) {
+                const tokenInput = document.getElementById('facebook_page_access_token');
+                if (tokenInput) tokenInput.value = data.page_access_token;
             }
         } else {
             setHtml(`<span class="text-red-600 font-bold">❌ ${data.message}</span>`);

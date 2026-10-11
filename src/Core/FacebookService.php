@@ -25,52 +25,125 @@ class FacebookService {
      * Test connection and retrieve Facebook Page information directly from Meta
      */
     public function verifyConnection(?string $pageId = null, ?string $token = null): array {
-        $pageId = $pageId ?: $this->pageId;
-        $token = $token ?: $this->pageAccessToken;
+        $pageId = trim((string)($pageId ?: $this->pageId));
+        $token = trim((string)($token ?: $this->pageAccessToken));
 
-        if (empty(trim($pageId)) || empty(trim($token))) {
+        if (empty($pageId) || empty($token)) {
             return [
                 'success' => false,
                 'message' => 'ফেসবুক পেজ আইডি অথবা পেজ অ্যাক্সেস টোকেন দেওয়া হয়নি!'
             ];
         }
 
-        $url = "https://graph.facebook.com/{$this->apiVersion}/" . urlencode($pageId) . "?fields=id,name,link,picture,followers_count,is_published&access_token=" . urlencode($token);
+        // Helper curl function
+        $fetchGraph = function(string $endpoint, array $params = []) use ($token) {
+            $params['access_token'] = $token;
+            $url = "https://graph.facebook.com/{$this->apiVersion}/" . ltrim($endpoint, '/') . '?' . http_build_query($params);
 
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'SodaiDorkar/1.0 (Meta Graph API)');
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'SodaiDorkar/1.0 (Meta Graph API)');
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-        if ($curlError) {
             return [
-                'success' => false,
-                'message' => 'কানেকশন এরর: ' . $curlError
+                'code' => $httpCode,
+                'error' => $curlError,
+                'data' => json_decode($response, true) ?: []
             ];
+        };
+
+        // 1. First, check if the token itself is already a direct Page Access Token (/me)
+        $meRes = $fetchGraph('me', ['fields' => 'id,name,link,picture']);
+        if ($meRes['code'] === 200 && !empty($meRes['data']['id'])) {
+            $meData = $meRes['data'];
+            // If /me ID matches the requested pageId, it's definitely a valid Page Access Token!
+            if ((string)$meData['id'] === (string)$pageId) {
+                return [
+                    'success' => true,
+                    'page_id' => $meData['id'],
+                    'page_name' => $meData['name'] ?? 'Facebook Page',
+                    'link' => $meData['link'] ?? "https://facebook.com/{$meData['id']}",
+                    'picture' => $meData['picture']['data']['url'] ?? null,
+                    'message' => "সফলভাবে ফেসবুক পেজ '{$meData['name']}' এর সাথে কানেক্ট হয়েছে!"
+                ];
+            }
         }
 
-        $json = json_decode($response, true);
-
-        if ($httpCode === 200 && !empty($json['id'])) {
+        // 2. Try fetching the Page directly by ID (/pageId) with only safe fields (id, name, link, picture)
+        // (Do NOT include followers_count as that requires 'Page Public Metadata Access' app review)
+        $pageRes = $fetchGraph($pageId, ['fields' => 'id,name,link,picture']);
+        if ($pageRes['code'] === 200 && !empty($pageRes['data']['id'])) {
+            $pageData = $pageRes['data'];
             return [
                 'success' => true,
-                'page_id' => $json['id'],
-                'page_name' => $json['name'] ?? 'Facebook Page',
-                'link' => $json['link'] ?? "https://facebook.com/{$json['id']}",
-                'picture' => $json['picture']['data']['url'] ?? null,
-                'followers' => $json['followers_count'] ?? 0,
-                'message' => "সফলভাবে ফেসবুক পেজ '{$json['name']}' এর সাথে কানেক্ট হয়েছে!"
+                'page_id' => $pageData['id'],
+                'page_name' => $pageData['name'] ?? 'Facebook Page',
+                'link' => $pageData['link'] ?? "https://facebook.com/{$pageData['id']}",
+                'picture' => $pageData['picture']['data']['url'] ?? null,
+                'message' => "সফলভাবে ফেসবুক পেজ '{$pageData['name']}' এর সাথে কানেক্ট হয়েছে!"
             ];
         }
 
-        $err = $json['error']['message'] ?? "ফেসবুক API এরর (HTTP {$httpCode})";
+        // 3. If direct page access failed, maybe the user provided a User Access Token instead of Page Token!
+        // Check /me/accounts to see if this user manages the target page
+        $accountsRes = $fetchGraph('me/accounts', ['fields' => 'id,name,access_token,picture', 'limit' => 50]);
+        if ($accountsRes['code'] === 200 && !empty($accountsRes['data']['data'])) {
+            foreach ($accountsRes['data']['data'] as $account) {
+                if ((string)$account['id'] === (string)$pageId && !empty($account['access_token'])) {
+                    // Found the real Page Access Token!
+                    $actualPageToken = $account['access_token'];
+                    Setting::set('facebook_page_access_token', $actualPageToken);
+                    Setting::set('facebook_page_name', $account['name'] ?? 'Facebook Page');
+                    if (!empty($account['picture']['data']['url'])) {
+                        Setting::set('facebook_page_picture', $account['picture']['data']['url']);
+                    }
+                    $this->pageAccessToken = $actualPageToken;
+
+                    return [
+                        'success' => true,
+                        'page_id' => $account['id'],
+                        'page_name' => $account['name'] ?? 'Facebook Page',
+                        'picture' => $account['picture']['data']['url'] ?? null,
+                        'page_access_token' => $actualPageToken,
+                        'auto_converted' => true,
+                        'message' => "সফলভাবে পেজ '{$account['name']}' এর সাথে কানেক্ট হয়েছে! (User Token থেকে স্বয়ংক্রিয়ভাবে আসল Page Token নেওয়া হয়েছে)"
+                    ];
+                }
+            }
+        }
+
+        // 4. If still failed, inspect the token permissions to explain EXACTLY what's missing
+        $permRes = $fetchGraph('me/permissions');
+        $grantedPerms = [];
+        if (!empty($permRes['data']['data'])) {
+            foreach ($permRes['data']['data'] as $p) {
+                if (($p['status'] ?? '') === 'granted') {
+                    $grantedPerms[] = $p['permission'];
+                }
+            }
+        }
+
+        $missingPerms = [];
+        if (!in_array('pages_manage_posts', $grantedPerms)) $missingPerms[] = 'pages_manage_posts';
+        if (!in_array('pages_read_engagement', $grantedPerms)) $missingPerms[] = 'pages_read_engagement';
+
+        if (!empty($missingPerms) && !empty($grantedPerms)) {
+            $missingList = implode(', ', $missingPerms);
+            return [
+                'success' => false,
+                'message' => "আপনার অ্যাক্সেস টোকেনে পেজের পারমিশন অনুপস্থিত ({$missingList})। Graph API Explorer-এ Permissions সেকশনে গিয়ে pages_manage_posts এবং pages_read_engagement যোগ করে আবার Generate Access Token বাটনে চাপুন।"
+            ];
+        }
+
+        // Return error message from Meta
+        $err = $pageRes['data']['error']['message'] ?? $meRes['data']['error']['message'] ?? ($pageRes['error'] ?: 'মেটা গ্রাফ এপিআই কানেক্ট করা যায়নি। পেজ আইডি বা টোকেন সঠিক কিনা যাচাই করুন।');
         return [
             'success' => false,
             'message' => 'ফেসবুক সংযোগ ব্যর্থ: ' . $err
