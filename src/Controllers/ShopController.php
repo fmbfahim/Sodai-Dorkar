@@ -1402,8 +1402,8 @@ class ShopController {
             exit;
         }
 
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
-        if (strlen($cleanPhone) < 11) {
+        $corePhone = \Models\Customer::extractCorePhone($phone);
+        if (!$corePhone) {
             echo json_encode(['status' => 'error', 'message' => 'অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।']);
             exit;
         }
@@ -1421,8 +1421,8 @@ class ShopController {
             }
 
             if (!$customer) {
-                $stmt = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$cleanPhone]);
-                $customer = $stmt->fetch();
+                $customerModel = new \Models\Customer();
+                $customer = $customerModel->findByPhone($phone);
 
                 if ($customer) {
                     $customerId = $customer['id'];
@@ -1432,8 +1432,10 @@ class ShopController {
                     }
                 } else {
                     $dummyPass = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
-                    $this->db->query("INSERT INTO customers (name, phone, address_details, password, created_at) VALUES (?, ?, ?, ?, NOW())",
-                        [$name, $cleanPhone, $address, $dummyPass]);
+                    $savedPhone = \Models\Customer::formatWithCountryCode($phone) ?? ('+88' . $corePhone);
+                    $uniqueCode = 'CUST' . time() . rand(10, 99);
+                    $this->db->query("INSERT INTO customers (unique_code, name, phone, address_details, password, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+                        [$uniqueCode, $name, $savedPhone, $address, $dummyPass]);
                     $customerId = $pdo->lastInsertId();
                     $_SESSION['customer_id'] = $customerId;
                 }

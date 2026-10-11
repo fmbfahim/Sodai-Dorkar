@@ -135,11 +135,8 @@ class FirebaseAuthController
             $this->redirect("$base/checkout/auth?error=firebase_failed&tab=signup");
         }
 
-        $phone = $this->normalizePhone($firebasePhone);
-
-        // Check if customer already exists (phone already registered)
-        $stmt = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$phone]);
-        $existing = $stmt->fetch();
+        $customerModel = new \Models\Customer();
+        $existing = $customerModel->findByPhone($firebasePhone);
 
         if ($existing) {
             // Auto-login if already exists
@@ -157,6 +154,7 @@ class FirebaseAuthController
         // Create customer
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $uniqueCode     = 'CUST' . time() . rand(10, 99);
+        $savedPhone     = \Models\Customer::formatWithCountryCode($firebasePhone) ?? $firebasePhone;
 
         if ($pointId === 'other') $pointId = null;
 
@@ -171,7 +169,7 @@ class FirebaseAuthController
 
         $fields = ['unique_code', 'name', 'phone'];
         $placeholders = ['?', '?', '?'];
-        $values = [$uniqueCode, $name, $phone];
+        $values = [$uniqueCode, $name, $savedPhone];
 
         if (empty($cols) || in_array('email', $cols)) {
             $fields[] = 'email';
@@ -242,14 +240,13 @@ class FirebaseAuthController
             $this->redirect("$base/checkout/auth?error=firebase_failed");
         }
 
-        $phone = $this->normalizePhone($firebasePhone);
-
-        $stmt     = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$phone]);
-        $customer = $stmt->fetch();
+        $customerModel = new \Models\Customer();
+        $customer = $customerModel->findByPhone($firebasePhone);
 
         if (!$customer) {
             // No account → send to signup tab with phone pre-filled
-            $this->redirect("$base/checkout/auth?error=create_account_first&tab=signup&phone=" . urlencode($phone));
+            $core = \Models\Customer::extractCorePhone($firebasePhone);
+            $this->redirect("$base/checkout/auth?error=create_account_first&tab=signup&phone=" . urlencode($core ?? $firebasePhone));
         }
 
         session_regenerate_id(true);

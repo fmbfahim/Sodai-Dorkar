@@ -104,8 +104,8 @@ class CustomerAuthController
             $this->redirect("$base/checkout/auth?error=missing_fields");
         }
 
-        $stmt     = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$phone]);
-        $customer = $stmt->fetch();
+        $customerModel = new \Models\Customer();
+        $customer = $customerModel->findByPhone($phone);
 
         if ($customer) {
             $isPasswordValid = password_verify($password, $customer['password']);
@@ -130,7 +130,6 @@ class CustomerAuthController
     }
 
     // ─────────────────────────────────────────────
-    // ─────────────────────────────────────────────
     // AJAX: Check if phone already registered
     // ─────────────────────────────────────────────
 
@@ -143,14 +142,24 @@ class CustomerAuthController
             exit;
         }
 
-        $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
-        $exists = (bool)$stmt->fetch();
+        $core = \Models\Customer::extractCorePhone($phone);
+        if (!$core) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)'
+            ]);
+            exit;
+        }
+
+        $customerModel = new \Models\Customer();
+        $exists = (bool)$customerModel->findByPhone($phone);
 
         echo json_encode([
-            'success' => true,
-            'exists'  => $exists,
-            'phone'   => $phone,
-            'message' => $exists ? 'এই নম্বরে ইতিমধ্যে অ্যাকাউন্ট রয়েছে।' : 'নম্বরটি ব্যবহারযোগ্য।'
+            'success'    => true,
+            'exists'     => $exists,
+            'phone'      => $phone,
+            'core_phone' => $core,
+            'message'    => $exists ? 'এই নম্বরে ইতিমধ্যে অ্যাকাউন্ট রয়েছে।' : 'নম্বরটি ব্যবহারযোগ্য।'
         ]);
         exit;
     }
@@ -165,26 +174,32 @@ class CustomerAuthController
         $phone = trim($_POST['phone'] ?? '');
         header('Content-Type: application/json');
 
-        if (empty($phone)) {
-            echo json_encode(['success' => false, 'message' => 'সঠিক মোবাইল নম্বর লিখুন']);
+        $core = \Models\Customer::extractCorePhone($phone);
+        if (!$core) {
+            echo json_encode(['success' => false, 'message' => 'সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)']);
             exit;
         }
 
-        // Check duplicate phone
-        $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
-        if ($stmt->fetch()) {
-            echo json_encode(['success' => false, 'exists' => true, 'message' => 'এই নম্বরে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা আছে। অনুগ্রহ করে লগইন করুন।']);
+        // Check duplicate phone across all DB formats
+        $customerModel = new \Models\Customer();
+        if ($customerModel->findByPhone($phone)) {
+            echo json_encode([
+                'success' => false, 
+                'exists'  => true, 
+                'message' => 'এই নম্বরে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা আছে। অনুগ্রহ করে লগইন করুন।'
+            ]);
             exit;
         }
 
         try {
-            $res = $this->otpService->generateForPending($phone);
-            $_SESSION['pending_signup_phone'] = $phone;
+            $formattedPhone = \Models\Customer::formatWithCountryCode($phone);
+            $res = $this->otpService->generateForPending($core);
+            $_SESSION['pending_signup_phone'] = $formattedPhone;
 
             echo json_encode([
                 'success' => true,
                 'message' => 'আপনার মোবাইল নম্বরে ৬-ডিজিটের ওটিপি কোড পাঠানো হয়েছে।',
-                'phone'   => $phone
+                'phone'   => $core
             ]);
             exit;
         } catch (\Throwable $e) {
@@ -204,14 +219,16 @@ class CustomerAuthController
         $code  = trim($_POST['otp_code'] ?? '');
         header('Content-Type: application/json');
 
-        if (empty($phone) || empty($code)) {
+        $core = \Models\Customer::extractCorePhone($phone);
+        if (!$core || empty($code)) {
             echo json_encode(['success' => false, 'message' => 'ফোন নম্বর এবং ওটিপি কোড আবশ্যক']);
             exit;
         }
 
-        $valid = $this->otpService->verify($phone, $code, true);
+        $valid = $this->otpService->verify($core, $code, true) || $this->otpService->verify($phone, $code, true);
         if ($valid) {
-            $_SESSION['otp_phone_verified'] = $phone;
+            $_SESSION['otp_phone_verified'] = $core;
+            $_SESSION['otp_phone_verified_formatted'] = \Models\Customer::formatWithCountryCode($phone);
             echo json_encode([
                 'success' => true,
                 'message' => 'ওটিপি সফলভাবে যাচাইকৃত হয়েছে।'
@@ -236,13 +253,14 @@ class CustomerAuthController
         $phone = trim($_POST['phone'] ?? ($_SESSION['pending_signup_phone'] ?? ''));
         header('Content-Type: application/json');
 
-        if (empty($phone)) {
+        $core = \Models\Customer::extractCorePhone($phone);
+        if (!$core) {
             echo json_encode(['success' => false, 'message' => 'নম্বর পাওয়া যায়নি']);
             exit;
         }
 
         try {
-            $this->otpService->generateForPending($phone);
+            $this->otpService->generateForPending($core);
             echo json_encode([
                 'success' => true,
                 'message' => 'নতুন ওটিপি কোড পুনরায় পাঠানো হয়েছে।'
@@ -275,19 +293,21 @@ class CustomerAuthController
         $addressDetails = trim($_POST['address'] ?? '');
         $otpCode        = trim($_POST['otp_code'] ?? '');
 
+        $core = \Models\Customer::extractCorePhone($phone);
+
         // Validate required fields
-        if (empty($name) || empty($phone) || empty($password)) {
+        if (empty($name) || !$core || empty($password)) {
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'নাম, মোবাইল নম্বর এবং পাসওয়ার্ড পূরণ করা আবশ্যক!']);
+                echo json_encode(['success' => false, 'message' => 'নাম, সঠিক মোবাইল নম্বর এবং পাসওয়ার্ড পূরণ করা আবশ্যক!']);
                 exit;
             }
             $this->redirect("$base/checkout/auth?error=missing_fields&tab=signup");
         }
 
-        // Check duplicate phone
-        $stmt = $this->db->query("SELECT id FROM customers WHERE phone = ?", [$phone]);
-        if ($stmt->fetch()) {
+        // Check duplicate phone across all representations
+        $customerModel = new \Models\Customer();
+        if ($customerModel->findByPhone($phone)) {
             if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'এই নম্বরে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা আছে।']);
@@ -298,9 +318,10 @@ class CustomerAuthController
 
         // If OTP required: ensure OTP verification happened
         if ($this->isOtpEnabled()) {
-            $isVerified = (isset($_SESSION['otp_phone_verified']) && $_SESSION['otp_phone_verified'] === $phone);
+            $isVerified = (isset($_SESSION['otp_phone_verified']) && $_SESSION['otp_phone_verified'] === $core)
+                       || (isset($_SESSION['otp_phone_verified']) && $_SESSION['otp_phone_verified'] === $phone);
             if (!$isVerified && !empty($otpCode)) {
-                $isVerified = $this->otpService->verify($phone, $otpCode, true);
+                $isVerified = $this->otpService->verify($core, $otpCode, true) || $this->otpService->verify($phone, $otpCode, true);
             }
 
             if (!$isVerified) {
@@ -313,9 +334,12 @@ class CustomerAuthController
             }
         }
 
+        // Format phone with country code when saving
+        $savedPhone = \Models\Customer::formatWithCountryCode($phone);
+
         // Create customer directly
-        $this->createCustomer($name, $phone, $email, $password, $areaId, $zoneId, $pointId, $addressDetails);
-        unset($_SESSION['otp_phone_verified'], $_SESSION['pending_signup_phone'], $_SESSION['signup_pending']);
+        $this->createCustomer($name, $savedPhone, $email, $password, $areaId, $zoneId, $pointId, $addressDetails);
+        unset($_SESSION['otp_phone_verified'], $_SESSION['otp_phone_verified_formatted'], $_SESSION['pending_signup_phone'], $_SESSION['signup_pending']);
 
         $redirect = $_POST['redirect'] ?? $_GET['redirect'] ?? "$base/checkout";
 
@@ -515,29 +539,21 @@ class CustomerAuthController
         $base  = $this->base();
         $phone = trim($_POST['phone'] ?? '');
 
-        // Normalize phone number (digits only)
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
-        if (str_starts_with($cleanPhone, '880')) {
-            $cleanPhone = substr($cleanPhone, 2);
-        }
-
+        $corePhone = \Models\Customer::extractCorePhone($phone);
         $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 
-        if (empty($cleanPhone) || strlen($cleanPhone) < 10) {
+        if (!$corePhone) {
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'সঠিক মোবাইল নম্বর প্রবেশ করান।']);
+                echo json_encode(['status' => 'error', 'message' => 'সঠিক ১১ সংখ্যার মোবাইল নম্বর প্রবেশ করান।']);
                 exit;
             }
             $this->redirect("$base/checkout/auth?tab=forgot&error=invalid_phone");
         }
 
-        // Check if customer exists with this phone
-        $stmt = $this->db->query("SELECT id, name, phone FROM customers WHERE phone = ? OR phone LIKE ?", [
-            $cleanPhone,
-            '%' . substr($cleanPhone, -10)
-        ]);
-        $customer = $stmt->fetch();
+        // Check if customer exists with this phone across all representations
+        $customerModel = new \Models\Customer();
+        $customer = $customerModel->findByPhone($phone);
 
         if (!$customer) {
             if ($isAjax) {
@@ -578,14 +594,10 @@ class CustomerAuthController
         $newPassword     = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
-        if (str_starts_with($cleanPhone, '880')) {
-            $cleanPhone = substr($cleanPhone, 2);
-        }
-
+        $corePhone = \Models\Customer::extractCorePhone($phone);
         $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 
-        if (empty($cleanPhone) || empty($otp) || empty($newPassword)) {
+        if (!$corePhone || empty($otp) || empty($newPassword)) {
             if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'সবগুলো প্রয়োজনীয় ঘর পূরণ করুন।']);
@@ -613,11 +625,8 @@ class CustomerAuthController
         }
 
         // Verify Customer
-        $stmt = $this->db->query("SELECT id, name, phone FROM customers WHERE phone = ? OR phone LIKE ?", [
-            $cleanPhone,
-            '%' . substr($cleanPhone, -10)
-        ]);
-        $customer = $stmt->fetch();
+        $customerModel = new \Models\Customer();
+        $customer = $customerModel->findByPhone($phone);
 
         if (!$customer) {
             if ($isAjax) {
@@ -629,6 +638,9 @@ class CustomerAuthController
         }
 
         $verified = $this->otpService->verify($customer['phone'], $otp, true);
+        if (!$verified && $corePhone) {
+            $verified = $this->otpService->verify($corePhone, $otp, true);
+        }
         if (!$verified) {
             $verified = $this->otpService->verify($customer['phone'], $otp, false);
         }
@@ -691,8 +703,8 @@ class CustomerAuthController
             $this->redirect("$base/checkout/auth?error=invalid_credentials");
         }
 
-        $stmt     = $this->db->query("SELECT * FROM customers WHERE phone = ?", [$phone]);
-        $customer = $stmt->fetch();
+        $customerModel = new \Models\Customer();
+        $customer = $customerModel->findByPhone($phone);
 
         $this->startSession();
         if ($customer) {
@@ -730,6 +742,7 @@ class CustomerAuthController
         mixed   $pointId,
         string  $addressDetails
     ): void {
+        $phone          = \Models\Customer::formatWithCountryCode($phone) ?? trim($phone);
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $uniqueCode     = 'CUST' . time() . rand(10, 99);
 

@@ -627,7 +627,7 @@ $hideFooter = true;
                 <div style="position:relative;display:flex;align-items:center;">
                   <span style="position:absolute;left:14px;font-weight:800;color:#059669;font-size:1rem;pointer-events:none;user-select:none;">+88</span>
                   <input type="tel" id="reg-phone" name="phone" class="auth-input font-mono" style="font-size:1.15rem;font-weight:700;letter-spacing:1px;padding:14px 16px 14px 54px;"
-                         placeholder="01XXXXXXXXX" maxlength="11" required autocomplete="tel" value="<?= $preFillPhone ?>">
+                         placeholder="01XXXXXXXXX" maxlength="17" required autocomplete="tel" value="<?= $preFillPhone ?>">
                 </div>
                 <div id="step-2-error" style="display:none;margin-top:10px;"></div>
               </div>
@@ -1032,15 +1032,39 @@ async function handleStep2Next() {
   const phoneInput = document.getElementById('reg-phone');
   const errDiv     = document.getElementById('step-2-error');
   const btn        = document.getElementById('btn-next-step-2');
-  let phone        = phoneInput.value.trim().replace(/\D/g, '');
+  let raw          = phoneInput.value.trim();
 
-  if (phone.startsWith('880')) {
-    phone = '0' + phone.substring(3);
+  // Convert Bengali numerals to English numerals
+  const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+  const en = ['0','1','2','3','4','5','6','7','8','9'];
+  for (let i = 0; i < 10; i++) {
+    raw = raw.replaceAll(bn[i], en[i]);
+  }
+
+  // Remove all non-digits
+  let digits = raw.replace(/\D/g, '');
+
+  // Strip country codes (+88, 88, 0088)
+  if (digits.startsWith('8801') && digits.length >= 13) {
+    digits = digits.substring(2);
+  } else if (digits.startsWith('008801') && digits.length >= 15) {
+    digits = digits.substring(4);
+  } else if (digits.startsWith('1') && digits.length === 10) {
+    digits = '0' + digits;
+  }
+
+  // Extract core 11-digit BD number
+  let phone = '';
+  const match = digits.match(/01[3-9]\d{8}/);
+  if (match) {
+    phone = match[0];
+  } else if (digits.length === 11 && digits.startsWith('01')) {
+    phone = digits;
   }
 
   // Validate format (Bangladeshi 11-digit mobile: 013-019)
   const phoneRegex = /^01[3-9]\d{8}$/;
-  if (!phoneRegex.test(phone)) {
+  if (!phone || !phoneRegex.test(phone)) {
     errDiv.innerHTML = '<span style="color:#dc2626;font-size:.82rem;font-weight:700;">⚠️ সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)</span>';
     errDiv.style.display = 'block';
     phoneInput.focus();

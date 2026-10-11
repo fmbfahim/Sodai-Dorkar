@@ -2,6 +2,29 @@
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 ?>
 <div class="mb-6 space-y-3">
+    <!-- Flash Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-xs text-sm font-bold flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <ion-icon name="checkmark-circle" class="text-xl text-emerald-600"></ion-icon>
+                <span><?php echo htmlspecialchars($_SESSION['success']); ?></span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700"><ion-icon name="close"></ion-icon></button>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl shadow-xs text-sm font-bold flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <ion-icon name="alert-circle" class="text-xl text-red-600"></ion-icon>
+                <span><?php echo htmlspecialchars($_SESSION['error']); ?></span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700"><ion-icon name="close"></ion-icon></button>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-bold text-secondary-800">Customer List</h2>
         <a href="<?= $base ?>/admin/customers/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
@@ -97,12 +120,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     </tr>
                 <?php else: ?>
                     <?php foreach ($customers as $c): ?>
-                        <?php $demos = json_decode($c['demographics_json'], true) ?? []; ?>
+                        <?php 
+                            $demos = json_decode($c['demographics_json'], true) ?? []; 
+                            $ordersCount = intval($c['orders_count'] ?? 0);
+                        ?>
                         <tr class="hover:bg-secondary-50">
                             <td class="px-6 py-4">
                                 <a href="<?= $base ?>/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-mono font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded hover:bg-primary-100 transition-colors inline-block" title="View Customer Profile">
                                     <?php echo htmlspecialchars($c['unique_code']); ?>
                                 </a>
+                                <div class="mt-1.5">
+                                    <a href="<?= $base ?>/admin/customers/history?id=<?php echo $c['id']; ?>" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded <?= $ordersCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500' ?>" title="Total Orders: <?= $ordersCount ?>">
+                                        <ion-icon name="bag-check-outline"></ion-icon> <?= $ordersCount ?> <?= $ordersCount === 1 ? 'Order' : 'Orders' ?>
+                                    </a>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <a href="<?= $base ?>/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-medium text-secondary-900 hover:text-primary-600 transition-colors block" title="View Customer Profile">
@@ -166,16 +197,22 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                 <a href="<?= $base ?>/admin/customers/history?id=<?php echo $c['id']; ?>" class="text-purple-500 hover:text-purple-700 p-1 mr-2 inline-block" title="Order History">
                                     <ion-icon name="time-outline" class="text-lg"></ion-icon>
                                 </a>
-                                <a href="<?= $base ?>/admin/customers/edit?id=<?php echo $c['id']; ?>" class="text-blue-500 hover:text-blue-700 p-1 mr-2 inline-block">
+                                <a href="<?= $base ?>/admin/customers/edit?id=<?php echo $c['id']; ?>" class="text-blue-500 hover:text-blue-700 p-1 mr-2 inline-block" title="Edit Customer">
                                     <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                 </a>
-                                <form action="<?= $base ?>/admin/customers/delete" method="POST" onsubmit="return confirm('Delete customer?');" class="inline">
-                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
-                                    <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
-                                    <button type="submit" class="text-red-500 hover:text-red-700 p-1">
+                                <?php if ($ordersCount > 0): ?>
+                                    <button type="button" onclick="alert('এই গ্রাহকের <?= $ordersCount ?> টি পূর্বের অর্ডার রয়েছে। অর্ডার তথ্যের সুরক্ষার জন্য গ্রাহক মুছে ফেলা সম্ভব নয়।');" class="text-gray-300 hover:text-gray-400 p-1 inline-block cursor-not-allowed" title="অর্ডার থাকায় মুছে ফেলা যাবে না (<?= $ordersCount ?> Orders)">
                                         <ion-icon name="trash-outline" class="text-lg"></ion-icon>
                                     </button>
-                                </form>
+                                <?php else: ?>
+                                    <form action="<?= $base ?>/admin/customers/delete" method="POST" onsubmit="return confirm('এই গ্রাহকটিকে মুছে ফেলতে চান?');" class="inline">
+                                        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                        <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
+                                        <button type="submit" class="text-red-500 hover:text-red-700 p-1" title="গ্রাহক মুছে ফেলুন">
+                                            <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

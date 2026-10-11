@@ -50,11 +50,110 @@ class Customer {
         }
     }
 
+    /**
+     * Extract core 11-digit Bangladesh phone number starting with '01'
+     * Strips non-digits, country code (+88, 88, 0088), spaces, dashes, converts Bangla digits.
+     */
+    public static function extractCorePhone($phone): ?string {
+        if (empty($phone)) return null;
+
+        $bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+        $en = ['0','1','2','3','4','5','6','7','8','9'];
+        $phone = str_replace($bn, $en, (string)$phone);
+
+        $digits = preg_replace('/\D/', '', $phone);
+        if (empty($digits)) return null;
+
+        if (str_starts_with($digits, '8801') && strlen($digits) >= 13) {
+            $digits = substr($digits, 2);
+        } elseif (str_starts_with($digits, '008801') && strlen($digits) >= 15) {
+            $digits = substr($digits, 4);
+        } elseif (str_starts_with($digits, '1') && strlen($digits) === 10) {
+            $digits = '0' . $digits;
+        }
+
+        if (preg_match('/01[3-9]\d{8}/', $digits, $m)) {
+            return $m[0];
+        }
+
+        if (strlen($digits) === 11 && str_starts_with($digits, '01')) {
+            return $digits;
+        }
+
+        return null;
+    }
+
+    /**
+     * Format phone number with country code (+8801XXXXXXXXX)
+     */
+    public static function formatWithCountryCode($phone): ?string {
+        $core = self::extractCorePhone($phone);
+        return $core ? '+88' . $core : null;
+    }
+
+    /**
+     * Find customer by any phone representation by checking core 11 digits
+     */
+    public function findByPhone($rawPhone, $excludeId = null): ?array {
+        $core = self::extractCorePhone($rawPhone);
+        if (!$core) {
+            $cleaned = trim((string)$rawPhone);
+            if (empty($cleaned)) return null;
+            $sql = "SELECT * FROM customers WHERE phone = :p";
+            $params = ['p' => $cleaned];
+            if ($excludeId) {
+                $sql .= " AND id != :exclude_id";
+                $params['exclude_id'] = $excludeId;
+            }
+            $sql .= " LIMIT 1";
+            $stmt = $this->db->query($sql, $params);
+            return $stmt->fetch() ?: null;
+        }
+
+        $withPlus = '+88' . $core;
+        $with88   = '88' . $core;
+        $likeCore = '%' . $core;
+
+        $sql = "SELECT * FROM customers WHERE (
+                    phone = :core 
+                    OR phone = :with_plus 
+                    OR phone = :with_88 
+                    OR phone LIKE :like_core
+                    OR REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), '(', '') LIKE :like_clean
+                )";
+        $params = [
+            'core'       => $core,
+            'with_plus'  => $withPlus,
+            'with_88'    => $with88,
+            'like_core'  => $likeCore,
+            'like_clean' => '%' . $core,
+        ];
+
+        if ($excludeId) {
+            $sql .= " AND id != :exclude_id";
+            $params['exclude_id'] = $excludeId;
+        }
+
+        $sql .= " ORDER BY id ASC LIMIT 1";
+        $stmt = $this->db->query($sql, $params);
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Count total orders placed by this customer
+     */
+    public function getOrderCount($id): int {
+        $stmt = $this->db->query("SELECT COUNT(*) as cnt FROM orders WHERE customer_id = :id", ['id' => $id]);
+        $row = $stmt->fetch();
+        return (int)($row['cnt'] ?? 0);
+    }
+
     public function all($filters = []) {
         $sql = "SELECT customers.*, 
                        areas.name as area_name,
                        zones.name as zone_name,
-                       points.name as point_name
+                       points.name as point_name,
+                       (SELECT COUNT(*) FROM orders WHERE orders.customer_id = customers.id) as orders_count
                 FROM customers 
                 LEFT JOIN areas ON customers.area_id = areas.id
                 LEFT JOIN zones ON customers.zone_id = zones.id
@@ -103,6 +202,7 @@ class Customer {
 
     public function create($data) {
         $unique_code = $this->generateUniqueCode();
+        $formattedPhone = self::formatWithCountryCode($data['phone']) ?? trim($data['phone']);
         
         $sql = "INSERT INTO customers (unique_code, name, phone, area_id, zone_id, point_id, address_details, demographics_json, latitude, longitude) 
                 VALUES (:unique_code, :name, :phone, :area_id, :zone_id, :point_id, :address_details, :demographics_json, :latitude, :longitude)";
@@ -110,7 +210,7 @@ class Customer {
         $this->db->query($sql, [
             'unique_code' => $unique_code,
             'name' => $data['name'],
-            'phone' => $data['phone'],
+            'phone' => $formattedPhone,
             'area_id' => $data['area_id'],
             'zone_id' => $data['zone_id'] ?? null,
             'point_id' => $data['point_id'] ?? null,
@@ -139,6 +239,7 @@ class Customer {
     }
 
     public function update($id, $data) {
+        $formattedPhone = self::formatWithCountryCode($data['phone']) ?? trim($data['phone']);
         $sql = "UPDATE customers SET 
                 name = :name, 
                 phone = :phone, 
@@ -153,7 +254,7 @@ class Customer {
         
         $this->db->query($sql, [
             'name' => $data['name'],
-            'phone' => $data['phone'],
+            'phone' => $formattedPhone,
             'area_id' => $data['area_id'],
             'zone_id' => $data['zone_id'] ?? null,
             'point_id' => $data['point_id'] ?? null,
@@ -166,6 +267,16 @@ class Customer {
     }
 
     public function delete($id) {
+        $orderCount = $this->getOrderCount($id);
+        if ($orderCount > 0) {
+            throw new \Exception("এই গ্রাহকের {$orderCount} টি পূর্বের অর্ডার রয়েছে। অর্ডার ডাটার সুরক্ষার কারণে গ্রাহক মুছে ফেলা সম্ভব নয়।");
+        }
+
+        // Clean up any nullable references before deleting customer
+        try {
+            $this->db->query("UPDATE incomplete_orders SET customer_id = NULL WHERE customer_id = :id", ['id' => $id]);
+        } catch (\Throwable $e) {}
+
         $this->db->query("DELETE FROM customers WHERE id = :id", ['id' => $id]);
     }
 

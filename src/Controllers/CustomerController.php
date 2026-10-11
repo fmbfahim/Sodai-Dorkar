@@ -73,13 +73,29 @@ class CustomerController extends Controller {
     }
 
     public function store() {
-        $name = $_POST['name'] ?? '';
-        $phone = $_POST['phone'] ?? '';
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $name = trim($_POST['name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
         $area_id = $_POST['area_id'] ?? null;
         $zone_id = $_POST['zone_id'] ?? null;
         $point_id = $_POST['point_id'] ?? null;
-        $address_details = $_POST['address_details'] ?? '';
+        $address_details = trim($_POST['address_details'] ?? '');
         
+        $corePhone = Customer::extractCorePhone($phone);
+        if (!$corePhone) {
+            $_SESSION['error'] = "সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)।";
+            header('Location: /sodai-dorkar/public/admin/customers/create');
+            exit;
+        }
+
+        $customerModel = new Customer();
+        $existing = $customerModel->findByPhone($phone);
+        if ($existing) {
+            $_SESSION['error'] = "এই মোবাইল নম্বর দিয়ে ইতিমধ্যে একজন গ্রাহক (" . ($existing['name'] ?? '') . ") নিবন্ধিত আছেন!";
+            header('Location: /sodai-dorkar/public/admin/customers/create');
+            exit;
+        }
+
         // Demographics
         $demographics = [
             'kids_count' => $_POST['kids_count'] ?? 0,
@@ -96,7 +112,6 @@ class CustomerController extends Controller {
         if ($longitude === '') $longitude = null;
 
         if ($name && $phone && $area_id) {
-            $customerModel = new Customer();
             $customerModel->create([
                 'name' => $name,
                 'phone' => $phone,
@@ -108,6 +123,7 @@ class CustomerController extends Controller {
                 'latitude' => $latitude,
                 'longitude' => $longitude
             ]);
+            $_SESSION['success'] = "গ্রাহক সফলভাবে তৈরি করা হয়েছে।";
         }
         
         header('Location: /sodai-dorkar/public/admin/customers');
@@ -144,14 +160,35 @@ class CustomerController extends Controller {
     }
 
     public function update() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
         $id = $_POST['id'] ?? null;
-        $name = $_POST['name'] ?? '';
-        $phone = $_POST['phone'] ?? '';
+        $name = trim($_POST['name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
         $area_id = $_POST['area_id'] ?? null;
         $zone_id = $_POST['zone_id'] ?? null;
         $point_id = $_POST['point_id'] ?? null;
-        $address_details = $_POST['address_details'] ?? '';
+        $address_details = trim($_POST['address_details'] ?? '');
         
+        if (!$id) {
+            header('Location: /sodai-dorkar/public/admin/customers');
+            exit;
+        }
+
+        $corePhone = Customer::extractCorePhone($phone);
+        if (!$corePhone) {
+            $_SESSION['error'] = "সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)।";
+            header('Location: /sodai-dorkar/public/admin/customers/edit?id=' . $id);
+            exit;
+        }
+
+        $customerModel = new Customer();
+        $existing = $customerModel->findByPhone($phone, $id);
+        if ($existing) {
+            $_SESSION['error'] = "অন্য একজন গ্রাহক (" . ($existing['name'] ?? '') . ") ইতিমধ্যে এই মোবাইল নম্বরটি ব্যবহার করছেন!";
+            header('Location: /sodai-dorkar/public/admin/customers/edit?id=' . $id);
+            exit;
+        }
+
         // Demographics
         $demographics = [
             'kids_count' => $_POST['kids_count'] ?? 0,
@@ -168,7 +205,6 @@ class CustomerController extends Controller {
         if ($longitude === '') $longitude = null;
 
         if ($id && $name && $phone && $area_id) {
-            $customerModel = new Customer();
             $customerModel->update($id, [
                 'name' => $name,
                 'phone' => $phone,
@@ -180,6 +216,7 @@ class CustomerController extends Controller {
                 'latitude' => $latitude,
                 'longitude' => $longitude
             ]);
+            $_SESSION['success'] = "গ্রাহকের তথ্য সফলভাবে আপডেট করা হয়েছে।";
         }
         
         header('Location: /sodai-dorkar/public/admin/customers');
@@ -241,10 +278,21 @@ class CustomerController extends Controller {
     }
 
     public function destroy() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
         $id = $_POST['id'] ?? null;
         if ($id) {
             $customerModel = new Customer();
-            $customerModel->delete($id);
+            $orderCount = $customerModel->getOrderCount($id);
+            if ($orderCount > 0) {
+                $_SESSION['error'] = "এই গ্রাহকের {$orderCount} টি অর্ডার রয়েছে। অর্ডার তথ্যের সুরক্ষার জন্য গ্রাহক মুছে ফেলা সম্ভব নয়।";
+            } else {
+                try {
+                    $customerModel->delete($id);
+                    $_SESSION['success'] = "গ্রাহক সফলভাবে মুছে ফেলা হয়েছে।";
+                } catch (\Throwable $e) {
+                    $_SESSION['error'] = "গ্রাহক মুছে ফেলা সম্ভব হয়নি: " . $e->getMessage();
+                }
+            }
         }
         header('Location: /sodai-dorkar/public/admin/customers');
         exit;
