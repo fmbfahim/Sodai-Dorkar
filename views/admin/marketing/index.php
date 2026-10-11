@@ -499,93 +499,126 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <input type="hidden" id="studio_post_id" value="">
                 <input type="hidden" id="studio_product_image_url" value="">
 
-                <!-- Template Theme Picker -->
+                <!-- Template Theme Picker (5 Grocery Themes) -->
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-600 mb-2">
-                        🎨 ব্যানার থিম ও কালার টেমপ্লেট
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="setStudioTheme('emerald')" class="p-2.5 rounded-xl border border-emerald-400 bg-emerald-50 text-emerald-900 font-bold flex items-center gap-2 hover:shadow-xs transition-all text-left">
-                            <span class="w-4 h-4 rounded-full bg-emerald-600 shrink-0"></span>
-                            <span>Emerald Fresh (সদাই ফ্রেশ)</span>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-700">
+                            🎨 ব্যানার থিম ও কালার টেমপ্লেট
+                        </label>
+                        <span class="text-[10px] text-emerald-600 font-bold">৫টি ব্রেন্ডেড থিম</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="themeButtonsGrid">
+                        <button type="button" onclick="setStudioTheme('emerald')" class="theme-btn p-2 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-950 font-bold flex items-center gap-1.5 hover:shadow-xs transition-all text-left text-[11px] cursor-pointer" data-theme="emerald">
+                            <span class="w-3.5 h-3.5 rounded-full bg-emerald-600 shrink-0"></span>
+                            <span class="truncate">🌿 Farm Fresh</span>
                         </button>
-                        <button type="button" onclick="setStudioTheme('ruby')" class="p-2.5 rounded-xl border border-red-400 bg-red-50 text-red-900 font-bold flex items-center gap-2 hover:shadow-xs transition-all text-left">
-                            <span class="w-4 h-4 rounded-full bg-red-600 shrink-0"></span>
-                            <span>Ruby Mega Deal (ধামাকা ছাড়)</span>
+                        <button type="button" onclick="setStudioTheme('ruby')" class="theme-btn p-2 rounded-xl border border-secondary-200 bg-white text-secondary-700 font-bold flex items-center gap-1.5 hover:shadow-xs transition-all text-left text-[11px] cursor-pointer" data-theme="ruby">
+                            <span class="w-3.5 h-3.5 rounded-full bg-red-600 shrink-0"></span>
+                            <span class="truncate">💥 Mega Deal</span>
                         </button>
-                        <button type="button" onclick="setStudioTheme('navy')" class="p-2.5 rounded-xl border border-blue-400 bg-blue-50 text-blue-900 font-bold flex items-center gap-2 hover:shadow-xs transition-all text-left">
-                            <span class="w-4 h-4 rounded-full bg-slate-900 shrink-0"></span>
-                            <span>Midnight Sunset (সন্ধ্যার অফার)</span>
+                        <button type="button" onclick="setStudioTheme('amber')" class="theme-btn p-2 rounded-xl border border-secondary-200 bg-white text-secondary-700 font-bold flex items-center gap-1.5 hover:shadow-xs transition-all text-left text-[11px] cursor-pointer" data-theme="amber">
+                            <span class="w-3.5 h-3.5 rounded-full bg-amber-500 shrink-0"></span>
+                            <span class="truncate">☀️ Morning Fresh</span>
                         </button>
-                        <button type="button" onclick="setStudioTheme('amber')" class="p-2.5 rounded-xl border border-amber-400 bg-amber-50 text-amber-900 font-bold flex items-center gap-2 hover:shadow-xs transition-all text-left">
-                            <span class="w-4 h-4 rounded-full bg-amber-500 shrink-0"></span>
-                            <span>Golden Morning (সকালের বাজার)</span>
+                        <button type="button" onclick="setStudioTheme('navy')" class="theme-btn p-2 rounded-xl border border-secondary-200 bg-white text-secondary-700 font-bold flex items-center gap-1.5 hover:shadow-xs transition-all text-left text-[11px] cursor-pointer" data-theme="navy">
+                            <span class="w-3.5 h-3.5 rounded-full bg-slate-900 shrink-0"></span>
+                            <span class="truncate">🌙 Midnight Flash</span>
+                        </button>
+                        <button type="button" onclick="setStudioTheme('royal')" class="theme-btn p-2 rounded-xl border border-secondary-200 bg-white text-secondary-700 font-bold flex items-center gap-1.5 hover:shadow-xs transition-all text-left text-[11px] cursor-pointer" data-theme="royal">
+                            <span class="w-3.5 h-3.5 rounded-full bg-purple-700 shrink-0"></span>
+                            <span class="truncate">🍇 Royal Organic</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Top Headline -->
+                <!-- Top Headline with Quick Presets -->
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_headline">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_headline">
                         শীর্ষ আকর্ষণ / হেডলাইন
                     </label>
                     <input type="text" id="studio_headline" oninput="drawBannerCanvas()" 
                            value="🔥 আজকের সেরা মেগা অফার!" 
-                           class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-primary-500">
+                           class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-emerald-500">
+                    <div class="flex items-center gap-1.5 mt-1.5 overflow-x-auto pb-1 text-[10px]">
+                        <button type="button" onclick="setHeadlinePreset('🔥 আজকের সেরা মেগা অফার!')" class="px-2 py-0.5 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-semibold shrink-0 cursor-pointer">মেগা অফার</button>
+                        <button type="button" onclick="setHeadlinePreset('🌿 সকালের তাজা বাজার অফার!')" class="px-2 py-0.5 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-semibold shrink-0 cursor-pointer">তাজা বাজার</button>
+                        <button type="button" onclick="setHeadlinePreset('💥 বিশেষ ধামাকা ডিসকাউন্ট ডিল!')" class="px-2 py-0.5 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-semibold shrink-0 cursor-pointer">ধামাকা ডিল</button>
+                        <button type="button" onclick="setHeadlinePreset('⚡ ফ্ল্যাশ ডিল - সীমিত স্টক!')" class="px-2 py-0.5 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-semibold shrink-0 cursor-pointer">ফ্ল্যাশ ডিল</button>
+                    </div>
                 </div>
 
                 <!-- Product Title -->
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_prod_name">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_prod_name">
                         পণ্যের নাম
                     </label>
                     <input type="text" id="studio_prod_name" oninput="drawBannerCanvas()" 
                            value="সদাই দরকার প্রিমিয়াম গ্রোসারি" 
-                           class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-primary-500">
+                           class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-emerald-500">
                 </div>
 
-                <!-- Pricing Row -->
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_sell_price">
-                            অফার মূল্য (৳)
-                        </label>
-                        <input type="number" step="0.01" id="studio_sell_price" oninput="drawBannerCanvas()" 
-                               value="120" 
-                               class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-emerald-700">
+                <!-- Pricing Row with Auto Savings Preview -->
+                <div class="bg-secondary-50/70 p-3 rounded-2xl border border-secondary-200 space-y-2">
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_sell_price">
+                                অফার মূল্য (৳)
+                            </label>
+                            <input type="number" step="0.01" id="studio_sell_price" oninput="onStudioPriceChange()" 
+                                   value="120" 
+                                   class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-black text-emerald-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_regular_price">
+                                রেগুলার MRP (৳)
+                            </label>
+                            <input type="number" step="0.01" id="studio_regular_price" oninput="onStudioPriceChange()" 
+                                   value="150" 
+                                   class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-600">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_unit">
+                                পরিমাণ / ইউনিট
+                            </label>
+                            <input type="text" id="studio_unit" oninput="drawBannerCanvas()" 
+                                   value="১ কেজি" 
+                                   class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-700">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_regular_price">
-                            রেগুলার মূল্য (৳)
-                        </label>
-                        <input type="number" step="0.01" id="studio_regular_price" oninput="drawBannerCanvas()" 
-                               value="150" 
-                               class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-600">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_unit">
-                            ইউনিট / পরিমাণ
-                        </label>
-                        <input type="text" id="studio_unit" oninput="drawBannerCanvas()" 
-                               value="১ কেজি" 
-                               class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-700">
+                    <div id="studio-savings-preview" class="text-[11px] font-bold text-emerald-700 flex items-center justify-between pt-1 border-t border-secondary-200/60">
+                        <span>💰 সাশ্রয়: ৳৩০.০০ (২০% ছাড়)</span>
+                        <span class="text-[10px] text-secondary-400">অটো ক্যালকুলেটেড</span>
                     </div>
                 </div>
 
-                <!-- Discount Tag Text -->
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_discount_tag">
-                        রিবন ডিসকাউন্ট ব্যাজ
-                    </label>
-                    <input type="text" id="studio_discount_tag" oninput="drawBannerCanvas()" 
-                           value="২০% ছাড়!" 
-                           class="w-full px-3 py-2 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-primary-500">
+                <!-- Badges Row: Quality & Discount -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_quality_tag">
+                            তাজাত্ব / কোয়ালিটি ব্যাজ
+                        </label>
+                        <select id="studio_quality_tag" onchange="drawBannerCanvas()" class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900">
+                            <option value="🌿 ১০০% ফার্ম-ফ্রেশ" selected>🌿 ১০০% ফার্ম-ফ্রেশ</option>
+                            <option value="✨ প্রিমিয়াম কোয়ালিটি">✨ প্রিমিয়াম কোয়ালিটি</option>
+                            <option value="🥗 ১০০% খাঁটি পণ্য">🥗 ১০০% খাঁটি পণ্য</option>
+                            <option value="🔥 আজকের হট ডিল">🔥 আজকের হট ডিল</option>
+                            <option value="⚡ সীমিত স্টক!">⚡ সীমিত স্টক!</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_discount_tag">
+                            ডিসকাউন্ট রিবন
+                        </label>
+                        <input type="text" id="studio_discount_tag" oninput="drawBannerCanvas()" 
+                               value="২০% ছাড়!" 
+                               class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-red-600">
+                    </div>
                 </div>
 
                 <!-- Store Info & Hotline -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_site_name">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_site_name">
                             দোকানের নাম
                         </label>
                         <input type="text" id="studio_site_name" oninput="drawBannerCanvas()" 
@@ -593,7 +626,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                class="w-full px-2.5 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-600 mb-1" for="studio_phone">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-secondary-700 mb-1" for="studio_phone">
                             হটলাইন ফোন
                         </label>
                         <input type="text" id="studio_phone" oninput="drawBannerCanvas()" 
@@ -715,44 +748,84 @@ let studioImgElement = null;
 
 const THEMES = {
     emerald: {
-        bgStart: '#064e3b',
-        bgEnd: '#022c22',
-        cardBg: '#ffffff',
+        name: 'Farm Fresh Green',
+        bgStart: '#043e2f',
+        bgMid: '#064e3b',
+        bgEnd: '#022119',
+        glowColor: 'rgba(16, 185, 129, 0.35)',
         accent: '#10b981',
-        badgeBg: '#fbbf24',
+        badgeBgStart: '#fbbf24',
+        badgeBgEnd: '#f59e0b',
         badgeText: '#78350f',
-        priceBg: '#10b981',
-        footerBg: '#022c22'
+        tagBg: '#059669',
+        priceBg: 'rgba(0, 0, 0, 0.65)',
+        priceAccent: '#34d399',
+        saveBg: '#fbbf24',
+        saveText: '#78350f'
     },
     ruby: {
-        bgStart: '#881337',
+        name: 'Mega Deal Ruby',
+        bgStart: '#831843',
+        bgMid: '#881337',
         bgEnd: '#4c0519',
-        cardBg: '#ffffff',
+        glowColor: 'rgba(244, 63, 94, 0.35)',
         accent: '#f43f5e',
-        badgeBg: '#fef08a',
+        badgeBgStart: '#fef08a',
+        badgeBgEnd: '#fde047',
         badgeText: '#713f12',
-        priceBg: '#e11d48',
-        footerBg: '#4c0519'
-    },
-    navy: {
-        bgStart: '#0f172a',
-        bgEnd: '#020617',
-        cardBg: '#ffffff',
-        accent: '#f97316',
-        badgeBg: '#f97316',
-        badgeText: '#ffffff',
-        priceBg: '#ea580c',
-        footerBg: '#090d16'
+        tagBg: '#e11d48',
+        priceBg: 'rgba(0, 0, 0, 0.65)',
+        priceAccent: '#fb7185',
+        saveBg: '#fef08a',
+        saveText: '#713f12'
     },
     amber: {
+        name: 'Golden Morning',
         bgStart: '#78350f',
+        bgMid: '#92400e',
         bgEnd: '#451a03',
-        cardBg: '#ffffff',
+        glowColor: 'rgba(245, 158, 11, 0.35)',
         accent: '#f59e0b',
-        badgeBg: '#fef3c7',
+        badgeBgStart: '#fef3c7',
+        badgeBgEnd: '#fde68a',
         badgeText: '#92400e',
-        priceBg: '#d97706',
-        footerBg: '#451a03'
+        tagBg: '#d97706',
+        priceBg: 'rgba(0, 0, 0, 0.65)',
+        priceAccent: '#fbbf24',
+        saveBg: '#fef3c7',
+        saveText: '#92400e'
+    },
+    navy: {
+        name: 'Midnight Flash',
+        bgStart: '#0f172a',
+        bgMid: '#1e1b4b',
+        bgEnd: '#020617',
+        glowColor: 'rgba(56, 189, 248, 0.3)',
+        accent: '#38bdf8',
+        badgeBgStart: '#f97316',
+        badgeBgEnd: '#ea580c',
+        badgeText: '#ffffff',
+        tagBg: '#0284c7',
+        priceBg: 'rgba(0, 0, 0, 0.7)',
+        priceAccent: '#38bdf8',
+        saveBg: '#f97316',
+        saveText: '#ffffff'
+    },
+    royal: {
+        name: 'Royal Organic',
+        bgStart: '#3b0764',
+        bgMid: '#581c87',
+        bgEnd: '#1e0836',
+        glowColor: 'rgba(192, 132, 252, 0.35)',
+        accent: '#c084fc',
+        badgeBgStart: '#fbcfe8',
+        badgeBgEnd: '#f472b6',
+        badgeText: '#701a75',
+        tagBg: '#9333ea',
+        priceBg: 'rgba(0, 0, 0, 0.7)',
+        priceAccent: '#e879f9',
+        saveBg: '#fbcfe8',
+        saveText: '#701a75'
     }
 };
 
@@ -771,13 +844,38 @@ function copyCaption(btn, textareaId) {
     });
 }
 
+function setHeadlinePreset(txt) {
+    const el = document.getElementById('studio_headline');
+    if (el) {
+        el.value = txt;
+        drawBannerCanvas();
+    }
+}
+
+function onStudioPriceChange() {
+    const sPrice = parseFloat(document.getElementById('studio_sell_price')?.value) || 0;
+    const rPrice = parseFloat(document.getElementById('studio_regular_price')?.value) || 0;
+    const prevEl = document.getElementById('studio-savings-preview');
+
+    if (rPrice > sPrice && rPrice > 0) {
+        const diff = rPrice - sPrice;
+        const pct = Math.round((diff / rPrice) * 100);
+        document.getElementById('studio_discount_tag').value = `${pct}% ছাড়!`;
+        if (prevEl) prevEl.innerHTML = `<span>💰 সাশ্রয়: ৳${diff.toFixed(2)} (${pct}% ছাড়)</span><span class="text-[10px] text-emerald-600 font-bold">অটো সেভ হবে</span>`;
+    } else {
+        document.getElementById('studio_discount_tag').value = 'সেরা অফার!';
+        if (prevEl) prevEl.innerHTML = `<span>⚡ রেগুলার স্পেশাল প্রাইস</span><span class="text-[10px] text-secondary-400">ছাড় নেই</span>`;
+    }
+    drawBannerCanvas();
+}
+
 function openBannerStudio(postId, postData) {
     document.getElementById('studio_post_id').value = postId || '';
     document.getElementById('studio_headline').value = postData.headline || '🔥 আজকের সেরা মেগা অফার!';
     document.getElementById('studio_prod_name').value = postData.product_name || 'সদাই দরকার সেরা পণ্য';
     document.getElementById('studio_sell_price').value = postData.sell_price || '120';
     document.getElementById('studio_regular_price').value = postData.regular_price || '150';
-    document.getElementById('studio_unit').value = '১ ইউনিট';
+    document.getElementById('studio_unit').value = postData.base_unit || '১ কেজি';
 
     const sPrice = parseFloat(postData.sell_price) || 0;
     const rPrice = parseFloat(postData.regular_price) || 0;
@@ -785,13 +883,15 @@ function openBannerStudio(postId, postData) {
         const pct = Math.round(((rPrice - sPrice) / rPrice) * 100);
         document.getElementById('studio_discount_tag').value = `${pct}% ছাড়!`;
     } else {
-        document.getElementById('studio_discount_tag').value = 'বিশেষ ছাড়!';
+        document.getElementById('studio_discount_tag').value = 'সেরা অফার!';
     }
 
     // Determine slot theme
     if (postData.slot_type === 'morning') currentStudioTheme = 'amber';
     else if (postData.slot_type === 'evening') currentStudioTheme = 'navy';
     else currentStudioTheme = 'emerald';
+
+    updateThemeButtonUI();
 
     // Load image
     const imgUrl = postData.image_path || postData.product_image || '';
@@ -808,6 +908,7 @@ function openBannerStudio(postId, postData) {
         drawBannerCanvas();
     }
 
+    onStudioPriceChange();
     document.getElementById('bannerStudioModal').classList.remove('hidden');
     drawBannerCanvas();
 }
@@ -816,13 +917,27 @@ function closeBannerStudio() {
     document.getElementById('bannerStudioModal').classList.add('hidden');
 }
 
+function updateThemeButtonUI() {
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.dataset.theme === currentStudioTheme) {
+            btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-950');
+            btn.classList.remove('border-secondary-200', 'bg-white', 'text-secondary-700');
+        } else {
+            btn.classList.remove('border-emerald-500', 'bg-emerald-50', 'text-emerald-950');
+            btn.classList.add('border-secondary-200', 'bg-white', 'text-secondary-700');
+        }
+    });
+}
+
 function setStudioTheme(themeKey) {
     currentStudioTheme = themeKey;
+    updateThemeButtonUI();
     drawBannerCanvas();
 }
 
 /**
- * Draw High-Resolution 1080x1080 Facebook Ad Creative on HTML5 Canvas
+ * Draw Ultra-High-Resolution 1080x1080 Facebook Ad Creative on HTML5 Canvas
+ * Professional Grocery Brand Design System (Chaldal / Shwapno / Zepto Style)
  */
 function drawBannerCanvas() {
     const canvas = document.getElementById('bannerCanvas');
@@ -832,166 +947,373 @@ function drawBannerCanvas() {
     const height = 1080;
 
     const theme = THEMES[currentStudioTheme] || THEMES.emerald;
-    const headline = document.getElementById('studio_headline').value || '🔥 আজকের সেরা অফার!';
-    const prodName = document.getElementById('studio_prod_name').value || 'সদাই দরকার সেরা পণ্য';
-    const sellPrice = parseFloat(document.getElementById('studio_sell_price').value) || 0;
-    const regPrice = parseFloat(document.getElementById('studio_regular_price').value) || 0;
-    const unit = document.getElementById('studio_unit').value || '১ ইউনিট';
-    const discountTag = document.getElementById('studio_discount_tag').value || 'বিশেষ ছাড়!';
-    const siteName = document.getElementById('studio_site_name').value || 'সদাই দরকার';
-    const phone = document.getElementById('studio_phone').value || '01700-000000';
+    const headline = document.getElementById('studio_headline')?.value || '🔥 আজকের সেরা মেগা অফার!';
+    const prodName = document.getElementById('studio_prod_name')?.value || 'সদাই দরকার প্রিমিয়াম গ্রোসারি';
+    const sellPrice = parseFloat(document.getElementById('studio_sell_price')?.value) || 0;
+    const regPrice = parseFloat(document.getElementById('studio_regular_price')?.value) || 0;
+    const unit = document.getElementById('studio_unit')?.value || '১ কেজি';
+    const discountTag = document.getElementById('studio_discount_tag')?.value || '';
+    const qualityTag = document.getElementById('studio_quality_tag')?.value || '🌿 ১০০% ফার্ম-ফ্রেশ';
+    const siteName = document.getElementById('studio_site_name')?.value || 'সদাই দরকার';
+    const phone = document.getElementById('studio_phone')?.value || '01700-000000';
 
-    // 1. Background Gradient
-    const grad = ctx.createLinearGradient(0, 0, width, height);
-    grad.addColorStop(0, theme.bgStart);
-    grad.addColorStop(1, theme.bgEnd);
-    ctx.fillStyle = grad;
+    // 1. Multi-Stop Background Gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, theme.bgStart);
+    bgGrad.addColorStop(0.5, theme.bgMid);
+    bgGrad.addColorStop(1, theme.bgEnd);
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Decorative background radial circles
-    ctx.beginPath();
-    ctx.arc(width * 0.85, height * 0.15, 300, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(width * 0.15, height * 0.85, 250, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.fill();
-
-    // 2. Top Header Ribbon (Store Branding & Headline)
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(0, 0, width, 140);
-
-    // Store Name on Left
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('🛒 ' + siteName, 60, 85);
-
-    // Hotline on Right
-    ctx.fillStyle = '#fef08a';
-    ctx.font = 'bold 28px "Outfit", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText('📞 ' + phone, width - 60, 85);
-
-    // 3. Catchy Headline Banner
+    // 2. Center Light Spotlight Aura (High-depth stage lighting)
     ctx.save();
-    ctx.fillStyle = theme.badgeBg;
-    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = 15;
-    roundRect(ctx, 60, 165, width - 120, 90, 24, true, false);
+    const aura = ctx.createRadialGradient(width / 2, 470, 50, width / 2, 470, 500);
+    aura.addColorStop(0, theme.glowColor);
+    aura.addColorStop(0.65, theme.glowColor.replace(/[\d\.]+\)$/, '0.08)'));
+    aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = aura;
+    ctx.fillRect(0, 0, width, height);
     ctx.restore();
 
+    // 3. Subtle Modern Geometric Rings (Dotted eCommerce accents)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 12]);
+    ctx.beginPath();
+    ctx.arc(width / 2, 470, 420, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(width / 2, 470, 460, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Decorative corner light bubbles
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.beginPath(); ctx.arc(120, 100, 180, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(width - 100, height - 120, 220, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // 4. Header: Brand Capsule & Hotline Capsule
+    // Brand Capsule (Left)
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 10;
+    roundRect(ctx, 60, 40, 390, 64, 32, true, true);
+    ctx.restore();
+
+    // Store Logo icon circle inside capsule
+    ctx.save();
+    ctx.fillStyle = theme.accent;
+    ctx.beginPath();
+    ctx.arc(96, 72, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🛒', 96, 73);
+    ctx.restore();
+
+    // Store Name
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 30px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(siteName, 126, 72);
+
+    // Green Verified Badge
+    const nameWidth = ctx.measureText(siteName).width;
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath(); ctx.arc(126 + nameWidth + 16, 72, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✓', 126 + nameWidth + 16, 73);
+    ctx.restore();
+
+    // Hotline Capsule (Right)
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 10;
+    roundRect(ctx, width - 420, 40, 360, 64, 32, true, true);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 26px "Outfit", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📞 ' + phone, width - 240, 72);
+    ctx.restore();
+
+    // 5. Promotional Headline Ribbon (Y: 122 to 212)
+    ctx.save();
+    const ribbonGrad = ctx.createLinearGradient(60, 122, width - 60, 212);
+    ribbonGrad.addColorStop(0, theme.badgeBgStart);
+    ribbonGrad.addColorStop(1, theme.badgeBgEnd);
+    ctx.fillStyle = ribbonGrad;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 6;
+    roundRect(ctx, 60, 122, width - 120, 88, 26, true, false);
+    ctx.restore();
+
+    // Inner subtle border on headline ribbon
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, 64, 126, width - 128, 80, 22, false, true);
+    ctx.restore();
+
+    // Headline Text
+    ctx.save();
     ctx.fillStyle = theme.badgeText;
     ctx.font = 'bold 44px "Hind Siliguri", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(headline, width / 2, 227);
-
-    // 4. Center Product Card
-    const cardX = 140;
-    const cardY = 280;
-    const cardW = 800;
-    const cardH = 460;
-
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetY = 15;
-    ctx.fillStyle = '#ffffff';
-    roundRect(ctx, cardX, cardY, cardW, cardH, 32, true, false);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(headline, width / 2, 166);
     ctx.restore();
 
-    // Product Image or Placeholder inside Card
+    // 6. Center Hero Product Card / 3D Pedestal Stage
+    const cardX = 140;
+    const cardY = 234;
+    const cardW = 800;
+    const cardH = 475;
+
+    // Card drop shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 35;
+    ctx.shadowOffsetY = 18;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, cardX, cardY, cardW, cardH, 36, true, false);
+    ctx.restore();
+
+    // Inner card border
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.lineWidth = 3;
+    roundRect(ctx, cardX, cardY, cardW, cardH, 36, false, true);
+    ctx.restore();
+
+    // 3D Realistic Contact Pedestal Shadow inside Card
+    ctx.save();
+    const pedGrad = ctx.createRadialGradient(width / 2, cardY + cardH - 65, 30, width / 2, cardY + cardH - 65, 280);
+    pedGrad.addColorStop(0, 'rgba(0, 0, 0, 0.16)');
+    pedGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.08)');
+    pedGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = pedGrad;
+    ctx.beginPath();
+    ctx.ellipse(width / 2, cardY + cardH - 65, 270, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Product Image Render inside Card
     if (studioImgElement && studioImgElement.complete && studioImgElement.naturalWidth > 0) {
         ctx.save();
-        roundRect(ctx, cardX + 20, cardY + 20, cardW - 40, cardH - 40, 24, false, false);
+        roundRect(ctx, cardX + 24, cardY + 24, cardW - 48, cardH - 58, 28, false, false);
         ctx.clip();
-        
-        // Draw image aspect fitted
+
         const iw = studioImgElement.naturalWidth;
         const ih = studioImgElement.naturalHeight;
-        const targetW = cardW - 40;
-        const targetH = cardH - 40;
+        const targetW = cardW - 48;
+        const targetH = cardH - 58;
         const ratio = Math.min(targetW / iw, targetH / ih);
         const nw = iw * ratio;
         const nh = ih * ratio;
-        const nx = cardX + 20 + (targetW - nw) / 2;
-        const ny = cardY + 20 + (targetH - nh) / 2;
+        const nx = cardX + 24 + (targetW - nw) / 2;
+        const ny = cardY + 24 + (targetH - nh) / 2;
         ctx.drawImage(studioImgElement, nx, ny, nw, nh);
         ctx.restore();
     } else {
-        ctx.fillStyle = '#f1f5f9';
-        roundRect(ctx, cardX + 20, cardY + 20, cardW - 40, cardH - 40, 24, true, false);
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 48px "Hind Siliguri", sans-serif';
+        ctx.save();
+        ctx.fillStyle = '#f8fafc';
+        roundRect(ctx, cardX + 24, cardY + 24, cardW - 48, cardH - 58, 28, true, false);
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 44px "Hind Siliguri", sans-serif';
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('📦 ' + prodName, cardX + cardW / 2, cardY + cardH / 2);
+        ctx.restore();
     }
 
-    // 5. Discount Ribbon on Top-Right of Card
-    if (discountTag) {
+    // 7. Floating Badges overlapping the card
+    // Top-Left: Freshness Quality Badge
+    if (qualityTag) {
         ctx.save();
-        ctx.fillStyle = '#ef4444';
-        ctx.shadowColor = 'rgba(239, 68, 68, 0.5)';
+        ctx.fillStyle = theme.tagBg;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
         ctx.shadowBlur = 15;
-        roundRect(ctx, cardX + cardW - 200, cardY - 20, 220, 65, 18, true, false);
+        ctx.shadowOffsetY = 6;
+        roundRect(ctx, cardX - 20, cardY + 16, 260, 56, 28, true, false);
         ctx.restore();
 
+        // Inner border on badge
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        roundRect(ctx, cardX - 18, cardY + 18, 256, 52, 26, false, true);
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(qualityTag, cardX - 20 + 130, cardY + 16 + 28);
+        ctx.restore();
+    }
+
+    // Top-Right: 3D Discount Ribbon
+    if (discountTag) {
+        ctx.save();
+        const discGrad = ctx.createLinearGradient(cardX + cardW - 220, cardY + 14, cardX + cardW + 15, cardY + 74);
+        discGrad.addColorStop(0, '#ef4444');
+        discGrad.addColorStop(1, '#b91c1c');
+        ctx.fillStyle = discGrad;
+        ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
+        roundRect(ctx, cardX + cardW - 235, cardY + 14, 250, 60, 22, true, false);
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 2.5;
+        roundRect(ctx, cardX + cardW - 232, cardY + 17, 244, 54, 19, false, true);
+        ctx.restore();
+
+        ctx.save();
         ctx.fillStyle = '#ffffff';
         ctx.font = 'black 30px "Hind Siliguri", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('⚡ ' + discountTag, cardX + cardW - 90, cardY + 24);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('⚡ ' + discountTag, cardX + cardW - 110, cardY + 44);
+        ctx.restore();
     }
 
-    // 6. Product Name Below Card
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 50px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(prodName, width / 2, 790);
-
-    // 7. Price Badges
-    const priceBoxY = 825;
+    // 8. Product Name (Below Card)
     ctx.save();
-    ctx.fillStyle = theme.priceBg;
-    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = 20;
-    roundRect(ctx, 240, priceBoxY, 600, 110, 28, true, false);
+    let nameFontSize = 46;
+    if (prodName.length > 25) nameFontSize = 38;
+    if (prodName.length > 38) nameFontSize = 32;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold ' + nameFontSize + 'px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
+    ctx.fillText(prodName, width / 2, 755);
     ctx.restore();
 
-    ctx.textAlign = 'center';
-    let priceText = `৳${sellPrice.toFixed(2)}`;
-    if (regPrice > sellPrice) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.font = 'bold 32px "Outfit", sans-serif';
-        ctx.fillText(`MRP: ৳${regPrice.toFixed(2)}`, width / 2 - 130, priceBoxY + 68);
+    // 9. Retail Price & Huge Savings Bar (Y: 798 to 924)
+    const priceBoxY = 798;
+    const priceBoxH = 126;
+    const priceBoxW = 840;
+    const priceBoxX = (width - priceBoxW) / 2;
+
+    ctx.save();
+    ctx.fillStyle = theme.priceBg;
+    ctx.strokeStyle = theme.priceAccent;
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 8;
+    roundRect(ctx, priceBoxX, priceBoxY, priceBoxW, priceBoxH, 30, true, true);
+    ctx.restore();
+
+    const hasDiscount = regPrice > sellPrice;
+    const savingsAmount = hasDiscount ? (regPrice - sellPrice) : 0;
+
+    if (hasDiscount) {
+        // Left Column: MRP & Savings Tag
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.font = 'bold 28px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        const mrpText = `MRP: ৳${regPrice.toFixed(0)}`;
+        ctx.fillText(mrpText, priceBoxX + 45, priceBoxY + 38);
 
         // Strikethrough line
+        const mrpW = ctx.measureText(mrpText).width;
         ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
-        ctx.moveTo(width / 2 - 240, priceBoxY + 58);
-        ctx.lineTo(width / 2 - 20, priceBoxY + 58);
+        ctx.moveTo(priceBoxX + 40, priceBoxY + 38);
+        ctx.lineTo(priceBoxX + 45 + mrpW + 5, priceBoxY + 38);
         ctx.stroke();
 
+        // Shiny Savings Pill Badge
+        ctx.fillStyle = theme.saveBg;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 8;
+        roundRect(ctx, priceBoxX + 45, priceBoxY + 68, 235, 42, 21, true, false);
+
+        ctx.fillStyle = theme.saveText;
+        ctx.font = 'bold 22px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`💰 সাশ্রয়: ৳${savingsAmount.toFixed(0)}!`, priceBoxX + 45 + 117, priceBoxY + 89);
+        ctx.restore();
+
+        // Right Column: Huge Offer Price
+        ctx.save();
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 52px "Outfit", sans-serif';
-        ctx.fillText(priceText, width / 2 + 130, priceBoxY + 72);
+        ctx.font = '900 64px "Outfit", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const priceStr = `৳${sellPrice.toFixed(0)}`;
+        ctx.fillText(priceStr, priceBoxX + priceBoxW - 45, priceBoxY + 54);
+
+        // Unit label under offer price
+        ctx.fillStyle = theme.priceAccent;
+        ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+        ctx.fillText(`প্রতি ${unit}`, priceBoxX + priceBoxW - 45, priceBoxY + 95);
+        ctx.restore();
     } else {
+        // Single Price Center Display
+        ctx.save();
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 56px "Outfit", sans-serif';
-        ctx.fillText(priceText + (unit ? ` / ${unit}` : ''), width / 2, priceBoxY + 75);
+        ctx.font = '900 68px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`৳${sellPrice.toFixed(0)} ${unit ? '/ ' + unit : ''}`, width / 2, priceBoxY + priceBoxH / 2);
+        ctx.restore();
     }
 
-    // 8. Footer Trust Badges
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px "Hind Siliguri", sans-serif';
+    // 10. Footer Trust Badges
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🚚 ক্যাশ অন ডেলিভারি   |   ✨ ১০০% খাঁটি পণ্য   |   ⚡ দ্রুত হোম ডেলিভারি', width / 2, 995);
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 8;
+    ctx.fillText('🚚 ৩০-৬০ মিনিটে দ্রুত ডেলিভারি   |   💵 ক্যাশ অন ডেলিভারি   |   ✨ ১০০% খাঁটি পণ্য', width / 2, 970);
+    ctx.restore();
 
-    // Bottom decorative bar
+    // 11. Bottom Call to Action Ribbon
+    ctx.save();
     ctx.fillStyle = theme.accent;
-    ctx.fillRect(0, height - 16, width, 16);
+    ctx.fillRect(0, height - 60, width, 60);
+
+    ctx.fillStyle = (currentStudioTheme === 'amber' || currentStudioTheme === 'ruby' || currentStudioTheme === 'navy' || currentStudioTheme === 'royal') ? '#ffffff' : '#042f24';
+    ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🛒 অর্ডার করতে এখনই ইনবক্স করুন  |  🌐 ' + siteName, width / 2, height - 30);
+    ctx.restore();
 }
 
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
