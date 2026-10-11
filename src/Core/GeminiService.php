@@ -8,9 +8,13 @@ class GeminiService {
     protected $apiKey;
     protected $model;
 
-    public function __construct($apiKey = null) {
+    public function __construct($apiKey = null, $model = null) {
         $this->apiKey = $apiKey ?: Setting::getValue('gemini_api_key', '');
-        $this->model = Setting::getValue('gemini_model', 'gemini-1.5-flash');
+        $savedModel = $model ?: Setting::getValue('gemini_model', 'gemini-2.5-flash');
+        if (empty($savedModel) || $savedModel === 'gemini-2.0-flash') {
+            $savedModel = 'gemini-2.5-flash';
+        }
+        $this->model = $savedModel;
     }
 
     public function isConfigured() {
@@ -32,9 +36,11 @@ class GeminiService {
         $result = $this->callApi($prompt);
 
         if ($result['success']) {
+            $usedModel = $result['model'] ?? $this->model;
             return [
                 'success' => true,
-                'message' => 'Gemini API সংযোগ সফল হয়েছে! রেসপন্স: ' . htmlspecialchars($result['text'])
+                'model' => $usedModel,
+                'message' => "Gemini API সংযোগ সফল হয়েছে! (মডেল: {$usedModel}) রেসপন্স: " . htmlspecialchars($result['text'])
             ];
         }
 
@@ -110,64 +116,50 @@ PROMPT;
     }
 
     /**
-     * Call Gemini API endpoint
+     * Call Gemini API endpoint with smart model fallback and auto-discovery
      */
     protected function callApi(string $prompt) {
-        $modelsToTry = [$this->model, 'gemini-1.5-flash', 'gemini-2.0-flash'];
-        $modelsToTry = array_unique($modelsToTry);
+        $primaryModel = ($this->model === 'gemini-2.0-flash') ? 'gemini-2.5-flash' : $this->model;
+        $candidates = [
+            $primaryModel,
+            'gemini-2.5-flash',
+            'gemini-1.5-flash',
+            'gemini-2.5-pro',
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-pro'
+        ];
+
+        // Explicitly remove deprecated/unavailable 2.0-flash
+        $modelsToTry = array_values(array_filter(array_unique($candidates), function($m) {
+            return !empty($m) && $m !== 'gemini-2.0-flash';
+        }));
 
         $lastError = 'অজানা ত্রুটি';
 
         foreach ($modelsToTry as $modelName) {
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . urlencode($this->apiKey);
-
-            $payload = [
-                'contents' => [
-                    [
-                        'parts' => [
-                            ['text' => $prompt]
-                        ]
-                    ]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.7,
-                    'maxOutputTokens' => 1000
-                ]
-            ];
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            if ($curlError) {
-                $lastError = "cURL Error: " . $curlError;
-                continue;
+            $res = $this->requestGenerateContent($modelName, $prompt);
+            if ($res['success']) {
+                if ($this->model !== $modelName) {
+                    Setting::set('gemini_model', $modelName);
+                    $this->model = $modelName;
+                }
+                return $res;
             }
+            $lastError = $res['message'];
+        }
 
-            $json = json_decode($response, true);
-
-            if ($httpCode === 200 && !empty($json['candidates'][0]['content']['parts'][0]['text'])) {
-                $text = trim($json['candidates'][0]['content']['parts'][0]['text']);
-                return [
-                    'success' => true,
-                    'text' => $text,
-                    'model' => $modelName
-                ];
-            }
-
-            if (!empty($json['error']['message'])) {
-                $lastError = "Gemini API Error ({$modelName}): " . $json['error']['message'];
-            } else {
-                $lastError = "Gemini API HTTP {$httpCode}: " . substr($response, 0, 300);
+        // If standard models failed, query Google models API directly to discover active models
+        $activeModels = $this->fetchAvailableModels();
+        foreach ($activeModels as $discovered) {
+            if ($discovered === 'gemini-2.0-flash') continue;
+            if (!in_array($discovered, $modelsToTry)) {
+                $res = $this->requestGenerateContent($discovered, $prompt);
+                if ($res['success']) {
+                    Setting::set('gemini_model', $discovered);
+                    $this->model = $discovered;
+                    return $res;
+                }
+                $lastError = $res['message'];
             }
         }
 
@@ -175,5 +167,90 @@ PROMPT;
             'success' => false,
             'message' => $lastError
         ];
+    }
+
+    /**
+     * Send generateContent HTTP request to a specific Gemini model
+     */
+    protected function requestGenerateContent(string $modelName, string $prompt): array {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . urlencode($this->apiKey);
+
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt]
+                    ]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.7,
+                'maxOutputTokens' => 1000
+            ]
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            return [
+                'success' => false,
+                'message' => "cURL Error: " . $curlError
+            ];
+        }
+
+        $json = json_decode($response, true);
+
+        if ($httpCode === 200 && !empty($json['candidates'][0]['content']['parts'][0]['text'])) {
+            $text = trim($json['candidates'][0]['content']['parts'][0]['text']);
+            return [
+                'success' => true,
+                'text' => $text,
+                'model' => $modelName
+            ];
+        }
+
+        $errMsg = $json['error']['message'] ?? "Gemini API HTTP {$httpCode}: " . substr((string)$response, 0, 250);
+        return [
+            'success' => false,
+            'message' => "Gemini API Error ({$modelName}): " . $errMsg
+        ];
+    }
+
+    /**
+     * Dynamically fetch all models from Google that support generateContent
+     */
+    protected function fetchAvailableModels(): array {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models?key=" . urlencode($this->apiKey);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $json = json_decode($response, true);
+        $result = [];
+        if (!empty($json['models'])) {
+            foreach ($json['models'] as $m) {
+                if (in_array('generateContent', $m['supportedGenerationMethods'] ?? [])) {
+                    $cleanName = str_replace('models/', '', $m['name']);
+                    $result[] = $cleanName;
+                }
+            }
+        }
+        return $result;
     }
 }

@@ -338,31 +338,79 @@ class MarketingController extends Controller {
     }
 
     /**
-     * Save/Update a Marketing Post
+     * Save/Update a Marketing Post (Supports Instant Publish outside schedule)
      */
     public function savePost() {
         $this->requireAdmin();
 
         $id = intval($_POST['id'] ?? 0);
+        $publishNow = (($_POST['action'] ?? '') === 'publish') || !empty($_POST['publish_now']);
+
+        $imagePath = trim($_POST['image_path'] ?? '');
+
+        // Handle uploaded image file if present
+        if (!empty($_FILES['custom_image']['name']) && $_FILES['custom_image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/marketing';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0755, true);
+            }
+            $ext = strtolower(pathinfo($_FILES['custom_image']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $filename = 'post_' . time() . '_' . rand(100, 999) . '.' . $ext;
+                $dest = $uploadDir . '/' . $filename;
+                if (move_uploaded_file($_FILES['custom_image']['tmp_name'], $dest)) {
+                    $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+                    $imagePath = $base . '/uploads/marketing/' . $filename;
+                }
+            }
+        }
+
         $data = [
             'product_id' => !empty($_POST['product_id']) ? intval($_POST['product_id']) : null,
-            'slot_type' => $_POST['slot_type'] ?? 'morning',
+            'slot_type' => $_POST['slot_type'] ?? 'custom',
             'post_date' => $_POST['post_date'] ?? date('Y-m-d'),
-            'schedule_time' => $_POST['schedule_time'] ?? null,
+            'schedule_time' => $_POST['schedule_time'] ?? date('H:i'),
             'mode' => $_POST['mode'] ?? 'template_no_ai',
             'headline' => trim($_POST['headline'] ?? ''),
             'caption' => trim($_POST['caption'] ?? ''),
-            'image_path' => trim($_POST['image_path'] ?? ''),
-            'status' => $_POST['status'] ?? 'draft'
+            'image_path' => $imagePath,
+            'status' => 'draft'
         ];
 
         $postModel = new MarketingPost();
         if ($id > 0) {
             $postModel->update($id, $data);
-            $_SESSION['success'] = 'পোস্ট সফলভাবে আপডেট করা হয়েছে!';
+            $postId = $id;
         } else {
-            $id = $postModel->create($data);
-            $_SESSION['success'] = 'নতুন পোস্ট সফলভাবে তৈরি করা হয়েছে!';
+            $postId = $postModel->create($data);
+        }
+
+        if ($publishNow) {
+            $facebook = new FacebookService();
+            if (!$facebook->isConfigured()) {
+                $_SESSION['error'] = 'পোস্ট সংরক্ষণ হয়েছে, কিন্তু ফেসবুক পেজ কনফিগার করা নেই। সেটিংস পেজে গিয়ে পেজ সংযুক্ত করুন।';
+                $this->redirect('/admin/marketing');
+                return;
+            }
+
+            $pubRes = $facebook->publishPost($data['caption'], $imagePath);
+            if ($pubRes['success']) {
+                $postModel->update($postId, [
+                    'status' => 'posted',
+                    'fb_post_id' => $pubRes['post_id'],
+                    'posted_at' => date('Y-m-d H:i:s'),
+                    'error_message' => null
+                ]);
+                $_SESSION['success'] = "🎉 অভিনন্দন! পোস্টটি সফলভাবে ফেসবুকে প্রকাশিত হয়েছে! লিংক: <a href='{$pubRes['post_url']}' target='_blank' class='underline font-bold text-white ml-1'>পোস্ট দেখুন ➔</a>";
+            } else {
+                $postModel->update($postId, [
+                    'status' => 'failed',
+                    'error_message' => $pubRes['message']
+                ]);
+                $_SESSION['error'] = "পোস্ট সেভ হয়েছে, কিন্তু ফেসবুকে পাবলিশ ব্যর্থ: " . $pubRes['message'];
+            }
+        } else {
+            $_SESSION['success'] = ($id > 0) ? 'পোস্ট সফলভাবে আপডেট করা হয়েছে!' : 'নতুন পোস্ট ড্রাফট হিসেবে সেভ করা হয়েছে!';
         }
 
         $this->redirect('/admin/marketing');
@@ -391,15 +439,9 @@ class MarketingController extends Controller {
             return;
         }
 
-        $image = $post['image_path'];
-        if (empty($image)) {
-            $_SESSION['error'] = 'পোস্ট করার জন্য কোনো ব্যানার বা ইমেজ নেই!';
-            $this->redirect('/admin/marketing');
-            return;
-        }
-
         $caption = $post['caption'];
-        $res = $facebook->postPhoto($caption, $image);
+        $image = $post['image_path'] ?? null;
+        $res = $facebook->publishPost($caption, $image);
 
         if ($res['success']) {
             $postModel->update($id, [
@@ -408,7 +450,8 @@ class MarketingController extends Controller {
                 'posted_at' => date('Y-m-d H:i:s'),
                 'error_message' => null
             ]);
-            $_SESSION['success'] = "🎉 ফেসবুকে সফলভাবে পোস্ট পাবলিশ হয়েছে! পোস্ট আইডি: {$res['post_id']}";
+            $postUrl = $res['post_url'] ?? "https://facebook.com/{$res['post_id']}";
+            $_SESSION['success'] = "🎉 ফেসবুকে সফলভাবে পোস্ট পাবলিশ হয়েছে! <a href='{$postUrl}' target='_blank' class='underline font-bold text-white ml-1'>পোস্ট দেখুন ➔</a>";
         } else {
             $postModel->update($id, [
                 'status' => 'failed',
@@ -443,7 +486,8 @@ class MarketingController extends Controller {
         header('Content-Type: application/json; charset=utf-8');
 
         $apiKey = trim($_POST['gemini_api_key'] ?? '') ?: Setting::getValue('gemini_api_key', '');
-        $gemini = new GeminiService($apiKey);
+        $model = trim($_POST['gemini_model'] ?? '') ?: Setting::getValue('gemini_model', 'gemini-2.5-flash');
+        $gemini = new GeminiService($apiKey, $model);
         echo json_encode($gemini->testConnection());
         exit;
     }
@@ -461,6 +505,21 @@ class MarketingController extends Controller {
         
         $fb = new FacebookService($pageId, $token);
         $result = $fb->verifyConnection($pageId, $token);
+        echo json_encode($result);
+        exit;
+    }
+
+    /**
+     * API: Publish a Test Post directly to Facebook Page (Ajax)
+     */
+    public function apiTestPost() {
+        $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $customMsg = trim($_POST['message'] ?? '');
+        $fb = new FacebookService();
+        $result = $fb->testPost($customMsg);
         echo json_encode($result);
         exit;
     }

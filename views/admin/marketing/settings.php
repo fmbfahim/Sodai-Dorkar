@@ -105,6 +105,11 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                                 <ion-icon name="pulse-outline" class="text-base text-blue-600"></ion-icon>
                                 <span>কানেকশন টেস্ট</span>
                             </button>
+                            <button type="button" onclick="testFacebookPost()" 
+                                    class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                                <ion-icon name="paper-plane-outline" class="text-base text-emerald-600"></ion-icon>
+                                <span>🧪 টেস্ট পোস্ট</span>
+                            </button>
                             <button type="button" onclick="confirmDisconnectFacebook()" 
                                     class="px-3 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
                                 <ion-icon name="unlink-outline" class="text-base"></ion-icon>
@@ -188,12 +193,19 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                 </div>
 
                 <!-- Test Connection Button & Result -->
-                <div class="flex items-center justify-between pt-2">
-                    <button type="button" onclick="testFacebookConnection()" 
-                            class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
-                        <ion-icon name="pulse-outline" class="text-base"></ion-icon>
-                        <span>সংযোগ পরীক্ষা করুন (Test Connection)</span>
-                    </button>
+                <div class="flex items-center justify-between flex-wrap gap-2 pt-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" onclick="testFacebookConnection()" 
+                                class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <ion-icon name="pulse-outline" class="text-base"></ion-icon>
+                            <span>সংযোগ পরীক্ষা করুন (Test Connection)</span>
+                        </button>
+                        <button type="button" onclick="testFacebookPost()" 
+                                class="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                            <ion-icon name="paper-plane-outline" class="text-base"></ion-icon>
+                            <span>🧪 টেস্ট পোস্ট করুন (Test Post)</span>
+                        </button>
+                    </div>
                     <span id="fb-test-result" class="text-xs font-semibold"></span>
                 </div>
             </div>
@@ -292,10 +304,11 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                     <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-2" for="gemini_model">
                         Gemini Model
                     </label>
-                    <?php $curModel = $settings['gemini_model'] ?? 'gemini-1.5-flash'; ?>
+                    <?php $curModel = $settings['gemini_model'] ?? 'gemini-2.5-flash'; ?>
                     <select id="gemini_model" name="gemini_model" class="w-full px-4 py-2.5 bg-white border border-secondary-300 rounded-xl text-sm font-semibold text-secondary-900 focus:ring-2 focus:ring-purple-500">
-                        <option value="gemini-1.5-flash" <?= $curModel === 'gemini-1.5-flash' ? 'selected' : '' ?>>Gemini 1.5 Flash (সুপার ফাস্ট - রেকমেন্ডেড)</option>
-                        <option value="gemini-2.0-flash" <?= $curModel === 'gemini-2.0-flash' ? 'selected' : '' ?>>Gemini 2.0 Flash (নতুন ও আধুনিক)</option>
+                        <option value="gemini-2.5-flash" <?= in_array($curModel, ['gemini-2.5-flash', 'gemini-2.0-flash']) ? 'selected' : '' ?>>Gemini 2.5 Flash (সুপার ফাস্ট ও আধুনিক - রেকমেন্ডেড)</option>
+                        <option value="gemini-1.5-flash" <?= $curModel === 'gemini-1.5-flash' ? 'selected' : '' ?>>Gemini 1.5 Flash (দ্রুত ও নির্ভরযোগ্য)</option>
+                        <option value="gemini-2.5-pro" <?= $curModel === 'gemini-2.5-pro' ? 'selected' : '' ?>>Gemini 2.5 Pro (স্মার্ট ও ক্রিয়েটিভ)</option>
                         <option value="gemini-1.5-pro" <?= $curModel === 'gemini-1.5-pro' ? 'selected' : '' ?>>Gemini 1.5 Pro (উচ্চমানের ক্রিয়েটিভ)</option>
                     </select>
                 </div>
@@ -449,6 +462,8 @@ async function testGeminiConnection() {
         const formData = new FormData();
         formData.append('csrf_token', csrfToken);
         formData.append('gemini_api_key', key);
+        const selModel = document.getElementById('gemini_model')?.value || 'gemini-2.5-flash';
+        formData.append('gemini_model', selModel);
 
         const res = await fetch('<?= $base ?>/admin/marketing/api/test-gemini', {
             method: 'POST',
@@ -547,6 +562,59 @@ async function testFacebookConnection() {
         }
     } catch (err) {
         setHtml(`<span class="text-red-600 font-bold">❌ সংযোগ পরীক্ষা ব্যর্থ: ${err.message}</span>`);
+    }
+}
+
+/**
+ * Test Facebook Post directly on Page
+ */
+async function testFacebookPost() {
+    const resEl = document.getElementById('fb-test-result');
+    const topResEl = document.getElementById('fb-top-test-result');
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
+
+    const setHtml = (html) => {
+        if (resEl) resEl.innerHTML = html;
+        if (topResEl) topResEl.innerHTML = html;
+    };
+
+    if (!confirm('আপনার ফেসবুক পেজে একটি রিয়েল টেস্ট পোস্ট পাবলিশ হবে। আপনি কি টেস্ট করতে চান?')) {
+        return;
+    }
+
+    setHtml('<span class="text-purple-600 animate-pulse flex items-center gap-1.5"><ion-icon name="sync-outline" class="animate-spin text-sm"></ion-icon> <span>ফেসবুক পেজে টেস্ট পোস্ট করা হচ্ছে...</span></span>');
+
+    try {
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('message', '🎉 টেস্ট পোস্ট: সদাই দরকার (Sodai Dorkar) ফেসবুক অটোমেশন সংযোগ সফল হয়েছে!');
+
+        const res = await fetch('<?= $base ?>/admin/marketing/api/test-post', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            setHtml(`<span class="text-red-600 font-bold">❌ রেসপন্স এরর (${res.status})</span>`);
+            return;
+        }
+
+        if (data.success) {
+            const url = data.post_url || '#';
+            setHtml(`<span class="text-emerald-700 font-bold">✅ টেস্ট পোস্ট সফল! <a href="${url}" target="_blank" class="underline ml-1">পোস্ট দেখুন ➔</a></span>`);
+        } else {
+            setHtml(`<span class="text-red-600 font-bold">❌ টেস্ট পোস্ট ব্যর্থ: ${data.message}</span>`);
+        }
+    } catch (err) {
+        setHtml(`<span class="text-red-600 font-bold">❌ এরর: ${err.message}</span>`);
     }
 }
 </script>

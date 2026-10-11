@@ -91,6 +91,12 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 </button>
             </form>
 
+            <!-- Facebook Test Post Button -->
+            <button type="button" onclick="testFacebookPost()" class="px-4 py-2.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                <ion-icon name="paper-plane-outline" class="text-base text-blue-600"></ion-icon>
+                <span>🧪 টেস্ট পোস্ট</span>
+            </button>
+
             <!-- Custom Post Button -->
             <button type="button" onclick="openCustomPostModal()" class="px-4 py-2.5 bg-white border border-secondary-300 hover:bg-secondary-50 text-secondary-700 font-bold text-xs rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer">
                 <ion-icon name="add-circle-outline" class="text-base text-primary-600"></ion-icon>
@@ -414,10 +420,22 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <button type="button" onclick="openBannerStudio(<?= $rp['id'] ?>, <?= htmlspecialchars(json_encode($rp)) ?>)" 
-                                            class="text-primary-600 hover:text-primary-800 font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors">
-                                        ব্যানার এডিটর
-                                    </button>
+                                    <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                                        <?php if ($rp['status'] !== 'posted'): ?>
+                                            <form action="<?= $base ?>/admin/marketing/post-to-facebook" method="POST" class="inline" onsubmit="return confirm('পোস্টটি এখনই ফেসবুক পেজে পাবলিশ করবেন?');">
+                                                <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                                <input type="hidden" name="id" value="<?= $rp['id'] ?>">
+                                                <button type="submit" class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1.5 rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer">
+                                                    <ion-icon name="paper-plane-outline"></ion-icon>
+                                                    <span>পাবলিশ করুন</span>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                        <button type="button" onclick="openBannerStudio(<?= $rp['id'] ?>, <?= htmlspecialchars(json_encode($rp)) ?>)" 
+                                                class="text-primary-600 hover:text-primary-800 font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors">
+                                            ব্যানার এডিটর
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -603,16 +621,16 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <button type="button" onclick="closeCustomPostModal()" class="text-secondary-400 hover:text-secondary-600 text-2xl cursor-pointer">&times;</button>
         </div>
 
-        <form action="<?= $base ?>/admin/marketing/save-post" method="POST" class="space-y-4 text-xs font-semibold">
+        <form action="<?= $base ?>/admin/marketing/save-post" method="POST" enctype="multipart/form-data" class="space-y-4 text-xs font-semibold">
             <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <input type="hidden" name="id" value="0">
             <input type="hidden" name="image_path" id="custom_image_path" value="">
 
             <div>
-                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">পণ্য নির্বাচন করুন <span class="text-red-500">*</span></label>
+                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">পণ্য নির্বাচন করুন (ঐচ্ছিক)</label>
                 <select name="product_id" id="custom_product_id" onchange="onCustomProductChange()" 
-                        class="w-full px-3 py-2 border border-secondary-300 rounded-xl bg-white font-semibold text-xs" required>
-                    <option value="">-- একটি পণ্য নির্বাচন করুন --</option>
+                        class="w-full px-3 py-2 border border-secondary-300 rounded-xl bg-white font-semibold text-xs">
+                    <option value="">-- পণ্য ছাড়া সাধারণ পোস্ট অথবা পণ্য বাছুন --</option>
                     <?php foreach ($products as $p): ?>
                         <option value="<?= $p['id'] ?>" 
                                 data-name="<?= htmlspecialchars($p['name']) ?>"
@@ -630,10 +648,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <div>
                     <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">স্লট</label>
                     <select name="slot_type" id="custom_slot_type" class="w-full px-3 py-2 border border-secondary-300 rounded-xl bg-white font-semibold text-xs">
+                        <option value="custom">✨ স্পেশাল / তাৎক্ষণিক (Custom)</option>
                         <option value="morning">🌅 সকাল (Morning)</option>
                         <option value="afternoon">🍛 দুপুর (Afternoon)</option>
                         <option value="evening">🌙 সন্ধ্যা (Evening)</option>
-                        <option value="custom">✨ স্পেশাল (Custom)</option>
                     </select>
                 </div>
                 <div>
@@ -655,20 +673,34 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">হেডলাইন</label>
+                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">হেডলাইন (ঐচ্ছিক)</label>
                 <input type="text" name="headline" id="custom_headline" placeholder="যেমন: 🔥 আজকের সেরা মেগা অফার!" 
                        class="w-full px-3 py-2 border border-secondary-300 rounded-xl font-bold text-xs">
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">ক্যাপশন টেক্সট</label>
+                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">পোস্টের ছবি আপলোড করুন (ঐচ্ছিক)</label>
+                <input type="file" name="custom_image" accept="image/*" 
+                       class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl bg-white text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer">
+                <span class="text-[10px] text-secondary-400 mt-0.5 block">ছবি না দিলে শুধুমাত্র টেক্সট হিসেবে পোস্ট প্রকাশিত হবে।</span>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-secondary-700 uppercase mb-1">ক্যাপশন টেক্সট <span class="text-red-500">*</span></label>
                 <textarea name="caption" id="custom_caption" rows="5" placeholder="পোস্টের সম্পূর্ণ ক্যাপশন লিখুন..." 
                           class="w-full p-3 border border-secondary-300 rounded-xl font-sans text-xs" required></textarea>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-2">
-                <button type="button" onclick="closeCustomPostModal()" class="px-4 py-2 bg-secondary-100 rounded-xl text-secondary-700 font-bold">বাতিল</button>
-                <button type="submit" class="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-xs">সেভ করুন</button>
+            <div class="flex items-center justify-end gap-2 pt-2 flex-wrap">
+                <button type="button" onclick="closeCustomPostModal()" class="px-4 py-2 bg-secondary-100 rounded-xl text-secondary-700 font-bold cursor-pointer">বাতিল</button>
+                <button type="submit" name="action" value="save" class="px-4 py-2 bg-secondary-700 hover:bg-secondary-800 text-white font-bold rounded-xl shadow-xs flex items-center gap-1 cursor-pointer">
+                    <ion-icon name="bookmark-outline"></ion-icon>
+                    <span>ড্রাফট সেভ করুন</span>
+                </button>
+                <button type="submit" name="action" value="publish" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer">
+                    <ion-icon name="rocket-outline"></ion-icon>
+                    <span>🚀 এখনই ফেসবুকে পাবলিশ করুন</span>
+                </button>
             </div>
         </form>
     </div>
@@ -1107,6 +1139,45 @@ async function generateCustomContent() {
         }
     } catch (err) {
         statusEl.innerHTML = `<span class="text-red-600 font-bold">❌ এরর: ${err.message}</span>`;
+    }
+}
+
+/**
+ * Test Facebook Post directly on Page from Dashboard
+ */
+async function testFacebookPost() {
+    if (!confirm('আপনার ফেসবুক পেজে একটি টেস্ট পোস্ট পাবলিশ হবে। আপনি কি নিশ্চিত?')) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
+    const formData = new FormData();
+    formData.append('csrf_token', csrfToken);
+    formData.append('message', '🎉 টেস্ট পোস্ট: সদাই দরকার ফেসবুক অটোমেশন সক্রিয় রয়েছে!');
+
+    try {
+        const res = await fetch('<?= $base ?>/admin/marketing/api/test-post', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+
+        const text = await res.text();
+        const data = JSON.parse(text);
+
+        if (data.success) {
+            alert('✅ টেস্ট পোস্ট সফলভাবে প্রকাশিত হয়েছে!\nপোস্ট আইডি: ' + data.post_id);
+            if (data.post_url) {
+                window.open(data.post_url, '_blank');
+            }
+        } else {
+            alert('❌ টেস্ট পোস্ট ব্যর্থ হয়েছে: ' + data.message);
+        }
+    } catch (e) {
+        alert('❌ এরর: ' + e.message);
     }
 }
 </script>

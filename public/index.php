@@ -350,6 +350,7 @@ $router->post('/admin/marketing/api/generate-content', 'MarketingController@apiG
 $router->post('/admin/marketing/api/save-banner', 'MarketingController@apiSaveBanner');
 $router->post('/admin/marketing/api/test-gemini', 'MarketingController@testGemini');
 $router->post('/admin/marketing/api/test-facebook', 'MarketingController@testFacebook');
+$router->post('/admin/marketing/api/test-post', 'MarketingController@apiTestPost');
 $router->get('/admin/marketing/facebook-auth', 'MarketingController@facebookOAuthStart');
 $router->get('/admin/marketing/facebook-callback', 'MarketingController@facebookOAuthCallback');
 $router->post('/admin/marketing/api/save-facebook-page', 'MarketingController@apiSaveFacebookPage');

@@ -200,6 +200,8 @@ class FacebookService {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'SodaiDorkar/1.0 (Meta Graph API)');
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -232,6 +234,102 @@ class FacebookService {
             'message' => $err,
             'response' => $json
         ];
+    }
+
+    /**
+     * Post text / status feed directly to Facebook Page
+     */
+    public function postFeed(string $message, ?string $link = null): array {
+        if (!$this->isConfigured()) {
+            return [
+                'success' => false,
+                'message' => 'ফেসবুক পেজ আইডি এবং অ্যাক্সেস টোকেন কনফিগার করা নেই।'
+            ];
+        }
+
+        $url = "https://graph.facebook.com/{$this->apiVersion}/" . urlencode($this->pageId) . "/feed";
+
+        $postFields = [
+            'message' => $message,
+            'access_token' => $this->pageAccessToken
+        ];
+
+        if (!empty($link)) {
+            $postFields['link'] = $link;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'SodaiDorkar/1.0 (Meta Graph API)');
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            return [
+                'success' => false,
+                'message' => 'ফেসবুক পোস্ট এরর: ' . $curlError
+            ];
+        }
+
+        $json = json_decode($response, true);
+
+        if ($httpCode === 200 && (!empty($json['id']) || !empty($json['post_id']))) {
+            $postId = $json['post_id'] ?? $json['id'];
+            $postUrl = "https://facebook.com/" . urlencode($postId);
+            return [
+                'success' => true,
+                'post_id' => $postId,
+                'post_url' => $postUrl,
+                'message' => 'ফেসবুকে সফলভাবে পোস্ট পাবলিশ করা হয়েছে!'
+            ];
+        }
+
+        $err = $json['error']['message'] ?? "ফেসবুক প্রকাশনা ব্যর্থ (HTTP {$httpCode})";
+        return [
+            'success' => false,
+            'message' => $err,
+            'response' => $json
+        ];
+    }
+
+    /**
+     * Smart Publisher: publishes with photo if image is available, otherwise publishes text status feed
+     */
+    public function publishPost(string $caption, ?string $imagePath = null): array {
+        if (!empty(trim((string)$imagePath))) {
+            return $this->postPhoto($caption, $imagePath);
+        }
+        return $this->postFeed($caption);
+    }
+
+    /**
+     * Publish a quick test post to verify posting capability directly on Facebook Page
+     */
+    public function testPost(string $customMessage = ''): array {
+        if (!$this->isConfigured()) {
+            return [
+                'success' => false,
+                'message' => 'ফেসবুক পেজ আইডি অথবা অ্যাক্সেস টোকেন কনফিগার করা নেই!'
+            ];
+        }
+
+        $pageName = Setting::getValue('facebook_page_name', 'আমাদের পেজ');
+        $siteUrl = (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $timeStr = date('d M Y, h:i A');
+
+        $message = !empty($customMessage) 
+            ? $customMessage 
+            : "🛒 এটি একটি টেস্ট পোস্ট ({$timeStr})।\n\n🎉 অভিনন্দন! {$pageName}-এর সাথে আমাদের ওয়েবসাইট সরাসরি Meta Graph API-এর মাধ্যমে সফলভাবে যুক্ত হয়েছে।\n\nএখন থেকে প্রতিদিনের আকর্ষণীয় অফার ও বাজার আপডেট স্বয়ংক্রিয়ভাবে এই পেজে প্রকাশিত হবে।\n\n🔗 ওয়েবসাইট ভিজিট করুন: {$siteUrl}";
+
+        return $this->postFeed($message, $siteUrl);
     }
 
     /**
