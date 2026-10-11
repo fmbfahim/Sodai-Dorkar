@@ -12,8 +12,9 @@ class Setting {
         $this->db = new Database($config);
     }
 
-    public function getAll() {
-        $stmt = $this->db->query("SELECT * FROM settings");
+    public static function getAll() {
+        $model = new self();
+        $stmt = $model->db->query("SELECT * FROM settings");
         $results = $stmt->fetchAll();
         $settings = [];
         foreach ($results as $row) {
