@@ -39,11 +39,36 @@ class PurchaseController extends Controller {
     }
 
     public function store() {
+        header('Content-Type: application/json; charset=utf-8');
         $input = json_decode(file_get_contents('php://input'), true);
 
-        if (!$input) {
+        if (!$input || empty($input['items'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Invalid Data']);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'সঠিক তথ্য পাওয়া যায়নি বা কোনো পণ্য নির্বাচন করা হয়নি',
+                'message' => 'সঠিক তথ্য পাওয়া যায়নি বা কোনো পণ্য নির্বাচন করা হয়নি'
+            ]);
+            exit;
+        }
+
+        if (empty($input['vendor_id'])) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'ভেন্ডর বা সরবরাহকারী নির্বাচন করুন',
+                'message' => 'ভেন্ডর বা সরবরাহকারী নির্বাচন করুন'
+            ]);
+            exit;
+        }
+
+        if (empty($input['invoice_no'])) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'ইনভয়েস নম্বর প্রদান করুন',
+                'message' => 'ইনভয়েস নম্বর প্রদান করুন'
+            ]);
             exit;
         }
 
@@ -52,24 +77,34 @@ class PurchaseController extends Controller {
             $id = $purchaseModel->createTransaction([
                 'vendor_id' => $input['vendor_id'],
                 'invoice_no' => $input['invoice_no'],
-                'purchase_date' => $input['purchase_date'],
-                'total_amount' => $input['total_amount'],
+                'purchase_date' => $input['purchase_date'] ?? date('Y-m-d'),
+                'total_amount' => $input['total_amount'] ?? 0,
                 'notes' => $input['notes'] ?? null
             ], $input['items']);
 
-            echo json_encode(['success' => true, 'redirect' => '/sodai-dorkar/public/admin/purchases/show?id=' . $id]);
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            echo json_encode([
+                'success' => true, 
+                'message' => 'ক্রয় চালান সফলভাবে সংরক্ষণ করা হয়েছে',
+                'redirect' => $base . '/admin/purchases/show?id=' . $id
+            ]);
 
         } catch (\Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            echo json_encode([
+                'success' => false, 
+                'error' => $e->getMessage(),
+                'message' => $e->getMessage()
+            ]);
         }
         exit;
     }
 
     public function show() {
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header('Location: /sodai-dorkar/public/admin/purchases');
+            header("Location: {$base}/admin/purchases");
             exit;
         }
 
@@ -77,7 +112,7 @@ class PurchaseController extends Controller {
         $purchase = $purchaseModel->find($id);
 
         if (!$purchase) {
-             header('Location: /sodai-dorkar/public/admin/purchases');
+             header("Location: {$base}/admin/purchases");
              exit;
         }
 

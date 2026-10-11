@@ -1,6 +1,10 @@
+<?php
+// views/admin/purchases/index.php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="mb-6 flex justify-between items-center">
     <h3 class="text-lg font-bold text-secondary-800">Purchase History</h3>
-    <a href="/sodai-dorkar/public/admin/purchases/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+    <a href="<?= $base ?>/admin/purchases/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
         <ion-icon name="cart-outline" class="mr-2"></ion-icon>
         New Purchase
     </a>
@@ -25,7 +29,7 @@
                     <td class="px-6 py-4"><?php echo htmlspecialchars($p['vendor_name']); ?></td>
                     <td class="px-6 py-4 font-bold text-secondary-900">৳ <?php echo number_format($p['total_amount'], 2); ?></td>
                     <td class="px-6 py-4 text-right">
-                        <a href="/sodai-dorkar/public/admin/purchases/show?id=<?php echo $p['id']; ?>" class="text-primary-600 hover:text-primary-800 font-medium">View</a>
+                        <a href="<?= $base ?>/admin/purchases/show?id=<?php echo $p['id']; ?>" class="text-primary-600 hover:text-primary-800 font-medium">View</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

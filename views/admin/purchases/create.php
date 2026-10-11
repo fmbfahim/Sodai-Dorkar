@@ -1,9 +1,14 @@
+<?php
+// views/admin/purchases/create.php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$csrfToken = \Core\CSRF::token();
+?>
 <div class="h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6">
     <!-- Left: Product Selection for Purchase -->
     <div class="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden">
         <div class="p-4 border-b border-secondary-100 flex gap-4">
             <div class="relative flex-1">
-                <input type="text" id="productSearch" placeholder="Search product to add..." class="w-full pl-10 pr-4 py-2 bg-secondary-50 border border-secondary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <input type="text" id="productSearch" placeholder="Search product by name or SKU..." class="w-full pl-10 pr-4 py-2 bg-secondary-50 border border-secondary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary-400">
                     <ion-icon name="search-outline"></ion-icon>
                 </div>
@@ -16,10 +21,10 @@
                     <div class="product-card bg-white p-3 rounded-xl shadow-sm border border-secondary-100 cursor-pointer hover:border-primary-500 transition-all flex flex-col h-full"
                          onclick='addItem(<?php echo json_encode($p); ?>)'>
                         <h4 class="font-medium text-secondary-800 text-sm line-clamp-2 mb-1 flex-1"><?php echo htmlspecialchars($p['name']); ?></h4>
-                        <div class="text-xs text-secondary-500 mb-1"><?php echo $p['sku']; ?></div>
+                        <div class="text-xs text-secondary-500 mb-1 product-sku"><?php echo htmlspecialchars($p['sku'] ?? ''); ?></div>
                         <div class="flex justify-between items-end mt-2">
-                             <span class="text-xs">Current Stock: <?php echo $p['stock_qty']; ?></span>
-                             <span class="font-bold text-primary-600">Buy: ৳ <?php echo number_format($p['buy_price']); ?></span>
+                             <span class="text-xs text-secondary-600">Stock: <?php echo $p['stock_qty']; ?></span>
+                             <span class="font-bold text-primary-600 text-xs">Buy: ৳ <?php echo number_format($p['buy_price']); ?></span>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -79,7 +84,7 @@
                 <span class="text-secondary-800 font-bold text-lg">Total</span>
                 <span class="font-bold text-primary-600 text-xl" id="cartTotal">৳ 0.00</span>
             </div>
-            <button onclick="savePurchase()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-lg flex justify-center items-center transition-colors">
+            <button id="savePurchaseBtn" onclick="savePurchase()" class="w-full bg-primary-600 hover:bg-primary-700 active:scale-98 text-white font-bold py-3 px-4 rounded-lg flex justify-center items-center transition-all cursor-pointer shadow-sm">
                 <ion-icon name="save-outline" class="mr-2 text-lg"></ion-icon> 
                 Save Purchase
             </button>
@@ -88,6 +93,8 @@
 </div>
 
 <script>
+    const baseUrl = '<?= $base ?>';
+    const csrfToken = '<?= $csrfToken ?>';
     let cart = [];
 
     function addItem(product) {
@@ -96,7 +103,7 @@
         const existing = cart.find(i => i.id === pId);
 
         if (existing) {
-            existing.qty++;
+            existing.qty = parseFloat((existing.qty + 1).toFixed(3));
         } else {
             cart.push({
                 id: pId,
@@ -116,7 +123,7 @@
     function updateItem(id, field, value) {
         const item = cart.find(i => i.id === id);
         if (item) {
-            if (field === 'qty') item.qty = parseInt(value) || 0;
+            if (field === 'qty') item.qty = parseFloat(value) || 0;
             if (field === 'price') item.price = parseFloat(value) || 0;
             renderCart();
         }
@@ -140,13 +147,13 @@
                     <div class="font-medium text-secondary-800 line-clamp-1">${item.name}</div>
                 </td>
                 <td class="px-1 py-1">
-                    <input type="number" value="${item.qty}" min="1" onchange="updateItem(${item.id}, 'qty', this.value)" class="w-14 px-1 py-1 border border-secondary-200 rounded text-center text-xs">
+                    <input type="number" value="${item.qty}" min="0.001" step="any" onchange="updateItem(${item.id}, 'qty', this.value)" class="w-14 px-1 py-1 border border-secondary-200 rounded text-center text-xs">
                 </td>
                 <td class="px-1 py-1">
-                     <input type="number" value="${item.price}" min="0" step="0.01" onchange="updateItem(${item.id}, 'price', this.value)" class="w-20 px-1 py-1 border border-secondary-200 rounded text-right text-xs">
+                     <input type="number" value="${item.price}" min="0" step="any" onchange="updateItem(${item.id}, 'price', this.value)" class="w-20 px-1 py-1 border border-secondary-200 rounded text-right text-xs">
                 </td>
                 <td class="px-1 py-1 text-center">
-                    <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700">
+                    <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700 cursor-pointer">
                         <ion-icon name="close-circle"></ion-icon>
                     </button>
                 </td>
@@ -159,15 +166,17 @@
 
     async function savePurchase() {
         const vendorId = document.getElementById('vendorSelect').value;
-        const invoiceNo = document.getElementById('invoiceNo').value;
+        const invoiceNo = document.getElementById('invoiceNo').value.trim();
         const purchaseDate = document.getElementById('purchaseDate').value;
-        const notes = document.getElementById('purchaseNotes').value;
+        const notes = document.getElementById('purchaseNotes').value.trim();
+        const saveBtn = document.getElementById('savePurchaseBtn');
         
-        if (!vendorId) return alert('Select a vendor');
-        if (!invoiceNo) return alert('Enter invoice number');
-        if (cart.length === 0) return alert('Add products');
+        if (!vendorId) return alert('সরবরাহকারী / ভেন্ডর সিলেক্ট করুন');
+        if (!invoiceNo) return alert('ইনভয়েস নম্বর লিখুন');
+        if (cart.length === 0) return alert('কমপক্ষে একটি পণ্য যোগ করুন');
 
         const payload = {
+            csrf_token: csrfToken,
             vendor_id: vendorId,
             invoice_no: invoiceNo,
             purchase_date: purchaseDate,
@@ -180,31 +189,58 @@
             }))
         };
 
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⟳</span> সংরক্ষণ হচ্ছে...';
+        }
+
         try {
-            const res = await fetch('/sodai-dorkar/public/admin/purchases/store', {
+            const res = await fetch(`${baseUrl}/admin/purchases/store`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (err) {
+                console.error('Server response:', text);
+                throw new Error('সার্ভার থেকে সঠিক ফরম্যাটে রেসপন্স পাওয়া যায়নি');
+            }
             
             if (data.success) {
                 window.location.href = data.redirect;
             } else {
-                alert('Error: ' + data.error);
+                const errMsg = data.error || data.message || 'ক্রয় চালান সংরক্ষণ করতে সমস্যা হয়েছে';
+                alert('ত্রুটি: ' + errMsg);
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<ion-icon name="save-outline" class="mr-2 text-lg"></ion-icon> Save Purchase';
+                }
             }
         } catch (e) {
             console.error(e);
-            alert('Failed to save purchase');
+            alert('ব্যর্থ হয়েছে: ' + e.message);
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<ion-icon name="save-outline" class="mr-2 text-lg"></ion-icon> Save Purchase';
+            }
         }
     }
 
     // Search Filter
     document.getElementById('productSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
+        const term = e.target.value.toLowerCase().trim();
         document.querySelectorAll('.product-card').forEach(card => {
-            const name = card.querySelector('h4').innerText.toLowerCase();
-            card.style.display = name.includes(term) ? 'flex' : 'none';
+            const name = (card.querySelector('h4')?.innerText || '').toLowerCase();
+            const sku = (card.querySelector('.product-sku')?.innerText || '').toLowerCase();
+            card.style.display = (!term || name.includes(term) || sku.includes(term)) ? 'flex' : 'none';
         });
     });
 </script>
