@@ -25,6 +25,9 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Load global helpers
+require_once __DIR__ . '/../src/helpers.php';
+
 use Core\Router;
 use Core\Database;
 use Core\Lang;

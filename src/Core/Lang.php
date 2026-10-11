@@ -83,25 +83,17 @@ class Lang {
     }
 }
 
-/**
- * Global shortcut helper function.
- * Usage: __('key') or __('key', ['count' => 5])
- */
-function __($key, $replacements = []) {
-    return Lang::get($key, $replacements);
-}
+// Require global helper functions (formatPrice, __, etc.)
+require_once __DIR__ . '/../helpers.php';
 
-/**
- * Global price formatter.
- * If price is integer (e.g. 25.00), returns integer string ('25').
- * If price has decimals (e.g. 12.50), returns 2 decimal string ('12.50').
- */
-if (!function_exists('formatPrice')) {
+// Also provide namespace-level aliases within Core namespace if called without leading backslash
+if (!function_exists('Core\formatPrice')) {
     function formatPrice($price) {
-        $val = floatval($price);
-        if (floor($val) == $val) {
-            return number_format($val, 0);
-        }
-        return number_format($val, 2);
+        return \formatPrice($price);
+    }
+}
+if (!function_exists('Core\__')) {
+    function __($key, $replacements = []) {
+        return \__($key, $replacements);
     }
 }
