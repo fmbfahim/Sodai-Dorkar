@@ -165,16 +165,18 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                 </div>
 
                 <!-- 1-Minute Helper Callout -->
-                <div class="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs space-y-2.5">
-                    <div class="font-bold text-blue-900 flex items-center gap-1.5">
-                        <ion-icon name="information-circle" class="text-base text-blue-600 shrink-0"></ion-icon>
-                        <span>মাত্র ১ মিনিটে ফেসবুক পেজের Access Token নেওয়ার সঠিক নিয়ম:</span>
+                <div class="p-4.5 rounded-2xl bg-blue-50/80 border border-blue-200 text-xs space-y-3">
+                    <div class="font-bold text-blue-900 flex items-center gap-1.5 text-sm">
+                        <ion-icon name="information-circle" class="text-lg text-blue-600 shrink-0"></ion-icon>
+                        <span>সঠিক Page Access Token নেওয়ার নিয়ম (মাত্র ১ মিনিট):</span>
                     </div>
-                    <ol class="list-decimal list-inside space-y-1.5 text-blue-800 leading-relaxed pl-1">
-                        <li>মেটার অফিসিয়াল <a href="https://developers.facebook.com/tools/explorer" target="_blank" class="underline font-bold text-blue-950">Graph API Explorer</a> লিংকে যান।</li>
-                        <li>ডানপাশে <b>Permissions</b> সেকশনে <b>Add a Permission</b> থেকে <b>pages_manage_posts</b> ও <b>pages_read_engagement</b> পারমিশন দুটি যোগ করুন।</li>
-                        <li><b>Generate Access Token</b> বাটনে চাপ দিয়ে ফেসবুক পপ-আপে আপনার পেজটি নির্বাচন করে Confirm করুন।</li>
-                        <li>উপরে <b>User or Page</b> ড্রপডাউন থেকে আপনার <b>Page</b> টি (যেমন: Sohozsodai.com) সিলেক্ট করে উৎপন্ন হওয়া পেজ টোকেনটি কপি করে উপরের বক্সে পেস্ট করুন।</li>
+                    <ol class="list-decimal list-inside space-y-2 text-blue-900 leading-relaxed pl-1 font-medium">
+                        <li>মেটার অফিসিয়াল <a href="https://developers.facebook.com/tools/explorer" target="_blank" class="underline font-bold text-blue-950 hover:text-blue-700">Graph API Explorer</a> লিংকে যান।</li>
+                        <li>ডানপাশে <b>Permissions</b> সেকশনে <b>Add a Permission</b> থেকে <b>pages_manage_posts</b> এবং <b>pages_read_engagement</b> পারমিশন দুটি যোগ করুন।</li>
+                        <li><b>Generate Access Token</b> বাটনে চাপ দিয়ে ফেসবুক পপ-আপে আপনার পেজটি নির্বাচন করে পারমিশন Confirm করুন।</li>
+                        <li class="bg-amber-100/80 text-amber-950 p-2.5 rounded-xl border border-amber-300 font-bold">
+                            ⚠️ সবচেয়ে জরুরি ধাপ: উপরে <b>User or Page</b> ড্রপডাউনে "User Token" এর বদলে আপনার <u>Page</u> টি (যেমন: <b>Sohozsodai.com</b>) সিলেক্ট করুন। তখন যে টোকেনটি তৈরি হবে সেটিই আসল Page Access Token। সেটি কপি করে এখানে পেস্ট করুন।
+                        </li>
                     </ol>
                 </div>
 

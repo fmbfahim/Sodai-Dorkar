@@ -22,6 +22,84 @@ class FacebookService {
     }
 
     /**
+     * Ensure we have a genuine Page Access Token, converting from User Token if necessary
+     */
+    public function resolvePageAccessToken(?string $inputToken = null): ?string {
+        $token = trim((string)($inputToken ?: $this->pageAccessToken));
+        $pageId = trim((string)$this->pageId);
+
+        if (empty($token) || empty($pageId)) {
+            return null;
+        }
+
+        // 1. Check if token is already a direct Page Access Token (/me)
+        $meRes = $this->httpGet("https://graph.facebook.com/{$this->apiVersion}/me?fields=id,name&access_token=" . urlencode($token));
+        if ($meRes['success'] && !empty($meRes['data']['id'])) {
+            if ((string)$meRes['data']['id'] === (string)$pageId) {
+                return $token;
+            }
+        }
+
+        // 2. Try fetching the Page Access Token directly via /{pageId}?fields=access_token
+        $directRes = $this->httpGet("https://graph.facebook.com/{$this->apiVersion}/" . urlencode($pageId) . "?fields=access_token,name,picture&access_token=" . urlencode($token));
+        if ($directRes['success'] && !empty($directRes['data']['access_token'])) {
+            $realPageToken = $directRes['data']['access_token'];
+            $this->pageAccessToken = $realPageToken;
+            Setting::set('facebook_page_access_token', $realPageToken);
+            if (!empty($directRes['data']['name'])) {
+                Setting::set('facebook_page_name', $directRes['data']['name']);
+            }
+            if (!empty($directRes['data']['picture']['data']['url'])) {
+                Setting::set('facebook_page_picture', $directRes['data']['picture']['data']['url']);
+            }
+            return $realPageToken;
+        }
+
+        // 3. Try fetching managed pages via /me/accounts
+        $accountsRes = $this->httpGet("https://graph.facebook.com/{$this->apiVersion}/me/accounts?fields=id,name,access_token,picture&limit=100&access_token=" . urlencode($token));
+        if ($accountsRes['success'] && !empty($accountsRes['data']['data'])) {
+            foreach ($accountsRes['data']['data'] as $page) {
+                if ((string)$page['id'] === (string)$pageId && !empty($page['access_token'])) {
+                    $realPageToken = $page['access_token'];
+                    $this->pageAccessToken = $realPageToken;
+                    Setting::set('facebook_page_access_token', $realPageToken);
+                    if (!empty($page['name'])) {
+                        Setting::set('facebook_page_name', $page['name']);
+                    }
+                    if (!empty($page['picture']['data']['url'])) {
+                        Setting::set('facebook_page_picture', $page['picture']['data']['url']);
+                    }
+                    return $realPageToken;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Format Graph API error into clear actionable Bengali message
+     */
+    protected function formatErrorMessage(array $json, int $httpCode = 0): string {
+        $msg = $json['error']['message'] ?? "মেটা সার্ভার ত্রুটি (HTTP {$httpCode})";
+        $code = $json['error']['code'] ?? 0;
+
+        if ($code == 283 || str_contains($msg, 'pages_read_engagement')) {
+            return "❌ মেটা পারমিশন এরর (#283): আপনার অ্যাক্সেস টোকেনে 'pages_read_engagement' পারমিশন নেই।\n👉 সমাধান: Graph API Explorer-এ Permissions অপশন থেকে 'pages_read_engagement' ও 'pages_manage_posts' যুক্ত করুন এবং 'User or Page' ড্রপডাউনে আপনার পেজটি নির্বাচন করে Page Access Token কপি করে পেস্ট করুন।";
+        }
+
+        if ($code == 200 || str_contains($msg, 'Permissions error') || str_contains($msg, 'pages_manage_posts')) {
+            return "❌ পারমিশন এরর (#{$code}): পেজে পোস্ট করার জন্য 'pages_manage_posts' এবং 'pages_read_engagement' পারমিশন প্রয়োজন। Graph API Explorer থেকে পেজের আসল Page Access Token কপি করে পেস্ট করুন।";
+        }
+
+        if ($code == 190) {
+            return "❌ অ্যাক্সেস টোকেনের মেয়াদ শেষ হয়ে গেছে (#190)। অনুগ্রহ করে Graph API Explorer থেকে নতুন টোকেন সংগ্রহ করে পেস্ট করুন।";
+        }
+
+        return "❌ ফেসবুক ত্রুটি (#{$code}): {$msg}";
+    }
+
+    /**
      * Test connection and retrieve Facebook Page information directly from Meta
      */
     public function verifyConnection(?string $pageId = null, ?string $token = null): array {
@@ -35,35 +113,12 @@ class FacebookService {
             ];
         }
 
-        // Helper curl function
-        $fetchGraph = function(string $endpoint, array $params = []) use ($token) {
-            $params['access_token'] = $token;
-            $url = "https://graph.facebook.com/{$this->apiVersion}/" . ltrim($endpoint, '/') . '?' . http_build_query($params);
+        $this->pageId = $pageId;
 
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'SodaiDorkar/1.0 (Meta Graph API)');
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            return [
-                'code' => $httpCode,
-                'error' => $curlError,
-                'data' => json_decode($response, true) ?: []
-            ];
-        };
-
-        // 1. First, check if the token itself is already a direct Page Access Token (/me)
-        $meRes = $fetchGraph('me', ['fields' => 'id,name,link,picture']);
-        if ($meRes['code'] === 200 && !empty($meRes['data']['id'])) {
+        // 1. Check if token is already a direct Page Access Token (/me)
+        $meRes = $this->httpGet("https://graph.facebook.com/{$this->apiVersion}/me?fields=id,name,link,picture&access_token=" . urlencode($token));
+        if ($meRes['success'] && !empty($meRes['data']['id'])) {
             $meData = $meRes['data'];
-            // If /me ID matches the requested pageId, it's definitely a valid Page Access Token!
             if ((string)$meData['id'] === (string)$pageId) {
                 return [
                     'success' => true,
@@ -71,56 +126,29 @@ class FacebookService {
                     'page_name' => $meData['name'] ?? 'Facebook Page',
                     'link' => $meData['link'] ?? "https://facebook.com/{$meData['id']}",
                     'picture' => $meData['picture']['data']['url'] ?? null,
-                    'message' => "সফলভাবে ফেসবুক পেজ '{$meData['name']}' এর সাথে কানেক্ট হয়েছে!"
+                    'message' => "সফলভাবে ফেসবুক পেজ '{$meData['name']}' এর সাথে কানেক্ট হয়েছে! (Page Access Token সক্রিয়)"
                 ];
             }
         }
 
-        // 2. Try fetching the Page directly by ID (/pageId) with only safe fields (id, name, link, picture)
-        // (Do NOT include followers_count as that requires 'Page Public Metadata Access' app review)
-        $pageRes = $fetchGraph($pageId, ['fields' => 'id,name,link,picture']);
-        if ($pageRes['code'] === 200 && !empty($pageRes['data']['id'])) {
-            $pageData = $pageRes['data'];
+        // 2. Try auto-converting from User Token to genuine Page Access Token
+        $resolvedToken = $this->resolvePageAccessToken($token);
+        if ($resolvedToken) {
+            $pageName = Setting::getValue('facebook_page_name', 'Facebook Page');
+            $pagePic = Setting::getValue('facebook_page_picture', null);
             return [
                 'success' => true,
-                'page_id' => $pageData['id'],
-                'page_name' => $pageData['name'] ?? 'Facebook Page',
-                'link' => $pageData['link'] ?? "https://facebook.com/{$pageData['id']}",
-                'picture' => $pageData['picture']['data']['url'] ?? null,
-                'message' => "সফলভাবে ফেসবুক পেজ '{$pageData['name']}' এর সাথে কানেক্ট হয়েছে!"
+                'page_id' => $pageId,
+                'page_name' => $pageName,
+                'picture' => $pagePic,
+                'page_access_token' => $resolvedToken,
+                'auto_converted' => true,
+                'message' => "সফলভাবে পেজ '{$pageName}' এর সাথে কানেক্ট হয়েছে! (User Token থেকে স্বয়ংক্রিয়ভাবে আসল Page Token সক্রিয় করা হয়েছে)"
             ];
         }
 
-        // 3. If direct page access failed, maybe the user provided a User Access Token instead of Page Token!
-        // Check /me/accounts to see if this user manages the target page
-        $accountsRes = $fetchGraph('me/accounts', ['fields' => 'id,name,access_token,picture', 'limit' => 50]);
-        if ($accountsRes['code'] === 200 && !empty($accountsRes['data']['data'])) {
-            foreach ($accountsRes['data']['data'] as $account) {
-                if ((string)$account['id'] === (string)$pageId && !empty($account['access_token'])) {
-                    // Found the real Page Access Token!
-                    $actualPageToken = $account['access_token'];
-                    Setting::set('facebook_page_access_token', $actualPageToken);
-                    Setting::set('facebook_page_name', $account['name'] ?? 'Facebook Page');
-                    if (!empty($account['picture']['data']['url'])) {
-                        Setting::set('facebook_page_picture', $account['picture']['data']['url']);
-                    }
-                    $this->pageAccessToken = $actualPageToken;
-
-                    return [
-                        'success' => true,
-                        'page_id' => $account['id'],
-                        'page_name' => $account['name'] ?? 'Facebook Page',
-                        'picture' => $account['picture']['data']['url'] ?? null,
-                        'page_access_token' => $actualPageToken,
-                        'auto_converted' => true,
-                        'message' => "সফলভাবে পেজ '{$account['name']}' এর সাথে কানেক্ট হয়েছে! (User Token থেকে স্বয়ংক্রিয়ভাবে আসল Page Token নেওয়া হয়েছে)"
-                    ];
-                }
-            }
-        }
-
-        // 4. If still failed, inspect the token permissions to explain EXACTLY what's missing
-        $permRes = $fetchGraph('me/permissions');
+        // 3. If conversion failed, check permissions
+        $permRes = $this->httpGet("https://graph.facebook.com/{$this->apiVersion}/me/permissions?access_token=" . urlencode($token));
         $grantedPerms = [];
         if (!empty($permRes['data']['data'])) {
             foreach ($permRes['data']['data'] as $p) {
@@ -138,15 +166,13 @@ class FacebookService {
             $missingList = implode(', ', $missingPerms);
             return [
                 'success' => false,
-                'message' => "আপনার অ্যাক্সেস টোকেনে পেজের পারমিশন অনুপস্থিত ({$missingList})। Graph API Explorer-এ Permissions সেকশনে গিয়ে pages_manage_posts এবং pages_read_engagement যোগ করে আবার Generate Access Token বাটনে চাপুন।"
+                'message' => "❌ মেটা পারমিশন অনুপস্থিত ({$missingList}): Graph API Explorer-এ Permissions অপশনে pages_manage_posts এবং pages_read_engagement যোগ করে 'User or Page' ড্রপডাউনে আপনার পেজটি নির্বাচন করে টোকেন নিন।"
             ];
         }
 
-        // Return error message from Meta
-        $err = $pageRes['data']['error']['message'] ?? $meRes['data']['error']['message'] ?? ($pageRes['error'] ?: 'মেটা গ্রাফ এপিআই কানেক্ট করা যায়নি। পেজ আইডি বা টোকেন সঠিক কিনা যাচাই করুন।');
         return [
             'success' => false,
-            'message' => 'ফেসবুক সংযোগ ব্যর্থ: ' . $err
+            'message' => "❌ এই ফেসবুক আইডি দিয়ে পেজ (ID: {$pageId}) অ্যাক্সেস করা সম্ভব হয়নি। Graph API Explorer-এ Permissions অপশনে pages_manage_posts ও pages_read_engagement যোগ করে 'User or Page' ড্রপডাউন থেকে আপনার পেজটি (Sohozsodai.com) নির্বাচন করে টোকেন কপি করুন।"
         ];
     }
 
@@ -164,6 +190,10 @@ class FacebookService {
                 'message' => 'ফেসবুক পেজ আইডি এবং অ্যাক্সেস টোকেন কনফিগার করা নেই।'
             ];
         }
+
+        // Auto-resolve genuine Page Access Token if token is User token
+        $resolvedToken = $this->resolvePageAccessToken();
+        $tokenToUse = $resolvedToken ?: $this->pageAccessToken;
 
         $url = "https://graph.facebook.com/{$this->apiVersion}/" . urlencode($this->pageId) . "/photos";
 
@@ -183,7 +213,7 @@ class FacebookService {
 
         $postFields = [
             'message' => $caption,
-            'access_token' => $this->pageAccessToken
+            'access_token' => $tokenToUse
         ];
 
         if ($resolvedFile && file_exists($resolvedFile)) {
@@ -215,7 +245,7 @@ class FacebookService {
             ];
         }
 
-        $json = json_decode($response, true);
+        $json = json_decode($response, true) ?: [];
 
         if ($httpCode === 200 && (!empty($json['id']) || !empty($json['post_id']))) {
             $postId = $json['post_id'] ?? $json['id'];
@@ -228,10 +258,9 @@ class FacebookService {
             ];
         }
 
-        $err = $json['error']['message'] ?? "ফেসবুক প্রকাশনা ব্যর্থ (HTTP {$httpCode})";
         return [
             'success' => false,
-            'message' => $err,
+            'message' => $this->formatErrorMessage($json, $httpCode),
             'response' => $json
         ];
     }
@@ -247,14 +276,19 @@ class FacebookService {
             ];
         }
 
+        // Auto-resolve genuine Page Access Token if token is User token
+        $resolvedToken = $this->resolvePageAccessToken();
+        $tokenToUse = $resolvedToken ?: $this->pageAccessToken;
+
         $url = "https://graph.facebook.com/{$this->apiVersion}/" . urlencode($this->pageId) . "/feed";
 
         $postFields = [
             'message' => $message,
-            'access_token' => $this->pageAccessToken
+            'access_token' => $tokenToUse
         ];
 
-        if (!empty($link)) {
+        // Only attach link if it's a valid public external URL (never localhost/127.0.0.1)
+        if (!empty($link) && !str_contains($link, 'localhost') && !str_contains($link, '127.0.0.1')) {
             $postFields['link'] = $link;
         }
 
@@ -279,7 +313,7 @@ class FacebookService {
             ];
         }
 
-        $json = json_decode($response, true);
+        $json = json_decode($response, true) ?: [];
 
         if ($httpCode === 200 && (!empty($json['id']) || !empty($json['post_id']))) {
             $postId = $json['post_id'] ?? $json['id'];
@@ -292,10 +326,9 @@ class FacebookService {
             ];
         }
 
-        $err = $json['error']['message'] ?? "ফেসবুক প্রকাশনা ব্যর্থ (HTTP {$httpCode})";
         return [
             'success' => false,
-            'message' => $err,
+            'message' => $this->formatErrorMessage($json, $httpCode),
             'response' => $json
         ];
     }
@@ -322,14 +355,14 @@ class FacebookService {
         }
 
         $pageName = Setting::getValue('facebook_page_name', 'আমাদের পেজ');
-        $siteUrl = (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
         $timeStr = date('d M Y, h:i A');
 
         $message = !empty($customMessage) 
             ? $customMessage 
-            : "🛒 এটি একটি টেস্ট পোস্ট ({$timeStr})।\n\n🎉 অভিনন্দন! {$pageName}-এর সাথে আমাদের ওয়েবসাইট সরাসরি Meta Graph API-এর মাধ্যমে সফলভাবে যুক্ত হয়েছে।\n\nএখন থেকে প্রতিদিনের আকর্ষণীয় অফার ও বাজার আপডেট স্বয়ংক্রিয়ভাবে এই পেজে প্রকাশিত হবে।\n\n🔗 ওয়েবসাইট ভিজিট করুন: {$siteUrl}";
+            : "🎉 টেস্ট পোস্ট: সদাই দরকার (Sodai Dorkar) ফেসবুক অটোমেশন সংযোগ সফল হয়েছে!\n\nপেজ: {$pageName}\nসময়: {$timeStr}";
 
-        return $this->postFeed($message, $siteUrl);
+        // Post clean status message (do not attach localhost URL)
+        return $this->postFeed($message);
     }
 
     /**
