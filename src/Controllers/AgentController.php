@@ -30,10 +30,18 @@ class AgentController extends Controller {
         $areaModel = new Area();
         $allAreas = $areaModel->all();
 
+        $selectedCustomer = null;
+        $custId = (int)($_GET['customer_id'] ?? ($_GET['create_for_customer'] ?? 0));
+        if ($custId > 0) {
+            $custModel = new \Models\Customer();
+            $selectedCustomer = $custModel->find($custId);
+        }
+
         return $this->view('admin/agents/index', [
             'title' => 'ফিল্ড এজেন্ট ব্যবস্থাপনা (Field Sales Agents)',
             'agents' => $agents,
             'areas' => $allAreas,
+            'selectedCustomer' => $selectedCustomer,
             'success' => $_SESSION['success'] ?? null,
             'error' => $_SESSION['error'] ?? null
         ]);
@@ -49,6 +57,7 @@ class AgentController extends Controller {
         $password = $_POST['password'] ?? '';
         $areaIds = $_POST['area_ids'] ?? [];
         $status = $_POST['status'] ?? 'active';
+        $customerId = (int)($_POST['customer_id'] ?? 0);
 
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
@@ -58,11 +67,20 @@ class AgentController extends Controller {
             exit;
         }
 
+        // If converting a customer and no area was chosen, auto-select customer's registered area
+        if ($customerId > 0 && empty($areaIds)) {
+            $custModel = new \Models\Customer();
+            $cust = $custModel->find($customerId);
+            if (!empty($cust['area_id'])) {
+                $areaIds = [(int)$cust['area_id']];
+            }
+        }
+
         // Check duplicate username
         $userModel = new User();
         $existing = $userModel->findByUsername($username);
         if ($existing) {
-            $_SESSION['error'] = 'এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হচ্ছে';
+            $_SESSION['error'] = 'এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হচ্ছে। অন্য একটি ইউজারনেম লিখুন।';
             header("Location: {$base}/admin/agents");
             exit;
         }
@@ -83,7 +101,9 @@ class AgentController extends Controller {
                 $this->allocationModel->syncAgentAreas($userId, (array)$areaIds);
             }
 
-            $_SESSION['success'] = 'নতুন এজেন্ট সফলভাবে তৈরি হয়েছে!';
+            $_SESSION['success'] = ($customerId > 0) 
+                ? 'কাস্টমার "' . htmlspecialchars($name) . '" সফলভাবে ফিল্ড এজেন্ট হিসেবে তৈরি হয়েছেন!'
+                : 'নতুন এজেন্ট সফলভাবে তৈরি হয়েছে!';
         } catch (\Throwable $e) {
             $_SESSION['error'] = 'এজেন্ট তৈরিতে ব্যর্থ: ' . $e->getMessage();
         }

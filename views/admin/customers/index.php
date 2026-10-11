@@ -1,7 +1,10 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="mb-6 space-y-3">
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-bold text-secondary-800">Customer List</h2>
-        <a href="/sodai-dorkar/public/admin/customers/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+        <a href="<?= $base ?>/admin/customers/create" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
             <ion-icon name="person-add-outline" class="mr-2"></ion-icon>
             New Customer
         </a>
@@ -65,7 +68,7 @@
                 Filter
             </button>
             <?php if(!empty($filters['search']) || !empty($filters['area_id']) || !empty($filters['zone_id']) || !empty($filters['point_id'])): ?>
-                <a href="/sodai-dorkar/public/admin/customers" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition-colors flex items-center">
+                <a href="<?= $base ?>/admin/customers" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition-colors flex items-center">
                     <ion-icon name="close-circle-outline" class="mr-1"></ion-icon> Clear
                 </a>
             <?php endif; ?>
@@ -97,12 +100,12 @@
                         <?php $demos = json_decode($c['demographics_json'], true) ?? []; ?>
                         <tr class="hover:bg-secondary-50">
                             <td class="px-6 py-4">
-                                <a href="/sodai-dorkar/public/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-mono font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded hover:bg-primary-100 transition-colors inline-block" title="View Customer Profile">
+                                <a href="<?= $base ?>/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-mono font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded hover:bg-primary-100 transition-colors inline-block" title="View Customer Profile">
                                     <?php echo htmlspecialchars($c['unique_code']); ?>
                                 </a>
                             </td>
                             <td class="px-6 py-4">
-                                <a href="/sodai-dorkar/public/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-medium text-secondary-900 hover:text-primary-600 transition-colors block" title="View Customer Profile">
+                                <a href="<?= $base ?>/admin/customers/show?id=<?php echo $c['id']; ?>" class="font-medium text-secondary-900 hover:text-primary-600 transition-colors block" title="View Customer Profile">
                                     <?php echo htmlspecialchars($c['name']); ?>
                                 </a>
                                 <div class="text-xs text-secondary-500 flex items-center mt-1">
@@ -146,24 +149,28 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="/sodai-dorkar/public/admin/orders/create?customer_id=<?php echo $c['id']; ?>" class="text-green-600 hover:text-green-800 p-1 mr-2 inline-block" title="Create Order">
+                                <!-- Make Agent Action -->
+                                <a href="<?= $base ?>/admin/agents?customer_id=<?php echo $c['id']; ?>" class="text-teal-600 hover:text-teal-800 p-1 mr-2 inline-block" title="ফিল্ড এজেন্ট বানান (Make Agent)">
+                                    <ion-icon name="briefcase-outline" class="text-lg"></ion-icon>
+                                </a>
+                                <a href="<?= $base ?>/admin/orders/create?customer_id=<?php echo $c['id']; ?>" class="text-green-600 hover:text-green-800 p-1 mr-2 inline-block" title="Create Order">
                                     <ion-icon name="bag-add-outline" class="text-lg"></ion-icon>
                                 </a>
-                                <form action="/sodai-dorkar/public/admin/customers/generate-pin" method="POST" class="inline" title="Generate Support PIN">
-    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                <form action="<?= $base ?>/admin/customers/generate-pin" method="POST" class="inline" title="Generate Support PIN">
+                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                     <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
                                     <button type="submit" class="text-yellow-600 hover:text-yellow-800 p-1 mr-2 inline-block">
                                         <ion-icon name="key-outline" class="text-lg"></ion-icon>
                                     </button>
                                 </form>
-                                <a href="/sodai-dorkar/public/admin/customers/history?id=<?php echo $c['id']; ?>" class="text-purple-500 hover:text-purple-700 p-1 mr-2 inline-block" title="Order History">
+                                <a href="<?= $base ?>/admin/customers/history?id=<?php echo $c['id']; ?>" class="text-purple-500 hover:text-purple-700 p-1 mr-2 inline-block" title="Order History">
                                     <ion-icon name="time-outline" class="text-lg"></ion-icon>
                                 </a>
-                                <a href="/sodai-dorkar/public/admin/customers/edit?id=<?php echo $c['id']; ?>" class="text-blue-500 hover:text-blue-700 p-1 mr-2 inline-block">
+                                <a href="<?= $base ?>/admin/customers/edit?id=<?php echo $c['id']; ?>" class="text-blue-500 hover:text-blue-700 p-1 mr-2 inline-block">
                                     <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                 </a>
-                                <form action="/sodai-dorkar/public/admin/customers/delete" method="POST" onsubmit="return confirm('Delete customer?');" class="inline">
-    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                <form action="<?= $base ?>/admin/customers/delete" method="POST" onsubmit="return confirm('Delete customer?');" class="inline">
+                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                     <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
                                     <button type="submit" class="text-red-500 hover:text-red-700 p-1">
                                         <ion-icon name="trash-outline" class="text-lg"></ion-icon>

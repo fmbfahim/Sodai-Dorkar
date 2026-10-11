@@ -1,3 +1,6 @@
+<?php
+$base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+?>
 <div class="max-w-4xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
@@ -5,11 +8,15 @@
             <p class="text-sm text-secondary-500 mt-1">View all details of the customer</p>
         </div>
         <div class="flex gap-2">
-            <a href="/sodai-dorkar/public/admin/customers" class="text-secondary-600 hover:text-primary-600 bg-white border border-secondary-300 hover:bg-secondary-50 font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+            <a href="<?= $base ?>/admin/customers" class="text-secondary-600 hover:text-primary-600 bg-white border border-secondary-300 hover:bg-secondary-50 font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
                 <ion-icon name="arrow-back-outline" class="mr-2 text-xl"></ion-icon>
                 Back to List
             </a>
-            <a href="/sodai-dorkar/public/admin/customers/edit?id=<?php echo $customer['id']; ?>" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+            <a href="<?= $base ?>/admin/agents?customer_id=<?php echo $customer['id']; ?>" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-xs" title="Make this customer a Field Sales Agent">
+                <ion-icon name="briefcase-outline" class="mr-2 text-xl"></ion-icon>
+                ফিল্ড এজেন্ট বানান
+            </a>
+            <a href="<?= $base ?>/admin/customers/edit?id=<?php echo $customer['id']; ?>" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
                 <ion-icon name="create-outline" class="mr-2 text-xl"></ion-icon>
                 Edit
             </a>
@@ -117,18 +124,21 @@
                 <ion-icon name="calendar-outline" class="mr-1.5"></ion-icon>
                 Registered on: <strong class="ml-1 text-secondary-700"><?php echo date('M j, Y, g:i A', strtotime($customer['created_at'])); ?></strong>
             </div>
-            <div class="flex gap-2">
-                <form action="/sodai-dorkar/public/admin/customers/generate-pin" method="POST" class="inline" title="Generate New Support PIN">
-    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <div class="flex flex-wrap gap-2">
+                <a href="<?= $base ?>/admin/agents?customer_id=<?php echo $customer['id']; ?>" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm" title="Make this customer a Field Agent">
+                    <ion-icon name="briefcase-outline" class="mr-1.5"></ion-icon> এজেন্ট বানান
+                </a>
+                <form action="<?= $base ?>/admin/customers/generate-pin" method="POST" class="inline" title="Generate New Support PIN">
+                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                     <input type="hidden" name="id" value="<?php echo $customer['id']; ?>">
                     <button type="submit" class="bg-secondary-800 hover:bg-secondary-900 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm">
                         <ion-icon name="key-outline" class="mr-1.5"></ion-icon> Generate Support PIN
                     </button>
                 </form>
-                <a href="/sodai-dorkar/public/admin/orders/create?customer_id=<?php echo $customer['id']; ?>" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm">
+                <a href="<?= $base ?>/admin/orders/create?customer_id=<?php echo $customer['id']; ?>" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm">
                     <ion-icon name="bag-add-outline" class="mr-1.5"></ion-icon> Create Order
                 </a>
-                <a href="/sodai-dorkar/public/admin/customers/history?id=<?php echo $customer['id']; ?>" class="bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50 font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm">
+                <a href="<?= $base ?>/admin/customers/history?id=<?php echo $customer['id']; ?>" class="bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50 font-bold py-2 px-4 rounded-lg flex items-center transition-colors text-sm shadow-sm">
                     <ion-icon name="time-outline" class="mr-1.5"></ion-icon> Order History
                 </a>
             </div>

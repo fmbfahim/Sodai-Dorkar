@@ -125,10 +125,13 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
     <!-- Ionicons for icons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-secondary-50 font-sans text-secondary-900 flex min-h-screen">
 
