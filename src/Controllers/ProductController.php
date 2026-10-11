@@ -321,16 +321,90 @@ class ProductController extends Controller {
         $brandModel = new \Models\Brand();
         $brands = $brandModel->all();
 
-        // Decode variants if present
+        // Robust multi-pass decoding for variants
         $variants = [];
         if (!empty($product['unit_variants_json'])) {
-            $variants = json_decode($product['unit_variants_json'], true) ?: [];
+            $vRaw = $product['unit_variants_json'];
+            $decoded = is_string($vRaw) ? json_decode($vRaw, true) : $vRaw;
+            if (is_string($decoded)) {
+                $decoded = json_decode($decoded, true);
+            }
+            if (is_array($decoded)) {
+                $variants = $decoded;
+            }
         }
 
-        // Decode addons if present
+        // Robust multi-pass decoding for addons
         $addons = [];
         if (!empty($product['addons_json'])) {
-            $addons = json_decode($product['addons_json'], true) ?: [];
+            $aRaw = $product['addons_json'];
+            $decoded = is_string($aRaw) ? json_decode($aRaw, true) : $aRaw;
+            if (is_string($decoded)) {
+                $decoded = json_decode($decoded, true);
+            }
+            if (is_array($decoded)) {
+                $addons = $decoded;
+            }
+        }
+
+        // Smart auto-detection and ancestry chain resolution
+        $selectedCategoryId = (!empty($product['category_id']) && intval($product['category_id']) > 0) ? intval($product['category_id']) : null;
+        
+        // If product has no category assigned yet, auto-match from product title
+        if (!$selectedCategoryId && !empty($product['name'])) {
+            $matchedCat = null;
+            $maxMatchLen = 0;
+            foreach ($categories as $cat) {
+                $cName = trim($cat['name'] ?? '');
+                if (mb_strlen($cName) >= 2 && mb_stripos($product['name'], $cName) !== false) {
+                    if (mb_strlen($cName) > $maxMatchLen) {
+                        $maxMatchLen = mb_strlen($cName);
+                        $matchedCat = $cat;
+                    }
+                }
+            }
+            if ($matchedCat) {
+                $selectedCategoryId = intval($matchedCat['id']);
+                $product['category_id'] = $selectedCategoryId;
+            }
+        }
+
+        // If product has no brand assigned yet, auto-match from product title
+        if (empty($product['brand_id']) && !empty($product['name'])) {
+            $matchedBrand = null;
+            $maxBrandLen = 0;
+            foreach ($brands as $br) {
+                $bName = trim($br['name'] ?? '');
+                if (mb_strlen($bName) >= 2 && mb_stripos($product['name'], $bName) !== false) {
+                    if (mb_strlen($bName) > $maxBrandLen) {
+                        $maxBrandLen = mb_strlen($bName);
+                        $matchedBrand = $br;
+                    }
+                }
+            }
+            if ($matchedBrand) {
+                $product['brand_id'] = intval($matchedBrand['id']);
+            }
+        }
+
+        // Build server-side Category Ancestry Chain
+        $categoryChain = [];
+        if ($selectedCategoryId) {
+            $catMap = [];
+            foreach ($categories as $c) {
+                $catMap[$c['id']] = $c;
+            }
+            $curId = $selectedCategoryId;
+            $visited = [];
+            while ($curId && isset($catMap[$curId]) && !in_array($curId, $visited) && count($visited) < 20) {
+                $visited[] = $curId;
+                array_unshift($categoryChain, $catMap[$curId]);
+                $pId = !empty($catMap[$curId]['parent_id']) ? intval($catMap[$curId]['parent_id']) : 0;
+                if ($pId === $curId || $pId === 0) {
+                    break;
+                }
+                $curId = $pId;
+            }
         }
 
         $packagingUnits = (new \Models\PackagingUnit())->all();
@@ -343,7 +417,9 @@ class ProductController extends Controller {
             'brands' => $brands,
             'variants' => $variants,
             'addons' => $addons,
-            'packagingUnits' => $packagingUnits
+            'packagingUnits' => $packagingUnits,
+            'categoryChain' => $categoryChain,
+            'selectedCategoryId' => $selectedCategoryId
         ]);
     }
 
@@ -370,6 +446,23 @@ class ProductController extends Controller {
         $vendor_id = !empty($_POST['vendor_id']) ? intval($_POST['vendor_id']) : null;
         $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
         $brand_id = !empty($_POST['brand_id']) ? intval($_POST['brand_id']) : null;
+
+        // Prevent accidental wiping of existing category, brand, or vendor if left empty on update
+        if ($id) {
+            $productModel = new Product();
+            $existingProduct = $productModel->find($id);
+            if ($existingProduct) {
+                if (empty($category_id) && !empty($existingProduct['category_id'])) {
+                    $category_id = intval($existingProduct['category_id']);
+                }
+                if (empty($brand_id) && !empty($existingProduct['brand_id'])) {
+                    $brand_id = intval($existingProduct['brand_id']);
+                }
+                if (empty($vendor_id) && !empty($existingProduct['vendor_id'])) {
+                    $vendor_id = intval($existingProduct['vendor_id']);
+                }
+            }
+        }
 
         $availability_status = $_POST['availability_status'] ?? 'pending';
         $is_verified = !empty($_POST['is_verified']) ? 1 : 0;

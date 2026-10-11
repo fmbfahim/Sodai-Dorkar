@@ -30,6 +30,25 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </div>
 
     <!-- 1-Click Quick Preset Selector -->
+    <?php
+    $currentUnitType = $product['unit_type'] ?? 'piece';
+    $currentBaseUnit = strtolower(trim($product['base_unit'] ?? 'pcs'));
+    $currentPurchaseQty = floatval($product['purchase_unit_qty'] ?? 1);
+
+    // Determine active packaging preset template
+    $activePresetKey = 'piece_standard';
+    if ($currentUnitType === 'sack_kg' || ($currentBaseUnit === 'kg' && $currentPurchaseQty >= 20)) {
+        $activePresetKey = 'sack_kg';
+    } elseif ($currentUnitType === 'drum_liter' || ($currentBaseUnit === 'liter' && $currentPurchaseQty > 1)) {
+        $activePresetKey = 'drum_liter';
+    } elseif ($currentUnitType === 'box_piece' || ($currentBaseUnit === 'pcs' && $currentPurchaseQty > 1)) {
+        $activePresetKey = 'box_piece';
+    } elseif ($currentUnitType === 'loose_kg' || ($currentBaseUnit === 'kg' && $currentPurchaseQty <= 1)) {
+        $activePresetKey = 'loose_kg';
+    } elseif ($currentUnitType === 'piece' || $currentUnitType === 'piece_standard') {
+        $activePresetKey = 'piece_standard';
+    }
+    ?>
     <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-2xl p-5 mb-8 shadow-xs">
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
@@ -42,39 +61,54 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         </div>
         
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            <button type="button" onclick="applyUnitPreset('sack_kg')" 
-                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center group">
+            <button type="button" onclick="applyUnitPreset('sack_kg')" data-preset="sack_kg"
+                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl <?php echo $activePresetKey === 'sack_kg' ? 'border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm' : 'bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md'; ?> transition-all text-center relative group">
                 <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🌾</span>
                 <span class="font-bold text-xs text-secondary-800">Sack Rice / Lentils</span>
                 <span class="text-[10px] text-secondary-500 mt-0.5">50 kg Sack ➔ kg/gm</span>
+                <?php if ($activePresetKey === 'sack_kg'): ?>
+                    <span class="preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1">✓ Active Template</span>
+                <?php endif; ?>
             </button>
 
-            <button type="button" onclick="applyUnitPreset('drum_liter')" 
-                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center group">
+            <button type="button" onclick="applyUnitPreset('drum_liter')" data-preset="drum_liter"
+                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl <?php echo $activePresetKey === 'drum_liter' ? 'border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm' : 'bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md'; ?> transition-all text-center relative group">
                 <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🛢️</span>
                 <span class="font-bold text-xs text-secondary-800">Drum / Bulk Oil</span>
                 <span class="text-[10px] text-secondary-500 mt-0.5">190 L Drum ➔ Liter/ml</span>
+                <?php if ($activePresetKey === 'drum_liter'): ?>
+                    <span class="preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1">✓ Active Template</span>
+                <?php endif; ?>
             </button>
 
-            <button type="button" onclick="applyUnitPreset('box_piece')" 
-                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center group">
+            <button type="button" onclick="applyUnitPreset('box_piece')" data-preset="box_piece"
+                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl <?php echo $activePresetKey === 'box_piece' ? 'border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm' : 'bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md'; ?> transition-all text-center relative group">
                 <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">📦</span>
                 <span class="font-bold text-xs text-secondary-800">Box Soap / Biscuits</span>
                 <span class="text-[10px] text-secondary-500 mt-0.5">Box (24 pcs) ➔ pcs</span>
+                <?php if ($activePresetKey === 'box_piece'): ?>
+                    <span class="preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1">✓ Active Template</span>
+                <?php endif; ?>
             </button>
 
-            <button type="button" onclick="applyUnitPreset('loose_kg')" 
-                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center group">
+            <button type="button" onclick="applyUnitPreset('loose_kg')" data-preset="loose_kg"
+                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl <?php echo $activePresetKey === 'loose_kg' ? 'border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm' : 'bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md'; ?> transition-all text-center relative group">
                 <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">⚖️</span>
                 <span class="font-bold text-xs text-secondary-800">Loose kg & gm</span>
                 <span class="text-[10px] text-secondary-500 mt-0.5">250 gm, 500 gm, 1 kg</span>
+                <?php if ($activePresetKey === 'loose_kg'): ?>
+                    <span class="preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1">✓ Active Template</span>
+                <?php endif; ?>
             </button>
 
-            <button type="button" onclick="applyUnitPreset('piece_standard')" 
-                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center group">
+            <button type="button" onclick="applyUnitPreset('piece_standard')" data-preset="piece_standard"
+                    class="preset-btn flex flex-col items-center justify-center p-3 rounded-xl <?php echo $activePresetKey === 'piece_standard' ? 'border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm' : 'bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md'; ?> transition-all text-center relative group">
                 <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🏷️</span>
                 <span class="font-bold text-xs text-secondary-800">Standard Piece / Packet</span>
                 <span class="text-[10px] text-secondary-500 mt-0.5">1 Piece = 1 Unit</span>
+                <?php if ($activePresetKey === 'piece_standard'): ?>
+                    <span class="preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1">✓ Active Template</span>
+                <?php endif; ?>
             </button>
         </div>
     </div>
@@ -145,10 +179,95 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <span class="text-[11px] text-primary-700 font-semibold flex items-center gap-1">🔍 নাম লিখে খুঁজুন অথবা ধাপে ধাপে সিলেক্ট করুন</span>
                         </div>
                         
-                        <input type="hidden" name="category_id" id="edit_category_id" value="<?php echo htmlspecialchars($product['category_id'] ?? ''); ?>" required>
+                        <?php
+                        $leafCategory = !empty($categoryChain) ? end($categoryChain) : null;
+                        $leafCategoryName = $leafCategory ? $leafCategory['name'] : '';
+                        $breadcrumbPath = !empty($categoryChain) ? implode(' › ', array_column($categoryChain, 'name')) : '';
+                        $activeCatIdVal = $selectedCategoryId ?? ($product['category_id'] ?? '');
+                        ?>
+                        <input type="hidden" name="category_id" id="edit_category_id" value="<?php echo htmlspecialchars($activeCatIdVal); ?>" required>
                         
                         <div id="edit_category_cascading_container" class="space-y-2.5">
-                            <!-- Injected dynamically by CascadingCategorySelector JS -->
+                            <!-- Live Category Search Bar -->
+                            <div class="relative mb-3 category-search-wrapper">
+                                <div class="relative flex items-center">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary-400">
+                                        <ion-icon name="search-outline" class="text-base text-primary-600"></ion-icon>
+                                    </div>
+                                    <input type="text" 
+                                           class="category-search-input w-full pl-9 pr-9 py-2.5 bg-white border border-secondary-300 rounded-xl text-xs font-semibold placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all shadow-2xs" 
+                                           placeholder="🔍 ক্যাটাগরি বা সাব-ক্যাটাগরির নাম লিখে সরাসরি খুঁজুন (যেমন: নুডলস, তেল, চাল, মসলা)..." 
+                                           value="<?php echo htmlspecialchars($leafCategoryName); ?>"
+                                           autocomplete="off">
+                                    <button type="button" 
+                                            class="category-search-clear <?php echo !empty($leafCategoryName) ? '' : 'hidden'; ?> absolute inset-y-0 right-0 flex items-center pr-2.5 text-secondary-400 hover:text-secondary-600 cursor-pointer"
+                                            title="মুছে ফেলুন">
+                                        <ion-icon name="close-circle" class="text-lg"></ion-icon>
+                                    </button>
+                                </div>
+                                
+                                <!-- Autocomplete Dropdown List -->
+                                <div class="category-search-dropdown hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-secondary-200 rounded-xl shadow-xl divide-y divide-secondary-100 text-xs">
+                                </div>
+                            </div>
+
+                            <!-- Step-by-Step Cascading Dropdowns (Server-Side Pre-Rendered) -->
+                            <div class="category-levels-container space-y-2.5">
+                                <?php
+                                $parentFilter = null;
+                                $levelIdx = 1;
+                                $chainIds = !empty($categoryChain) ? array_column($categoryChain, 'id') : [];
+
+                                while (true) {
+                                    $children = array_filter($categories, function($c) use ($parentFilter) {
+                                        if ($parentFilter === null) {
+                                            return empty($c['parent_id']) || $c['parent_id'] == 0 || $c['parent_id'] === '0';
+                                        }
+                                        return (string)($c['parent_id'] ?? '') === (string)$parentFilter;
+                                    });
+
+                                    if (empty($children)) break;
+
+                                    $currentSelectedId = $chainIds[$levelIdx - 1] ?? null;
+                                    $lvlLabel = ($levelIdx === 1) ? '1. Primary Category:' : "{$levelIdx}. Sub-Category:";
+                                    $placeholder = ($levelIdx === 1) ? '-- Select Primary Category --' : '-- Select Sub-Category --';
+                                ?>
+                                    <div class="category-level-wrapper" data-level="<?php echo $levelIdx; ?>">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="text-[11px] font-bold text-secondary-700"><?php echo $lvlLabel; ?></label>
+                                        </div>
+                                        <div class="relative">
+                                            <select class="category-level-select w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500 appearance-none bg-white">
+                                                <option value=""><?php echo $placeholder; ?></option>
+                                                <?php foreach ($children as $child): 
+                                                    $isSel = ((string)$child['id'] === (string)$currentSelectedId);
+                                                ?>
+                                                    <option value="<?php echo $child['id']; ?>" <?php echo $isSel ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($child['name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary-400">
+                                                <ion-icon name="chevron-down-outline"></ion-icon>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php
+                                    if (!$currentSelectedId) break;
+                                    $parentFilter = $currentSelectedId;
+                                    $levelIdx++;
+                                }
+                                ?>
+                            </div>
+
+                            <!-- Breadcrumb / Status Banner (Server-Side Pre-Rendered) -->
+                            <div class="category-breadcrumb mt-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl flex items-center gap-1.5" <?php echo empty($breadcrumbPath) ? 'style="display: none;"' : ''; ?>>
+                                <ion-icon name="checkmark-circle" class="text-base text-emerald-600 flex-shrink-0"></ion-icon>
+                                <div>
+                                    <span class="font-bold text-emerald-900">Selected Category:</span>
+                                    <span class="text-secondary-900 font-semibold"><?php echo htmlspecialchars($breadcrumbPath); ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -290,29 +409,34 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                             <!-- Toggle Buttons -->
+                            <?php
+                            $currentDiscountType = $product['discount_type'] ?? 'none';
+                            $btnActive = 'py-2 px-3 text-xs font-bold rounded-xl border-2 border-primary-600 bg-primary-50 text-primary-700 shadow-2xs transition-all text-center';
+                            $btnInactive = 'py-2 px-3 text-xs font-bold rounded-xl border border-secondary-200 bg-white text-secondary-600 hover:bg-secondary-50 transition-all text-center';
+                            ?>
                             <div>
                                 <label class="block text-xs font-semibold text-secondary-700 mb-1.5">Discount Method</label>
                                 <div class="grid grid-cols-3 gap-2">
                                     <button type="button" onclick="setDiscountType('none')" id="btn-discount-none" 
-                                            class="py-2 px-3 text-xs font-bold rounded-xl border transition-all text-center">
+                                            class="<?php echo ($currentDiscountType === 'none') ? $btnActive : $btnInactive; ?>">
                                         No Discount
                                     </button>
                                     <button type="button" onclick="setDiscountType('percent')" id="btn-discount-percent" 
-                                            class="py-2 px-3 text-xs font-bold rounded-xl border transition-all text-center">
+                                            class="<?php echo ($currentDiscountType === 'percent') ? $btnActive : $btnInactive; ?>">
                                         % Percent
                                     </button>
                                     <button type="button" onclick="setDiscountType('fixed')" id="btn-discount-fixed" 
-                                            class="py-2 px-3 text-xs font-bold rounded-xl border transition-all text-center">
+                                            class="<?php echo ($currentDiscountType === 'fixed') ? $btnActive : $btnInactive; ?>">
                                         Fixed (Tk)
                                     </button>
                                 </div>
-                                <input type="hidden" id="discount_type" name="discount_type" value="<?php echo htmlspecialchars($product['discount_type'] ?? 'none'); ?>">
+                                <input type="hidden" id="discount_type" name="discount_type" value="<?php echo htmlspecialchars($currentDiscountType); ?>">
                             </div>
 
                             <!-- Discount Value Input -->
-                            <div id="discount-value-container" class="<?php echo ($product['discount_type'] ?? 'none') === 'none' ? 'opacity-50 pointer-events-none' : ''; ?>">
+                            <div id="discount-value-container" class="<?php echo ($currentDiscountType === 'none') ? 'opacity-50 pointer-events-none' : ''; ?>">
                                 <label class="block text-xs font-semibold text-secondary-700 mb-1.5">
-                                    Discount Value (<span id="discount-unit-symbol">%</span>)
+                                    Discount Value (<span id="discount-unit-symbol"><?php echo ($currentDiscountType === 'fixed') ? 'Tk' : '%'; ?></span>)
                                 </label>
                                 <div class="relative">
                                     <input type="number" step="0.01" min="0" id="discount_value" name="discount_value" 
@@ -320,7 +444,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                            oninput="onDiscountValueInput()"
                                            placeholder="0" 
                                            class="w-full px-4 py-2 bg-white border border-secondary-300 rounded-xl text-sm font-bold text-secondary-900 focus:ring-2 focus:ring-primary-500">
-                                    <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-xs font-bold text-secondary-400 pointer-events-none" id="discount-suffix">%</span>
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-xs font-bold text-secondary-400 pointer-events-none" id="discount-suffix"><?php echo ($currentDiscountType === 'fixed') ? 'Tk' : '%'; ?></span>
                                 </div>
                             </div>
                         </div>
@@ -353,6 +477,21 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <!-- 3 Unit Columns -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                         <!-- 1. Stock Base Unit -->
+                        <?php
+                        $rawBaseUnit = trim($product['base_unit'] ?? 'pcs');
+                        $cleanBaseUnit = strtolower($rawBaseUnit);
+                        $unitMap = [
+                            'piece' => 'pcs', 'pieces' => 'pcs', 'pc' => 'pcs', 'পিস' => 'pcs',
+                            'kilogram' => 'kg', 'কেজি' => 'kg',
+                            'gram' => 'gm', 'গ্রাম' => 'gm', 'g' => 'gm',
+                            'litre' => 'liter', 'লিটার' => 'liter', 'l' => 'liter', 'ltr' => 'liter',
+                            'milliliter' => 'ml', 'মিলি' => 'ml',
+                            'packet' => 'packet', 'প্যাকেট' => 'packet', 'pkt' => 'packet'
+                        ];
+                        $normalizedBaseUnit = $unitMap[$cleanBaseUnit] ?? $cleanBaseUnit;
+                        $standardUnits = ['pcs', 'kg', 'gm', 'liter', 'ml', 'packet'];
+                        $isCustomBaseUnit = !in_array($normalizedBaseUnit, $standardUnits) && !empty($rawBaseUnit);
+                        ?>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-2" for="base_unit">
                                 Stock Base Unit <span class="text-red-500">*</span>
@@ -360,12 +499,17 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <div class="relative">
                                 <select id="base_unit" name="base_unit" onchange="calculateUnitPricing()" 
                                         class="w-full px-4 py-2.5 border border-secondary-300 rounded-xl text-sm font-bold text-secondary-800 focus:ring-2 focus:ring-primary-500 bg-white appearance-none">
-                                    <option value="pcs" <?php echo ($product['base_unit'] ?? '') === 'pcs' ? 'selected' : ''; ?>>Piece (pcs)</option>
-                                    <option value="kg" <?php echo ($product['base_unit'] ?? '') === 'kg' ? 'selected' : ''; ?>>Kilogram (kg)</option>
-                                    <option value="gm" <?php echo ($product['base_unit'] ?? '') === 'gm' ? 'selected' : ''; ?>>Gram (gm)</option>
-                                    <option value="liter" <?php echo ($product['base_unit'] ?? '') === 'liter' ? 'selected' : ''; ?>>Liter (liter)</option>
-                                    <option value="ml" <?php echo ($product['base_unit'] ?? '') === 'ml' ? 'selected' : ''; ?>>Milliliter (ml)</option>
-                                    <option value="packet" <?php echo ($product['base_unit'] ?? '') === 'packet' ? 'selected' : ''; ?>>Packet (packet)</option>
+                                    <option value="pcs" <?php echo ($normalizedBaseUnit === 'pcs') ? 'selected' : ''; ?>>Piece (pcs)</option>
+                                    <option value="kg" <?php echo ($normalizedBaseUnit === 'kg') ? 'selected' : ''; ?>>Kilogram (kg)</option>
+                                    <option value="gm" <?php echo ($normalizedBaseUnit === 'gm') ? 'selected' : ''; ?>>Gram (gm)</option>
+                                    <option value="liter" <?php echo ($normalizedBaseUnit === 'liter') ? 'selected' : ''; ?>>Liter (liter)</option>
+                                    <option value="ml" <?php echo ($normalizedBaseUnit === 'ml') ? 'selected' : ''; ?>>Milliliter (ml)</option>
+                                    <option value="packet" <?php echo ($normalizedBaseUnit === 'packet') ? 'selected' : ''; ?>>Packet (packet)</option>
+                                    <?php if ($isCustomBaseUnit): ?>
+                                        <option value="<?php echo htmlspecialchars($rawBaseUnit); ?>" selected>
+                                            <?php echo htmlspecialchars($rawBaseUnit); ?> (Custom)
+                                        </option>
+                                    <?php endif; ?>
                                 </select>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-secondary-400">
                                     <ion-icon name="chevron-down-outline"></ion-icon>
@@ -375,6 +519,16 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         </div>
 
                         <!-- 2. Purchase / Bulk Unit -->
+                        <?php
+                        $savedPurchaseUnit = trim($product['purchase_unit'] ?? '');
+                        $hasMatchedUnit = false;
+                        foreach ($packagingUnits as $pu) {
+                            if (!empty($savedPurchaseUnit) && strcasecmp($savedPurchaseUnit, trim($pu['name'])) === 0) {
+                                $hasMatchedUnit = true;
+                                break;
+                            }
+                        }
+                        ?>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-2" for="purchase_unit_select">
                                 Purchase / Bulk Unit
@@ -384,10 +538,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                         class="w-full px-4 py-2.5 border border-secondary-300 rounded-xl text-sm font-bold text-secondary-800 focus:ring-2 focus:ring-primary-500 bg-white appearance-none">
                                     <option value="" data-qty="1">-- None (Single Base Unit) --</option>
                                     <?php 
-                                        $hasMatchedUnit = false;
                                         foreach ($packagingUnits as $pu): 
-                                            $isSelected = ($product['purchase_unit'] === $pu['name']);
-                                            if ($isSelected) $hasMatchedUnit = true;
+                                            $isSelected = (!empty($savedPurchaseUnit) && strcasecmp($savedPurchaseUnit, trim($pu['name'])) === 0);
                                     ?>
                                         <option value="<?php echo htmlspecialchars($pu['name']); ?>" 
                                                 data-qty="<?php echo floatval($pu['default_qty']); ?>" 
@@ -396,7 +548,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                             <?php echo htmlspecialchars($pu['name']); ?> (= <?php echo floatval($pu['default_qty']) . ' ' . $pu['base_unit']; ?>)
                                         </option>
                                     <?php endforeach; ?>
-                                    <option value="__custom__" <?php echo (!empty($product['purchase_unit']) && !$hasMatchedUnit) ? 'selected' : ''; ?>>
+                                    <option value="__custom__" <?php echo (!empty($savedPurchaseUnit) && !$hasMatchedUnit) ? 'selected' : ''; ?>>
                                         ➕ Custom Packaging Unit...
                                     </option>
                                 </select>
@@ -406,12 +558,12 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             </div>
 
                             <!-- Hidden field submitted to server -->
-                            <input type="hidden" id="purchase_unit" name="purchase_unit" value="<?php echo htmlspecialchars($product['purchase_unit'] ?? ''); ?>">
+                            <input type="hidden" id="purchase_unit" name="purchase_unit" value="<?php echo htmlspecialchars($savedPurchaseUnit); ?>">
 
                             <!-- Custom Purchase Unit input (visible when __custom__ is selected) -->
-                            <div id="custom_purchase_unit_wrapper" class="mt-2 <?php echo (!empty($product['purchase_unit']) && !$hasMatchedUnit) ? '' : 'hidden'; ?>">
+                            <div id="custom_purchase_unit_wrapper" class="mt-2 <?php echo (!empty($savedPurchaseUnit) && !$hasMatchedUnit) ? '' : 'hidden'; ?>">
                                 <input type="text" id="custom_purchase_unit_input" 
-                                       value="<?php echo htmlspecialchars($product['purchase_unit'] ?? ''); ?>"
+                                       value="<?php echo htmlspecialchars($savedPurchaseUnit); ?>"
                                        oninput="onCustomPurchaseUnitInput(this)"
                                        placeholder="Enter custom container (e.g. Barrel, Crate)" 
                                        class="w-full px-3.5 py-2 border border-primary-400 bg-primary-50/40 rounded-xl text-xs font-semibold text-secondary-800">
@@ -549,6 +701,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         </span>
                         <span class="text-secondary-400 text-[10px]">ডিফল্ট সাইজের মূল্য পরিবর্তন করলে মূল বিক্রয় মূল্যও সিঙ্ক হবে</span>
                     </div>
+                </div>
+
                 <!-- 5. Processing, Cutting & Dressing Add-ons -->
                 <div class="bg-white rounded-2xl shadow-sm border border-secondary-200/80 p-6">
                     <input type="hidden" name="addons_submitted" value="1">
@@ -767,7 +921,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
 <!-- Dynamic Calculator, Cascading Categories & Presets JavaScript -->
 <script>
-const ALL_CATEGORIES = <?php echo json_encode($categories); ?>;
+const ALL_CATEGORIES = <?php echo json_encode($categories, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 let variantCount = <?php echo count($variants); ?>;
 
 // --- CASCADING CATEGORY SELECTOR CLASS WITH LIVE SEARCH ---
@@ -776,8 +930,10 @@ class CascadingCategorySelector {
         this.container = typeof container === 'string' ? document.getElementById(container) : container;
         this.hiddenInput = typeof hiddenInput === 'string' ? document.getElementById(hiddenInput) : hiddenInput;
         this.categories = categories || [];
-        this.selectedId = initialId ? parseInt(initialId) : null;
+        this.selectedId = (initialId !== null && initialId !== undefined && initialId !== '' && initialId !== 0 && initialId !== '0') ? parseInt(initialId) : null;
         this.activeIndex = -1;
+
+        if (!this.container) return;
 
         // Precompute category full paths for searching
         this.categoryPaths = this.categories.map(c => {
@@ -800,56 +956,63 @@ class CascadingCategorySelector {
     }
 
     getCategory(id) {
-        return this.categories.find(c => c.id == id);
+        if (!id) return null;
+        return this.categories.find(c => String(c.id) === String(id));
     }
 
     getChildren(parentId) {
+        const pid = (!parentId || parentId == 0 || parentId === '0') ? null : String(parentId);
         return this.categories.filter(c => {
-            if (!parentId) return !c.parent_id || c.parent_id == 0;
-            return c.parent_id == parentId;
+            const cPid = (!c.parent_id || c.parent_id == 0 || c.parent_id === '0') ? null : String(c.parent_id);
+            return pid === null ? cPid === null : cPid === pid;
         });
     }
 
     getAncestry(id) {
+        if (!id) return [];
         const path = [];
         let cur = this.getCategory(id);
-        while (cur) {
+        const visited = new Set();
+        while (cur && !visited.has(String(cur.id)) && path.length < 20) {
+            visited.add(String(cur.id));
             path.unshift(cur);
-            cur = cur.parent_id ? this.getCategory(cur.parent_id) : null;
+            cur = (cur.parent_id && cur.parent_id != 0 && cur.parent_id !== '0') ? this.getCategory(cur.parent_id) : null;
         }
         return path;
     }
 
     initStructure() {
-        this.container.innerHTML = `
-            <!-- Live Category Search Bar -->
-            <div class="relative mb-3 category-search-wrapper">
-                <div class="relative flex items-center">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary-400">
-                        <ion-icon name="search-outline" class="text-base text-primary-600"></ion-icon>
+        if (!this.container.querySelector('.category-search-input')) {
+            this.container.innerHTML = `
+                <!-- Live Category Search Bar -->
+                <div class="relative mb-3 category-search-wrapper">
+                    <div class="relative flex items-center">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-secondary-400">
+                            <ion-icon name="search-outline" class="text-base text-primary-600"></ion-icon>
+                        </div>
+                        <input type="text" 
+                               class="category-search-input w-full pl-9 pr-9 py-2.5 bg-white border border-secondary-300 rounded-xl text-xs font-semibold placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all shadow-2xs" 
+                               placeholder="🔍 ক্যাটাগরি বা সাব-ক্যাটাগরির নাম লিখে সরাসরি খুঁজুন (যেমন: নুডলস, তেল, চাল, মসলা)..."
+                               autocomplete="off">
+                        <button type="button" 
+                                class="category-search-clear hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-secondary-400 hover:text-secondary-600 cursor-pointer"
+                                title="মুছে ফেলুন">
+                            <ion-icon name="close-circle" class="text-lg"></ion-icon>
+                        </button>
                     </div>
-                    <input type="text" 
-                           class="category-search-input w-full pl-9 pr-9 py-2.5 bg-white border border-secondary-300 rounded-xl text-xs font-semibold placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all shadow-2xs" 
-                           placeholder="🔍 ক্যাটাগরি বা সাব-ক্যাটাগরির নাম লিখে সরাসরি খুঁজুন (যেমন: নুডলস, তেল, চাল, মসলা)..."
-                           autocomplete="off">
-                    <button type="button" 
-                            class="category-search-clear hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-secondary-400 hover:text-secondary-600 cursor-pointer"
-                            title="মুছে ফেলুন">
-                        <ion-icon name="close-circle" class="text-lg"></ion-icon>
-                    </button>
+                    
+                    <!-- Autocomplete Dropdown List -->
+                    <div class="category-search-dropdown hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-secondary-200 rounded-xl shadow-xl divide-y divide-secondary-100 text-xs">
+                    </div>
                 </div>
-                
-                <!-- Autocomplete Dropdown List -->
-                <div class="category-search-dropdown hidden absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-secondary-200 rounded-xl shadow-xl divide-y divide-secondary-100 text-xs">
-                </div>
-            </div>
 
-            <!-- Step-by-Step Cascading Dropdowns -->
-            <div class="category-levels-container space-y-2.5"></div>
+                <!-- Step-by-Step Cascading Dropdowns -->
+                <div class="category-levels-container space-y-2.5"></div>
 
-            <!-- Breadcrumb / Status Banner -->
-            <div class="category-breadcrumb mt-2 text-xs px-3 py-2 rounded-xl flex items-center gap-1.5" style="display: none;"></div>
-        `;
+                <!-- Breadcrumb / Status Banner -->
+                <div class="category-breadcrumb mt-2 text-xs px-3 py-2 rounded-xl flex items-center gap-1.5" style="display: none;"></div>
+            `;
+        }
 
         this.searchInput = this.container.querySelector('.category-search-input');
         this.clearBtn = this.container.querySelector('.category-search-clear');
@@ -982,17 +1145,17 @@ class CascadingCategorySelector {
     }
 
     selectCategory(id) {
-        this.selectedId = id;
+        this.selectedId = id ? parseInt(id) : null;
         if (this.hiddenInput) {
-            this.hiddenInput.value = id;
+            this.hiddenInput.value = this.selectedId || '';
         }
 
-        const ancestry = this.getAncestry(id);
+        const ancestry = this.getAncestry(this.selectedId);
         const chain = ancestry.map(c => c.id);
 
         if (this.searchInput && ancestry.length > 0) {
             this.searchInput.value = ancestry[ancestry.length - 1].name;
-            this.clearBtn.classList.remove('hidden');
+            if (this.clearBtn) this.clearBtn.classList.remove('hidden');
         }
 
         this.hideDropdown();
@@ -1007,7 +1170,10 @@ class CascadingCategorySelector {
             chain = ancestry.map(c => c.id);
             if (this.searchInput && ancestry.length > 0) {
                 this.searchInput.value = ancestry[ancestry.length - 1].name;
-                this.clearBtn.classList.remove('hidden');
+                if (this.clearBtn) this.clearBtn.classList.remove('hidden');
+            }
+            if (this.hiddenInput) {
+                this.hiddenInput.value = this.selectedId;
             }
         }
         this.renderLevels(chain);
@@ -1015,6 +1181,7 @@ class CascadingCategorySelector {
     }
 
     renderLevels(chain) {
+        if (!this.levelsContainer) return;
         this.levelsContainer.innerHTML = '';
         let parentId = null;
         let levelIndex = 1;
@@ -1037,9 +1204,9 @@ class CascadingCategorySelector {
                     <label class="text-[11px] font-bold text-secondary-700">${labelText}</label>
                 </div>
                 <div class="relative">
-                    <select class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500 appearance-none bg-white">
+                    <select class="category-level-select w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500 appearance-none bg-white">
                         <option value="">${placeholder}</option>
-                        ${children.map(c => `<option value="${c.id}" ${c.id == currentSelected ? 'selected' : ''}>${c.name}</option>`).join('')}
+                        ${children.map(c => `<option value="${c.id}" ${String(c.id) === String(currentSelected) ? 'selected' : ''}>${this.escapeHtml(c.name)}</option>`).join('')}
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary-400">
                         <ion-icon name="chevron-down-outline"></ion-icon>
@@ -1048,8 +1215,11 @@ class CascadingCategorySelector {
             `;
 
             const selectEl = selectDiv.querySelector('select');
-            const thisLevel = levelIndex;
+            if (currentSelected) {
+                selectEl.value = String(currentSelected);
+            }
 
+            const thisLevel = levelIndex;
             selectEl.addEventListener('change', (e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 const newChain = chain.slice(0, thisLevel - 1);
@@ -1068,12 +1238,12 @@ class CascadingCategorySelector {
                     const selCat = this.getCategory(this.selectedId);
                     if (this.searchInput && selCat) {
                         this.searchInput.value = selCat.name;
-                        this.clearBtn.classList.remove('hidden');
+                        if (this.clearBtn) this.clearBtn.classList.remove('hidden');
                     }
                 } else {
                     if (this.searchInput) {
                         this.searchInput.value = '';
-                        this.clearBtn.classList.add('hidden');
+                        if (this.clearBtn) this.clearBtn.classList.add('hidden');
                     }
                 }
 
@@ -1281,6 +1451,24 @@ function applyUnitPreset(presetKey) {
 
     // Refresh labels
     updateLabels();
+
+    // Update active UI for preset buttons
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        const isCur = btn.dataset.preset === presetKey;
+        if (isCur) {
+            btn.className = 'preset-btn flex flex-col items-center justify-center p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm transition-all text-center relative group';
+            if (!btn.querySelector('.preset-active-badge')) {
+                const b = document.createElement('span');
+                b.className = 'preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1';
+                b.textContent = '✓ Active Template';
+                btn.appendChild(b);
+            }
+        } else {
+            btn.className = 'preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center relative group';
+            const b = btn.querySelector('.preset-active-badge');
+            if (b) b.remove();
+        }
+    });
 
     // Auto generate variants based on current sell_price
     const currentSell = parseFloat(document.getElementById('sell_price').value) || 0;
@@ -1673,6 +1861,9 @@ function setDiscountType(type) {
 }
 
 function updateDiscountButtonUI(type) {
+    if (type === 'percentage') type = 'percent';
+    if (type === 'flat') type = 'fixed';
+
     const btnNone = document.getElementById('btn-discount-none');
     const btnPercent = document.getElementById('btn-discount-percent');
     const btnFixed = document.getElementById('btn-discount-fixed');
@@ -1703,7 +1894,7 @@ function updateDiscountButtonUI(type) {
         if (unitSymbol) unitSymbol.textContent = '%';
         if (suffix) suffix.textContent = '%';
         const valInput = document.getElementById('discount_value');
-        if (valInput) valInput.value = '0';
+        if (valInput && document.getElementById('discount_type').value === 'none') valInput.value = '0';
     }
 }
 
@@ -1785,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'edit_category_cascading_container',
         'edit_category_id',
         ALL_CATEGORIES,
-        <?php echo json_encode($product['category_id'] ?? null); ?>
+        <?php echo json_encode($activeCatIdVal ? intval($activeCatIdVal) : null); ?>
     );
 
     updateDiscountButtonUI(document.getElementById('discount_type').value || 'none');

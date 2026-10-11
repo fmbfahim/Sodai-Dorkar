@@ -93,6 +93,8 @@ if ($isMenuActive('/admin/orders/create', true)) {
     $activeNavLabel = 'HR & Payroll';
 } elseif ($isMenuActive('/admin/users', false)) {
     $activeNavLabel = 'User Access Control';
+} elseif ($isMenuActive('/admin/marketing', false)) {
+    $activeNavLabel = 'Facebook Marketing (অটো-পোস্ট)';
 } elseif ($isMenuActive('/admin/ecommerce-settings', false)) {
     $activeNavLabel = 'E-Commerce Config';
 } elseif ($isMenuActive('/admin/settings', false)) {
@@ -453,6 +455,15 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
                     <?php endif; ?>
 
                     <?php if (\Core\Auth::can('settings')): ?>
+                        <li>
+                            <a href="<?= $base ?>/admin/marketing" class="<?= $navItemClass('/admin/marketing', false) ?> justify-between">
+                                <div class="flex items-center">
+                                    <ion-icon name="logo-facebook" class="text-lg mr-3 text-blue-600 group-hover:text-blue-700"></ion-icon>
+                                    <span class="font-bold text-secondary-900">Facebook Marketing</span>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-black">Daily 3</span>
+                            </a>
+                        </li>
                         <li>
                             <a href="<?= $base ?>/admin/ecommerce-settings" class="<?= $navItemClass('/admin/ecommerce-settings', false) ?>">
                                 <ion-icon name="storefront-outline" class="text-lg mr-3 group-hover:text-emerald-600"></ion-icon>

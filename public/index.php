@@ -338,6 +338,26 @@ $router->post('/admin/settings/units/delete', 'SettingsController@deleteUnit');
 $router->get('/admin/settings/cleanup', 'SettingsController@cleanup');
 $router->post('/admin/settings/cleanup/execute', 'SettingsController@executeCleanup');
 
+// Marketing & Facebook Automation Routes
+$router->get('/admin/marketing', 'MarketingController@index');
+$router->get('/admin/marketing/settings', 'MarketingController@settings');
+$router->post('/admin/marketing/settings/save', 'MarketingController@saveSettings');
+$router->post('/admin/marketing/generate-daily', 'MarketingController@generateDaily');
+$router->post('/admin/marketing/save-post', 'MarketingController@savePost');
+$router->post('/admin/marketing/post-to-facebook', 'MarketingController@postToFacebook');
+$router->post('/admin/marketing/delete-post', 'MarketingController@deletePost');
+$router->post('/admin/marketing/api/generate-content', 'MarketingController@apiGenerateContent');
+$router->post('/admin/marketing/api/save-banner', 'MarketingController@apiSaveBanner');
+$router->post('/admin/marketing/api/test-gemini', 'MarketingController@testGemini');
+$router->post('/admin/marketing/api/test-facebook', 'MarketingController@testFacebook');
+$router->get('/admin/marketing/facebook-auth', 'MarketingController@facebookOAuthStart');
+$router->get('/admin/marketing/facebook-callback', 'MarketingController@facebookOAuthCallback');
+$router->post('/admin/marketing/api/save-facebook-page', 'MarketingController@apiSaveFacebookPage');
+$router->post('/admin/marketing/api/fetch-facebook-pages', 'MarketingController@apiFetchPagesWithToken');
+$router->post('/admin/marketing/disconnect-facebook', 'MarketingController@disconnectFacebookPage');
+$router->get('/admin/marketing/cron-trigger', 'MarketingController@cronTrigger');
+$router->get('/cron/marketing-auto-post', 'MarketingController@cronTrigger');
+
 // Delivery Man Management Routes
 $router->get('/admin/delivery-men', 'DeliveryManController@index');
 $router->post('/admin/delivery-men/store', 'DeliveryManController@store');
