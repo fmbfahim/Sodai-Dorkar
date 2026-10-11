@@ -238,6 +238,7 @@ class MarketingController extends Controller {
      */
     public function apiGenerateContent() {
         $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json; charset=utf-8');
 
         $productId = intval($_POST['product_id'] ?? 0);
@@ -288,6 +289,7 @@ class MarketingController extends Controller {
      */
     public function apiSaveBanner() {
         $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json; charset=utf-8');
 
         $postId = intval($_POST['post_id'] ?? 0);
@@ -437,9 +439,10 @@ class MarketingController extends Controller {
      */
     public function testGemini() {
         $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json; charset=utf-8');
 
-        $apiKey = trim($_POST['gemini_api_key'] ?? '');
+        $apiKey = trim($_POST['gemini_api_key'] ?? '') ?: Setting::getValue('gemini_api_key', '');
         $gemini = new GeminiService($apiKey);
         echo json_encode($gemini->testConnection());
         exit;
@@ -450,12 +453,15 @@ class MarketingController extends Controller {
      */
     public function testFacebook() {
         $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json; charset=utf-8');
 
-        $pageId = trim($_POST['facebook_page_id'] ?? '');
-        $token = trim($_POST['facebook_page_access_token'] ?? '');
+        $pageId = trim($_POST['facebook_page_id'] ?? '') ?: Setting::getValue('facebook_page_id', '');
+        $token = trim($_POST['facebook_page_access_token'] ?? '') ?: Setting::getValue('facebook_page_access_token', '');
+        
         $fb = new FacebookService($pageId, $token);
-        echo json_encode($fb->verifyConnection());
+        $result = $fb->verifyConnection($pageId, $token);
+        echo json_encode($result);
         exit;
     }
 

@@ -98,17 +98,20 @@ $hasConnectedPage = !empty($connectedPageId) && !empty($settings['facebook_page_
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 flex-wrap shrink-0">
-                        <button type="button" onclick="testFacebookConnection()" 
-                                class="px-3.5 py-2 bg-white hover:bg-secondary-50 text-secondary-700 border border-secondary-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
-                            <ion-icon name="pulse-outline" class="text-base text-blue-600"></ion-icon>
-                            <span>কানেকশন টেস্ট</span>
-                        </button>
-                        <button type="button" onclick="confirmDisconnectFacebook()" 
-                                class="px-3 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
-                            <ion-icon name="unlink-outline" class="text-base"></ion-icon>
-                            <span>সংযোগ বিচ্ছিন্ন করুন</span>
-                        </button>
+                    <div class="flex flex-col sm:items-end gap-2 shrink-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button type="button" onclick="testFacebookConnection()" 
+                                    class="px-3.5 py-2 bg-white hover:bg-secondary-50 text-secondary-700 border border-secondary-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                                <ion-icon name="pulse-outline" class="text-base text-blue-600"></ion-icon>
+                                <span>কানেকশন টেস্ট</span>
+                            </button>
+                            <button type="button" onclick="confirmDisconnectFacebook()" 
+                                    class="px-3 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+                                <ion-icon name="unlink-outline" class="text-base"></ion-icon>
+                                <span>সংযোগ বিচ্ছিন্ন করুন</span>
+                            </button>
+                        </div>
+                        <div id="fb-top-test-result" class="text-xs font-semibold"></div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -430,27 +433,49 @@ function toggleApiKeyVisibility(id) {
  * Test Gemini Connection
  */
 async function testGeminiConnection() {
-    const key = document.getElementById('gemini_api_key').value;
+    const key = document.getElementById('gemini_api_key')?.value.trim();
     const resEl = document.getElementById('gemini-test-result');
-    resEl.innerHTML = '<span class="text-secondary-500 animate-pulse">কানেকশন পরীক্ষা করা হচ্ছে...</span>';
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
+
+    if (!key) {
+        if (resEl) resEl.innerHTML = '<span class="text-amber-600 font-bold">⚠️ অনুগ্রহ করে Gemini API Key লিখুন</span>';
+        return;
+    }
+
+    if (resEl) resEl.innerHTML = '<span class="text-secondary-500 animate-pulse flex items-center gap-1.5"><ion-icon name="sync-outline" class="animate-spin text-sm"></ion-icon> <span>কানেকশন পরীক্ষা করা হচ্ছে...</span></span>';
 
     try {
         const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
         formData.append('gemini_api_key', key);
 
         const res = await fetch('<?= $base ?>/admin/marketing/api/test-gemini', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
             body: formData
         });
-        const data = await res.json();
+
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid server response:', text);
+            const cleanErr = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().substring(0, 150);
+            if (resEl) resEl.innerHTML = `<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স ত্রুটি (${res.status}): ${cleanErr || 'অবৈধ রেসপন্স'}</span>`;
+            return;
+        }
 
         if (data.success) {
-            resEl.innerHTML = `<span class="text-emerald-700 font-bold">✅ ${data.message}</span>`;
+            if (resEl) resEl.innerHTML = `<span class="text-emerald-700 font-bold">✅ ${data.message}</span>`;
         } else {
-            resEl.innerHTML = `<span class="text-red-600 font-bold">❌ ${data.message}</span>`;
+            if (resEl) resEl.innerHTML = `<span class="text-red-600 font-bold">❌ ${data.message}</span>`;
         }
     } catch (err) {
-        resEl.innerHTML = `<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স দেয়নি: ${err.message}</span>`;
+        if (resEl) resEl.innerHTML = `<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স দেয়নি: ${err.message}</span>`;
     }
 }
 
@@ -458,40 +483,64 @@ async function testGeminiConnection() {
  * Test Facebook Connection Directly with Meta Graph API
  */
 async function testFacebookConnection() {
-    const pageId = document.getElementById('facebook_page_id')?.value.trim();
+    const pageId = document.getElementById('facebook_page_id')?.value.trim() || '<?= htmlspecialchars($connectedPageId) ?>';
     const token = document.getElementById('facebook_page_access_token')?.value.trim();
     const resEl = document.getElementById('fb-test-result');
+    const topResEl = document.getElementById('fb-top-test-result');
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
 
-    if (!pageId || !token) {
-        resEl.innerHTML = '<span class="text-amber-600 font-bold">⚠️ অনুগ্রহ করে Page ID এবং Access Token লিখুন</span>';
+    const setHtml = (html) => {
+        if (resEl) resEl.innerHTML = html;
+        if (topResEl) topResEl.innerHTML = html;
+    };
+
+    if (!pageId) {
+        setHtml('<span class="text-amber-600 font-bold">⚠️ অনুগ্রহ করে Facebook Page ID দিন</span>');
         return;
     }
 
-    resEl.innerHTML = '<span class="text-secondary-500 animate-pulse">মেটা গ্রাফ এপিআই যাচাই করা হচ্ছে...</span>';
+    setHtml('<span class="text-secondary-500 animate-pulse flex items-center gap-1.5"><ion-icon name="sync-outline" class="animate-spin text-sm"></ion-icon> <span>মেটা গ্রাফ এপিআই যাচাই করা হচ্ছে...</span></span>');
 
     try {
         const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
         formData.append('facebook_page_id', pageId);
-        formData.append('facebook_page_access_token', token);
+        if (token) {
+            formData.append('facebook_page_access_token', token);
+        }
 
         const res = await fetch('<?= $base ?>/admin/marketing/api/test-facebook', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
             body: formData
         });
-        const data = await res.json();
+
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid server response:', text);
+            const cleanErr = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().substring(0, 150);
+            setHtml(`<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স ত্রুটি (${res.status}): ${cleanErr || 'অবৈধ রেসপন্স'}</span>`);
+            return;
+        }
 
         if (data.success) {
-            resEl.innerHTML = `<span class="text-emerald-700 font-bold">✅ ${data.message} (${data.followers || 0} ফলোয়ার্স)</span>`;
+            setHtml(`<span class="text-emerald-700 font-bold">✅ ${data.message} (${data.followers || 0} ফলোয়ার্স)</span>`);
             // Auto fill Page Name if empty
             const nameInput = document.getElementById('facebook_page_name');
-            if (nameInput && !nameInput.value.trim() && data.page_name) {
+            if (nameInput && (!nameInput.value.trim() || nameInput.value === 'Facebook Page') && data.page_name) {
                 nameInput.value = data.page_name;
             }
         } else {
-            resEl.innerHTML = `<span class="text-red-600 font-bold">❌ ${data.message}</span>`;
+            setHtml(`<span class="text-red-600 font-bold">❌ ${data.message}</span>`);
         }
     } catch (err) {
-        resEl.innerHTML = `<span class="text-red-600 font-bold">❌ সংযোগ পরীক্ষা ব্যর্থ: ${err.message}</span>`;
+        setHtml(`<span class="text-red-600 font-bold">❌ সংযোগ পরীক্ষা ব্যর্থ: ${err.message}</span>`);
     }
 }
 </script>

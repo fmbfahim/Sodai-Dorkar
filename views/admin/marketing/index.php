@@ -999,15 +999,29 @@ async function saveBannerToServer() {
     statusEl.innerHTML = '<span class="text-secondary-500 animate-pulse">সার্ভারে ব্যানার আপলোড হচ্ছে...</span>';
 
     try {
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
         const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
         formData.append('post_id', postId);
         formData.append('image_base64', base64);
 
         const res = await fetch('<?= $base ?>/admin/marketing/api/save-banner', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
             body: formData
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid server response:', text);
+            statusEl.innerHTML = `<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স ত্রুটি (${res.status})</span>`;
+            return;
+        }
 
         if (data.success) {
             statusEl.innerHTML = '<span class="text-emerald-700 font-bold">✅ ব্যানার সফলভাবে সেভ হয়েছে!</span>';
@@ -1059,16 +1073,30 @@ async function generateCustomContent() {
     statusEl.innerHTML = '<span class="text-purple-600 animate-pulse">ক্যাপশন তৈরি হচ্ছে...</span>';
 
     try {
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= \Core\CSRF::token() ?>';
         const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
         formData.append('product_id', productId);
         formData.append('slot_type', slot);
         formData.append('mode', mode);
 
         const res = await fetch('<?= $base ?>/admin/marketing/api/generate-content', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
             body: formData
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid server response:', text);
+            statusEl.innerHTML = `<span class="text-red-600 font-bold">❌ সার্ভার রেসপন্স ত্রুটি (${res.status})</span>`;
+            return;
+        }
 
         if (data.success) {
             document.getElementById('custom_headline').value = data.headline;
