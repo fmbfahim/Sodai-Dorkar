@@ -42,12 +42,14 @@ class MarketingController extends Controller {
         $facebook = new FacebookService();
 
         $settings = Setting::getAll();
+        $recentPriceChanged = $productModel->getRecentPriceChangedProducts(24);
 
         return $this->view('admin/marketing/index', [
             'title' => 'Facebook Marketing Automation',
             'todayPosts' => $todayPosts,
             'recentPosts' => $recentPosts,
             'products' => $allProducts,
+            'recentPriceChanged' => $recentPriceChanged,
             'isGeminiConfigured' => $gemini->isConfigured(),
             'isFacebookConfigured' => $facebook->isConfigured(),
             'settings' => $settings
@@ -281,6 +283,125 @@ class MarketingController extends Controller {
             'caption' => $caption,
             'mode' => $mode
         ]);
+        exit;
+    }
+
+    /**
+     * API: Get products whose price has changed within last 24h (or same day)
+     */
+    public function apiGetPriceChangedProducts() {
+        $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $productModel = new Product();
+        $hours = intval($_POST['hours'] ?? 24);
+        if ($hours <= 0) $hours = 24;
+
+        $products = $productModel->getRecentPriceChangedProducts($hours);
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+        $list = [];
+        foreach ($products as $p) {
+            $sell = floatval($p['sell_price']);
+            $reg = floatval($p['regular_price'] ?? 0);
+            $hasDiscount = ($reg > $sell);
+            $discountPct = $hasDiscount ? round((($reg - $sell) / $reg) * 100) : 0;
+            $savings = $hasDiscount ? ($reg - $sell) : 0;
+            $img = !empty($p['image_path']) ? Product::getImageUrl($p['image_path'], $base) : '';
+
+            $list[] = [
+                'id' => $p['id'],
+                'name' => $p['name'],
+                'sell_price' => $sell,
+                'regular_price' => $reg,
+                'has_discount' => $hasDiscount,
+                'discount_percent' => $discountPct,
+                'savings' => $savings,
+                'unit' => $p['base_unit'] ?? 'পিস',
+                'image_url' => $img,
+                'category_name' => $p['category_name'] ?? '',
+                'price_updated_at' => $p['price_updated_at'] ?? $p['updated_at'] ?? $p['created_at']
+            ];
+        }
+
+        echo json_encode(['success' => true, 'products' => $list]);
+        exit;
+    }
+
+    /**
+     * API: Generate AI Campaign (Observance, Viral Memes, Lifestyle, Product Deals)
+     */
+    public function apiGenerateAiCampaign() {
+        $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $type = trim($_POST['type'] ?? 'observance');
+        $eventName = trim($_POST['event_name'] ?? '');
+        $userPrompt = trim($_POST['user_prompt'] ?? '');
+        $productsText = trim($_POST['products_text'] ?? '');
+        $generateImage = !empty($_POST['generate_image']);
+
+        $gemini = new GeminiService();
+        if (!$gemini->isConfigured()) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Gemini API Key সেট করা নেই! দয়া করে মার্কেটিং সেটিংস পেজে আপনার API Key দিন।'
+            ]);
+            exit;
+        }
+
+        $res = $gemini->generateCreativeCampaign($type, [
+            'event_name' => $eventName,
+            'user_prompt' => $userPrompt,
+            'products_text' => $productsText
+        ]);
+
+        if (!$res['success']) {
+            echo json_encode($res);
+            exit;
+        }
+
+        // If requested to also generate image using Google Imagen 3
+        if ($generateImage && !empty($res['visual_prompt'])) {
+            $imgRes = $gemini->generateImage($res['visual_prompt']);
+            if ($imgRes['success']) {
+                $res['image_url'] = $imgRes['image_url'];
+                $res['image_base64'] = $imgRes['base64'];
+            } else {
+                $res['image_warning'] = $imgRes['message'];
+            }
+        }
+
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * API: Generate AI Image directly using Google Imagen 3
+     */
+    public function apiGenerateAiImage() {
+        $this->requireAdmin();
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $prompt = trim($_POST['prompt'] ?? '');
+        $aspectRatio = trim($_POST['aspect_ratio'] ?? '1:1');
+
+        if (empty($prompt)) {
+            echo json_encode(['success' => false, 'message' => 'প্রম্পট খালি রাখা যাবে না!']);
+            exit;
+        }
+
+        $gemini = new GeminiService();
+        if (!$gemini->isConfigured()) {
+            echo json_encode(['success' => false, 'message' => 'Gemini API Key সেট করা নেই!']);
+            exit;
+        }
+
+        $res = $gemini->generateImage($prompt, $aspectRatio);
+        echo json_encode($res);
         exit;
     }
 

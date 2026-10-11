@@ -52,6 +52,8 @@ class Product {
                 'demand_percentage'   => "ALTER TABLE products ADD COLUMN demand_percentage INT DEFAULT 0",
                 'is_deleted'          => "ALTER TABLE products ADD COLUMN is_deleted TINYINT(1) DEFAULT 0",
                 'deleted_at'          => "ALTER TABLE products ADD COLUMN deleted_at DATETIME NULL AFTER is_deleted",
+                'updated_at'          => "ALTER TABLE products ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+                'price_updated_at'    => "ALTER TABLE products ADD COLUMN price_updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP",
             ];
 
             foreach ($columnsToAdd as $col => $alterSql) {
@@ -66,6 +68,32 @@ class Product {
             }
         } catch (\Throwable $e) {
             error_log("Product::ensureSchema failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get products whose price has been updated recently (same day / within 24h) or with active discounts
+     */
+    public function getRecentPriceChangedProducts($hours = 24) {
+        $sql = "SELECT products.*, categories.name as category_name, brands.name as brand_name 
+                FROM products
+                LEFT JOIN categories ON products.category_id = categories.id
+                LEFT JOIN brands ON products.brand_id = brands.id
+                WHERE products.is_deleted = 0 
+                  AND (
+                      (products.price_updated_at IS NOT NULL AND products.price_updated_at >= NOW() - INTERVAL :hours HOUR)
+                      OR (products.updated_at >= NOW() - INTERVAL :hours HOUR)
+                      OR (products.created_at >= NOW() - INTERVAL :hours HOUR)
+                      OR (products.regular_price > products.sell_price)
+                  )
+                ORDER BY products.price_updated_at DESC, products.updated_at DESC, products.id DESC
+                LIMIT 50";
+        try {
+            $stmt = $this->db->query($sql, ['hours' => $hours]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Fallback if columns not yet active
+            return $this->all(['limit' => 50]);
         }
     }
 
