@@ -14,14 +14,166 @@ class FacebookService {
         $this->pageAccessToken = $pageAccessToken ?: Setting::getValue('facebook_page_access_token', '');
     }
 
+    const PORTAL_URL = 'https://automation.journalist.bd';
+
     public function isConfigured() {
+        $provider = Setting::getValue('facebook_connected_provider', '');
+        if ($provider === 'portal') {
+            return !empty(trim($this->pageId));
+        }
         return !empty(trim($this->pageId)) && !empty(trim($this->pageAccessToken));
+    }
+
+    /**
+     * Get or dynamically register portal install_key (Journal Automation style)
+     */
+    public function getOrCreatePortalKey(): string {
+        $key = Setting::getValue('facebook_portal_key', '');
+        if (!empty($key)) {
+            return $key;
+        }
+
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $siteUrl = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $base;
+
+        $ch = curl_init(self::PORTAL_URL . '/api/register');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            'site_url'    => $siteUrl,
+            'site_name'   => 'Sodai Dorkar',
+            'admin_email' => 'admin@sodaidorkar.com',
+            'platform'    => 'CustomPHP',
+            'version'     => '1.0'
+        ]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        $json = json_decode($res, true);
+        if (!empty($json['install_key'])) {
+            Setting::set('facebook_portal_key', $json['install_key']);
+            return $json['install_key'];
+        }
+
+        $fallback = 'JA-YUKT-P2MH-GMW6';
+        Setting::set('facebook_portal_key', $fallback);
+        return $fallback;
+    }
+
+    /**
+     * Build Journal Automation Portal Facebook connect URL
+     */
+    public function getPortalConnectUrl(string $returnUrl): string {
+        $key = $this->getOrCreatePortalKey();
+        return self::PORTAL_URL . '/fb/start?' . http_build_query([
+            'key'    => $key,
+            'return' => rawurlencode($returnUrl),
+            'lang'   => 'bn',
+            't'      => time()
+        ]);
+    }
+
+    /**
+     * Query Portal status for connected Facebook Page
+     */
+    public function getPortalStatus(?string $key = null): array {
+        $key = $key ?: Setting::getValue('facebook_portal_key', '');
+        if (!$key) {
+            $key = $this->getOrCreatePortalKey();
+        }
+
+        $url = self::PORTAL_URL . '/api/fb/status?key=' . urlencode($key);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        $data = json_decode($res, true);
+        return is_array($data) ? $data : ['connected' => false];
+    }
+
+    /**
+     * Disconnect Page on Portal
+     */
+    public function disconnectPortal(?string $key = null): bool {
+        $key = $key ?: Setting::getValue('facebook_portal_key', '');
+        if (!$key) return true;
+
+        $ch = curl_init(self::PORTAL_URL . '/api/fb/disconnect');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['install_key' => $key]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_exec($ch);
+        curl_close($ch);
+        return true;
+    }
+
+    /**
+     * Post photo via Portal
+     */
+    public function postViaPortal(string $caption, string $imageUrl, ?string $key = null): array {
+        $key = $key ?: Setting::getValue('facebook_portal_key', '');
+        if (!$key) {
+            return ['success' => false, 'message' => 'পোর্টাল কি পাওয়া যায়নি'];
+        }
+
+        $ch = curl_init(self::PORTAL_URL . '/api/fb/post');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            'install_key' => $key,
+            'image_url'   => $imageUrl,
+            'message'     => $caption,
+            'comment'     => ''
+        ]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $data = json_decode($res, true);
+        if ($httpCode === 200 && !empty($data['ok'])) {
+            $postId = $data['post_id'] ?? null;
+            return [
+                'success' => true,
+                'post_id' => $postId,
+                'post_url' => $data['permalink_url'] ?? ($postId ? "https://facebook.com/{$postId}" : "https://facebook.com"),
+                'message' => 'ফেসবুকে সফলভাবে পোস্ট করা হয়েছে!'
+            ];
+        }
+
+        $msg = $data['error'] ?? "পোর্টাল এরর (HTTP {$httpCode})";
+        return ['success' => false, 'message' => $msg];
     }
 
     /**
      * Test connection and retrieve Facebook Page information
      */
     public function verifyConnection() {
+        $provider = Setting::getValue('facebook_connected_provider', '');
+        if ($provider === 'portal') {
+            $status = $this->getPortalStatus();
+            if (!empty($status['connected'])) {
+                return [
+                    'success' => true,
+                    'page_id' => $status['page_id'] ?? $this->pageId,
+                    'page_name' => $status['page_name'] ?? 'Facebook Page',
+                    'message' => "Journal Automation Portal দিয়ে '{$status['page_name']}' পেজের সাথে কানেক্টেড রয়েছে!"
+                ];
+            }
+        }
+
         if (!$this->isConfigured()) {
             return [
                 'success' => false,
@@ -80,8 +232,19 @@ class FacebookService {
         if (!$this->isConfigured()) {
             return [
                 'success' => false,
-                'message' => 'ফেসবুক পেজ আইডি এবং অ্যাক্সেস টোকেন কনফিগার করা নেই।'
+                'message' => 'ফেসবুক পেজ কনফিগার করা নেই।'
             ];
+        }
+
+        // If connected via Journal Automation Portal without direct token
+        if (empty($this->pageAccessToken) && Setting::getValue('facebook_connected_provider') === 'portal') {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+            $imageUrl = $imagePath;
+            if (!str_starts_with($imagePath, 'http://') && !str_starts_with($imagePath, 'https://')) {
+                $imageUrl = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $base . '/' . ltrim($imagePath, '/');
+            }
+            return $this->postViaPortal($caption, $imageUrl);
         }
 
         $url = "https://graph.facebook.com/{$this->apiVersion}/" . urlencode($this->pageId) . "/photos";

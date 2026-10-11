@@ -13,14 +13,18 @@ class Setting {
     }
 
     public static function getAll() {
-        $model = new self();
-        $stmt = $model->db->query("SELECT * FROM settings");
-        $results = $stmt->fetchAll();
-        $settings = [];
-        foreach ($results as $row) {
-            $settings[$row['key_name']] = $row['value'];
+        try {
+            $model = new self();
+            $stmt = $model->db->query("SELECT * FROM settings");
+            $results = $stmt->fetchAll();
+            $settings = [];
+            foreach ($results as $row) {
+                $settings[$row['key_name']] = $row['value'];
+            }
+            return $settings;
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $settings;
     }
 
     public function get($key, $default = null) {
@@ -30,8 +34,12 @@ class Setting {
     }
 
     public static function getValue($key, $default = null) {
-        $model = new self();
-        return $model->get($key, $default);
+        try {
+            $model = new self();
+            return $model->get($key, $default);
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 
     public function update($key, $value) {
