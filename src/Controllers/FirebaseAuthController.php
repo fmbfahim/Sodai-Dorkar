@@ -215,6 +215,7 @@ class FirebaseAuthController
         session_regenerate_id(true);
         $_SESSION['customer_id']   = $customerId;
         $_SESSION['customer_name'] = $name;
+        \Core\Auth::persistCustomerLogin($customerId);
 
         $this->redirect("$base/checkout");
     }
@@ -252,6 +253,7 @@ class FirebaseAuthController
         session_regenerate_id(true);
         $_SESSION['customer_id']   = $customer['id'];
         $_SESSION['customer_name'] = $customer['name'];
+        \Core\Auth::persistCustomerLogin($customer['id']);
 
         $redirect = $_POST['redirect'] ?? "$base/checkout";
         $this->redirect($redirect);

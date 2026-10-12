@@ -93,6 +93,8 @@ if ($isMenuActive('/admin/orders/create', true)) {
     $activeNavLabel = 'HR & Payroll';
 } elseif ($isMenuActive('/admin/users', false)) {
     $activeNavLabel = 'User Access Control';
+} elseif ($isMenuActive('/admin/notifications', false)) {
+    $activeNavLabel = 'প্রোমো পুশ নোটিফিকেশন';
 } elseif ($isMenuActive('/admin/marketing', false)) {
     $activeNavLabel = 'Facebook Marketing (অটো-পোস্ট)';
 } elseif ($isMenuActive('/admin/ecommerce-settings', false)) {
@@ -450,6 +452,18 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
                             <a href="<?= $base ?>/admin/users" class="<?= $navItemClass('/admin/users', false) ?>">
                                 <ion-icon name="shield-checkmark-outline" class="text-lg mr-3 group-hover:text-primary-600"></ion-icon>
                                 <span class="font-medium">User Access Control</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::can('notifications') || \Core\Auth::can('settings')): ?>
+                        <li>
+                            <a href="<?= $base ?>/admin/notifications" class="<?= $navItemClass('/admin/notifications', false) ?> justify-between">
+                                <div class="flex items-center">
+                                    <ion-icon name="notifications-outline" class="text-lg mr-3 text-amber-500 group-hover:text-amber-600"></ion-icon>
+                                    <span class="font-bold text-secondary-900">পুশ নোটিফিকেশন</span>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">App Push</span>
                             </a>
                         </li>
                     <?php endif; ?>

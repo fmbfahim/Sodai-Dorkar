@@ -22,6 +22,162 @@ class Auth {
         return !empty($_SESSION['user_id']) && !empty($_SESSION['role']);
     }
 
+    private static function getDb() {
+        static $db = null;
+        if ($db === null) {
+            $config = require __DIR__ . '/../../config/database.php';
+            $db = new Database($config);
+        }
+        return $db;
+    }
+
+    /**
+     * Persist customer login via secure cookie (1 year duration)
+     */
+    public static function persistCustomerLogin($customerId): void {
+        try {
+            $token = bin2hex(random_bytes(32));
+            $db = self::getDb();
+            (new \Models\Customer())->ensureSchema();
+            $db->query("UPDATE customers SET remember_token = ? WHERE id = ?", [$token, $customerId]);
+
+            $expires = time() + (365 * 86400); // 1 year
+            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie('sd_cust_remember', $token, [
+                'expires'  => $expires,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            $_COOKIE['sd_cust_remember'] = $token;
+        } catch (\Throwable $e) {
+            error_log("persistCustomerLogin error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear customer persistent login
+     */
+    public static function clearCustomerLogin(): void {
+        try {
+            if (!empty($_SESSION['customer_id'])) {
+                $db = self::getDb();
+                $db->query("UPDATE customers SET remember_token = NULL WHERE id = ?", [$_SESSION['customer_id']]);
+            }
+            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie('sd_cust_remember', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            unset($_COOKIE['sd_cust_remember']);
+        } catch (\Throwable $e) {
+            error_log("clearCustomerLogin error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Persist user (admin / rider / agent / staff) login via secure cookie (1 year duration)
+     */
+    public static function persistUserLogin($userId): void {
+        try {
+            $token = bin2hex(random_bytes(32));
+            $db = self::getDb();
+            (new \Models\User())->ensureSchema();
+            $db->query("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $userId]);
+
+            $expires = time() + (365 * 86400); // 1 year
+            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie('sd_user_remember', $token, [
+                'expires'  => $expires,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            $_COOKIE['sd_user_remember'] = $token;
+        } catch (\Throwable $e) {
+            error_log("persistUserLogin error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear user persistent login
+     */
+    public static function clearUserLogin(): void {
+        try {
+            if (!empty($_SESSION['user_id'])) {
+                $db = self::getDb();
+                $db->query("UPDATE users SET remember_token = NULL WHERE id = ?", [$_SESSION['user_id']]);
+            }
+            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie('sd_user_remember', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            unset($_COOKIE['sd_user_remember']);
+        } catch (\Throwable $e) {
+            error_log("clearUserLogin error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check cookies and restore active session if session expired or browser was reopened
+     */
+    public static function restoreSessionFromCookie($db = null): void {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = $db ?: self::getDb();
+
+        // 1. Restore Customer Session if missing
+        if (empty($_SESSION['customer_id']) && !empty($_COOKIE['sd_cust_remember'])) {
+            try {
+                (new \Models\Customer())->ensureSchema();
+                $token = $_COOKIE['sd_cust_remember'];
+                $stmt = $db->query("SELECT id, name, status FROM customers WHERE remember_token = ? LIMIT 1", [$token]);
+                $cust = $stmt->fetch();
+                if ($cust && ($cust['status'] ?? 'active') !== 'inactive') {
+                    $_SESSION['customer_id'] = (int)$cust['id'];
+                    $_SESSION['customer_name'] = $cust['name'];
+                } else {
+                    self::clearCustomerLogin();
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+        }
+
+        // 2. Restore System User (Admin / Agent / Delivery / Staff) Session if missing
+        if (empty($_SESSION['user_id']) && !empty($_COOKIE['sd_user_remember'])) {
+            try {
+                (new \Models\User())->ensureSchema();
+                $token = $_COOKIE['sd_user_remember'];
+                $stmt = $db->query("SELECT id, name, username, role, status FROM users WHERE remember_token = ? LIMIT 1", [$token]);
+                $u = $stmt->fetch();
+                if ($u && ($u['status'] ?? 'active') !== 'inactive') {
+                    $_SESSION['user_id'] = (int)$u['id'];
+                    $_SESSION['role'] = $u['role'];
+                    $_SESSION['name'] = $u['name'];
+                    $_SESSION['username'] = $u['username'];
+                    $_SESSION['permissions'] = self::userPermissions($u['id']);
+                } else {
+                    self::clearUserLogin();
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+        }
+    }
+
     /**
      * Get current user role
      */
@@ -130,7 +286,7 @@ class Auth {
                 return [
                     'dashboard', 'products', 'categories_brands', 'orders',
                     'dispatch', 'delivery_men', 'agents', 'customers', 'vendors_purchases',
-                    'locations', 'hr', 'payroll', 'reports'
+                    'locations', 'hr', 'payroll', 'reports', 'notifications'
                 ];
             case 'accountant':
                 return ['dashboard', 'vendors_purchases', 'payroll', 'reports'];
@@ -239,6 +395,12 @@ class Auth {
                     'label_bn' => 'ব্যবহারকারী ও এক্সেস কন্ট্রোল',
                     'desc' => 'Manage system users, passwords, account status, and assign granular feature permissions',
                     'icon' => 'shield-checkmark-outline'
+                ],
+                'notifications' => [
+                    'label' => 'Push Notifications',
+                    'label_bn' => 'প্রোমো ও পুশ নোটিফিকেশন',
+                    'desc' => 'Manage custom promo push notifications and in-app announcements',
+                    'icon' => 'notifications-outline'
                 ],
                 'settings' => [
                     'label' => 'Store Settings & Config',

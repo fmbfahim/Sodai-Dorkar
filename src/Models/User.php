@@ -38,6 +38,10 @@ class User {
                 $this->db->query("ALTER TABLE users ADD COLUMN permissions TEXT NULL AFTER role");
             }
 
+            if (!in_array('remember_token', $colNames)) {
+                $this->db->query("ALTER TABLE users ADD COLUMN remember_token VARCHAR(255) NULL AFTER permissions");
+            }
+
             // Ensure role enum has all roles
             $this->db->query("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'manager', 'accountant', 'staff', 'agent', 'delivery_man') NOT NULL DEFAULT 'staff'");
 

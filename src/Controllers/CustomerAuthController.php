@@ -116,6 +116,7 @@ class CustomerAuthController
                 session_regenerate_id(true);
                 $_SESSION['customer_id']   = $customer['id'];
                 $_SESSION['customer_name'] = $customer['name'];
+                \Core\Auth::persistCustomerLogin($customer['id']);
 
                 if ($isPinValid) {
                     $this->redirect("$base/checkout/reset-password");
@@ -665,6 +666,7 @@ class CustomerAuthController
         session_regenerate_id(true);
         $_SESSION['customer_id']   = $customer['id'];
         $_SESSION['customer_name'] = $customer['name'];
+        \Core\Auth::persistCustomerLogin($customer['id']);
         unset($_SESSION['forgot_password_phone'], $_SESSION['forgot_password_step']);
 
         if ($isAjax) {
@@ -711,6 +713,7 @@ class CustomerAuthController
             session_regenerate_id(true);
             $_SESSION['customer_id']   = $customer['id'];
             $_SESSION['customer_name'] = $customer['name'];
+            \Core\Auth::persistCustomerLogin($customer['id']);
             $this->redirect("$base/checkout");
         }
 
@@ -723,6 +726,7 @@ class CustomerAuthController
 
     public function logout()
     {
+        \Core\Auth::clearCustomerLogin();
         $this->startSession();
         unset($_SESSION['customer_id'], $_SESSION['customer_name']);
         $this->redirect($this->base() . '/');
@@ -810,5 +814,6 @@ class CustomerAuthController
         session_regenerate_id(true);
         $_SESSION['customer_id']   = $customerId;
         $_SESSION['customer_name'] = $name;
+        \Core\Auth::persistCustomerLogin($customerId);
     }
 }

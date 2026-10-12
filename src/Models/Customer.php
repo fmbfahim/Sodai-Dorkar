@@ -33,6 +33,7 @@ class Customer {
                 'otp_verified'     => "ALTER TABLE customers ADD COLUMN otp_verified TINYINT(1) DEFAULT 0 AFTER otp_expiry",
                 'reset_code'       => "ALTER TABLE customers ADD COLUMN reset_code VARCHAR(50) NULL AFTER otp_verified",
                 'status'           => "ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'active' AFTER reset_code",
+                'remember_token'   => "ALTER TABLE customers ADD COLUMN remember_token VARCHAR(255) NULL AFTER status",
             ];
 
             foreach ($columnsToAdd as $col => $alterSql) {

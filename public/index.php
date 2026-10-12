@@ -1,17 +1,20 @@
 <?php
 
-// ── Session must start ONCE at the very top ─────────────────────────────
+// ── Session settings: Keep user logged in persistently (1 year lifetime so closing browser never logs out) ──
+$sessionLifetime = 365 * 24 * 60 * 60; // 1 year (31,536,000 seconds)
+ini_set('session.gc_maxlifetime', (string)$sessionLifetime);
+ini_set('session.cookie_lifetime', (string)$sessionLifetime);
+
 if (session_status() === PHP_SESSION_NONE) {
-    // On live servers, ensure secure cookie settings
-    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path'     => '/',
-            'secure'   => true,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-    }
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    session_set_cookie_params([
+        'lifetime' => $sessionLifetime,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -32,6 +35,7 @@ use Core\Router;
 use Core\Database;
 use Core\Lang;
 use Core\Tracker;
+use Core\Auth;
 
 // Load Config
 $config = require __DIR__ . '/../config/database.php';
@@ -39,6 +43,9 @@ $config = require __DIR__ . '/../config/database.php';
 // Initialize Database (Global helper or Dependency Injection)
 // For simplicity in raw PHP, we might store it in a static registry or global variable
 $db = new Database($config);
+
+// Restore persistent login from secure cookies if session was cleared or browser reopened
+Auth::restoreSessionFromCookie($db);
 
 // Initialize Language
 Lang::init();
@@ -361,6 +368,21 @@ $router->post('/admin/marketing/api/fetch-facebook-pages', 'MarketingController@
 $router->post('/admin/marketing/disconnect-facebook', 'MarketingController@disconnectFacebookPage');
 $router->get('/admin/marketing/cron-trigger', 'MarketingController@cronTrigger');
 $router->get('/cron/marketing-auto-post', 'MarketingController@cronTrigger');
+
+// Promo Push Notification Routes (Admin & App API)
+$router->get('/admin/notifications', 'NotificationController@index');
+$router->get('/admin/notifications/create', 'NotificationController@create');
+$router->post('/admin/notifications/store', 'NotificationController@store');
+$router->get('/admin/notifications/edit', 'NotificationController@edit');
+$router->post('/admin/notifications/update', 'NotificationController@update');
+$router->post('/admin/notifications/delete', 'NotificationController@destroy');
+$router->post('/admin/notifications/toggle', 'NotificationController@toggleStatus');
+$router->post('/admin/notifications/broadcast', 'NotificationController@broadcast');
+
+$router->get('/api/notifications/active', 'NotificationController@apiActive');
+$router->post('/api/notifications/track-view', 'NotificationController@apiTrackView');
+$router->post('/api/notifications/track-click', 'NotificationController@apiTrackClick');
+$router->post('/api/notifications/subscribe', 'NotificationController@apiSubscribe');
 
 // Delivery Man Management Routes
 $router->get('/admin/delivery-men', 'DeliveryManController@index');

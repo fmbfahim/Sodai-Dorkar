@@ -42,6 +42,9 @@ class AuthController {
             // Cache permissions
             $_SESSION['permissions'] = Auth::userPermissions($user['id']);
 
+            // Persist login so closing the browser does not log the user out
+            Auth::persistUserLogin($user['id']);
+
             $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
             // Redirect based on role
@@ -60,6 +63,7 @@ class AuthController {
     }
 
     public function logout() {
+        Auth::clearUserLogin();
         if (session_status() === PHP_SESSION_NONE) session_start();
         session_destroy();
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';

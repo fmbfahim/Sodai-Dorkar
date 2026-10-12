@@ -35,6 +35,11 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <meta name="robots" content="noindex, nofollow">
     <?php endif; ?>
     <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
+    <link rel="manifest" href="<?= $base ?>/manifest.json">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script>window.APP_BASE = '<?= $base ?>';</script>
     <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -446,6 +451,16 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 <div id="mobile-slim-live-search-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 hidden max-h-80 overflow-y-auto"></div>
             </form>
 
+            <!-- Mobile Notification Bell -->
+            <button type="button" onclick="openPromoNotificationsDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all text-gray-700 hover:text-emerald-600 cursor-pointer" id="msh-notif-btn" title="অফার ও নোটিফিকেশন">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span id="msh-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full ring-1.5 ring-white flex items-center justify-center shadow-xs leading-none">
+                    0
+                </span>
+            </button>
+
             <!-- Cart Icon -->
             <button type="button" onclick="openCartDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all" id="msh-cart-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -562,6 +577,16 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                         </div>
                     </a>
                 <?php endif; ?>
+
+                <!-- Promo Push Notification Bell Widget (Desktop) -->
+                <button type="button" onclick="openPromoNotificationsDrawer()" class="relative p-2.5 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-gray-700 hover:text-emerald-700 transition-all flex items-center justify-center cursor-pointer group shadow-2xs" id="desktop-notif-bell" title="অফার ও নোটিফিকেশন">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 group-hover:text-emerald-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span id="desktop-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-4.5 px-1 bg-rose-600 text-white text-[10px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs animate-pulse">
+                        0
+                    </span>
+                </button>
 
                 <!-- My Cart Trigger Widget -->
                 <button type="button" onclick="openCartDrawer()" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 transition-all text-left group cursor-pointer" id="header-cart-btn">
@@ -2684,5 +2709,451 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             </form>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PROMO PUSH NOTIFICATIONS SYSTEM (DRAWER, FLOATING BANNER & PWA) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- 1. Side Drawer Backdrop -->
+    <div id="promo-drawer-backdrop" onclick="closePromoNotificationsDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+    <!-- 2. Promo Notifications Slide-over Drawer -->
+    <div id="promo-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-out flex flex-col">
+        <!-- Header -->
+        <div class="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/70 to-green-50/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 text-base sm:text-lg leading-tight">অফার ও নোটিফিকেশন</h3>
+                    <p class="text-[11px] text-gray-500 font-medium">বিশেষ ছাড় ও কাস্টম প্রোমো আপডেট</p>
+                </div>
+            </div>
+            <button type="button" onclick="closePromoNotificationsDrawer()" class="w-8 h-8 rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors cursor-pointer shadow-2xs">
+                ✕
+            </button>
+        </div>
+
+        <!-- Push Permission Activation Bar -->
+        <div id="push-permission-cta" class="p-3 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs text-amber-900 font-semibold leading-tight">
+                <span class="text-base">🔔</span>
+                <span>মোবাইল পুশ নোটিফিকেশন চালু করুন</span>
+            </div>
+            <button type="button" onclick="enablePushNotifications()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-2xs">
+                অন করুন
+            </button>
+        </div>
+
+        <!-- Notification Cards List Container -->
+        <div id="promo-notifications-list" class="flex-1 overflow-y-auto p-4 space-y-3.5 divide-y divide-gray-100">
+            <!-- Loading placeholder -->
+            <div class="text-center py-12 text-gray-400">
+                <div class="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-xs font-semibold">নোটিফিকেশন লোড হচ্ছে...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3.5 border-t border-gray-100 bg-gray-50 text-center">
+            <span class="text-[11px] text-gray-400">সদাই দরকার • সর্বস্বত্ব সংরক্ষিত</span>
+        </div>
+    </div>
+
+    <!-- 3. Floating In-App Promo Push Banner / Toast -->
+    <div id="floating-promo-banner" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-50 transform -translate-y-24 opacity-0 pointer-events-none transition-all duration-300 ease-out">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border-2 border-emerald-500 text-gray-900 relative">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-black shadow-xs">
+                        🛒
+                    </div>
+                    <div>
+                        <span id="fpb-badge" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                            🔥 বিশেষ অফার
+                        </span>
+                    </div>
+                </div>
+                <button type="button" onclick="dismissFloatingPromo()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-700 flex items-center justify-center text-xs transition-colors cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Optional Image -->
+            <div id="fpb-image-container" class="mt-2.5 rounded-xl overflow-hidden max-h-28 hidden border border-gray-200">
+                <img id="fpb-image" src="" alt="Promo" class="w-full h-full object-cover">
+            </div>
+
+            <!-- Content -->
+            <div class="mt-2">
+                <h4 id="fpb-title" class="text-xs sm:text-sm font-black text-gray-900 leading-snug"></h4>
+                <p id="fpb-message" class="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed"></p>
+            </div>
+
+            <!-- Promo Code with Copy button -->
+            <div id="fpb-code-container" class="mt-2.5 p-2 rounded-xl bg-gray-50 border border-dashed border-gray-300 flex items-center justify-between text-xs hidden">
+                <div class="flex items-center gap-1.5 font-mono font-bold text-emerald-800">
+                    <span class="text-gray-400 text-[10px]">কোড:</span>
+                    <span id="fpb-code"></span>
+                </div>
+                <button type="button" onclick="copyPromoCodeText()" id="fpb-copy-btn" class="px-2 py-1 rounded-lg bg-white border border-gray-200 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-2xs">
+                    কপি করুন
+                </button>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-3 flex items-center gap-2">
+                <a id="fpb-action-btn" href="#" onclick="handlePromoClick(event)" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-xs font-black text-center shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5">
+                    <span>অফার লুফে নিন</span>
+                    <span>➔</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT: Push Notifications, Service Worker, Drawer Logic -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <script>
+    (function() {
+        let activeNotifications = [];
+        let currentFloatingPromo = null;
+
+        // 1. Register Service Worker for PWA & Native Web Push
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register((window.APP_BASE || '') + '/sw.js')
+                    .then(reg => {
+                        console.log('SW Registered for Sodai Dorkar');
+                    })
+                    .catch(err => {
+                        console.log('SW Registration notice:', err);
+                    });
+            });
+        }
+
+        // 2. Fetch Active Promo Push Notifications
+        async function fetchActiveNotifications() {
+            try {
+                const res = await fetch((window.APP_BASE || '') + '/api/notifications/active');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data && data.success && Array.isArray(data.notifications)) {
+                    activeNotifications = data.notifications;
+                    updateNotificationBadges(activeNotifications.length);
+                    renderNotificationsList(activeNotifications);
+                    checkForFloatingPromo(activeNotifications);
+                }
+            } catch (e) {
+                console.log('Notification fetch error:', e);
+            }
+        }
+
+        // 3. Update Badges
+        function updateNotificationBadges(count) {
+            const mBadge = document.getElementById('msh-notif-badge');
+            const dBadge = document.getElementById('desktop-notif-badge');
+            
+            // Check how many are unread
+            const readList = JSON.parse(localStorage.getItem('read_promos') || '[]');
+            const unreadCount = activeNotifications.filter(n => !readList.includes(n.id)).length;
+
+            if (unreadCount > 0) {
+                if (mBadge) { mBadge.innerText = unreadCount; mBadge.classList.remove('hidden'); }
+                if (dBadge) { dBadge.innerText = unreadCount; dBadge.classList.remove('hidden'); }
+            } else {
+                if (mBadge) mBadge.classList.add('hidden');
+                if (dBadge) dBadge.classList.add('hidden');
+            }
+        }
+
+        // 4. Render Notifications Drawer List
+        function renderNotificationsList(list) {
+            const container = document.getElementById('promo-notifications-list');
+            if (!container) return;
+
+            if (!list || list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-gray-400">
+                        <div class="w-14 h-14 rounded-2xl bg-gray-50 text-gray-300 flex items-center justify-center mx-auto text-2xl mb-3 border border-gray-100">
+                            🔔
+                        </div>
+                        <p class="text-sm font-bold text-gray-700">কোনো নতুন নোটিফিকেশন নেই</p>
+                        <p class="text-xs text-gray-400 mt-1">নতুন স্পেশাল অফার এলে এখানে দেখতে পাবেন।</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const readList = JSON.parse(localStorage.getItem('read_promos') || '[]');
+
+            let html = '';
+            list.forEach(n => {
+                const isRead = readList.includes(n.id);
+                const safeTitle = escapeHtml(n.title);
+                const safeMessage = escapeHtml(n.message).replace(/\n/g, '<br>');
+                const safeBadge = escapeHtml(n.badge_text || 'স্পেশাল');
+                const safeUrl = n.action_url || (window.APP_BASE || '') + '/shop';
+
+                html += `
+                    <div class="pt-3.5 first:pt-0 group">
+                        <div class="p-3.5 rounded-2xl border transition-all ${isRead ? 'bg-white border-gray-200/80' : 'bg-emerald-50/40 border-emerald-200 shadow-xs'}">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                                    ${safeBadge}
+                                </span>
+                                <span class="text-[10px] text-gray-400 font-medium">${n.time_ago || ''}</span>
+                            </div>
+
+                            ${n.image_url ? `
+                                <div class="my-2 rounded-xl overflow-hidden max-h-32 border border-gray-100">
+                                    <img src="${escapeHtml(n.image_url)}" alt="Promo" class="w-full h-full object-cover">
+                                </div>
+                            ` : ''}
+
+                            <h4 class="text-xs sm:text-sm font-black text-gray-900 leading-snug">${safeTitle}</h4>
+                            <p class="text-[11px] text-gray-600 mt-1 leading-relaxed">${safeMessage}</p>
+
+                            ${n.promo_code ? `
+                                <div class="mt-2.5 p-1.5 px-2 rounded-lg bg-gray-50 border border-dashed border-gray-300 flex items-center justify-between text-xs">
+                                    <div class="font-mono font-bold text-emerald-800">
+                                        <span class="text-[10px] text-gray-400">কোড: </span>
+                                        <span>${escapeHtml(n.promo_code)}</span>
+                                    </div>
+                                    <button type="button" onclick="copyPromoCode('${escapeHtml(n.promo_code)}', this)" class="text-[10px] font-bold text-emerald-700 bg-white border border-gray-200 px-2 py-0.5 rounded shadow-2xs hover:bg-emerald-50 transition-colors">
+                                        কপি করুন
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            <div class="mt-3 flex items-center justify-between gap-2">
+                                <a href="${safeUrl}" onclick="recordPromoClick(${n.id})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all shadow-xs">
+                                    <span>অফার দেখুন</span>
+                                    <span>➔</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 5. Check & Show In-App Floating Promo Banner
+        function checkForFloatingPromo(list) {
+            if (!list || list.length === 0) return;
+            
+            // Find the latest active notification not yet dismissed
+            const latest = list.find(n => {
+                return !localStorage.getItem('dismissed_promo_' + n.id);
+            });
+
+            if (!latest) return;
+            currentFloatingPromo = latest;
+
+            // Record impression in DB
+            fetch((window.APP_BASE || '') + '/api/notifications/track-view?id=' + latest.id, { method: 'POST' }).catch(() => {});
+
+            // Display floating card
+            const banner = document.getElementById('floating-promo-banner');
+            const bBadge = document.getElementById('fpb-badge');
+            const bTitle = document.getElementById('fpb-title');
+            const bMsg = document.getElementById('fpb-message');
+            const bImgContainer = document.getElementById('fpb-image-container');
+            const bImg = document.getElementById('fpb-image');
+            const bCodeContainer = document.getElementById('fpb-code-container');
+            const bCode = document.getElementById('fpb-code');
+            const bBtn = document.getElementById('fpb-action-btn');
+
+            if (bBadge) bBadge.innerText = latest.badge_text || '🔥 বিশেষ অফার';
+            if (bTitle) bTitle.innerText = latest.title;
+            if (bMsg) bMsg.innerText = latest.message;
+
+            if (latest.image_url && bImg && bImgContainer) {
+                bImg.src = latest.image_url;
+                bImgContainer.classList.remove('hidden');
+            } else if (bImgContainer) {
+                bImgContainer.classList.add('hidden');
+            }
+
+            if (latest.promo_code && bCode && bCodeContainer) {
+                bCode.innerText = latest.promo_code;
+                bCodeContainer.classList.remove('hidden');
+            } else if (bCodeContainer) {
+                bCodeContainer.classList.add('hidden');
+            }
+
+            if (bBtn) {
+                bBtn.setAttribute('data-id', latest.id);
+                bBtn.setAttribute('data-url', latest.action_url || ((window.APP_BASE || '') + '/shop'));
+            }
+
+            if (banner) {
+                setTimeout(() => {
+                    banner.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+                    banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                }, 1200);
+            }
+
+            // Also show native notification if permission granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(latest.title, {
+                        body: latest.message,
+                        icon: latest.image_url || ((window.APP_BASE || '') + '/images/default-product.png'),
+                        tag: 'sodai-promo-' + latest.id
+                    });
+                } catch(e) {}
+            }
+        }
+
+        // 6. Native Push Notification Permission Flow
+        window.enablePushNotifications = function() {
+            if (!('Notification' in window)) {
+                alert('আপনার ব্রাউজার বা ডিভাইসে পুশ নোটিফিকেশন সাপোর্ট নেই।');
+                return;
+            }
+
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    // Update CTA bar
+                    const cta = document.getElementById('push-permission-cta');
+                    if (cta) cta.classList.add('hidden');
+
+                    // Subscribe via Service Worker if available
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+                        navigator.serviceWorker.ready.then(reg => {
+                            // Test Notification
+                            reg.showNotification('🎉 স্বাগতম!', {
+                                body: 'সদাই দরকারের পুশ নোটিফিকেশন সক্রিয় হয়েছে। আকর্ষণীয় অফার সবার আগে পাবেন!',
+                                icon: (window.APP_BASE || '') + '/images/default-product.png',
+                                tag: 'welcome-notification'
+                            });
+                        });
+                    } else {
+                        new Notification('🎉 স্বাগতম!', {
+                            body: 'সদাই দরকারের পুশ নোটিফিকেশন সক্রিয় হয়েছে।',
+                            icon: (window.APP_BASE || '') + '/images/default-product.png'
+                        });
+                    }
+
+                    if (typeof showToast === 'function') {
+                        showToast('মোবাইল পুশ নোটিফিকেশন সফলভাবে চালু করা হয়েছে!');
+                    }
+                } else {
+                    alert('নোটিফিকেশন পারমিশন দেওয়া হয়নি। ব্রাউজার সেটিং থেকে পারমিশন এলাও করুন।');
+                }
+            });
+        };
+
+        // 7. Drawer Open/Close
+        window.openPromoNotificationsDrawer = function() {
+            const backdrop = document.getElementById('promo-drawer-backdrop');
+            const drawer = document.getElementById('promo-drawer');
+            if (backdrop && drawer) {
+                backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                backdrop.classList.add('opacity-100', 'pointer-events-auto');
+                drawer.classList.remove('translate-x-full');
+                drawer.classList.add('translate-x-0');
+
+                // Mark current as read in local storage
+                if (activeNotifications.length > 0) {
+                    const ids = activeNotifications.map(n => n.id);
+                    localStorage.setItem('read_promos', JSON.stringify(ids));
+                    updateNotificationBadges(0);
+                }
+
+                // Check permission state for CTA banner
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const cta = document.getElementById('push-permission-cta');
+                    if (cta) cta.classList.add('hidden');
+                }
+            }
+        };
+
+        window.closePromoNotificationsDrawer = function() {
+            const backdrop = document.getElementById('promo-drawer-backdrop');
+            const drawer = document.getElementById('promo-drawer');
+            if (backdrop && drawer) {
+                backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
+                drawer.classList.remove('translate-x-0');
+                drawer.classList.add('translate-x-full');
+            }
+        };
+
+        // 8. Dismiss Floating Promo
+        window.dismissFloatingPromo = function() {
+            const banner = document.getElementById('floating-promo-banner');
+            if (banner) {
+                banner.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+                banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            }
+            if (currentFloatingPromo) {
+                localStorage.setItem('dismissed_promo_' + currentFloatingPromo.id, '1');
+            }
+        };
+
+        // 9. Floating Promo Click Handler
+        window.handlePromoClick = function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('fpb-action-btn');
+            if (!btn) return;
+
+            const id = btn.getAttribute('data-id');
+            const url = btn.getAttribute('data-url') || ((window.APP_BASE || '') + '/shop');
+
+            if (id) {
+                recordPromoClick(id);
+                localStorage.setItem('dismissed_promo_' + id, '1');
+            }
+            window.location.href = url;
+        };
+
+        window.recordPromoClick = function(id) {
+            if (!id) return;
+            fetch((window.APP_BASE || '') + '/api/notifications/track-click?id=' + encodeURIComponent(id), {
+                method: 'POST'
+            }).catch(() => {});
+        };
+
+        // 10. Copy promo code
+        window.copyPromoCode = function(code, btn) {
+            navigator.clipboard.writeText(code).then(() => {
+                const old = btn.innerText;
+                btn.innerText = 'কপি হয়েছে! ✓';
+                btn.classList.add('bg-emerald-100', 'text-emerald-800');
+                setTimeout(() => {
+                    btn.innerText = old;
+                    btn.classList.remove('bg-emerald-100', 'text-emerald-800');
+                }, 2000);
+            });
+        };
+
+        window.copyPromoCodeText = function() {
+            if (!currentFloatingPromo || !currentFloatingPromo.promo_code) return;
+            const btn = document.getElementById('fpb-copy-btn');
+            navigator.clipboard.writeText(currentFloatingPromo.promo_code).then(() => {
+                if (btn) {
+                    btn.innerText = 'কপি হয়েছে! ✓';
+                    setTimeout(() => { btn.innerText = 'কপি করুন'; }, 2000);
+                }
+            });
+        };
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.toString().replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Initialize fetch on load
+        fetchActiveNotifications();
+    })();
+    </script>
 </body>
 </html>
