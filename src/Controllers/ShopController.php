@@ -1350,6 +1350,10 @@ class ShopController {
                 try {
                     $trackOrderModel = new \Models\Order();
                     $trackOrderModel->addTrackingLog($orderId, 'pending', 'Consignment created by Customer (Web).');
+
+                    // Notify Customer: New Order Placed
+                    $pushModel = new \Models\PushNotification();
+                    $pushModel->sendOrderStatusNotification((int)$orderId, 'pending', 'অর্ডার সফলভাবে তৈরি হয়েছে।');
                 } catch (\Exception $ex) {}
 
                 // Recalculate Product Demand (On-Demand Feature)
@@ -1535,6 +1539,14 @@ class ShopController {
 
             $pdo->commit();
             unset($_SESSION['cart']);
+
+            // Send Realtime Order Status Push Notification to Customer
+            try {
+                $pushModel = new \Models\PushNotification();
+                $pushModel->sendOrderStatusNotification((int)$orderId, 'pending', 'অর্ডার সফলভাবে তৈরি হয়েছে।');
+            } catch (\Throwable $ex) {
+                error_log("fastOrder notification error: " . $ex->getMessage());
+            }
 
             echo json_encode([
                 'status' => 'success',

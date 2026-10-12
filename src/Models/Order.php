@@ -172,7 +172,16 @@ class Order {
             'status' => $status,
             'id' => $id
         ]);
-        $this->addTrackingLog($id, $status, "Consignment status has been updated as " . ucfirst($status));
+        $msg = "Consignment status has been updated as " . ucfirst($status);
+        $this->addTrackingLog($id, $status, $msg);
+
+        // Send Realtime Order Status Push Notification to Customer
+        try {
+            $pushModel = new \Models\PushNotification();
+            $pushModel->sendOrderStatusNotification((int)$id, $status, $msg);
+        } catch (\Throwable $ex) {
+            error_log("Order updateStatus notification error: " . $ex->getMessage());
+        }
     }
 
     public function updateDeliveryStatus($id, $status, $paymentMethod = 'cash', $trxId = null, $cancelReason = null, $deliveryDiscount = 0, $amountChangeReason = null, $riderNote = null) {
@@ -221,6 +230,14 @@ class Order {
             $msg = "Consignment has been returned.";
         }
         $this->addTrackingLog($id, $status, $msg);
+
+        // Send Realtime Order Status Push Notification to Customer
+        try {
+            $pushModel = new \Models\PushNotification();
+            $pushModel->sendOrderStatusNotification((int)$id, $status, $msg);
+        } catch (\Throwable $ex) {
+            error_log("Order updateStatus notification error: " . $ex->getMessage());
+        }
     }
 
     public function restoreOrderStock($orderId) {

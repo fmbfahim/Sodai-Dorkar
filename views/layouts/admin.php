@@ -534,10 +534,12 @@ $navItemClass = function($path, $exact = false, $isSub = false) use ($isMenuActi
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <h1 class="text-xl md:text-2xl font-bold text-secondary-800"><?php echo $title ?? 'Dashboard'; ?></h1>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold border border-primary-200 shadow-2xs">
-                            <span class="w-1.5 h-1.5 rounded-full bg-primary-600 animate-pulse"></span>
-                            <span><?= htmlspecialchars($activeNavLabel) ?></span>
-                        </span>
+                        <?php if (!empty($activeNavLabel) && trim(mb_strtolower($activeNavLabel)) !== trim(mb_strtolower($title ?? ''))): ?>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold border border-primary-200 shadow-2xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary-600 animate-pulse"></span>
+                                <span><?= htmlspecialchars($activeNavLabel) ?></span>
+                            </span>
+                        <?php endif; ?>
                     </div>
                     <p class="text-secondary-500 text-xs mt-0.5 hidden md:block">Logged in as <strong class="text-secondary-800"><?= htmlspecialchars($currentUserName) ?></strong> (<?= htmlspecialchars($displayRole) ?>)</p>
                 </div>

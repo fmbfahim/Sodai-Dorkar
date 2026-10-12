@@ -32,6 +32,7 @@ ob_start();
         <!-- Form Section -->
         <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-secondary-200/80 shadow-xs">
             <form action="<?= $base ?>/admin/marketing/coupons/store" method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                 
                 <!-- Code & Generate Button -->
                 <div>

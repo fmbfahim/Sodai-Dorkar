@@ -25,9 +25,12 @@ class Router {
         $method = $_SERVER['REQUEST_METHOD'];
         $callback = $this->routes[$method][$path] ?? false;
 
-        // Apply global middleware (CSRF)
+        // Apply global middleware (CSRF for web forms, excluding public /api/ endpoints)
         if ($method === 'POST') {
-            \Core\Middleware::verifyCsrf();
+            $isApiRoute = (strpos($path, '/api/') === 0);
+            if (!$isApiRoute) {
+                \Core\Middleware::verifyCsrf();
+            }
         }
 
         if ($callback === false) {

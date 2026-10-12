@@ -250,6 +250,7 @@ ob_start();
                                 <!-- Status Toggle -->
                                 <td class="py-3.5 px-4 align-top text-center">
                                     <form method="POST" action="<?= $base ?>/admin/marketing/coupons/toggle" class="inline-block">
+                                        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                         <input type="hidden" name="id" value="<?= $c['id'] ?>">
                                         <?php if ($c['status'] === 'active'): ?>
                                             <button type="submit" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200 transition-colors flex items-center gap-1 mx-auto cursor-pointer" title="ক্লিক করে নিষ্ক্রিয় করুন">
@@ -278,6 +279,7 @@ ob_start();
 
                                         <!-- Delete -->
                                         <form method="POST" action="<?= $base ?>/admin/marketing/coupons/delete" class="inline" onsubmit="return confirm('আপনি কি নিশ্চিত যে এই কুপনটি মুছে ফেলতে চান?');">
+                                            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                                             <input type="hidden" name="id" value="<?= $c['id'] ?>">
                                             <button type="submit" class="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer" title="মুছে ফেলুন">
                                                 <ion-icon name="trash-outline" class="text-base"></ion-icon>

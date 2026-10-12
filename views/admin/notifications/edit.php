@@ -1,6 +1,7 @@
 <?php
-$title = "প্রোমো নোটিফিকেশন সম্পাদনা";
+$title = "নোটিফিকেশন সম্পাদনা (#" . $notification['id'] . ")";
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$currentType = $notification['type'] ?? 'promo';
 ob_start();
 ?>
 
@@ -12,8 +13,8 @@ ob_start();
                 <ion-icon name="arrow-back" class="text-xl"></ion-icon>
             </a>
             <div>
-                <h1 class="text-2xl font-black text-secondary-900 tracking-tight">প্রোমো নোটিফিকেশন সম্পাদনা (#<?= $notification['id'] ?>)</h1>
-                <p class="text-xs text-secondary-500 font-medium mt-0.5">বিদ্যমান নোটিফিকেশনের শিরোনাম, মেসেজ বা ব্যানার পরিবর্তন করুন।</p>
+                <h1 class="text-2xl font-black text-secondary-900 tracking-tight">নোটিফিকেশন সম্পাদনা (#<?= $notification['id'] ?>)</h1>
+                <p class="text-xs text-secondary-500 font-medium mt-0.5">বিদ্যমান নোটিফিকেশনের শিরোনাম, মেসেজ, ধরন বা ব্যানার পরিবর্তন করুন।</p>
             </div>
         </div>
     </div>
@@ -32,7 +33,45 @@ ob_start();
         <!-- Form Section -->
         <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-secondary-200/80 shadow-xs">
             <form action="<?= $base ?>/admin/notifications/update" method="POST" enctype="multipart/form-data" class="space-y-5">
+                <!-- CSRF Token (Crucial for 419 Page Expired fix) -->
+                <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                 <input type="hidden" name="id" value="<?= $notification['id'] ?>">
+
+                <!-- Notification Type Selector -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-2">
+                        নোটিফিকেশনের ধরন (Notification Type) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <label class="flex flex-col items-center p-3 rounded-xl border-2 cursor-pointer transition-all text-center"
+                               :class="type === 'promo' ? 'border-emerald-500 bg-emerald-50/60 text-emerald-900 font-bold shadow-2xs' : 'border-secondary-200 hover:border-secondary-300 text-secondary-600'">
+                            <input type="radio" name="type" value="promo" x-model="type" class="hidden">
+                            <span class="text-xl mb-1">🔥</span>
+                            <span class="text-xs">প্রোমো অফার</span>
+                        </label>
+                        
+                        <label class="flex flex-col items-center p-3 rounded-xl border-2 cursor-pointer transition-all text-center"
+                               :class="type === 'notice' ? 'border-amber-500 bg-amber-50/60 text-amber-900 font-bold shadow-2xs' : 'border-secondary-200 hover:border-secondary-300 text-secondary-600'">
+                            <input type="radio" name="type" value="notice" x-model="type" class="hidden">
+                            <span class="text-xl mb-1">📢</span>
+                            <span class="text-xs">জরুরি নোটিশ</span>
+                        </label>
+
+                        <label class="flex flex-col items-center p-3 rounded-xl border-2 cursor-pointer transition-all text-center"
+                               :class="type === 'offer' ? 'border-purple-500 bg-purple-50/60 text-purple-900 font-bold shadow-2xs' : 'border-secondary-200 hover:border-secondary-300 text-secondary-600'">
+                            <input type="radio" name="type" value="offer" x-model="type" class="hidden">
+                            <span class="text-xl mb-1">🎁</span>
+                            <span class="text-xs">ভাউচার / ছাড়</span>
+                        </label>
+
+                        <label class="flex flex-col items-center p-3 rounded-xl border-2 cursor-pointer transition-all text-center"
+                               :class="type === 'general' ? 'border-blue-500 bg-blue-50/60 text-blue-900 font-bold shadow-2xs' : 'border-secondary-200 hover:border-secondary-300 text-secondary-600'">
+                            <input type="radio" name="type" value="general" x-model="type" class="hidden">
+                            <span class="text-xl mb-1">ℹ️</span>
+                            <span class="text-xs">সাধারণ বার্তা</span>
+                        </label>
+                    </div>
+                </div>
 
                 <!-- Title -->
                 <div>
@@ -40,7 +79,7 @@ ob_start();
                         নোটিফিকেশন শিরোনাম <span class="text-rose-500">*</span>
                     </label>
                     <input type="text" name="title" x-model="title" required
-                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm font-medium transition-all">
+                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm font-medium transition-all">
                 </div>
 
                 <!-- Message / Body -->
@@ -49,7 +88,7 @@ ob_start();
                         মেসেজ বা অফারের বিবরণ <span class="text-rose-500">*</span>
                     </label>
                     <textarea name="message" x-model="message" rows="3" required
-                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm font-medium transition-all"></textarea>
+                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm font-medium transition-all"></textarea>
                 </div>
 
                 <!-- Badge & Promo Code in Grid -->
@@ -59,57 +98,65 @@ ob_start();
                             অফার ব্যাজ / ট্যাগ
                         </label>
                         <input type="text" name="badge_text" x-model="badgeText"
-                            class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm font-medium transition-all">
+                            class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm font-medium transition-all">
                     </div>
 
-                    <div>
+                    <div x-show="type !== 'notice'">
                         <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-1.5">
-                            প্রোমো / কুপন কোড
+                            প্রোমো / কুপন কোড (যদি থাকে)
                         </label>
                         <input type="text" name="promo_code" x-model="promoCode"
-                            class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm font-mono font-bold tracking-wider uppercase transition-all">
+                            class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm font-mono font-bold tracking-wider uppercase transition-all">
                     </div>
                 </div>
 
                 <!-- Action URL / Target Link -->
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-1.5">
-                        অ্যাকশন লিংক
+                        অ্যাকশন লিংক (ক্লিক করলে যে পেজটি খুলবে)
                     </label>
                     <input type="text" name="action_url" x-model="actionUrl"
-                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm font-medium transition-all">
+                        class="w-full px-4 py-2.5 rounded-xl border border-secondary-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm font-medium transition-all">
                 </div>
 
                 <!-- Image URL & Upload -->
                 <div class="space-y-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700">
-                        ব্যানার বা ছবি
+                        ব্যানার বা ছবি (ঐচ্ছিক)
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <input type="url" name="image_url" x-model="imageUrl"
                                 placeholder="ছবির ওয়েব লিংক (URL)"
-                                class="w-full px-4 py-2 rounded-xl border border-secondary-200 text-xs font-medium focus:border-primary-500">
+                                class="w-full px-4 py-2 rounded-xl border border-secondary-200 text-xs font-medium focus:border-emerald-500">
                         </div>
                         <div>
                             <input type="file" name="image_file" accept="image/*" @change="handleFileSelect($event)"
-                                class="w-full text-xs text-secondary-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer">
+                                class="w-full text-xs text-secondary-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
                         </div>
                     </div>
                 </div>
 
-                <!-- Target Audience & Status & Expiry -->
+                <!-- Audience, Expiry & Status in Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-1.5">
-                            টার্গেট অডিয়েন্স
+                            টার্গেট গ্রাহক
                         </label>
                         <select name="target_audience" x-model="targetAudience"
-                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-sm font-medium focus:border-primary-500">
-                            <option value="all">সকল ভিজিটর (All)</option>
-                            <option value="registered">শুধুমাত্র রেজিস্টার্ড গ্রাহক</option>
-                            <option value="guests">নতুন অতিথি ভিজিটর</option>
+                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-xs font-medium focus:border-emerald-500">
+                            <option value="all">সকল গ্রাহক ও ভিজিটর</option>
+                            <option value="registered">শুধু রেজিস্টার্ড ব্যবহারকারী</option>
+                            <option value="guests">শুধু নতুন ভিজিটর (Guest)</option>
                         </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-1.5">
+                            মেয়াদ শেষ (ঐচ্ছিক)
+                        </label>
+                        <input type="datetime-local" name="expires_at" value="<?= !empty($notification['expires_at']) ? date('Y-m-d\TH:i', strtotime($notification['expires_at'])) : '' ?>"
+                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-xs font-medium focus:border-emerald-500">
                     </div>
 
                     <div>
@@ -117,19 +164,11 @@ ob_start();
                             স্ট্যাটাস
                         </label>
                         <select name="status" x-model="status"
-                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-sm font-medium focus:border-primary-500">
+                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-xs font-medium focus:border-emerald-500">
                             <option value="active">সক্রিয় (Active)</option>
                             <option value="draft">ড্রাফট (Draft)</option>
                             <option value="expired">মেয়াদোত্তীর্ণ (Expired)</option>
                         </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-secondary-700 mb-1.5">
-                            মেয়াদ শেষ হওয়ার তারিখ
-                        </label>
-                        <input type="datetime-local" name="expires_at" value="<?= !empty($notification['expires_at']) ? date('Y-m-d\TH:i', strtotime($notification['expires_at'])) : '' ?>"
-                            class="w-full px-3 py-2.5 rounded-xl border border-secondary-200 bg-white text-xs font-medium focus:border-primary-500">
                     </div>
                 </div>
 
@@ -138,123 +177,76 @@ ob_start();
                     <a href="<?= $base ?>/admin/notifications" class="px-5 py-2.5 rounded-xl border border-secondary-200 text-secondary-700 text-sm font-bold hover:bg-secondary-50 transition-colors">
                         বাতিল
                     </a>
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
-                        <ion-icon name="checkmark-circle" class="text-base"></ion-icon>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+                        <ion-icon name="save" class="text-base"></ion-icon>
                         <span>আপডেট সংরক্ষণ করুন</span>
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Realtime Mobile Mockup Preview (Right) -->
+        <!-- Smartphone Mockup Preview (Right) -->
         <div class="lg:col-span-5 sticky top-6">
-            <div class="bg-secondary-900 text-white p-6 rounded-3xl border border-secondary-800 shadow-xl">
-                <!-- Preview Header -->
-                <div class="flex items-center justify-between pb-4 border-b border-secondary-800">
+            <div class="bg-secondary-900 text-white p-4 sm:p-6 rounded-3xl border border-secondary-800 shadow-xl space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-secondary-800">
                     <div class="flex items-center gap-2">
-                        <ion-icon name="phone-portrait-outline" class="text-lg text-primary-400"></ion-icon>
-                        <span class="text-xs font-bold uppercase tracking-wider text-secondary-300">মোবাইল প্রিভিউ</span>
-                    </div>
-                    <div class="flex bg-secondary-800 p-0.5 rounded-lg text-[10px] font-bold">
-                        <button type="button" @click="previewMode = 'lockscreen'" :class="previewMode === 'lockscreen' ? 'bg-primary-600 text-white' : 'text-secondary-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition-colors">
-                            পুশ নোটিফিকেশন
-                        </button>
-                        <button type="button" @click="previewMode = 'inapp'" :class="previewMode === 'inapp' ? 'bg-primary-600 text-white' : 'text-secondary-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition-colors">
-                            ইন-অ্যাপ ব্যানার
-                        </button>
+                        <ion-icon name="phone-portrait-outline" class="text-xl text-emerald-400"></ion-icon>
+                        <span class="text-xs font-bold uppercase tracking-wider text-secondary-300">রিয়েলটাইম ডিভাইস প্রিভিউ</span>
                     </div>
                 </div>
 
-                <!-- Phone Frame -->
-                <div class="mt-5 mx-auto max-w-[310px] rounded-[36px] bg-secondary-950 p-3.5 border-4 border-secondary-800 shadow-2xl relative">
-                    <div class="w-24 h-4 bg-secondary-800 rounded-full mx-auto mb-3"></div>
+                <!-- Modern Smartphone Frame -->
+                <div class="w-full max-w-[320px] mx-auto bg-slate-950 p-3 rounded-[36px] shadow-2xl border-4 border-secondary-700 relative">
+                    <!-- Dynamic Island Notch -->
+                    <div class="w-20 h-4 bg-black rounded-full mx-auto mb-3 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-slate-800 mr-2"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-blue-900"></div>
+                    </div>
 
-                    <!-- Screen -->
-                    <div class="bg-gray-100 rounded-[24px] min-h-[460px] text-gray-900 overflow-hidden relative flex flex-col justify-between p-3.5">
+                    <!-- Screen Content -->
+                    <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-[26px] p-3 min-h-[420px] flex flex-col justify-between text-white relative overflow-hidden border border-slate-800">
                         
-                        <div class="flex items-center justify-between text-[11px] font-bold text-gray-500 px-1 mb-2">
+                        <div class="flex justify-between items-center text-[10px] text-gray-400 px-1 mb-2">
                             <span>09:41</span>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <ion-icon name="wifi"></ion-icon>
-                                <ion-icon name="battery-full"></ion-icon>
+                            <div class="flex gap-1">
+                                <span>📶</span>
+                                <span>🔋</span>
                             </div>
                         </div>
 
-                        <!-- Lockscreen Notification -->
-                        <div x-show="previewMode === 'lockscreen'" class="space-y-3 my-auto">
-                            <div class="text-center my-4">
-                                <div class="text-4xl font-extralight text-gray-800">09:41</div>
-                                <div class="text-[11px] text-gray-500 font-medium">সোমবার, ১২ অক্টোবর</div>
-                            </div>
-
-                            <div class="bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-gray-200/80">
-                                <div class="flex items-center justify-between mb-1.5">
+                        <!-- Lockscreen Notification Style -->
+                        <div class="space-y-3 mt-4">
+                            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-3.5 shadow-lg text-white">
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
                                     <div class="flex items-center gap-1.5">
-                                        <div class="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
-                                            স
-                                        </div>
-                                        <span class="text-[11px] font-bold text-gray-900 tracking-tight">সদাই দরকার</span>
-                                        <span class="text-[9px] text-gray-400">• এইমাত্র</span>
-                                    </div>
-                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800" x-text="badgeText || 'স্পেশাল'"></span>
-                                </div>
-
-                                <div class="text-xs font-black text-gray-900 line-clamp-1" x-text="title"></div>
-                                <div class="text-[11px] text-gray-600 line-clamp-2 mt-0.5 leading-snug" x-text="message"></div>
-
-                                <template x-if="promoCode">
-                                    <div class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold">
-                                        <ion-icon name="pricetag-outline"></ion-icon>
-                                        <span x-text="promoCode"></span>
-                                    </div>
-                                </template>
-
-                                <template x-if="imageUrl">
-                                    <div class="mt-2 rounded-xl overflow-hidden max-h-28 border border-gray-200">
-                                        <img :src="imageUrl" alt="Banner" class="w-full h-full object-cover">
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- In-App Floating Banner -->
-                        <div x-show="previewMode === 'inapp'" class="my-auto space-y-3">
-                            <div class="text-[10px] uppercase font-bold text-gray-400 text-center tracking-wider mb-2">স্টোরফ্রন্ট ভিজিটে পপআপ ব্যানার</div>
-                            
-                            <div class="bg-white rounded-2xl p-3.5 shadow-xl border-2 border-emerald-500 relative">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-1.5">
-                                        <div class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-black">
+                                        <div class="w-5 h-5 rounded-md bg-emerald-600 flex items-center justify-center text-[10px] font-black text-white">
                                             🛒
                                         </div>
-                                        <div class="text-[10px] font-bold uppercase text-emerald-700" x-text="badgeText || '🔥 বিশেষ অফার'"></div>
+                                        <span class="text-[11px] font-bold text-gray-200">সদাই দরকার</span>
+                                        <span class="text-[9px] text-gray-400">• এইমাত্র</span>
                                     </div>
-                                    <button type="button" class="text-gray-400 text-sm">✕</button>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30" x-text="badgeText || 'অফার'"></span>
                                 </div>
 
                                 <template x-if="imageUrl">
-                                    <div class="mb-2 rounded-xl overflow-hidden max-h-24 border border-gray-100">
-                                        <img :src="imageUrl" alt="Promo" class="w-full h-full object-cover">
+                                    <div class="my-2 rounded-xl overflow-hidden max-h-28 border border-white/10">
+                                        <img :src="imageUrl" alt="Preview" class="w-full h-full object-cover">
                                     </div>
                                 </template>
 
-                                <div class="text-xs font-black text-gray-900" x-text="title"></div>
-                                <div class="text-[11px] text-gray-600 mt-1 leading-snug" x-text="message"></div>
+                                <h4 class="text-xs font-black text-white tracking-tight" x-text="title"></h4>
+                                <p class="text-[11px] text-gray-300 mt-1 line-clamp-2 leading-relaxed" x-text="message"></p>
 
-                                <template x-if="promoCode">
-                                    <div class="mt-2.5 p-1.5 rounded-lg bg-gray-50 border border-dashed border-gray-300 flex items-center justify-between text-[10px]">
-                                        <span class="font-mono font-bold text-emerald-800" x-text="promoCode"></span>
-                                        <span class="text-emerald-700 font-bold bg-white px-1.5 py-0.5 rounded shadow-2xs">কপি করুন</span>
+                                <template x-if="promoCode && type !== 'notice'">
+                                    <div class="mt-2.5 p-1.5 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between text-[11px]">
+                                        <span class="font-mono font-bold text-emerald-400" x-text="'কুপন কোড: ' + promoCode"></span>
+                                        <span class="text-[9px] text-gray-300 bg-white/20 px-1.5 py-0.5 rounded">কপি</span>
                                     </div>
                                 </template>
-
-                                <button type="button" class="w-full mt-2.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold text-center shadow-xs">
-                                    অফার লুফে নিন ➔
-                                </button>
                             </div>
                         </div>
 
-                        <div class="w-24 h-1 bg-gray-400 rounded-full mx-auto mt-2"></div>
+                        <div class="w-24 h-1 bg-gray-600 rounded-full mx-auto mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -266,6 +258,7 @@ ob_start();
 <script>
 function pushNotificationEditor() {
     return {
+        type: <?= json_encode($currentType) ?>,
         title: <?= json_encode($notification['title']) ?>,
         message: <?= json_encode($notification['message']) ?>,
         badgeText: <?= json_encode($notification['badge_text'] ?? '') ?>,
@@ -274,7 +267,6 @@ function pushNotificationEditor() {
         imageUrl: <?= json_encode($notification['image_url'] ?? '') ?>,
         targetAudience: <?= json_encode($notification['target_audience'] ?? 'all') ?>,
         status: <?= json_encode($notification['status'] ?? 'active') ?>,
-        previewMode: 'lockscreen',
 
         handleFileSelect(event) {
             const file = event.target.files[0];

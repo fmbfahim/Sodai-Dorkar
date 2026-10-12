@@ -2748,6 +2748,14 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             </button>
         </div>
 
+        <!-- Drawer Notification Type Filter Tabs -->
+        <div class="px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold bg-gray-50/70 shrink-0">
+            <button type="button" onclick="setDrawerFilter('all')" id="dnf-tab-all" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white shadow-2xs cursor-pointer">সবগুলো</button>
+            <button type="button" onclick="setDrawerFilter('order')" id="dnf-tab-order" class="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 cursor-pointer">📦 অর্ডার</button>
+            <button type="button" onclick="setDrawerFilter('promo')" id="dnf-tab-promo" class="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 cursor-pointer">🎁 অফার</button>
+            <button type="button" onclick="setDrawerFilter('notice')" id="dnf-tab-notice" class="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 cursor-pointer">📢 নোটিশ</button>
+        </div>
+
         <!-- Notification Cards List Container -->
         <div id="promo-notifications-list" class="flex-1 overflow-y-auto p-4 space-y-3.5 divide-y divide-gray-100">
             <!-- Loading placeholder -->
@@ -2821,6 +2829,23 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
     (function() {
         let activeNotifications = [];
         let currentFloatingPromo = null;
+        let drawerFilter = 'all';
+
+        // Filter Drawer by type
+        window.setDrawerFilter = function(filter) {
+            drawerFilter = filter;
+            ['all', 'order', 'promo', 'notice'].forEach(t => {
+                const tab = document.getElementById('dnf-tab-' + t);
+                if (tab) {
+                    if (t === filter) {
+                        tab.className = 'px-2.5 py-1 rounded-lg bg-emerald-600 text-white shadow-2xs cursor-pointer';
+                    } else {
+                        tab.className = 'px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 cursor-pointer';
+                    }
+                }
+            });
+            renderNotificationsList(activeNotifications);
+        };
 
         // 1. Register Service Worker for PWA & Native Web Push
         if ('serviceWorker' in navigator) {
@@ -2835,7 +2860,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             });
         }
 
-        // 2. Fetch Active Promo Push Notifications
+        // 2. Fetch Active Promo & Order Push Notifications
         async function fetchActiveNotifications() {
             try {
                 const res = await fetch((window.APP_BASE || '') + '/api/notifications/active');
@@ -2875,14 +2900,29 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             const container = document.getElementById('promo-notifications-list');
             if (!container) return;
 
-            if (!list || list.length === 0) {
+            let displayList = list || [];
+            if (drawerFilter === 'order') {
+                displayList = displayList.filter(n => n.type === 'order');
+            } else if (drawerFilter === 'promo') {
+                displayList = displayList.filter(n => n.type === 'promo' || n.type === 'offer');
+            } else if (drawerFilter === 'notice') {
+                displayList = displayList.filter(n => n.type === 'notice');
+            }
+
+            if (!displayList || displayList.length === 0) {
+                const emptyMessages = {
+                    all: 'কোনো নতুন নোটিফিকেশন নেই',
+                    order: 'কোনো অর্ডার নোটিফিকেশন নেই',
+                    promo: 'কোনো অফার পাওয়া যায়নি',
+                    notice: 'কোনো জরুরি নোটিশ নেই'
+                };
                 container.innerHTML = `
                     <div class="text-center py-16 text-gray-400">
                         <div class="w-14 h-14 rounded-2xl bg-gray-50 text-gray-300 flex items-center justify-center mx-auto text-2xl mb-3 border border-gray-100">
                             🔔
                         </div>
-                        <p class="text-sm font-bold text-gray-700">কোনো নতুন নোটিফিকেশন নেই</p>
-                        <p class="text-xs text-gray-400 mt-1">নতুন স্পেশাল অফার এলে এখানে দেখতে পাবেন।</p>
+                        <p class="text-sm font-bold text-gray-700">${emptyMessages[drawerFilter] || emptyMessages.all}</p>
+                        <p class="text-xs text-gray-400 mt-1">নতুন আপডেট এলে এখানে দেখতে পাবেন।</p>
                     </div>
                 `;
                 return;
@@ -2891,21 +2931,49 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             const readList = JSON.parse(localStorage.getItem('read_promos') || '[]');
 
             let html = '';
-            list.forEach(n => {
+            displayList.forEach(n => {
                 const isRead = readList.includes(n.id);
                 const safeTitle = escapeHtml(n.title);
                 const safeMessage = escapeHtml(n.message).replace(/\n/g, '<br>');
-                const safeBadge = escapeHtml(n.badge_text || 'স্পেশাল');
-                const safeUrl = n.action_url || (window.APP_BASE || '') + '/shop';
+                const type = n.type || 'promo';
+
+                let badgeClass = 'bg-amber-100 text-amber-800';
+                let typeIcon = '🎁';
+                let defaultBadge = 'স্পেশাল অফার';
+                let cardBgClass = isRead ? 'bg-white border-gray-200/80' : 'bg-emerald-50/40 border-emerald-200 shadow-xs';
+                let actionBtnClass = 'bg-emerald-600 hover:bg-emerald-700';
+                let actionBtnText = 'অফার দেখুন';
+                let defaultUrl = (window.APP_BASE || '') + '/shop';
+
+                if (type === 'order') {
+                    badgeClass = 'bg-blue-100 text-blue-800';
+                    typeIcon = '📦';
+                    defaultBadge = 'অর্ডার আপডেট';
+                    cardBgClass = isRead ? 'bg-white border-gray-200/80' : 'bg-blue-50/40 border-blue-200 shadow-xs';
+                    actionBtnClass = 'bg-blue-600 hover:bg-blue-700';
+                    actionBtnText = 'অর্ডার বিস্তারিত';
+                    defaultUrl = (window.APP_BASE || '') + '/account/order-detail?id=' + (n.order_id || '');
+                } else if (type === 'notice') {
+                    badgeClass = 'bg-sky-100 text-sky-800';
+                    typeIcon = '📢';
+                    defaultBadge = 'জরুরি নোটিশ';
+                    cardBgClass = isRead ? 'bg-white border-gray-200/80' : 'bg-sky-50/40 border-sky-200 shadow-xs';
+                    actionBtnClass = 'bg-sky-600 hover:bg-sky-700';
+                    actionBtnText = 'বিস্তারিত দেখুন';
+                }
+
+                const safeBadge = escapeHtml(n.badge_text || defaultBadge);
+                const safeUrl = n.action_url || defaultUrl;
 
                 html += `
                     <div class="pt-3.5 first:pt-0 group">
-                        <div class="p-3.5 rounded-2xl border transition-all ${isRead ? 'bg-white border-gray-200/80' : 'bg-emerald-50/40 border-emerald-200 shadow-xs'}">
+                        <div class="p-3.5 rounded-2xl border transition-all ${cardBgClass}">
                             <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                                    ${safeBadge}
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${badgeClass} flex items-center gap-1">
+                                    <span>${typeIcon}</span>
+                                    <span>${safeBadge}</span>
                                 </span>
-                                <span class="text-[10px] text-gray-400 font-medium">${n.time_ago || ''}</span>
+                                <span class="text-[10px] text-gray-400 font-medium">${escapeHtml(n.time_ago || '')}</span>
                             </div>
 
                             ${n.image_url ? `
@@ -2930,10 +2998,13 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                             ` : ''}
 
                             <div class="mt-3 flex items-center justify-between gap-2">
-                                <a href="${safeUrl}" onclick="recordPromoClick(${n.id})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all shadow-xs">
-                                    <span>অফার দেখুন</span>
+                                <a href="${safeUrl}" onclick="recordPromoClick(${n.id})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${actionBtnClass} text-white text-[11px] font-bold transition-all shadow-xs">
+                                    <span>${actionBtnText}</span>
                                     <span>➔</span>
                                 </a>
+                                ${type === 'order' && n.order_id ? `
+                                    <span class="text-[10px] font-mono text-gray-400 font-semibold">অর্ডার #${escapeHtml(n.order_id)}</span>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -3151,8 +3222,9 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             return text.toString().replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Initialize fetch on load
+        // Initialize fetch on load and periodically check for new order status/promo updates
         fetchActiveNotifications();
+        setInterval(fetchActiveNotifications, 45000);
     })();
     </script>
 </body>

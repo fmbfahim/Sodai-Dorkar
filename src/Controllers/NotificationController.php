@@ -27,20 +27,22 @@ class NotificationController
     }
 
     /**
-     * Admin: List all promo push notifications
+     * Admin: List all promo push notifications & notices
      */
     public function index()
     {
         Middleware::auth(['admin', 'manager']);
 
         $statusFilter = $_GET['status'] ?? null;
-        $notifications = $this->model->getAll($statusFilter);
+        $typeFilter   = $_GET['type'] ?? null;
+        $notifications = $this->model->getAll($statusFilter, $typeFilter);
         $stats = $this->model->getStats();
 
         return View::render('admin.notifications.index', [
             'notifications' => $notifications,
             'stats'         => $stats,
             'currentStatus' => $statusFilter,
+            'currentType'   => $typeFilter,
             'success'       => $_SESSION['flash_success'] ?? null,
             'error'         => $_SESSION['flash_error'] ?? null,
         ]);
@@ -67,10 +69,11 @@ class NotificationController
         Middleware::auth(['admin', 'manager']);
         $base = $this->base();
 
+        $type           = trim($_POST['type'] ?? 'promo');
         $title          = trim($_POST['title'] ?? '');
         $message        = trim($_POST['message'] ?? '');
         $promoCode      = trim($_POST['promo_code'] ?? '');
-        $badgeText      = trim($_POST['badge_text'] ?? '🔥 স্পেশাল অফার');
+        $badgeText      = trim($_POST['badge_text'] ?? '');
         $actionUrl      = trim($_POST['action_url'] ?? '/shop');
         $targetAudience = $_POST['target_audience'] ?? 'all';
         $status         = $_POST['status'] ?? 'active';
@@ -94,6 +97,7 @@ class NotificationController
         }
 
         $id = $this->model->create([
+            'type'            => $type,
             'title'           => $title,
             'message'         => $message,
             'promo_code'      => $promoCode,
@@ -157,6 +161,7 @@ class NotificationController
             exit;
         }
 
+        $type           = trim($_POST['type'] ?? $notification['type'] ?? 'promo');
         $title          = trim($_POST['title'] ?? '');
         $message        = trim($_POST['message'] ?? '');
         $promoCode      = trim($_POST['promo_code'] ?? '');
@@ -182,6 +187,7 @@ class NotificationController
         }
 
         $this->model->update($id, [
+            'type'            => $type,
             'title'           => $title,
             'message'         => $message,
             'promo_code'      => $promoCode,
@@ -193,7 +199,7 @@ class NotificationController
             'expires_at'      => $expiresAt,
         ]);
 
-        $_SESSION['flash_success'] = 'প্রোমো নোটিফিকেশন সফলভাবে আপডেট করা হয়েছে!';
+        $_SESSION['flash_success'] = 'নোটিফিকেশন সফলভাবে আপডেট করা হয়েছে!';
         header("Location: {$base}/admin/notifications");
         exit;
     }
@@ -282,15 +288,16 @@ class NotificationController
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * API: Get active promo push notifications for app/website
+     * API: Get active promo push notifications & order updates for app/website
      */
     public function apiActive()
     {
         header('Content-Type: application/json');
         header('Cache-Control: no-cache, no-store, must-revalidate');
 
-        $isLoggedIn = !empty($_SESSION['customer_id']);
-        $notifications = $this->model->getActiveForUser($isLoggedIn, 20);
+        $customerId = isset($_SESSION['customer_id']) ? (int)$_SESSION['customer_id'] : null;
+        $isLoggedIn = !empty($customerId);
+        $notifications = $this->model->getActiveForUser($customerId, $isLoggedIn, 30);
 
         echo json_encode([
             'success'       => true,
