@@ -491,7 +491,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <!-- Left Column: Live Canvas Preview & Facebook Post Card (5 Cols) -->
             <div class="lg:col-span-5 flex flex-col items-center">
                 <!-- Poster Display Mode Switcher (Full AI Poster vs Combo Cards) -->
-                <div class="w-full max-w-[420px] mb-2.5">
+                <div class="w-full max-w-[420px] mb-2">
                     <div class="grid grid-cols-2 gap-1 bg-secondary-100 p-1 rounded-xl border border-secondary-200 text-center">
                         <button type="button" onclick="setPosterLayout('full_ai')" id="layout-btn-full_ai" 
                                 class="py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer">
@@ -502,6 +502,23 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <span>📋 প্রডাক্ট কম্বো কার্ড</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- Overlay Elements Toggle Strip (Headline, Product Card, Brand) -->
+                <div class="w-full max-w-[420px] mb-2.5 px-3 py-1.5 flex items-center justify-between text-[11px] font-bold text-secondary-700 bg-secondary-100/70 rounded-xl border border-secondary-200">
+                    <span class="text-[10px] uppercase tracking-wider text-secondary-500 font-bold">ছবির উপাদান:</span>
+                    <label class="flex items-center gap-1 cursor-pointer hover:text-secondary-950">
+                        <input type="checkbox" id="studio_toggle_headline" onchange="drawBannerCanvas()" class="rounded text-emerald-600">
+                        <span>হেডলাইন</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer hover:text-secondary-950">
+                        <input type="checkbox" id="studio_toggle_product_card" onchange="drawBannerCanvas()" class="rounded text-emerald-600">
+                        <span>প্রোডাক্ট কার্ড</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer hover:text-secondary-950">
+                        <input type="checkbox" id="studio_toggle_brand_watermark" checked onchange="drawBannerCanvas()" class="rounded text-emerald-600">
+                        <span>ব্র্যান্ডিং</span>
+                    </label>
                 </div>
 
                 <!-- Canvas Stage -->
@@ -797,7 +814,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             শীর্ষ আকর্ষণ / হেডলাইন
                         </label>
                         <input type="text" id="studio_headline" oninput="drawBannerCanvas()" 
-                               value="হার্টের যত্ন শুরু হোক বাজার থেকেই" 
+                               value="" placeholder="যেমন: ৫০০০৳ কিনাকাটায় ফ্রি ডেলিভারি / তাজা বাজার অফার..." 
                                class="w-full px-3 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div>
@@ -805,7 +822,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             কর্নার বা ইভেন্ট ব্যাজ
                         </label>
                         <input type="text" id="studio_badge_text" oninput="drawBannerCanvas()" 
-                               value="২৯ সেপ্টেম্বর • বিশ্ব হার্ট দিবস" 
+                               value="" placeholder="যেমন: ফ্রি ডেলিভারি / মেগা অফার..." 
                                class="w-full px-3 py-1.5 bg-white border border-secondary-300 rounded-xl text-xs font-bold text-secondary-900 focus:ring-2 focus:ring-emerald-500">
                     </div>
                 </div>
@@ -1138,13 +1155,10 @@ const RECENT_PRICE_CHANGED = <?= json_encode(array_map(function($p) use ($base) 
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    // If we have recent price-changed products, pre-select the first one
-    if (RECENT_PRICE_CHANGED.length > 0) {
-        selectedProductIds = [RECENT_PRICE_CHANGED[0].id];
-    } else if (ALL_PRODUCTS.length > 0) {
-        selectedProductIds = [ALL_PRODUCTS[0].id];
-    }
+    // Start in clean full AI poster mode with no obstructive overlays
+    selectedProductIds = [];
     renderStudioProductChecklist();
+    setPosterLayout('full_ai');
     onBackdropSceneChange('fresh_veggies');
 });
 
@@ -1397,13 +1411,20 @@ function setPosterLayout(layout) {
     currentPosterLayout = layout;
     const btnFull = document.getElementById('layout-btn-full_ai');
     const btnCombo = document.getElementById('layout-btn-combo_cards');
+    const chkHeadline = document.getElementById('studio_toggle_headline');
+    const chkCard = document.getElementById('studio_toggle_product_card');
+
     if (btnFull && btnCombo) {
         if (layout === 'full_ai') {
             btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
             btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+            if (chkHeadline) chkHeadline.checked = false; // By default no headline on full AI photo
+            if (chkCard) chkCard.checked = false; // By default no product card on full AI photo
         } else {
             btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
             btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
+            if (chkHeadline) chkHeadline.checked = true; // Show headline on combo flyer
+            if (chkCard) chkCard.checked = true; // Show product cards on combo flyer
         }
     }
     drawBannerCanvas();
@@ -1481,8 +1502,12 @@ function drawBannerCanvas() {
     const height = 1080;
     const theme = THEMES[currentStudioTheme] || THEMES.emerald;
 
-    const headline = document.getElementById('studio_headline')?.value || 'হার্টের যত্ন শুরু হোক বাজার থেকেই';
-    const badgeText = document.getElementById('studio_badge_text')?.value || '২৯ সেপ্টেম্বর • বিশ্ব হার্ট দিবস';
+    const showHeadline = document.getElementById('studio_toggle_headline')?.checked || false;
+    const showProductCard = document.getElementById('studio_toggle_product_card')?.checked || false;
+    const showBrand = document.getElementById('studio_toggle_brand_watermark')?.checked ?? true;
+
+    const headline = document.getElementById('studio_headline')?.value?.trim() || '';
+    const badgeText = document.getElementById('studio_badge_text')?.value?.trim() || '';
     const siteName = document.getElementById('studio_site_name')?.value || 'সদাই দরকার';
     const phone = document.getElementById('studio_phone')?.value || '01609448066';
     const website = document.getElementById('studio_website')?.value || 'sodaidorkar.com';
@@ -1501,16 +1526,17 @@ function drawBannerCanvas() {
         const ny = (height - nh) / 2;
         ctx.drawImage(studioBackdropImgElement, nx, ny, nw, nh);
 
-        // Soft contrast vignette: Full AI mode keeps center 70% crystal clear and vibrant
+        // Soft contrast vignette: Full AI mode keeps visual crystal clear; only gentle bottom gradient if brand is shown
         if (currentPosterLayout === 'full_ai') {
-            const vig = ctx.createLinearGradient(0, 0, 0, height);
-            vig.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
-            vig.addColorStop(0.22, 'rgba(0, 0, 0, 0.05)');
-            vig.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-            vig.addColorStop(0.76, 'rgba(0, 0, 0, 0.08)');
-            vig.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
-            ctx.fillStyle = vig;
-            ctx.fillRect(0, 0, width, height);
+            if (showBrand || showHeadline) {
+                const vig = ctx.createLinearGradient(0, 0, 0, height);
+                vig.addColorStop(0, (showHeadline && headline) ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0)');
+                vig.addColorStop(0.2, 'rgba(0, 0, 0, 0)');
+                vig.addColorStop(0.78, 'rgba(0, 0, 0, 0)');
+                vig.addColorStop(1, showBrand ? 'rgba(0, 0, 0, 0.72)' : 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = vig;
+                ctx.fillRect(0, 0, width, height);
+            }
         } else {
             const vig = ctx.createLinearGradient(0, 0, 0, height);
             vig.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
@@ -1550,45 +1576,47 @@ function drawBannerCanvas() {
     }
 
     // 2. Top Header: Store Logo Capsule (Left) & Corner Badge (Right)
-    // Brand Logo Capsule (Left)
-    ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.lineWidth = 2;
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur = 12;
-    roundRect(ctx, 50, 45, 370, 68, 34, true, true);
-    ctx.restore();
+    if (showBrand) {
+        // Brand Logo Capsule (Left)
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 12;
+        roundRect(ctx, 50, 45, 370, 68, 34, true, true);
+        ctx.restore();
 
-    // Shopping Bag Icon
-    ctx.save();
-    ctx.fillStyle = theme.accent;
-    ctx.beginPath(); ctx.arc(88, 79, 22, 0, Math.PI * 2); ctx.fill();
-    ctx.font = '24px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🛍️', 88, 80);
-    ctx.restore();
+        // Shopping Bag Icon
+        ctx.save();
+        ctx.fillStyle = theme.accent;
+        ctx.beginPath(); ctx.arc(88, 79, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🛍️', 88, 80);
+        ctx.restore();
 
-    // Store Name & Verified Tick
-    ctx.save();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 30px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(siteName, 122, 79);
-    const snW = ctx.measureText(siteName).width;
+        // Store Name & Verified Tick
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(siteName, 122, 79);
+        const snW = ctx.measureText(siteName).width;
 
-    ctx.fillStyle = '#10b981';
-    ctx.beginPath(); ctx.arc(122 + snW + 16, 79, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('✓', 122 + snW + 16, 80);
-    ctx.restore();
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath(); ctx.arc(122 + snW + 16, 79, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓', 122 + snW + 16, 80);
+        ctx.restore();
+    }
 
-    // Top-Right Event Badge (Meena Bazar Style)
-    if (badgeText) {
+    // Top-Right Event Badge (Meena Bazar Style) - ONLY if Headline toggle is checked and badgeText exists
+    if (showHeadline && badgeText) {
         ctx.save();
         const badgeGrad = ctx.createLinearGradient(width - 450, 45, width - 50, 113);
         badgeGrad.addColorStop(0, theme.badgeBgStart);
@@ -1608,42 +1636,44 @@ function drawBannerCanvas() {
         ctx.restore();
     }
 
-    // 3. 3D Promotional Headline Ribbon (Y: 135 to 225)
-    ctx.save();
-    const ribbonGrad = ctx.createLinearGradient(50, 135, width - 50, 225);
-    ribbonGrad.addColorStop(0, '#ffffff');
-    ribbonGrad.addColorStop(1, '#f1f5f9');
-    ctx.fillStyle = ribbonGrad;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetY = 6;
-    roundRect(ctx, 50, 135, width - 100, 90, 26, true, false);
-    ctx.restore();
+    // 3. 3D Promotional Headline Ribbon (Y: 135 to 225) - ONLY if Headline toggle is checked and headline exists!
+    if (showHeadline && headline) {
+        ctx.save();
+        const ribbonGrad = ctx.createLinearGradient(50, 135, width - 50, 225);
+        ribbonGrad.addColorStop(0, '#ffffff');
+        ribbonGrad.addColorStop(1, '#f1f5f9');
+        ctx.fillStyle = ribbonGrad;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 6;
+        roundRect(ctx, 50, 135, width - 100, 90, 26, true, false);
+        ctx.restore();
 
-    // Inner gold/accent ribbon border
-    ctx.save();
-    ctx.strokeStyle = theme.accent;
-    ctx.lineWidth = 3;
-    roundRect(ctx, 54, 139, width - 108, 82, 22, false, true);
-    ctx.restore();
+        // Inner gold/accent ribbon border
+        ctx.save();
+        ctx.strokeStyle = theme.accent;
+        ctx.lineWidth = 3;
+        roundRect(ctx, 54, 139, width - 108, 82, 22, false, true);
+        ctx.restore();
 
-    // Headline Text
-    ctx.save();
-    ctx.fillStyle = '#0f172a';
-    let hlFontSize = 44;
-    if (headline.length > 28) hlFontSize = 36;
-    if (headline.length > 38) hlFontSize = 30;
-    ctx.font = 'bold ' + hlFontSize + 'px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(headline, width / 2, 180);
-    ctx.restore();
+        // Headline Text
+        ctx.save();
+        ctx.fillStyle = '#0f172a';
+        let hlFontSize = 44;
+        if (headline.length > 28) hlFontSize = 36;
+        if (headline.length > 38) hlFontSize = 30;
+        ctx.font = 'bold ' + hlFontSize + 'px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(headline, width / 2, 180);
+        ctx.restore();
+    }
 
     // 4. Center Stage (Based on Layout Mode: Full AI Visual vs Combo Cards)
     const selectedProds = ALL_PRODUCTS.filter(p => selectedProductIds.includes(p.id));
 
     if (currentPosterLayout === 'full_ai') {
-        renderFullAiPosterStage(ctx, selectedProds, currentCampaignMode, theme, width, height);
+        renderFullAiPosterStage(ctx, selectedProds, currentCampaignMode, theme, width, height, showProductCard);
     } else {
         if (selectedProds.length === 1) {
             renderSingleProductHero(ctx, selectedProds[0], theme, width, height);
@@ -1654,70 +1684,72 @@ function drawBannerCanvas() {
         }
     }
 
-    // 5. Automated Brand Capsules (Hotline at Bottom-Left & Website at Bottom-Right - Meena Bazar Ref 4 Style)
-    // Hotline Pill (Bottom-Left)
-    ctx.save();
-    ctx.fillStyle = theme.pillBg;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 4;
-    roundRect(ctx, 50, 920, 380, 72, 36, true, false);
-    ctx.restore();
+    // 5. Automated Brand Capsules (Hotline at Bottom-Left & Website at Bottom-Right)
+    if (showBrand) {
+        // Hotline Pill (Bottom-Left)
+        ctx.save();
+        ctx.fillStyle = theme.pillBg;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 4;
+        roundRect(ctx, 50, 920, 380, 72, 36, true, false);
+        ctx.restore();
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
-    roundRect(ctx, 52, 922, 376, 68, 34, false, true);
-    ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        roundRect(ctx, 52, 922, 376, 68, 34, false, true);
+        ctx.restore();
 
-    ctx.save();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 30px "Outfit", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📞 ' + phone, 240, 956);
-    ctx.restore();
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📞 ' + phone, 240, 956);
+        ctx.restore();
 
-    // Website Capsule (Bottom-Right)
-    ctx.save();
-    ctx.fillStyle = theme.pillBg;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 4;
-    roundRect(ctx, width - 430, 920, 380, 72, 36, true, false);
-    ctx.restore();
+        // Website Capsule (Bottom-Right)
+        ctx.save();
+        ctx.fillStyle = theme.pillBg;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 4;
+        roundRect(ctx, width - 430, 920, 380, 72, 36, true, false);
+        ctx.restore();
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
-    roundRect(ctx, width - 428, 922, 376, 68, 34, false, true);
-    ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        roundRect(ctx, width - 428, 922, 376, 68, 34, false, true);
+        ctx.restore();
 
-    ctx.save();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px "Outfit", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(website + ' 🌐', width - 240, 956);
-    ctx.restore();
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(website + ' 🌐', width - 240, 956);
+        ctx.restore();
 
-    // 6. Full-Width Bottom Trust Bar
-    ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.fillRect(0, 1020, width, 60);
+        // 6. Full-Width Bottom Trust Bar
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(0, 1020, width, 60);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🚚 ৩০-৬০ মিনিটে দ্রুত ডেলিভারি  |  💵 ক্যাশ অন ডেলিভারি  |  ✨ ১০০% খাঁটি পণ্য', width / 2, 1050);
-    ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px "Hind Siliguri", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🚚 ৩০-৬০ মিনিটে দ্রুত ডেলিভারি  |  💵 ক্যাশ অন ডেলিভারি  |  ✨ ১০০% খাঁটি পণ্য', width / 2, 1050);
+        ctx.restore();
+    }
 }
 
 // -------------------------------------------------------------------------
 // Sub-renderers: Meena Bazar Full AI Stage & Product Deal Cards
 // -------------------------------------------------------------------------
-function renderFullAiPosterStage(ctx, prods, mode, theme, width, height) {
+function renderFullAiPosterStage(ctx, prods, mode, theme, width, height, showProductCard = false) {
     // If no backdrop/AI image is loaded yet, show inviting guidance on canvas
     if (!studioBackdropImgElement || !studioBackdropImgElement.complete || studioBackdropImgElement.naturalWidth === 0) {
         ctx.save();
@@ -1738,8 +1770,8 @@ function renderFullAiPosterStage(ctx, prods, mode, theme, width, height) {
         ctx.restore();
     }
 
-    // Floating Meena Bazar Style Product Offer Badges / Capsules at bottom (Leaves 85% of visual unobstructed)
-    if (prods && prods.length > 0) {
+    // Floating Meena Bazar Style Product Offer Badges / Capsules at bottom (ONLY if Product Card toggle is checked)
+    if (showProductCard && prods && prods.length > 0) {
         if (prods.length === 1) {
             const p = prods[0];
             const cardX = 120;
@@ -2320,6 +2352,25 @@ async function generateAiPosterImage(customPrompt = null) {
             aiImg.onload = () => {
                 studioBackdropImgElement = aiImg;
                 setPosterLayout('full_ai'); // Automatically switch to full visual poster mode!
+
+                // Uncheck headline and product card overlays so image is 100% unobstructed!
+                const chkHeadline = document.getElementById('studio_toggle_headline');
+                const chkCard = document.getElementById('studio_toggle_product_card');
+                if (chkHeadline) chkHeadline.checked = false;
+                if (chkCard) chkCard.checked = false;
+
+                // Clear leftover product selections so no Harpic or previous deal card lingers
+                selectedProductIds = [];
+                renderStudioProductChecklist();
+
+                // Clear previous badge text and set prompt into input field without forcing on canvas
+                if (document.getElementById('studio_badge_text')) {
+                    document.getElementById('studio_badge_text').value = '';
+                }
+                if (document.getElementById('studio_headline')) {
+                    document.getElementById('studio_headline').value = prompt;
+                }
+
                 if (overlay) overlay.classList.add('hidden');
                 drawBannerCanvas();
                 if (statusEl) statusEl.innerHTML = '<span class="text-emerald-700 font-bold">✅ সম্পূর্ণ এআই ছবি সফলভাবে তৈরি ও ক্যানভাসে যুক্ত হয়েছে!</span>';
@@ -2387,6 +2438,14 @@ async function generateAiCampaignConcept() {
                 aiImg.onload = () => {
                     studioBackdropImgElement = aiImg;
                     setPosterLayout('full_ai'); // Unobstructed full visual!
+                    const chkHeadline = document.getElementById('studio_toggle_headline');
+                    const chkCard = document.getElementById('studio_toggle_product_card');
+                    if (chkHeadline) chkHeadline.checked = false;
+                    if (chkCard) chkCard.checked = false;
+
+                    selectedProductIds = [];
+                    renderStudioProductChecklist();
+
                     document.getElementById('canvas-loading-overlay').classList.add('hidden');
                     drawBannerCanvas();
                 };

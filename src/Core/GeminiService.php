@@ -271,13 +271,16 @@ PROMPT;
      * Generate photorealistic image using Google Imagen 3 (with automatic FLUX fallback)
      */
     public function generateImage(string $prompt, string $aspectRatio = '1:1'): array {
+        // Build an ultra-realistic commercial advertising master prompt in English
+        $masterPrompt = $this->buildMasterPrompt($prompt);
+
         // If Google Imagen API is configured, try Google Imagen 3 first
         if ($this->isConfigured()) {
             $models = ['imagen-3.0-generate-002', 'imagen-3.0-fast-generate-001'];
             foreach ($models as $modelName) {
                 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:predict?key=" . urlencode($this->apiKey);
                 $payload = [
-                    'instances' => [['prompt' => $prompt]],
+                    'instances' => [['prompt' => $masterPrompt]],
                     'parameters' => [
                         'sampleCount' => 1,
                         'aspectRatio' => $aspectRatio,
@@ -319,64 +322,170 @@ PROMPT;
                         'image_url' => $relativeUrl,
                         'base64' => "data:{$mime};base64,{$b64}",
                         'local_path' => $fullPath,
-                        'model' => $modelName
+                        'model' => $modelName,
+                        'master_prompt' => $masterPrompt
                     ];
                 }
             }
         }
 
         // Seamless, high-speed FLUX.1 Engine fallback (100% reliable, zero-config)
-        return $this->generateFluxImage($prompt);
+        return $this->generateFluxImage($masterPrompt);
     }
 
     /**
      * Generate 1080x1080 photorealistic marketing image using FLUX.1 AI engine (Zero-config, 100% reliable)
      */
-    public function generateFluxImage(string $prompt): array {
-        $enhancedPrompt = $prompt . ", commercial retail advertising photography, modern Bangladeshi supermarket aesthetic, warm vibrant lighting, 8k resolution, photorealistic, clean composition";
+    public function generateFluxImage(string $masterPrompt): array {
+        $encoded = urlencode($masterPrompt);
         $seed = rand(1000, 999999);
-        $encoded = urlencode($enhancedPrompt);
-        $url = "https://image.pollinations.ai/prompt/{$encoded}?width=1080&height=1080&nologo=true&seed={$seed}&model=flux";
+        $endpoints = [
+            "https://image.pollinations.ai/prompt/{$encoded}?width=1080&height=1080&nologo=true&seed={$seed}&model=flux",
+            "https://image.pollinations.ai/prompt/{$encoded}?width=1080&height=1080&nologo=true&seed={$seed}&model=turbo",
+            "https://image.pollinations.ai/prompt/{$encoded}?width=1080&height=1080&nologo=true"
+        ];
 
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 40);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        $lastError = "";
+        $httpCode = 0;
 
-        $imageData = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+        foreach ($endpoints as $url) {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 35);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
-        if ($httpCode === 200 && strlen($imageData) > 5000) {
-            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/marketing';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0755, true);
+            $imageData = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode === 200 && strlen($imageData) > 5000) {
+                $uploadDir = dirname(__DIR__, 2) . '/public/uploads/marketing';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+
+                $filename = 'ai_full_' . time() . '_' . rand(100, 999) . '.jpg';
+                $fullPath = $uploadDir . '/' . $filename;
+                file_put_contents($fullPath, $imageData);
+
+                $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+                $relativeUrl = "{$base}/uploads/marketing/{$filename}";
+                $b64 = base64_encode($imageData);
+
+                return [
+                    'success' => true,
+                    'image_url' => $relativeUrl,
+                    'base64' => "data:image/jpeg;base64,{$b64}",
+                    'local_path' => $fullPath,
+                    'model' => 'flux-1-schnell',
+                    'master_prompt' => $masterPrompt
+                ];
             }
-
-            $filename = 'ai_full_' . time() . '_' . rand(100, 999) . '.jpg';
-            $fullPath = $uploadDir . '/' . $filename;
-            file_put_contents($fullPath, $imageData);
-
-            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
-            $relativeUrl = "{$base}/uploads/marketing/{$filename}";
-            $b64 = base64_encode($imageData);
-
-            return [
-                'success' => true,
-                'image_url' => $relativeUrl,
-                'base64' => "data:image/jpeg;base64,{$b64}",
-                'local_path' => $fullPath,
-                'model' => 'flux-1-schnell'
-            ];
+            $lastError = $curlError ?: "AI Image Server HTTP {$httpCode}";
         }
 
         return [
             'success' => false,
-            'message' => $curlError ?: "AI Image Server HTTP {$httpCode}"
+            'message' => $lastError ?: "AI Image Server HTTP {$httpCode}"
         ];
+    }
+
+    /**
+     * Convert any user prompt (Bengali or English) into an industry-grade English master diffusion prompt
+     */
+    public function buildMasterPrompt(string $prompt): string {
+        $cleanPrompt = trim($prompt);
+        if (empty($cleanPrompt)) {
+            return "Commercial retail advertising photography for a modern supermarket, abundant fresh colorful groceries, clean aesthetic, 8k resolution, photorealistic, no text, no watermark, no cartoon";
+        }
+
+        // If the prompt is already our long master preset, keep it
+        if (strlen($cleanPrompt) > 100 && stripos($cleanPrompt, 'photorealistic') !== false && !preg_match('/[\x{0980}-\x{09FF}]/u', $cleanPrompt)) {
+            return $cleanPrompt;
+        }
+
+        // Check if prompt contains Bengali characters
+        $isBengali = preg_match('/[\x{0980}-\x{09FF}]/u', $cleanPrompt);
+        $translatedEnglish = $cleanPrompt;
+
+        if ($isBengali) {
+            $trans = $this->translateToEnglish($cleanPrompt);
+            if (!empty($trans)) {
+                $translatedEnglish = $trans;
+            }
+        }
+
+        $lower = strtolower($translatedEnglish . ' ' . $cleanPrompt);
+
+        $deliveryKeywords = ['delivery', 'ডেলিভারি', 'শিপিং', 'ফ্রি ডেলিভারি', 'free delivery', 'order', 'অর্ডার', 'হোম ডেলিভারি', 'scooter', 'ডেলিভারী', 'টাকার বেশি', 'টাকা'];
+        $veggieKeywords = ['vegetable', 'সবজি', 'শাকসবজি', 'কাঁচাবাজার', 'fresh', 'farm', 'সবুজ', 'তাজা', 'শাক', 'আলু', 'টমেটো'];
+        $fruitKeywords = ['fruit', 'ফল', 'ফলমূল', 'আম', 'আপেল', 'কমলা', 'কলা'];
+        $cookingKeywords = ['cook', 'cooking', 'kitchen', 'রান্না', 'ঘি', 'ghee', 'তেল', 'oil', 'homemaker', 'গৃহিণী', 'রেসিপি', 'recipe', 'মসলা', 'spice'];
+        $fishMeatKeywords = ['meat', 'মাংস', 'beef', 'গরুর মাংস', 'fish', 'মাছ', 'chicken', 'মুরগি', 'ডিম', 'egg', 'ইলিশ'];
+        $marketKeywords = ['supermarket', 'cart', 'trolley', 'সুপারমার্কেট', 'ট্রলি', 'বাজার', 'দোকান', 'শপিং'];
+        $healthKeywords = ['heart', 'হার্ট', 'স্বাস্থ্য', 'health', 'healthy', 'family', 'পরিবার'];
+        $festiveKeywords = ['eid', 'ঈদ', 'রমজান', 'ramadan', 'বৈশাখ', 'boishakh', 'উৎসব', 'festival'];
+
+        $sceneSubject = "";
+
+        if ($this->hasAnyKeyword($lower, $deliveryKeywords)) {
+            $sceneSubject = "Minimalist commercial advertising photography for online grocery delivery service: {$translatedEnglish}, modern sleek electric delivery scooter parked next to fresh grocery crates overflowing with crisp vibrant green vegetables, red apples, milk cartons, and grocery packages, bright crisp daylight, clean pastel gradient background, minimalist commercial retail campaign, Meena Bazar advertising style";
+        } elseif ($this->hasAnyKeyword($lower, $fishMeatKeywords)) {
+            $sceneSubject = "Commercial food and grocery advertising photography: {$translatedEnglish}, fresh premium produce neatly arranged on clean ice and marble counter in a modern supermarket, pristine studio lighting, appetizing commercial presentation";
+        } elseif ($this->hasAnyKeyword($lower, $cookingKeywords)) {
+            $sceneSubject = "Commercial food lifestyle photography: {$translatedEnglish}, authentic modern kitchen counter, pure ingredients, appetizing culinary scene, warm soft cinematic lighting, Meena Bazar advertising style";
+        } elseif ($this->hasAnyKeyword($lower, $veggieKeywords)) {
+            $sceneSubject = "Commercial retail grocery photography: {$translatedEnglish}, rustic wooden crates overflowing with vibrant farm-fresh vegetables and greens, crisp dewdrops, bright natural morning sunlight, supermarket display standard";
+        } elseif ($this->hasAnyKeyword($lower, $fruitKeywords)) {
+            $sceneSubject = "Commercial retail grocery photography: {$translatedEnglish}, vibrant colorful fresh fruits arranged in woven baskets, glistening dewdrops, soft commercial studio lighting";
+        } elseif ($this->hasAnyKeyword($lower, $healthKeywords)) {
+            $sceneSubject = "Commercial advertising photography: {$translatedEnglish}, healthy family diet theme, nutritious fresh greens, organic fruits, vibrant colors, bright natural morning sunlight, clean modern aesthetic";
+        } elseif ($this->hasAnyKeyword($lower, $festiveKeywords)) {
+            $sceneSubject = "Festive commercial advertising photography: {$translatedEnglish}, festive celebration in a modern Bangladeshi home, luxurious dining table spread with delicious feast, sweets, warm golden festive lighting";
+        } elseif ($this->hasAnyKeyword($lower, $marketKeywords)) {
+            $sceneSubject = "Commercial retail supermarket photography: {$translatedEnglish}, pristine modern Bangladeshi grocery supermarket aisle, gleaming shopping cart filled with grocery packages, soft retail ambient lighting";
+        } else {
+            $sceneSubject = "Commercial retail advertising photography for a modern Bangladeshi grocery brand: {$translatedEnglish}, clean minimalist aesthetic, elegant composition, vibrant natural colors, professional studio lighting, Meena Bazar retail advertising standard";
+        }
+
+        // Master negative prompt modifiers & photographic excellence tokens
+        return $sceneSubject . ", 8k resolution, ultra-photorealistic, high-end commercial ad photography, highly detailed, sharp focus, cinematic lighting, no text, no letters, no watermark, no logo, no cartoon, no anime, no 3d render, no distorted faces, no illustration";
+    }
+
+    /**
+     * Helper to translate Bengali prompt to English using Google Translate client API
+     */
+    public function translateToEnglish(string $text): string {
+        $url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=' . urlencode($text);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        if ($res) {
+            $json = json_decode($res, true);
+            if (!empty($json[0])) {
+                $translated = '';
+                foreach ($json[0] as $segment) {
+                    if (!empty($segment[0])) $translated .= $segment[0] . ' ';
+                }
+                return trim($translated);
+            }
+        }
+        return $text;
+    }
+
+    protected function hasAnyKeyword(string $text, array $keywords): bool {
+        foreach ($keywords as $kw) {
+            if (mb_strpos($text, $kw) !== false) return true;
+        }
+        return false;
     }
 
     /**
