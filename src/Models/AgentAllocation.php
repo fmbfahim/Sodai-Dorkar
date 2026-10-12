@@ -43,7 +43,7 @@ class AgentAllocation {
      * Get all assigned area records for a given agent
      */
     public function getByAgent($agentId) {
-        $sql = "SELECT aa.*, a.name as area_name, a.code as area_code
+        $sql = "SELECT aa.*, a.name as area_name
                 FROM agent_allocations aa
                 JOIN areas a ON aa.area_id = a.id
                 WHERE aa.user_id = :agent_id
