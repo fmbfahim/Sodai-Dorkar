@@ -35,6 +35,8 @@ $initialTitle = $hasVariants ? ($variants[$defaultVariantIndex]['title'] ?? '') 
 $initialPrice = $hasVariants ? floatval($variants[$defaultVariantIndex]['price'] ?? $sellPrice) : $sellPrice;
 $initialQty = $hasVariants ? floatval($variants[$defaultVariantIndex]['qty'] ?? 1) : 1;
 $initialOffer = $hasVariants ? trim($variants[$defaultVariantIndex]['offer'] ?? '') : '';
+$initialOfferLimit = $hasVariants ? trim($variants[$defaultVariantIndex]['offer_limit'] ?? 'unlimited') : 'unlimited';
+$initialOfferLimitLabel = ($hasVariants && !empty($initialOffer)) ? \Models\Product::getOfferLimitLabel($initialOfferLimit, $locale) : '';
 
 // Check criteria (cutting, dressing, bogo, variants)
 $criteria = \Models\Product::getCriteriaData($product, $locale);
@@ -258,15 +260,20 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                                         <?php 
                                             $isSelected = ($idx === $defaultVariantIndex); 
                                             $vOffer = trim($v['offer'] ?? '');
+                                            $vOfferLimit = trim($v['offer_limit'] ?? 'unlimited');
+                                            $vOfferLimitLabel = !empty($vOffer) ? \Models\Product::getOfferLimitLabel($vOfferLimit, $locale) : '';
                                         ?>
                                         <button type="button" 
-                                                onclick="selectDetailVariant(this, '<?= htmlspecialchars(addslashes($v['title']), ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>, '<?= htmlspecialchars(addslashes($vOffer), ENT_QUOTES) ?>')"
+                                                onclick="selectDetailVariant(this, '<?= htmlspecialchars(addslashes($v['title']), ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>, '<?= htmlspecialchars(addslashes($vOffer), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($vOfferLimit), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($vOfferLimitLabel), ENT_QUOTES) ?>')"
                                                 class="detail-variant-pill relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer <?= $isSelected ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300' ?>">
                                             <span><?= htmlspecialchars($v['title']) ?></span>
                                             <span class="ml-1 text-emerald-600">৳<?= number_format($v['price']) ?></span>
                                             <?php if (!empty($vOffer)): ?>
-                                                <span class="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight text-white bg-gradient-to-r from-amber-500 to-rose-500 shadow-2xs">
-                                                    🎁 <?= htmlspecialchars($vOffer) ?>
+                                                <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight text-white bg-gradient-to-r from-amber-500 to-rose-500 shadow-2xs">
+                                                    <span>🎁 <?= htmlspecialchars($vOffer) ?></span>
+                                                    <?php if (!empty($vOfferLimitLabel)): ?>
+                                                        <span class="opacity-90 font-medium border-l border-white/30 pl-1"><?= htmlspecialchars($vOfferLimitLabel) ?></span>
+                                                    <?php endif; ?>
                                                 </span>
                                             <?php endif; ?>
                                         </button>
@@ -279,8 +286,11 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                                         🎁
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div class="text-[11px] font-black tracking-wider uppercase text-amber-700">
-                                            <?= $locale === 'bn' ? 'বিশেষ প্যাকেজ অফার / ফ্রি বোনাস' : 'Special Package Offer / Free Bonus' ?>
+                                        <div class="text-[11px] font-black tracking-wider uppercase text-amber-700 flex items-center gap-1.5 flex-wrap">
+                                            <span><?= $locale === 'bn' ? 'বিশেষ প্যাকেজ অফার / ফ্রি বোনাস' : 'Special Package Offer / Free Bonus' ?></span>
+                                            <span id="detail-variant-offer-limit" class="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 text-[10px] font-bold <?= !empty($initialOfferLimitLabel) ? '' : 'hidden' ?>">
+                                                <?= htmlspecialchars($initialOfferLimitLabel) ?>
+                                            </span>
                                         </div>
                                         <div id="detail-variant-offer-text" class="text-xs sm:text-sm font-extrabold text-gray-900 truncate">
                                             <?= !empty($initialOffer) ? htmlspecialchars($initialOffer) : '' ?>
@@ -525,6 +535,8 @@ window.DETAIL_STATE = {
     selectedVariantPrice: <?= floatval($initialPrice) ?>,
     selectedVariantQty: <?= floatval($initialQty) ?>,
     selectedVariantOffer: <?= json_encode($initialOffer) ?>,
+    selectedVariantOfferLimit: <?= json_encode($initialOfferLimit) ?>,
+    selectedVariantOfferLimitLabel: <?= json_encode($initialOfferLimitLabel) ?>,
     selectedAddonTitle: <?= json_encode($initialAddon) ?>,
     selectedAddonPrice: <?= floatval($initialAddonPrice) ?>,
     maxStock: <?= $maxOrderQty ?>
@@ -556,8 +568,10 @@ function updateDetailPriceDisplay() {
     }
 }
 
-function selectDetailVariant(btn, title, price, qty, offer) {
+function selectDetailVariant(btn, title, price, qty, offer, offerLimit, offerLimitLabel) {
     offer = offer || '';
+    offerLimit = offerLimit || 'unlimited';
+    offerLimitLabel = offerLimitLabel || '';
     // Update pills active state
     document.querySelectorAll('.detail-variant-pill').forEach(el => {
         el.className = 'detail-variant-pill relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer border-gray-200 text-gray-700 bg-white hover:border-gray-300';
@@ -568,13 +582,24 @@ function selectDetailVariant(btn, title, price, qty, offer) {
     window.DETAIL_STATE.selectedVariantPrice = price;
     window.DETAIL_STATE.selectedVariantQty = qty;
     window.DETAIL_STATE.selectedVariantOffer = offer;
+    window.DETAIL_STATE.selectedVariantOfferLimit = offerLimit;
+    window.DETAIL_STATE.selectedVariantOfferLimitLabel = offerLimitLabel;
 
     // Toggle and update offer callout box
     const offerBox = document.getElementById('detail-variant-offer-box');
     const offerText = document.getElementById('detail-variant-offer-text');
+    const offerLimitEl = document.getElementById('detail-variant-offer-limit');
     if (offerBox && offerText) {
         if (offer) {
             offerText.textContent = offer;
+            if (offerLimitEl) {
+                if (offerLimitLabel) {
+                    offerLimitEl.textContent = offerLimitLabel;
+                    offerLimitEl.classList.remove('hidden');
+                } else {
+                    offerLimitEl.classList.add('hidden');
+                }
+            }
             offerBox.classList.remove('hidden');
         } else {
             offerBox.classList.add('hidden');
@@ -617,6 +642,7 @@ function submitDetailAddToCart(productId, btn) {
     }
     if (window.DETAIL_STATE.selectedVariantOffer) {
         formData.append('variant_offer', window.DETAIL_STATE.selectedVariantOffer);
+        formData.append('variant_offer_limit', window.DETAIL_STATE.selectedVariantOfferLimit || 'unlimited');
     }
     if (window.DETAIL_STATE.selectedAddonTitle) {
         formData.append('addon_title', window.DETAIL_STATE.selectedAddonTitle);

@@ -226,12 +226,15 @@ if (!empty($search)) $activeFilterCount++;
                             $decodedV = json_decode($prod['unit_variants_json'], true);
                             if (is_array($decodedV)) {
                                 foreach ($decodedV as $dv) {
+                                    $vLimit = trim($dv['offer_limit'] ?? 'unlimited');
                                     $prodVariants[] = [
                                         'title' => (string)($dv['title'] ?? ''),
                                         'qty' => floatval($dv['qty'] ?? 1),
                                         'price' => floatval($dv['price'] ?? $pSell),
                                         'is_default' => !empty($dv['is_default']),
-                                        'offer' => trim($dv['offer'] ?? '')
+                                        'offer' => trim($dv['offer'] ?? ''),
+                                        'offer_limit' => $vLimit,
+                                        'offer_limit_label' => \Models\Product::getOfferLimitLabel($vLimit, Lang::locale())
                                     ];
                                 }
                             }

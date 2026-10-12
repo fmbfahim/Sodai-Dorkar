@@ -66,6 +66,24 @@ class Product {
                     }
                 }
             }
+
+            // Ensure variant offer usage tracking table
+            try {
+                $this->db->query("CREATE TABLE IF NOT EXISTS variant_offer_usages (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    product_id INT UNSIGNED NOT NULL,
+                    variant_title VARCHAR(191) NOT NULL,
+                    offer_text VARCHAR(191) NOT NULL,
+                    customer_id INT UNSIGNED NULL,
+                    phone VARCHAR(30) NULL,
+                    order_id INT UNSIGNED NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_product (product_id),
+                    INDEX idx_customer (customer_id),
+                    INDEX idx_phone (phone),
+                    INDEX idx_order (order_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            } catch (\Throwable $e) {}
         } catch (\Throwable $e) {
             error_log("Product::ensureSchema failed: " . $e->getMessage());
         }
@@ -711,30 +729,217 @@ class Product {
         return !empty($base) ? rtrim($base, '/') . '/' . $clean : '/' . $clean;
     }
 
+
     /**
-     * Resolves product criteria:
-     * - Chicken / Poultry Dressing (ড্রেসিং)
-     * - Fish Cutting (মাছ কাটিং)
-     * - Meat Cutting (মাংস কাটিং)
-     * - Explicit Addons (Database addons_json)
-     * - BOGO Offers (Buy 1 Get 1)
+     * Get user-friendly label for offer limit / frequency
      */
-    public static function getCriteriaData($product, $locale = 'bn') {
-        if (!is_array($product)) {
+    public static function getOfferLimitLabel($limit, $locale = 'bn') {
+        $limit = trim((string)$limit);
+        if ($limit === '' || $limit === 'unlimited') {
+            return '';
+        }
+        if ($limit === '1') {
+            return ($locale === 'bn') ? 'গ্রাহক প্রতি ১ বার' : 'Limit: 1 time per customer';
+        }
+        if ($limit === '2') {
+            return ($locale === 'bn') ? 'গ্রাহক প্রতি ২ বার' : 'Limit: 2 times per customer';
+        }
+        if ($limit === '3') {
+            return ($locale === 'bn') ? 'গ্রাহক প্রতি ৩ বার' : 'Limit: 3 times per customer';
+        }
+        if ($limit === '5') {
+            return ($locale === 'bn') ? 'গ্রাহক প্রতি ৫ বার' : 'Limit: 5 times per customer';
+        }
+        if ($limit === 'first_order') {
+            return ($locale === 'bn') ? 'শুধুমাত্র ১ম অর্ডারে' : 'First order only';
+        }
+        if ($limit === 'first_month') {
+            return ($locale === 'bn') ? 'প্রথম ১ মাস (৩০ দিন)' : 'First 30 days only';
+        }
+        if (is_numeric($limit) && (int)$limit > 0) {
+            return ($locale === 'bn') ? "গ্রাহক প্রতি {$limit} বার" : "Limit: {$limit} times per customer";
+        }
+        return $limit;
+    }
+
+    /**
+     * Check whether a customer is eligible to receive a variant offer based on frequency / limits
+     */
+    public static function checkVariantOfferEligibility($productId, $variantTitle, $offerLimit, $customerId = null, $phone = null) {
+        $limit = trim((string)$offerLimit);
+        if ($limit === '' || $limit === 'unlimited') {
+            return ['eligible' => true, 'used_count' => 0, 'limit' => 'unlimited'];
+        }
+
+        $config = require __DIR__ . '/../../config/database.php';
+        $db = new \Core\Database($config);
+
+        // Normalize phone if provided
+        $cleanPhone = null;
+        if (!empty($phone)) {
+            $digits = preg_replace('/[^0-9]/', '', (string)$phone);
+            if (strlen($digits) >= 10) {
+                $cleanPhone = substr($digits, -10);
+            } else {
+                $cleanPhone = $digits;
+            }
+        }
+
+        // Rule: Only on first order ever
+        if ($limit === 'first_order') {
+            $pastOrders = 0;
+            if (!empty($customerId)) {
+                $stmt = $db->query("SELECT COUNT(*) FROM orders WHERE customer_id = ? AND status != 'cancelled'", [(int)$customerId]);
+                $pastOrders = (int)$stmt->fetchColumn();
+            } elseif (!empty($cleanPhone)) {
+                $stmt = $db->query("SELECT COUNT(*) FROM orders WHERE contact_number LIKE ? AND status != 'cancelled'", ['%' . $cleanPhone . '%']);
+                $pastOrders = (int)$stmt->fetchColumn();
+            }
+            if ($pastOrders > 0) {
+                return [
+                    'eligible' => false,
+                    'reason' => 'first_order_used',
+                    'limit_label' => 'শুধুমাত্র প্রথম অর্ডারে প্রযোজ্য'
+                ];
+            }
+            return ['eligible' => true, 'used_count' => 0, 'limit' => 'first_order'];
+        }
+
+        // Rule: First month of customer registration / first order
+        if ($limit === 'first_month') {
+            if (!empty($customerId)) {
+                $stmt = $db->query("SELECT created_at, DATEDIFF(NOW(), created_at) as days_old FROM customers WHERE id = ?", [(int)$customerId]);
+                $cust = $stmt->fetch();
+                if ($cust && isset($cust['days_old']) && (int)$cust['days_old'] > 30) {
+                    return [
+                        'eligible' => false,
+                        'reason' => 'first_month_expired',
+                        'limit_label' => 'অ্যাকাউন্টের প্রথম ১ মাস (৩০ দিন) অতিক্রান্ত হয়েছে'
+                    ];
+                }
+            } elseif (!empty($cleanPhone)) {
+                $stmt = $db->query("SELECT MIN(created_at) as first_date, DATEDIFF(NOW(), MIN(created_at)) as days_old FROM orders WHERE contact_number LIKE ? AND status != 'cancelled'", ['%' . $cleanPhone . '%']);
+                $firstOrder = $stmt->fetch();
+                if ($firstOrder && !empty($firstOrder['first_date']) && (int)$firstOrder['days_old'] > 30) {
+                    return [
+                        'eligible' => false,
+                        'reason' => 'first_month_expired',
+                        'limit_label' => 'প্রথম ৩০ দিনের অফার সময়সীমা অতিক্রান্ত হয়েছে'
+                    ];
+                }
+            }
+            return ['eligible' => true, 'used_count' => 0, 'limit' => 'first_month'];
+        }
+
+        // Rule: Maximum N times per customer
+        $maxTimes = is_numeric($limit) ? (int)$limit : 1;
+        if ($maxTimes <= 0) $maxTimes = 1;
+
+        // If neither customerId nor phone is known (pure guest visiting site), they are eligible to claim it initially
+        if (empty($customerId) && empty($cleanPhone)) {
+            return ['eligible' => true, 'used_count' => 0, 'max_limit' => $maxTimes];
+        }
+
+        // Count how many times this customer has ordered this variant with the offer
+        $usedCount = 0;
+
+        // 1. Check variant_offer_usages table
+        try {
+            $stmt = $db->query(
+                "SELECT COUNT(*) FROM variant_offer_usages vou 
+                 LEFT JOIN orders o ON vou.order_id = o.id 
+                 WHERE vou.product_id = ? 
+                   AND vou.variant_title = ?
+                   AND (o.status IS NULL OR o.status != 'cancelled')
+                   AND (
+                       (? IS NOT NULL AND vou.customer_id = ?) 
+                       OR (? IS NOT NULL AND vou.phone LIKE ?)
+                   )",
+                [
+                    (int)$productId,
+                    $variantTitle,
+                    $customerId ? (int)$customerId : null,
+                    $customerId ? (int)$customerId : null,
+                    $cleanPhone,
+                    $cleanPhone ? '%' . $cleanPhone . '%' : null
+                ]
+            );
+            $usedCount = (int)$stmt->fetchColumn();
+        } catch (\Throwable $e) {}
+
+        // 2. Also check order_items table for historical orders
+        if ($usedCount < $maxTimes) {
+            try {
+                $stmtItems = $db->query(
+                    "SELECT COUNT(*) FROM order_items oi
+                     JOIN orders o ON oi.order_id = o.id
+                     WHERE oi.product_id = ?
+                       AND o.status != 'cancelled'
+                       AND (
+                           (? IS NOT NULL AND o.customer_id = ?) 
+                           OR (? IS NOT NULL AND o.contact_number LIKE ?)
+                       )
+                       AND oi.unit_title LIKE ?
+                       AND oi.unit_title LIKE '%[🎁%'",
+                    [
+                        (int)$productId,
+                        $customerId ? (int)$customerId : null,
+                        $customerId ? (int)$customerId : null,
+                        $cleanPhone,
+                        $cleanPhone ? '%' . $cleanPhone . '%' : null,
+                        '%' . $variantTitle . '%'
+                    ]
+                );
+                $histCount = (int)$stmtItems->fetchColumn();
+                $usedCount = max($usedCount, $histCount);
+            } catch (\Throwable $e) {}
+        }
+
+        if ($usedCount >= $maxTimes) {
             return [
-                'has_criteria' => false,
-                'has_addons' => false,
-                'is_bogo' => false,
-                'is_fish' => false,
-                'is_meat' => false,
-                'criteria_type' => 'none',
-                'badge_label' => '',
-                'button_label' => '',
-                'addons' => []
+                'eligible' => false,
+                'reason' => 'limit_reached',
+                'used_count' => $usedCount,
+                'max_limit' => $maxTimes,
+                'limit_label' => "গ্রাহক প্রতি সর্বোচ্চ {$maxTimes} বার প্রযোজ্য (আপনি ইতিমধ্যে গ্রহণ করেছেন)"
             ];
         }
 
-        // 1. Explicit addons in database
+        return [
+            'eligible' => true,
+            'used_count' => $usedCount,
+            'max_limit' => $maxTimes
+        ];
+    }
+
+    /**
+     * Record variant offer usage for a placed order
+     */
+    public static function recordVariantOfferUsage($orderId, $productId, $variantTitle, $offerText, $customerId = null, $phone = null) {
+        if (empty($offerText)) return;
+        $db = \Core\Database::getInstance();
+        try {
+            $stmt = $db->query(
+                "INSERT INTO variant_offer_usages (product_id, variant_title, offer_text, customer_id, phone, order_id, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW())",
+                [
+                    (int)$productId,
+                    $variantTitle,
+                    $offerText,
+                    $customerId ? (int)$customerId : null,
+                    $phone ? trim($phone) : null,
+                    $orderId ? (int)$orderId : null
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Failed to record variant offer usage: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Determine criteria data for a product (cutting, dressing, bogo, variant offers)
+     */
+    public static function getCriteriaData($product, $locale = 'bn') {
         $addons = [];
         if (!empty($product['addons_json'])) {
             $decoded = is_string($product['addons_json']) ? json_decode($product['addons_json'], true) : $product['addons_json'];
@@ -743,19 +948,12 @@ class Product {
             }
         }
 
-        // 2. Check if product is BOGO (Buy 1 Get 1)
+        // 2. Check BOGO
         $specialBadge = $product['special_badge'] ?? 'none';
+        $isBogo = ($specialBadge === 'bogo');
+
+        // 3. Category & Name checks for smart heuristics
         $nameLower = mb_strtolower($product['name'] ?? '', 'UTF-8');
-        $tagsLower = mb_strtolower($product['tags'] ?? '', 'UTF-8');
-
-        $isBogo = ($specialBadge === 'bogo')
-            || (strpos($tagsLower, 'bogo') !== false)
-            || (strpos($tagsLower, '১+১') !== false)
-            || (strpos($nameLower, 'bogo') !== false)
-            || (strpos($nameLower, '১+১') !== false)
-            || (strpos($nameLower, 'buy 1 get 1') !== false);
-
-        // 3. Category Name and Slug if available
         $catName = mb_strtolower($product['category_name'] ?? '', 'UTF-8');
         $catSlug = mb_strtolower($product['category_slug'] ?? $product['slug'] ?? '', 'UTF-8');
 
@@ -776,6 +974,8 @@ class Product {
         // 5.5. Check if product has custom variants with special offers (e.g. '৩০ কিনলে ১টি ফ্রি')
         $hasVariantOffers = false;
         $variantOfferLabel = '';
+        $variantOfferLimit = 'unlimited';
+        $variantOfferLimitLabel = '';
         if (!empty($product['unit_variants_json'])) {
             $vDecoded = is_string($product['unit_variants_json']) ? json_decode($product['unit_variants_json'], true) : $product['unit_variants_json'];
             if (is_array($vDecoded)) {
@@ -784,6 +984,8 @@ class Product {
                         $hasVariantOffers = true;
                         if (empty($variantOfferLabel)) {
                             $variantOfferLabel = trim($v['offer']);
+                            $variantOfferLimit = trim($v['offer_limit'] ?? 'unlimited');
+                            $variantOfferLimitLabel = self::getOfferLimitLabel($variantOfferLimit, $locale);
                         }
                     }
                 }
@@ -824,6 +1026,9 @@ class Product {
         } elseif ($hasVariantOffers) {
             $criteriaType = 'variant_offer';
             $badgeLabel = (strpos($variantOfferLabel, '🎁') === false ? '🎁 ' : '') . $variantOfferLabel;
+            if (!empty($variantOfferLimitLabel)) {
+                $badgeLabel .= " ({$variantOfferLimitLabel})";
+            }
             $buttonLabel = ($locale === 'bn' ? '🎁 অফার সহ সাইজ বাছুন' : '🎁 Choose Size & Offer');
         }
 
@@ -832,6 +1037,8 @@ class Product {
             'has_addons' => $hasAddons,
             'has_variant_offers' => $hasVariantOffers,
             'variant_offer_label' => $variantOfferLabel,
+            'variant_offer_limit' => $variantOfferLimit,
+            'variant_offer_limit_label' => $variantOfferLimitLabel,
             'is_bogo' => $isBogo,
             'is_fish' => $isFish,
             'is_meat' => $isMeat,

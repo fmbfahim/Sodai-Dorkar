@@ -807,6 +807,7 @@ class ShopController {
             $variantPrice = isset($_POST['variant_price']) && $_POST['variant_price'] !== '' ? floatval($_POST['variant_price']) : null;
             $variantQty = isset($_POST['variant_qty']) && $_POST['variant_qty'] !== '' ? floatval($_POST['variant_qty']) : 1.000;
             $variantOffer = trim($_POST['variant_offer'] ?? '');
+            $variantOfferLimit = trim($_POST['variant_offer_limit'] ?? '');
             $addonTitle = trim($_POST['addon_title'] ?? '');
             $addonPrice = floatval($_POST['addon_price'] ?? 0);
 
@@ -824,16 +825,55 @@ class ShopController {
                     $isBogo = !empty($criteria['is_bogo']) || (($product['special_badge'] ?? '') === 'bogo');
                     $bogoTag = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি' : '🎁 BOGO Free';
 
-                    // Auto-detect variant offer from product if not passed
-                    if (empty($variantOffer) && $variantTitle && !empty($product['unit_variants_json'])) {
+                    // Auto-detect variant offer and offer_limit from product if not passed
+                    if ($variantTitle && !empty($product['unit_variants_json'])) {
                         $decodedVariants = json_decode($product['unit_variants_json'], true);
                         if (is_array($decodedVariants)) {
                             foreach ($decodedVariants as $dv) {
-                                if (($dv['title'] ?? '') === $variantTitle && !empty($dv['offer'])) {
-                                    $variantOffer = trim($dv['offer']);
+                                if (($dv['title'] ?? '') === $variantTitle) {
+                                    if (empty($variantOffer) && !empty($dv['offer'])) {
+                                        $variantOffer = trim($dv['offer']);
+                                    }
+                                    if (empty($variantOfferLimit) && !empty($dv['offer_limit'])) {
+                                        $variantOfferLimit = trim($dv['offer_limit']);
+                                    }
                                     break;
                                 }
                             }
+                        }
+                    }
+                    if (empty($variantOfferLimit)) {
+                        $variantOfferLimit = 'unlimited';
+                    }
+
+                    // Check customer eligibility for the variant offer limit (e.g. 1 time, 3 times, first month, etc.)
+                    $offerNotice = null;
+                    if (!empty($variantOffer) && $variantOfferLimit !== 'unlimited') {
+                        $cId = isset($_SESSION['customer_id']) ? (int)$_SESSION['customer_id'] : null;
+                        $cPhone = $_SESSION['customer_phone'] ?? '';
+                        if (!$cPhone && $cId) {
+                            try {
+                                $cRow = $this->db->query("SELECT phone FROM customers WHERE id = ?", [$cId])->fetch();
+                                if (!empty($cRow['phone'])) {
+                                    $cPhone = $cRow['phone'];
+                                }
+                            } catch (\Throwable $e) {}
+                        }
+
+                        $eligibility = \Models\Product::checkVariantOfferEligibility(
+                            $productId,
+                            $variantTitle,
+                            $variantOfferLimit,
+                            $cId,
+                            $cPhone
+                        );
+
+                        if (empty($eligibility['eligible'])) {
+                            $limitReason = $eligibility['limit_label'] ?? 'সীমা অতিক্রান্ত';
+                            $offerNotice = (Lang::locale() === 'bn')
+                                ? "⚠️ অফারের সীমা: এই বিশেষ অফারটি {$limitReason}। পণ্যটি নিয়মিত মূল্যে কার্টে যোগ করা হয়েছে।"
+                                : "⚠️ Offer limit: This offer is {$limitReason}. Added as regular item.";
+                            $variantOffer = ''; // Remove free offer bonus tag for this ineligible customer
                         }
                     }
 
@@ -903,6 +943,7 @@ class ShopController {
                             'base_qty' => $variantQty > 0 ? $variantQty : 1.000,
                             'variant_title' => $unitDesc,
                             'variant_offer' => $variantOffer,
+                            'variant_offer_limit' => $variantOfferLimit,
                             'addon_title' => $addonTitle,
                             'addon_price' => $addonPrice,
                             'stock' => $product['stock_qty'],
@@ -935,7 +976,9 @@ class ShopController {
                         $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, Lang::locale());
 
                         $toastMsg = Lang::get('toast_added_to_cart');
-                        if ($isBogo) {
+                        if (!empty($offerNotice)) {
+                            $toastMsg = $offerNotice;
+                        } elseif ($isBogo) {
                             $toastMsg = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি অফার সহ কার্টে যোগ করা হয়েছে!' : '🎁 Added with Buy 1 Get 1 Free offer!';
                         } elseif (!empty($variantOffer)) {
                             $toastMsg = (Lang::locale() === 'bn') ? "🎁 {$variantOffer} অফার সহ কার্টে যোগ হয়েছে!" : "🎁 Added with offer: {$variantOffer}!";
@@ -950,6 +993,7 @@ class ShopController {
                             'cart' => $_SESSION['cart'],
                             'product_name' => $displayName,
                             'spend_more_offers' => $spendMoreOffers,
+                            'offer_notice' => $offerNotice,
                             'message' => $toastMsg
                         ]);
                         exit;
@@ -1352,6 +1396,18 @@ class ShopController {
 
                     $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qtyOrdered, $item['price']]);
                     $stmtStock->execute([$deductTotal, $pid]);
+
+                    // Record variant offer usage if item had an offer
+                    if (!empty($item['variant_offer'])) {
+                        \Models\Product::recordVariantOfferUsage(
+                            $orderId,
+                            $pid,
+                            $unitTitle ?? '',
+                            $item['variant_offer'],
+                            $customerId,
+                            $phone
+                        );
+                    }
                 }
 
                 $pdo->commit();
@@ -1552,6 +1608,18 @@ class ShopController {
 
                 $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qty, $price]);
                 $stmtStock->execute([$qty * $baseQty, $pid]);
+
+                // Record variant offer usage if item had an offer
+                if (!empty($item['variant_offer'])) {
+                    \Models\Product::recordVariantOfferUsage(
+                        $orderId,
+                        $pid,
+                        $unitTitle ?? '',
+                        $item['variant_offer'],
+                        $customerId,
+                        $cleanPhone
+                    );
+                }
             }
 
             try {

@@ -661,7 +661,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                     <th class="px-3.5 py-3">Variant Label</th>
                                     <th class="px-3 py-3 w-36">Quantity (Base Unit)</th>
                                     <th class="px-3 py-3 w-36 text-right">Selling Price (Tk)</th>
-                                    <th class="px-3.5 py-3 w-56 text-amber-900 font-extrabold">🎁 Offer / Incentive (অফার বা বোনাস)</th>
+                                    <th class="px-3.5 py-3 w-64 text-amber-900 font-extrabold">🎁 Offer & Frequency (অফার ও সীমা)</th>
                                     <th class="px-2 py-3 w-16 text-center">Default</th>
                                     <th class="px-2 py-3 w-12 text-center">Action</th>
                                 </tr>
@@ -691,11 +691,26 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                                 </div>
                                             </td>
                                             <td class="px-3.5 py-2.5">
-                                                <div class="relative">
-                                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
-                                                    <input type="text" list="variant-offer-presets" name="variants[<?php echo $idx; ?>][offer]" value="<?php echo htmlspecialchars($v['offer'] ?? ''); ?>" 
-                                                           placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
-                                                           class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20">
+                                                <div class="space-y-1.5">
+                                                    <div class="relative">
+                                                        <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
+                                                        <input type="text" list="variant-offer-presets" name="variants[<?php echo $idx; ?>][offer]" value="<?php echo htmlspecialchars($v['offer'] ?? ''); ?>" 
+                                                               placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
+                                                               class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20 variant-offer-input">
+                                                    </div>
+                                                    <div class="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200/60">
+                                                        <span class="text-[10px] font-black text-amber-900 whitespace-nowrap">সীমা:</span>
+                                                        <?php $curLimit = $v['offer_limit'] ?? 'unlimited'; ?>
+                                                        <select name="variants[<?php echo $idx; ?>][offer_limit]" class="w-full bg-white text-secondary-800 text-[11px] font-bold border border-secondary-200 rounded-md py-0.5 px-1.5 focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                                                            <option value="unlimited" <?php echo ($curLimit === 'unlimited') ? 'selected' : ''; ?>>♾️ সর্বদা (আনলিমিটেড)</option>
+                                                            <option value="1" <?php echo ($curLimit === '1') ? 'selected' : ''; ?>>👤 গ্রাহক প্রতি ১ বার</option>
+                                                            <option value="2" <?php echo ($curLimit === '2') ? 'selected' : ''; ?>>👤 গ্রাহক প্রতি ২ বার</option>
+                                                            <option value="3" <?php echo ($curLimit === '3') ? 'selected' : ''; ?>>👤 গ্রাহক প্রতি ৩ বার</option>
+                                                            <option value="5" <?php echo ($curLimit === '5') ? 'selected' : ''; ?>>👤 গ্রাহক প্রতি ৫ বার</option>
+                                                            <option value="first_order" <?php echo ($curLimit === 'first_order') ? 'selected' : ''; ?>>🥇 শুধুমাত্র ১ম অর্ডারে</option>
+                                                            <option value="first_month" <?php echo ($curLimit === 'first_month') ? 'selected' : ''; ?>>🗓️ প্রথম ১ মাস (৩০ দিন)</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td class="px-2 py-2.5 text-center">
@@ -720,14 +735,15 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     <!-- Quick Offer Idea Helper Buttons -->
                     <div class="mt-2.5 flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs">
                         <span class="font-extrabold text-amber-900 flex items-center gap-1">
-                            <span>💡 কুইক অফার যুক্ত করুন:</span>
+                            <span>💡 কুইক অফার ও সীমা যোগ করুন:</span>
                         </span>
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <button type="button" onclick="applyQuickOfferToActiveRow('৩০ কিনলে ১টি ফ্রি')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ৩০ কিনলে ১টি ফ্রি</button>
-                            <button type="button" onclick="applyQuickOfferToActiveRow('১টি ফ্রি')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ১টি ফ্রি</button>
-                            <button type="button" onclick="applyQuickOfferToActiveRow('ফ্রি গিফট')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ফ্রি গিফট</button>
-                            <button type="button" onclick="applyQuickOfferToActiveRow('সেরা ভ্যালু')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">⭐ সেরা ভ্যালু</button>
-                            <button type="button" onclick="applyQuickOfferToActiveRow('১০% ছাড়')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🔥 ১০% ছাড়</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('৩০ কিনলে ১টি ফ্রি', '1')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer" title="৩০ কিনলে ১টি ফ্রি (১ বার)">🎁 ৩০ কিনলে ১টি ফ্রি (১ বার)</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('৩০ কিনলে ১টি ফ্রি', '3')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer" title="৩০ কিনলে ১টি ফ্রি (৩ বার)">🎁 ৩০ কিনলে ১টি ফ্রি (৩ বার)</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('৩০ কিনলে ১টি ফ্রি', 'first_month')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer" title="৩০ কিনলে ১টি ফ্রি (প্রথম ১ মাস)">🗓️ ৩০ কিনলে ১টি ফ্রি (১ম মাস)</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('১টি ফ্রি', '1')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ১টি ফ্রি (১ বার)</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('ফ্রি গিফট', 'first_order')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🥇 ফ্রি গিফট (১ম অর্ডার)</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('সেরা ভ্যালু', 'unlimited')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">⭐ সেরা ভ্যালু (আনলিমিটেড)</button>
                         </div>
                     </div>
 
@@ -1449,80 +1465,8 @@ function onPurchaseUnitSelectChange(selectEl) {
         }
     }
 
-    calculateUnitPricing();
-}
-
-function onCustomPurchaseUnitInput(inputEl) {
-    document.getElementById('purchase_unit').value = inputEl.value;
-    calculateUnitPricing();
-}
-
-// Apply Preset
-function applyUnitPreset(presetKey) {
-    const preset = PRESETS[presetKey];
-    if (!preset) return;
-
-    document.getElementById('unit_type').value = preset.unit_type;
-    document.getElementById('base_unit').value = preset.base_unit;
-    document.getElementById('purchase_unit').value = preset.purchase_unit;
-    document.getElementById('purchase_unit_qty').value = preset.purchase_unit_qty;
-
-    // Sync purchase unit select
-    const pSelect = document.getElementById('purchase_unit_select');
-    let matched = false;
-    for (let i = 0; i < pSelect.options.length; i++) {
-        if (pSelect.options[i].value === preset.purchase_unit) {
-            pSelect.selectedIndex = i;
-            matched = true;
-            break;
-        }
-    }
-    const customWrapper = document.getElementById('custom_purchase_unit_wrapper');
-    if (!matched) {
-        pSelect.value = '__custom__';
-        customWrapper.classList.remove('hidden');
-        document.getElementById('custom_purchase_unit_input').value = preset.purchase_unit;
-    } else {
-        customWrapper.classList.add('hidden');
-    }
-
-    // Refresh labels
-    updateLabels();
-
-    // Update active UI for preset buttons
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        const isCur = btn.dataset.preset === presetKey;
-        if (isCur) {
-            btn.className = 'preset-btn flex flex-col items-center justify-center p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 shadow-sm transition-all text-center relative group';
-            if (!btn.querySelector('.preset-active-badge')) {
-                const b = document.createElement('span');
-                b.className = 'preset-active-badge text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-full mt-1';
-                b.textContent = '✓ Active Template';
-                btn.appendChild(b);
-            }
-        } else {
-            btn.className = 'preset-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-md transition-all text-center relative group';
-            const b = btn.querySelector('.preset-active-badge');
-            if (b) b.remove();
-        }
-    });
-
-    // Auto generate variants based on current sell_price
-    const currentSell = parseFloat(document.getElementById('sell_price').value) || 0;
-    const tbody = document.getElementById('variants-tbody');
-    tbody.innerHTML = '';
-    variantCount = 0;
-
-    preset.variants.forEach((v, i) => {
-        const calculatedPrice = currentSell > 0 ? (currentSell * v.qty * v.discount).toFixed(2) : '0.00';
-        addVariantRow(v.title, v.qty, calculatedPrice, i === 0);
-    });
-
-    calculateUnitPricing();
-}
-
-// Add Variant Row
-function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer = '') {
+   // Add Variant Row
+function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer = '', offerLimit = 'unlimited') {
     const tbody = document.getElementById('variants-tbody');
     const emptyState = document.getElementById('variants-empty-state');
     const baseUnit = document.getElementById('base_unit').value;
@@ -1538,7 +1482,7 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer
                 <input type="text" name="variants[${variantCount}][title]" value="${title}" 
                        placeholder="e.g. 1 kg or 30 pcs" class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500" required>
             </td>
-            <td class="px-3 py-2.5">
+            <td class="px-3.5 py-2.5">
                 <div class="relative">
                     <input type="number" step="0.001" min="0.001" name="variants[${variantCount}][qty]" value="${qty}" 
                            oninput="onVariantQtyChange(this)"
@@ -1546,7 +1490,7 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer
                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-[10px] text-secondary-400 font-bold base-unit-label pointer-events-none">${baseUnit}</span>
                 </div>
             </td>
-            <td class="px-3 py-2.5 text-right">
+            <td class="px-3.5 py-2.5 text-right">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-emerald-600 font-bold text-xs">Tk</span>
                     <input type="number" step="0.01" min="0" name="variants[${variantCount}][price]" value="${price}" 
@@ -1555,11 +1499,25 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer
                 </div>
             </td>
             <td class="px-3.5 py-2.5">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
-                    <input type="text" list="variant-offer-presets" name="variants[${variantCount}][offer]" value="${offer}" 
-                           placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
-                           class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20">
+                <div class="space-y-1.5">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
+                        <input type="text" list="variant-offer-presets" name="variants[${variantCount}][offer]" value="${offer}" 
+                               placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
+                               class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20 variant-offer-input">
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200/60">
+                        <span class="text-[10px] font-black text-amber-900 whitespace-nowrap">সীমা:</span>
+                        <select name="variants[${variantCount}][offer_limit]" class="w-full bg-white text-secondary-800 text-[11px] font-bold border border-secondary-200 rounded-md py-0.5 px-1.5 focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                            <option value="unlimited" ${offerLimit === 'unlimited' ? 'selected' : ''}>♾️ সর্বদা (আনলিমিটেড)</option>
+                            <option value="1" ${offerLimit === '1' ? 'selected' : ''}>👤 গ্রাহক প্রতি ১ বার</option>
+                            <option value="2" ${offerLimit === '2' ? 'selected' : ''}>👤 গ্রাহক প্রতি ২ বার</option>
+                            <option value="3" ${offerLimit === '3' ? 'selected' : ''}>👤 গ্রাহক প্রতি ৩ বার</option>
+                            <option value="5" ${offerLimit === '5' ? 'selected' : ''}>👤 গ্রাহক প্রতি ৫ বার</option>
+                            <option value="first_order" ${offerLimit === 'first_order' ? 'selected' : ''}>🥇 শুধুমাত্র ১ম অর্ডারে</option>
+                            <option value="first_month" ${offerLimit === 'first_month' ? 'selected' : ''}>🗓️ প্রথম ১ মাস (৩০ দিন)</option>
+                        </select>
+                    </div>
                 </div>
             </td>
             <td class="px-2 py-2.5 text-center">
@@ -1578,23 +1536,29 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer
     variantCount++;
 }
 
-// Quick Offer Helper to inject preset offer text to active or last variant row
-function applyQuickOfferToActiveRow(offerText) {
+// Quick Offer Helper to inject preset offer text & limit to active or last variant row
+function applyQuickOfferToActiveRow(offerText, limit = 'unlimited') {
     const rows = document.querySelectorAll('#variants-tbody tr.variant-row');
     if (!rows.length) {
-        addVariantRow('৩০ পিস', 30, '', false, offerText);
+        addVariantRow('৩০ পিস', 30, '', false, offerText, limit);
         return;
     }
-    let targetInput = (document.activeElement && document.activeElement.name && document.activeElement.name.includes('[offer]'))
-        ? document.activeElement
-        : rows[rows.length - 1].querySelector('input[name*="[offer]"]');
-    if (targetInput) {
-        targetInput.value = offerText;
-        targetInput.focus();
-        targetInput.classList.add('ring-2', 'ring-amber-500', 'bg-amber-100/50');
-        setTimeout(() => targetInput.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-100/50'), 1200);
-        showToastNotification(`ভ্যারিয়েন্টে অফার যুক্ত হয়েছে: "${offerText}"`);
+    let targetRow = rows[rows.length - 1];
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest('tr.variant-row')) {
+        targetRow = document.activeElement.closest('tr.variant-row');
     }
+    const offerInput = targetRow.querySelector('input[name*="[offer]"]');
+    const limitSelect = targetRow.querySelector('select[name*="[offer_limit]"]');
+    if (offerInput) {
+        offerInput.value = offerText;
+        offerInput.focus();
+        offerInput.classList.add('ring-2', 'ring-amber-500', 'bg-amber-100/50');
+        setTimeout(() => offerInput.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-100/50'), 1200);
+    }
+    if (limitSelect && limit) {
+        limitSelect.value = limit;
+    }
+    showToastNotification(`ভ্যারিয়েন্টে অফার ও সীমা যুক্ত হয়েছে: "${offerText}"`);
 }
 
 function deleteVariantRow(btn) {

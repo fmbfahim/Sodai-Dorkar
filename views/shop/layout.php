@@ -1775,6 +1775,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             const varCont = document.getElementById('qc-variants-container');
             const offerCallout = document.getElementById('qc-variant-offer-callout');
             let initialOffer = '';
+            let initialLimitLabel = '';
             if (variants && variants.length > 0) {
                 varSec?.classList.remove('hidden');
                 varCont.innerHTML = variants.map(v => {
@@ -1784,20 +1785,25 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                         window.QC_STATE.selectedVariantPrice = parseFloat(v.price);
                         window.QC_STATE.selectedVariantQty = parseFloat(v.qty || 1);
                         window.QC_STATE.selectedVariantOffer = v.offer || '';
+                        window.QC_STATE.selectedVariantOfferLimit = v.offer_limit || 'unlimited';
+                        window.QC_STATE.selectedVariantOfferLimitLabel = v.offer_limit_label || '';
                         initialOffer = v.offer || '';
+                        initialLimitLabel = v.offer_limit_label || '';
                     }
                     const activeCls = isSelected 
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' 
                         : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+                    const limitTag = v.offer_limit_label ? `<span class="opacity-90 font-medium">(${escapeHtml(v.offer_limit_label)})</span>` : '';
                     const offerBadge = v.offer ? `
-                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-500 via-rose-500 to-red-500 text-white shadow-2xs animate-pulse">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-500 via-rose-500 to-red-500 text-white shadow-2xs animate-pulse">
                             <span>🎁</span>
                             <span>${escapeHtml(v.offer)}</span>
+                            ${limitTag}
                         </span>
                     ` : '';
                     return `
                         <button type="button" 
-                                onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, '${escapeHtml(v.offer || '')}', this)" 
+                                onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, '${escapeHtml(v.offer || '')}', '${escapeHtml(v.offer_limit || 'unlimited')}', '${escapeHtml(v.offer_limit_label || '')}', this)" 
                                 class="qc-var-pill px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 flex-wrap ${activeCls}">
                             <span class="font-bold">${escapeHtml(v.title)}</span>
                             <span class="text-emerald-700 font-black">৳${formatPrice(v.price)}</span>
@@ -1808,7 +1814,16 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
                 if (offerCallout) {
                     if (initialOffer) {
-                        offerCallout.innerHTML = `<span class="text-base">🎉</span><span>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(initialOffer)}</strong></span>`;
+                        const limitNote = initialLimitLabel ? `<div class="text-[10px] text-amber-800 font-bold mt-0.5">📌 শর্ত: ${escapeHtml(initialLimitLabel)} প্রযোজ্য</div>` : '';
+                        offerCallout.innerHTML = `
+                            <div class="flex items-start gap-2">
+                                <span class="text-base">🎉</span>
+                                <div>
+                                    <div>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(initialOffer)}</strong></div>
+                                    ${limitNote}
+                                </div>
+                            </div>
+                        `;
                         offerCallout.classList.remove('hidden');
                     } else {
                         offerCallout.classList.add('hidden');
@@ -1934,10 +1949,21 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             updateQuickCriteriaPriceDisplay();
         }
 
-        function selectQuickCriteriaVariant(title, price, qty, offer, btn) {
+        function selectQuickCriteriaVariant(title, price, qty, offer, offerLimit, offerLimitLabel, btn) {
             if (offer instanceof HTMLElement || (offer && offer.tagName)) {
                 btn = offer;
                 offer = '';
+                offerLimit = 'unlimited';
+                offerLimitLabel = '';
+            }
+            if (offerLimit instanceof HTMLElement || (offerLimit && offerLimit.tagName)) {
+                btn = offerLimit;
+                offerLimit = 'unlimited';
+                offerLimitLabel = '';
+            }
+            if (offerLimitLabel instanceof HTMLElement || (offerLimitLabel && offerLimitLabel.tagName)) {
+                btn = offerLimitLabel;
+                offerLimitLabel = '';
             }
             document.querySelectorAll('.qc-var-pill').forEach(el => {
                 el.className = 'qc-var-pill px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 flex-wrap border-gray-200 text-gray-700 bg-white hover:border-gray-300';
@@ -1950,11 +1976,22 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             window.QC_STATE.selectedVariantPrice = price;
             window.QC_STATE.selectedVariantQty = qty;
             window.QC_STATE.selectedVariantOffer = offer || '';
+            window.QC_STATE.selectedVariantOfferLimit = offerLimit || 'unlimited';
+            window.QC_STATE.selectedVariantOfferLimitLabel = offerLimitLabel || '';
 
             const calloutEl = document.getElementById('qc-variant-offer-callout');
             if (calloutEl) {
                 if (offer) {
-                    calloutEl.innerHTML = `<span class="text-base">🎉</span><span>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(offer)}</strong></span>`;
+                    const limitNote = offerLimitLabel ? `<div class="text-[10px] text-amber-800 font-bold mt-0.5">📌 শর্ত: ${escapeHtml(offerLimitLabel)} প্রযোজ্য</div>` : '';
+                    calloutEl.innerHTML = `
+                        <div class="flex items-start gap-2">
+                            <span class="text-base">🎉</span>
+                            <div>
+                                <div>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(offer)}</strong></div>
+                                ${limitNote}
+                            </div>
+                        </div>
+                    `;
                     calloutEl.classList.remove('hidden');
                 } else {
                     calloutEl.classList.add('hidden');
@@ -2026,6 +2063,9 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             }
             if (window.QC_STATE.selectedVariantOffer) {
                 formData.append('variant_offer', window.QC_STATE.selectedVariantOffer);
+            }
+            if (window.QC_STATE.selectedVariantOfferLimit) {
+                formData.append('variant_offer_limit', window.QC_STATE.selectedVariantOfferLimit);
             }
             if (window.QC_STATE.selectedAddonTitle) {
                 formData.append('addon_title', window.QC_STATE.selectedAddonTitle);

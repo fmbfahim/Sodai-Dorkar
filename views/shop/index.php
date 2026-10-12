@@ -20,6 +20,8 @@ function getProductUnits($product) {
 
             foreach ($decoded as $v) {
                 $offer = trim($v['offer'] ?? '');
+                $offerLimit = trim($v['offer_limit'] ?? 'unlimited');
+                $offerLimitLabel = \Models\Product::getOfferLimitLabel($offerLimit, $locale);
                 if (empty($firstOffer) && !empty($offer)) {
                     $firstOffer = $offer;
                 }
@@ -28,7 +30,9 @@ function getProductUnits($product) {
                     'qty' => $v['qty'] ?? 1,
                     'price' => $v['price'],
                     'is_default' => !empty($v['is_default']),
-                    'offer' => $offer
+                    'offer' => $offer,
+                    'offer_limit' => $offerLimit,
+                    'offer_limit_label' => $offerLimitLabel
                 ];
                 if (!empty($v['is_default']) && empty($defaultTitle)) {
                     $defaultTitle = $v['title'];
