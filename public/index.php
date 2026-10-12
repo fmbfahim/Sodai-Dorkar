@@ -369,6 +369,26 @@ $router->post('/admin/marketing/disconnect-facebook', 'MarketingController@disco
 $router->get('/admin/marketing/cron-trigger', 'MarketingController@cronTrigger');
 $router->get('/cron/marketing-auto-post', 'MarketingController@cronTrigger');
 
+// Marketing Coupon & Promo Discount Routes
+$router->get('/admin/marketing/coupons', 'CouponController@index');
+$router->get('/admin/marketing/coupons/create', 'CouponController@create');
+$router->post('/admin/marketing/coupons/store', 'CouponController@store');
+$router->get('/admin/marketing/coupons/edit', 'CouponController@edit');
+$router->post('/admin/marketing/coupons/update', 'CouponController@update');
+$router->post('/admin/marketing/coupons/delete', 'CouponController@destroy');
+$router->post('/admin/marketing/coupons/toggle', 'CouponController@toggleStatus');
+$router->get('/admin/marketing/coupons/usages', 'CouponController@usages');
+
+// Direct Aliases for /admin/coupons
+$router->get('/admin/coupons', 'CouponController@index');
+$router->get('/admin/coupons/create', 'CouponController@create');
+$router->post('/admin/coupons/store', 'CouponController@store');
+$router->get('/admin/coupons/edit', 'CouponController@edit');
+$router->post('/admin/coupons/update', 'CouponController@update');
+$router->post('/admin/coupons/delete', 'CouponController@destroy');
+$router->post('/admin/coupons/toggle', 'CouponController@toggleStatus');
+$router->get('/admin/coupons/usages', 'CouponController@usages');
+
 // Promo Push Notification Routes (Admin & App API)
 $router->get('/admin/notifications', 'NotificationController@index');
 $router->get('/admin/notifications/create', 'NotificationController@create');

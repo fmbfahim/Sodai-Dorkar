@@ -1230,27 +1230,42 @@ class ShopController {
                 // Coupon Code Verification & Calculation
                 $couponCode = strtoupper(trim($_POST['coupon_code'] ?? ''));
                 $couponDiscount = 0.00;
+                $customerId = isset($_SESSION['customer_id']) ? (int)$_SESSION['customer_id'] : null;
                 if (!empty($couponCode)) {
                     $claimedDiscount = floatval($_POST['coupon_discount'] ?? 0);
-                    // Server-side validation
-                    if ($couponCode === 'SODAI50') {
-                        $couponDiscount = ($subtotal >= 200) ? 50.00 : 0.00;
-                    } elseif ($couponCode === 'SODAI10') {
-                        $couponDiscount = ($subtotal >= 300) ? min(100.00, round($subtotal * 0.10, 2)) : 0.00;
-                    } elseif ($couponCode === 'WELCOME' || $couponCode === 'FAST30') {
-                        $couponDiscount = ($subtotal >= 150) ? 30.00 : 0.00;
-                    } else {
-                        // Check custom coupons
-                        $activeCouponsSetting = \Models\Setting::getValue('active_coupons', '');
-                        $savedCoupons = !empty($activeCouponsSetting) ? json_decode($activeCouponsSetting, true) : [];
-                        if (isset($savedCoupons[$couponCode])) {
-                            $cp = $savedCoupons[$couponCode];
-                            if ($subtotal >= ($cp['min_order'] ?? 0)) {
-                                if (($cp['type'] ?? '') === 'percent') {
-                                    $couponDiscount = round(($subtotal * floatval($cp['value'])) / 100, 2);
-                                    if (!empty($cp['max_discount'])) $couponDiscount = min($couponDiscount, floatval($cp['max_discount']));
-                                } else {
-                                    $couponDiscount = floatval($cp['value']);
+                    
+                    // 1. Validate with Database Coupon Model
+                    try {
+                        $couponModel = new \Models\Coupon();
+                        $val = $couponModel->validateCoupon($couponCode, $subtotal, $customerId);
+                        if ($val['valid']) {
+                            $couponDiscount = floatval($val['discount']);
+                        }
+                    } catch (\Throwable $e) {
+                        error_log("Coupon validation error in placeOrder: " . $e->getMessage());
+                    }
+
+                    // 2. Fallback to legacy dictionary if not in DB
+                    if ($couponDiscount == 0.00) {
+                        if ($couponCode === 'SODAI50') {
+                            $couponDiscount = ($subtotal >= 200) ? 50.00 : 0.00;
+                        } elseif ($couponCode === 'SODAI10') {
+                            $couponDiscount = ($subtotal >= 300) ? min(100.00, round($subtotal * 0.10, 2)) : 0.00;
+                        } elseif ($couponCode === 'WELCOME' || $couponCode === 'FAST30') {
+                            $couponDiscount = ($subtotal >= 150) ? 30.00 : 0.00;
+                        } else {
+                            // Check custom settings coupons
+                            $activeCouponsSetting = \Models\Setting::getValue('active_coupons', '');
+                            $savedCoupons = !empty($activeCouponsSetting) ? json_decode($activeCouponsSetting, true) : [];
+                            if (isset($savedCoupons[$couponCode])) {
+                                $cp = $savedCoupons[$couponCode];
+                                if ($subtotal >= ($cp['min_order'] ?? 0)) {
+                                    if (($cp['type'] ?? '') === 'percent') {
+                                        $couponDiscount = round(($subtotal * floatval($cp['value'])) / 100, 2);
+                                        if (!empty($cp['max_discount'])) $couponDiscount = min($couponDiscount, floatval($cp['max_discount']));
+                                    } else {
+                                        $couponDiscount = floatval($cp['value']);
+                                    }
                                 }
                             }
                         }
@@ -1319,6 +1334,16 @@ class ShopController {
 
                 $pdo->commit();
                 
+                // Record coupon usage and increment stats
+                if (!empty($couponCode) && $couponDiscount > 0) {
+                    try {
+                        $couponModel = new \Models\Coupon();
+                        $couponModel->recordUsage($couponCode, $couponDiscount, (int)$orderId, !empty($customerId) ? (int)$customerId : null);
+                    } catch (\Throwable $ex) {
+                        error_log("Coupon recordUsage error: " . $ex->getMessage());
+                    }
+                }
+
                 // Auto-assignment happens later in Dispatch now
 
                 // Add tracking log after commit
@@ -1764,13 +1789,39 @@ class ShopController {
         $input = json_decode($raw, true) ?: $_POST;
         $code = strtoupper(trim($input['code'] ?? ''));
         $subtotal = floatval($input['subtotal'] ?? 0);
+        $customerId = isset($_SESSION['customer_id']) ? (int)$_SESSION['customer_id'] : null;
 
         if (empty($code)) {
             echo json_encode(['success' => false, 'message' => 'অনুগ্রহ করে কুপন কোড লিখুন।']);
             exit;
         }
 
-        // Active coupon dictionary
+        // 1. Try DB-backed Coupon Model
+        try {
+            $couponModel = new \Models\Coupon();
+            $res = $couponModel->validateCoupon($code, $subtotal, $customerId);
+            if ($res['valid']) {
+                echo json_encode([
+                    'success' => true,
+                    'code' => $res['coupon']['code'] ?? $code,
+                    'discount' => floatval($res['discount']),
+                    'description' => $res['coupon']['title'] ?? '',
+                    'message' => $res['message']
+                ]);
+                exit;
+            } elseif ($res['message'] !== "অকার্যকর কুপন কোড: '{$code}'") {
+                // If the coupon exists in DB but failed validation (e.g., min order, expired, usage limit)
+                echo json_encode([
+                    'success' => false,
+                    'message' => $res['message']
+                ]);
+                exit;
+            }
+        } catch (\Throwable $e) {
+            error_log("ShopController::applyCoupon model error: " . $e->getMessage());
+        }
+
+        // 2. Fallback to settings / standard dictionary if not found in DB
         $activeCouponsSetting = \Models\Setting::getValue('active_coupons', '');
         $couponsList = !empty($activeCouponsSetting) ? json_decode($activeCouponsSetting, true) : [];
 

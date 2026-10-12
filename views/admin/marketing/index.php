@@ -34,6 +34,13 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                 <span>FB পেজ: <?= $isFacebookConfigured ? (!empty($settings['facebook_page_name']) ? htmlspecialchars($settings['facebook_page_name']) : 'কানেক্টেড') : 'কানেক্ট করুন' ?></span>
             </div>
 
+            <!-- Coupons Management Button -->
+            <a href="<?= $base ?>/admin/marketing/coupons" 
+               class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-2xs">
+                <ion-icon name="ticket-outline" class="text-base text-emerald-600"></ion-icon>
+                <span>কুপন ও ডিসকাউন্ট</span>
+            </a>
+
             <!-- Settings Button -->
             <a href="<?= $base ?>/admin/marketing/settings" 
                class="px-3.5 py-2 rounded-xl bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-2xs">
