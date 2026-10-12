@@ -1012,6 +1012,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                         <?= ($locale === 'bn') ? 'ওজন / সাইজ নির্বাচন করুন:' : 'Select Size / Variant:' ?>
                     </label>
                     <div id="qc-variants-container" class="flex flex-wrap gap-2"></div>
+                    <!-- Live Selected Variant Offer Callout Box -->
+                    <div id="qc-variant-offer-callout" class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 hidden"></div>
                 </div>
 
                 <!-- Custom Processing / Cutting & Dressing Options -->
@@ -1702,6 +1704,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 selectedVariantTitle: initialVarTitle,
                 selectedVariantPrice: initialVarPrice,
                 selectedVariantQty: initialVarQty,
+                selectedVariantOffer: '',
                 selectedAddonTitle: '',
                 selectedAddonPrice: 0,
                 quantity: 1,
@@ -1770,6 +1773,8 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             // Variants Section
             const varSec = document.getElementById('qc-variants-section');
             const varCont = document.getElementById('qc-variants-container');
+            const offerCallout = document.getElementById('qc-variant-offer-callout');
+            let initialOffer = '';
             if (variants && variants.length > 0) {
                 varSec?.classList.remove('hidden');
                 varCont.innerHTML = variants.map(v => {
@@ -1778,22 +1783,41 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                         window.QC_STATE.selectedVariantTitle = v.title;
                         window.QC_STATE.selectedVariantPrice = parseFloat(v.price);
                         window.QC_STATE.selectedVariantQty = parseFloat(v.qty || 1);
+                        window.QC_STATE.selectedVariantOffer = v.offer || '';
+                        initialOffer = v.offer || '';
                     }
                     const activeCls = isSelected 
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' 
                         : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+                    const offerBadge = v.offer ? `
+                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-500 via-rose-500 to-red-500 text-white shadow-2xs animate-pulse">
+                            <span>🎁</span>
+                            <span>${escapeHtml(v.offer)}</span>
+                        </span>
+                    ` : '';
                     return `
                         <button type="button" 
-                                onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, this)" 
-                                class="qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${activeCls}">
-                            <span>${escapeHtml(v.title)}</span>
-                            <span class="ml-1 text-emerald-600">৳${formatPrice(v.price)}</span>
+                                onclick="selectQuickCriteriaVariant('${escapeHtml(v.title)}', ${parseFloat(v.price)}, ${parseFloat(v.qty || 1)}, '${escapeHtml(v.offer || '')}', this)" 
+                                class="qc-var-pill px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 flex-wrap ${activeCls}">
+                            <span class="font-bold">${escapeHtml(v.title)}</span>
+                            <span class="text-emerald-700 font-black">৳${formatPrice(v.price)}</span>
+                            ${offerBadge}
                         </button>
                     `;
                 }).join('');
+
+                if (offerCallout) {
+                    if (initialOffer) {
+                        offerCallout.innerHTML = `<span class="text-base">🎉</span><span>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(initialOffer)}</strong></span>`;
+                        offerCallout.classList.remove('hidden');
+                    } else {
+                        offerCallout.classList.add('hidden');
+                    }
+                }
             } else {
                 varSec?.classList.add('hidden');
                 if (varCont) varCont.innerHTML = '';
+                if (offerCallout) offerCallout.classList.add('hidden');
             }
 
             // Addons (Cutting & Dressing) Section
@@ -1910,15 +1934,32 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             updateQuickCriteriaPriceDisplay();
         }
 
-        function selectQuickCriteriaVariant(title, price, qty, btn) {
+        function selectQuickCriteriaVariant(title, price, qty, offer, btn) {
+            if (offer instanceof HTMLElement || (offer && offer.tagName)) {
+                btn = offer;
+                offer = '';
+            }
             document.querySelectorAll('.qc-var-pill').forEach(el => {
-                el.className = 'qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+                el.className = 'qc-var-pill px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 flex-wrap border-gray-200 text-gray-700 bg-white hover:border-gray-300';
             });
-            btn.className = 'qc-var-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs';
+            if (btn) {
+                btn.className = 'qc-var-pill px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 flex-wrap border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs';
+            }
 
             window.QC_STATE.selectedVariantTitle = title;
             window.QC_STATE.selectedVariantPrice = price;
             window.QC_STATE.selectedVariantQty = qty;
+            window.QC_STATE.selectedVariantOffer = offer || '';
+
+            const calloutEl = document.getElementById('qc-variant-offer-callout');
+            if (calloutEl) {
+                if (offer) {
+                    calloutEl.innerHTML = `<span class="text-base">🎉</span><span>এই সাইজে বিশেষ অফার: <strong class="text-rose-700 font-black">${escapeHtml(offer)}</strong></span>`;
+                    calloutEl.classList.remove('hidden');
+                } else {
+                    calloutEl.classList.add('hidden');
+                }
+            }
             updateQuickCriteriaPriceDisplay();
         }
 
@@ -1982,6 +2023,9 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             }
             if (window.QC_STATE.selectedVariantQty) {
                 formData.append('variant_qty', window.QC_STATE.selectedVariantQty);
+            }
+            if (window.QC_STATE.selectedVariantOffer) {
+                formData.append('variant_offer', window.QC_STATE.selectedVariantOffer);
             }
             if (window.QC_STATE.selectedAddonTitle) {
                 formData.append('addon_title', window.QC_STATE.selectedAddonTitle);

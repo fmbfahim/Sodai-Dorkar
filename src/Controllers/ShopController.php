@@ -806,6 +806,7 @@ class ShopController {
             $variantTitle = trim($_POST['variant_title'] ?? '');
             $variantPrice = isset($_POST['variant_price']) && $_POST['variant_price'] !== '' ? floatval($_POST['variant_price']) : null;
             $variantQty = isset($_POST['variant_qty']) && $_POST['variant_qty'] !== '' ? floatval($_POST['variant_qty']) : 1.000;
+            $variantOffer = trim($_POST['variant_offer'] ?? '');
             $addonTitle = trim($_POST['addon_title'] ?? '');
             $addonPrice = floatval($_POST['addon_price'] ?? 0);
 
@@ -823,6 +824,19 @@ class ShopController {
                     $isBogo = !empty($criteria['is_bogo']) || (($product['special_badge'] ?? '') === 'bogo');
                     $bogoTag = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি' : '🎁 BOGO Free';
 
+                    // Auto-detect variant offer from product if not passed
+                    if (empty($variantOffer) && $variantTitle && !empty($product['unit_variants_json'])) {
+                        $decodedVariants = json_decode($product['unit_variants_json'], true);
+                        if (is_array($decodedVariants)) {
+                            foreach ($decodedVariants as $dv) {
+                                if (($dv['title'] ?? '') === $variantTitle && !empty($dv['offer'])) {
+                                    $variantOffer = trim($dv['offer']);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     if (empty($addonTitle) && !empty($criteria['addons'])) {
                         foreach ($criteria['addons'] as $a) {
                             if (!empty($a['is_default'])) {
@@ -837,11 +851,16 @@ class ShopController {
                         }
                     }
 
+                    $variantPart = $variantTitle;
+                    if ($variantTitle && $variantOffer) {
+                        $variantPart = "{$variantTitle} [🎁 {$variantOffer}]";
+                    }
+
                     $unitDesc = '';
-                    if ($variantTitle && $addonTitle) {
-                        $unitDesc = "{$variantTitle} • {$addonTitle}";
-                    } elseif ($variantTitle) {
-                        $unitDesc = $variantTitle;
+                    if ($variantPart && $addonTitle) {
+                        $unitDesc = "{$variantPart} • {$addonTitle}";
+                    } elseif ($variantPart) {
+                        $unitDesc = $variantPart;
                     } elseif ($addonTitle) {
                         $unitDesc = $addonTitle;
                     }
@@ -883,6 +902,7 @@ class ShopController {
                             'quantity' => $quantity,
                             'base_qty' => $variantQty > 0 ? $variantQty : 1.000,
                             'variant_title' => $unitDesc,
+                            'variant_offer' => $variantOffer,
                             'addon_title' => $addonTitle,
                             'addon_price' => $addonPrice,
                             'stock' => $product['stock_qty'],
@@ -917,6 +937,8 @@ class ShopController {
                         $toastMsg = Lang::get('toast_added_to_cart');
                         if ($isBogo) {
                             $toastMsg = (Lang::locale() === 'bn') ? '🎁 ১+১ ফ্রি অফার সহ কার্টে যোগ করা হয়েছে!' : '🎁 Added with Buy 1 Get 1 Free offer!';
+                        } elseif (!empty($variantOffer)) {
+                            $toastMsg = (Lang::locale() === 'bn') ? "🎁 {$variantOffer} অফার সহ কার্টে যোগ হয়েছে!" : "🎁 Added with offer: {$variantOffer}!";
                         } elseif (!empty($addonTitle)) {
                             $toastMsg = (Lang::locale() === 'bn') ? "🔪 {$addonTitle} সহ কার্টে যোগ হয়েছে!" : "🔪 Added with {$addonTitle}!";
                         }

@@ -16,13 +16,19 @@ function getProductUnits($product) {
             $defaultTitle = '';
             $defaultPrice = $product['sell_price'];
             $defaultQty = 1;
+            $firstOffer = '';
 
             foreach ($decoded as $v) {
+                $offer = trim($v['offer'] ?? '');
+                if (empty($firstOffer) && !empty($offer)) {
+                    $firstOffer = $offer;
+                }
                 $variantsList[] = [
                     'title' => $v['title'],
                     'qty' => $v['qty'] ?? 1,
                     'price' => $v['price'],
-                    'is_default' => !empty($v['is_default'])
+                    'is_default' => !empty($v['is_default']),
+                    'offer' => $offer
                 ];
                 if (!empty($v['is_default']) && empty($defaultTitle)) {
                     $defaultTitle = $v['title'];
@@ -42,7 +48,8 @@ function getProductUnits($product) {
                 'default_title' => $defaultTitle,
                 'default_price' => $defaultPrice,
                 'default_qty' => $defaultQty,
-                'variants' => $variantsList
+                'variants' => $variantsList,
+                'featured_offer' => $firstOffer
             ];
         }
     }
@@ -720,7 +727,7 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                             <div class="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
                                 <div class="flex flex-col gap-1 items-start">
                                     <?php if (!empty($badgeLabel)): ?>
-                                        <span class="bg-gradient-to-r from-amber-500 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5 <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                        <span class="bg-gradient-to-r from-amber-500 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-0.5 <?= ($isBogo || !empty($criteria['has_variant_offers'])) ? 'animate-pulse' : '' ?>">
                                             <?= htmlspecialchars($badgeLabel) ?>
                                         </span>
                                     <?php endif; ?>
@@ -829,7 +836,7 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                     <?php elseif ($hasCriteria): ?>
                                         <button type="button" 
                                                 onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
-                                                class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-amber-500/30 cursor-pointer group/btn <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                                class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-amber-500/30 cursor-pointer group/btn <?= ($isBogo || !empty($criteria['has_variant_offers'])) ? 'animate-pulse' : '' ?>">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
                                             </svg>

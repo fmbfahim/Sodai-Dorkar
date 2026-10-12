@@ -642,25 +642,39 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                     </div>
 
                     <div class="overflow-hidden border border-secondary-200 rounded-2xl bg-white shadow-2xs">
+                        <!-- Preset Suggestions Datalist for Fast 1-Click Offer Suggestions -->
+                        <datalist id="variant-offer-presets">
+                            <option value="🎁 ৩০ কিনলে ১টি ফ্রি">
+                            <option value="🎁 ১টি ফ্রি (Buy X Get 1 Free)">
+                            <option value="🎁 ১২ কিনলে ১টি ফ্রি">
+                            <option value="🎁 ফ্রি গিফট (Free Gift Included)">
+                            <option value="🔥 সেরা ভ্যালু (Best Value Deal)">
+                            <option value="⚡ ১০% অতিরিক্ত ছাড়">
+                            <option value="💰 সেভ ৳২৫">
+                            <option value="💰 সেভ ৳৫০">
+                            <option value="🚚 ফ্রি হোম ডেলিভারি">
+                        </datalist>
+
                         <table class="w-full text-left text-xs">
                             <thead class="bg-secondary-50/80 border-b border-secondary-200 uppercase text-[11px] font-bold text-secondary-600">
                                 <tr>
-                                    <th class="px-4 py-3">Variant Label</th>
-                                    <th class="px-4 py-3 w-44">Quantity In Base Unit</th>
-                                    <th class="px-4 py-3 w-40 text-right">Selling Price (Tk)</th>
-                                    <th class="px-4 py-3 w-24 text-center">Default</th>
-                                    <th class="px-3 py-3 w-14 text-center">Action</th>
+                                    <th class="px-3.5 py-3">Variant Label</th>
+                                    <th class="px-3 py-3 w-36">Quantity (Base Unit)</th>
+                                    <th class="px-3 py-3 w-36 text-right">Selling Price (Tk)</th>
+                                    <th class="px-3.5 py-3 w-56 text-amber-900 font-extrabold">🎁 Offer / Incentive (অফার বা বোনাস)</th>
+                                    <th class="px-2 py-3 w-16 text-center">Default</th>
+                                    <th class="px-2 py-3 w-12 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="variants-tbody" class="divide-y divide-secondary-100">
                                 <?php if (!empty($variants)): ?>
                                     <?php foreach ($variants as $idx => $v): ?>
                                         <tr class="variant-row hover:bg-secondary-50/60 transition-colors">
-                                            <td class="px-4 py-2.5">
+                                            <td class="px-3.5 py-2.5">
                                                 <input type="text" name="variants[<?php echo $idx; ?>][title]" value="<?php echo htmlspecialchars($v['title']); ?>" 
-                                                       placeholder="e.g. 1 kg or 50 kg Sack" class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500" required>
+                                                       placeholder="e.g. 1 kg or 30 pcs" class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500" required>
                                             </td>
-                                            <td class="px-4 py-2.5">
+                                            <td class="px-3 py-2.5">
                                                 <div class="relative">
                                                     <input type="number" step="0.001" min="0.001" name="variants[<?php echo $idx; ?>][qty]" value="<?php echo floatval($v['qty']); ?>" 
                                                            oninput="onVariantQtyChange(this)"
@@ -668,7 +682,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-[10px] text-secondary-400 font-bold base-unit-label pointer-events-none"><?php echo htmlspecialchars($product['base_unit'] ?? 'pcs'); ?></span>
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-2.5 text-right">
+                                            <td class="px-3 py-2.5 text-right">
                                                 <div class="relative">
                                                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-emerald-600 font-bold text-xs">Tk</span>
                                                     <input type="number" step="0.01" min="0" name="variants[<?php echo $idx; ?>][price]" value="<?php echo floatval($v['price']); ?>" 
@@ -676,10 +690,18 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                                            placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500 transition-all variant-price-input" required>
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-2.5 text-center">
+                                            <td class="px-3.5 py-2.5">
+                                                <div class="relative">
+                                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
+                                                    <input type="text" list="variant-offer-presets" name="variants[<?php echo $idx; ?>][offer]" value="<?php echo htmlspecialchars($v['offer'] ?? ''); ?>" 
+                                                           placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
+                                                           class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20">
+                                                </div>
+                                            </td>
+                                            <td class="px-2 py-2.5 text-center">
                                                 <input type="checkbox" name="variants[<?php echo $idx; ?>][is_default]" value="1" <?php echo !empty($v['is_default']) ? 'checked' : ''; ?> onchange="onVariantDefaultChange(this)" class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 variant-default-cb">
                                             </td>
-                                            <td class="px-3 py-2.5 text-center">
+                                            <td class="px-2 py-2.5 text-center">
                                                 <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Delete Variant">
                                                     <ion-icon name="trash-outline" class="text-base"></ion-icon>
                                                 </button>
@@ -694,6 +716,21 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             <p class="text-xs font-medium">No custom size variants added. Product will sell in single base units.</p>
                         </div>
                     </div>
+
+                    <!-- Quick Offer Idea Helper Buttons -->
+                    <div class="mt-2.5 flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs">
+                        <span class="font-extrabold text-amber-900 flex items-center gap-1">
+                            <span>💡 কুইক অফার যুক্ত করুন:</span>
+                        </span>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onclick="applyQuickOfferToActiveRow('৩০ কিনলে ১টি ফ্রি')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ৩০ কিনলে ১টি ফ্রি</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('১টি ফ্রি')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ১টি ফ্রি</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('ফ্রি গিফট')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🎁 ফ্রি গিফট</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('সেরা ভ্যালু')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">⭐ সেরা ভ্যালু</button>
+                            <button type="button" onclick="applyQuickOfferToActiveRow('১০% ছাড়')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] transition-colors shadow-2xs cursor-pointer">🔥 ১০% ছাড়</button>
+                        </div>
+                    </div>
+
                     <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-secondary-500">
                         <span class="flex items-center gap-1 text-emerald-700 font-medium">
                             <ion-icon name="flash" class="text-xs"></ion-icon>
@@ -1485,7 +1522,7 @@ function applyUnitPreset(presetKey) {
 }
 
 // Add Variant Row
-function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
+function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer = '') {
     const tbody = document.getElementById('variants-tbody');
     const emptyState = document.getElementById('variants-empty-state');
     const baseUnit = document.getElementById('base_unit').value;
@@ -1497,11 +1534,11 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
 
     const rowHtml = `
         <tr class="variant-row hover:bg-secondary-50/60 transition-colors">
-            <td class="px-4 py-2.5">
+            <td class="px-3.5 py-2.5">
                 <input type="text" name="variants[${variantCount}][title]" value="${title}" 
-                       placeholder="e.g. 1 kg or 50 kg Sack" class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500" required>
+                       placeholder="e.g. 1 kg or 30 pcs" class="w-full px-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary-500" required>
             </td>
-            <td class="px-4 py-2.5">
+            <td class="px-3 py-2.5">
                 <div class="relative">
                     <input type="number" step="0.001" min="0.001" name="variants[${variantCount}][qty]" value="${qty}" 
                            oninput="onVariantQtyChange(this)"
@@ -1509,7 +1546,7 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-[10px] text-secondary-400 font-bold base-unit-label pointer-events-none">${baseUnit}</span>
                 </div>
             </td>
-            <td class="px-4 py-2.5 text-right">
+            <td class="px-3 py-2.5 text-right">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-emerald-600 font-bold text-xs">Tk</span>
                     <input type="number" step="0.01" min="0" name="variants[${variantCount}][price]" value="${price}" 
@@ -1517,10 +1554,18 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
                            placeholder="0.00" class="w-full pl-7 pr-3 py-1.5 border border-secondary-300 rounded-xl text-xs font-black text-emerald-700 text-right focus:ring-2 focus:ring-emerald-500 transition-all variant-price-input" required>
                 </div>
             </td>
-            <td class="px-4 py-2.5 text-center">
+            <td class="px-3.5 py-2.5">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-amber-500 text-xs pointer-events-none">🎁</span>
+                    <input type="text" list="variant-offer-presets" name="variants[${variantCount}][offer]" value="${offer}" 
+                           placeholder="যেমন: ৩০ কিনলে ১টি ফ্রি" 
+                           class="w-full pl-7 pr-2.5 py-1.5 border border-secondary-300 rounded-xl text-xs font-bold text-amber-900 placeholder:font-normal placeholder:text-secondary-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20">
+                </div>
+            </td>
+            <td class="px-2 py-2.5 text-center">
                 <input type="checkbox" name="variants[${variantCount}][is_default]" value="1" ${isDefault ? 'checked' : ''} onchange="onVariantDefaultChange(this)" class="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 variant-default-cb">
             </td>
-            <td class="px-3 py-2.5 text-center">
+            <td class="px-2 py-2.5 text-center">
                 <button type="button" onclick="deleteVariantRow(this)" class="text-secondary-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Delete Variant">
                     <ion-icon name="trash-outline" class="text-base"></ion-icon>
                 </button>
@@ -1531,6 +1576,25 @@ function addVariantRow(title = '', qty = 1, price = '', isDefault = false) {
     tbody.insertAdjacentHTML('beforeend', rowHtml);
     if (emptyState) emptyState.classList.add('hidden');
     variantCount++;
+}
+
+// Quick Offer Helper to inject preset offer text to active or last variant row
+function applyQuickOfferToActiveRow(offerText) {
+    const rows = document.querySelectorAll('#variants-tbody tr.variant-row');
+    if (!rows.length) {
+        addVariantRow('৩০ পিস', 30, '', false, offerText);
+        return;
+    }
+    let targetInput = (document.activeElement && document.activeElement.name && document.activeElement.name.includes('[offer]'))
+        ? document.activeElement
+        : rows[rows.length - 1].querySelector('input[name*="[offer]"]');
+    if (targetInput) {
+        targetInput.value = offerText;
+        targetInput.focus();
+        targetInput.classList.add('ring-2', 'ring-amber-500', 'bg-amber-100/50');
+        setTimeout(() => targetInput.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-100/50'), 1200);
+        showToastNotification(`ভ্যারিয়েন্টে অফার যুক্ত হয়েছে: "${offerText}"`);
+    }
 }
 
 function deleteVariantRow(btn) {

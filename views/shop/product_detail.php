@@ -22,9 +22,19 @@ $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg'
 
 // Check variants
 $hasVariants = !empty($variants) && is_array($variants);
-$initialTitle = $hasVariants ? ($variants[0]['title'] ?? '') : ($product['selling_unit'] ?? $product['base_unit'] ?? '1 Unit');
-$initialPrice = $hasVariants ? floatval($variants[0]['price'] ?? $sellPrice) : $sellPrice;
-$initialQty = $hasVariants ? floatval($variants[0]['qty'] ?? 1) : 1;
+$defaultVariantIndex = 0;
+if ($hasVariants) {
+    foreach ($variants as $idx => $v) {
+        if (!empty($v['is_default'])) {
+            $defaultVariantIndex = $idx;
+            break;
+        }
+    }
+}
+$initialTitle = $hasVariants ? ($variants[$defaultVariantIndex]['title'] ?? '') : ($product['selling_unit'] ?? $product['base_unit'] ?? '1 Unit');
+$initialPrice = $hasVariants ? floatval($variants[$defaultVariantIndex]['price'] ?? $sellPrice) : $sellPrice;
+$initialQty = $hasVariants ? floatval($variants[$defaultVariantIndex]['qty'] ?? 1) : 1;
+$initialOffer = $hasVariants ? trim($variants[$defaultVariantIndex]['offer'] ?? '') : '';
 
 // Check criteria (cutting, dressing, bogo, variants)
 $criteria = \Models\Product::getCriteriaData($product, $locale);
@@ -245,14 +255,37 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                                 </label>
                                 <div class="flex flex-wrap gap-2.5">
                                     <?php foreach ($variants as $idx => $v): ?>
-                                        <?php $isSelected = ($idx === 0); ?>
+                                        <?php 
+                                            $isSelected = ($idx === $defaultVariantIndex); 
+                                            $vOffer = trim($v['offer'] ?? '');
+                                        ?>
                                         <button type="button" 
-                                                onclick="selectDetailVariant(this, '<?= htmlspecialchars($v['title'], ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>)"
-                                                class="detail-variant-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer <?= $isSelected ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300' ?>">
+                                                onclick="selectDetailVariant(this, '<?= htmlspecialchars(addslashes($v['title']), ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>, '<?= htmlspecialchars(addslashes($vOffer), ENT_QUOTES) ?>')"
+                                                class="detail-variant-pill relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer <?= $isSelected ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs' : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300' ?>">
                                             <span><?= htmlspecialchars($v['title']) ?></span>
                                             <span class="ml-1 text-emerald-600">৳<?= number_format($v['price']) ?></span>
+                                            <?php if (!empty($vOffer)): ?>
+                                                <span class="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight text-white bg-gradient-to-r from-amber-500 to-rose-500 shadow-2xs">
+                                                    🎁 <?= htmlspecialchars($vOffer) ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </button>
                                     <?php endforeach; ?>
+                                </div>
+
+                                <!-- Live Variant Offer Callout Box -->
+                                <div id="detail-variant-offer-box" class="mt-3 p-3 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 border border-amber-200/80 flex items-center gap-2.5 shadow-2xs <?= !empty($initialOffer) ? '' : 'hidden' ?>">
+                                    <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center text-base shadow-xs shrink-0 animate-bounce">
+                                        🎁
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[11px] font-black tracking-wider uppercase text-amber-700">
+                                            <?= $locale === 'bn' ? 'বিশেষ প্যাকেজ অফার / ফ্রি বোনাস' : 'Special Package Offer / Free Bonus' ?>
+                                        </div>
+                                        <div id="detail-variant-offer-text" class="text-xs sm:text-sm font-extrabold text-gray-900 truncate">
+                                            <?= !empty($initialOffer) ? htmlspecialchars($initialOffer) : '' ?>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -491,6 +524,7 @@ window.DETAIL_STATE = {
     selectedVariantTitle: <?= json_encode($initialTitle) ?>,
     selectedVariantPrice: <?= floatval($initialPrice) ?>,
     selectedVariantQty: <?= floatval($initialQty) ?>,
+    selectedVariantOffer: <?= json_encode($initialOffer) ?>,
     selectedAddonTitle: <?= json_encode($initialAddon) ?>,
     selectedAddonPrice: <?= floatval($initialAddonPrice) ?>,
     maxStock: <?= $maxOrderQty ?>
@@ -522,16 +556,30 @@ function updateDetailPriceDisplay() {
     }
 }
 
-function selectDetailVariant(btn, title, price, qty) {
+function selectDetailVariant(btn, title, price, qty, offer) {
+    offer = offer || '';
     // Update pills active state
     document.querySelectorAll('.detail-variant-pill').forEach(el => {
-        el.className = 'detail-variant-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer border-gray-200 text-gray-700 bg-white hover:border-gray-300';
+        el.className = 'detail-variant-pill relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer border-gray-200 text-gray-700 bg-white hover:border-gray-300';
     });
-    btn.className = 'detail-variant-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs';
+    btn.className = 'detail-variant-pill relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs';
 
     window.DETAIL_STATE.selectedVariantTitle = title;
     window.DETAIL_STATE.selectedVariantPrice = price;
     window.DETAIL_STATE.selectedVariantQty = qty;
+    window.DETAIL_STATE.selectedVariantOffer = offer;
+
+    // Toggle and update offer callout box
+    const offerBox = document.getElementById('detail-variant-offer-box');
+    const offerText = document.getElementById('detail-variant-offer-text');
+    if (offerBox && offerText) {
+        if (offer) {
+            offerText.textContent = offer;
+            offerBox.classList.remove('hidden');
+        } else {
+            offerBox.classList.add('hidden');
+        }
+    }
 
     updateDetailPriceDisplay();
 }
@@ -566,6 +614,9 @@ function submitDetailAddToCart(productId, btn) {
     }
     if (window.DETAIL_STATE.selectedVariantQty) {
         formData.append('variant_qty', window.DETAIL_STATE.selectedVariantQty);
+    }
+    if (window.DETAIL_STATE.selectedVariantOffer) {
+        formData.append('variant_offer', window.DETAIL_STATE.selectedVariantOffer);
     }
     if (window.DETAIL_STATE.selectedAddonTitle) {
         formData.append('addon_title', window.DETAIL_STATE.selectedAddonTitle);

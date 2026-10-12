@@ -135,6 +135,7 @@ class ProductController extends Controller {
                 $title = trim($v['title'] ?? '');
                 $qty = floatval($v['qty'] ?? 1);
                 $price = floatval($v['price'] ?? 0);
+                $offer = trim($v['offer'] ?? '');
                 if ($price <= 0 && $fallbackSellPrice > 0 && $qty > 0) {
                     $price = round($fallbackSellPrice * $qty, 2);
                 }
@@ -143,7 +144,8 @@ class ProductController extends Controller {
                         'title' => $title,
                         'qty' => $qty,
                         'price' => $price,
-                        'is_default' => !empty($v['is_default']) ? 1 : 0
+                        'is_default' => !empty($v['is_default']) ? 1 : 0,
+                        'offer' => $offer
                     ];
                 }
             }

@@ -221,7 +221,21 @@ if (!empty($search)) $activeFilterCount++;
                         $badgeLabel = $criteria['badge_label'];
                         $buttonLabel = $criteria['button_label'];
                         $prodBadge = $prod['special_badge'] ?? ($prodIsBogo ? 'bogo' : 'none');
-                        $isProdOutOfStock = (($prod['availability_status'] ?? '') === 'out_of_stock');
+                        $prodVariants = [];
+                        if (!empty($prod['unit_variants_json'])) {
+                            $decodedV = json_decode($prod['unit_variants_json'], true);
+                            if (is_array($decodedV)) {
+                                foreach ($decodedV as $dv) {
+                                    $prodVariants[] = [
+                                        'title' => (string)($dv['title'] ?? ''),
+                                        'qty' => floatval($dv['qty'] ?? 1),
+                                        'price' => floatval($dv['price'] ?? $pSell),
+                                        'is_default' => !empty($dv['is_default']),
+                                        'offer' => trim($dv['offer'] ?? '')
+                                    ];
+                                }
+                            }
+                        }
                     ?>
                     <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group relative"
                          data-product-id="<?= $prod['id'] ?>"
@@ -237,7 +251,7 @@ if (!empty($search)) $activeFilterCount++;
                          data-button-label="<?= htmlspecialchars($buttonLabel, ENT_QUOTES) ?>"
                          data-special-badge="<?= htmlspecialchars($prodBadge, ENT_QUOTES) ?>"
                          data-addons='<?= htmlspecialchars(json_encode($prodAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
-                         data-variants='[]'
+                         data-variants='<?= htmlspecialchars(json_encode($prodVariants, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
                          data-out-of-stock="<?= $isProdOutOfStock ? '1' : '0' ?>">
                         
                         <?php if (!empty($_SESSION['user_id'])): ?>
@@ -317,7 +331,7 @@ if (!empty($search)) $activeFilterCount++;
                                 <?php elseif ($prodHasCriteria): ?>
                                     <button type="button" 
                                             onclick="openQuickCriteriaModal(<?= $prod['id'] ?>, this)" 
-                                            class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn <?= $prodIsBogo ? 'animate-pulse' : '' ?>">
+                                            class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn <?= ($prodIsBogo || !empty($criteria['has_variant_offers'])) ? 'animate-pulse' : '' ?>">
                                         <span><?= htmlspecialchars($buttonLabel) ?></span>
                                     </button>
                                 <?php else: ?>

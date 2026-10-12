@@ -773,9 +773,26 @@ class Product {
             || (!empty($catName) && preg_match('/(মাংস|মুরগি|chicken|meat|beef|mutton)/iu', $catName))
             || (!empty($catSlug) && preg_match('/(meat|chicken|beef|mutton)/iu', $catSlug));
 
-        // 6. Only products with explicit addons configured in database will have cutting/dressing options
+        // 5.5. Check if product has custom variants with special offers (e.g. '৩০ কিনলে ১টি ফ্রি')
+        $hasVariantOffers = false;
+        $variantOfferLabel = '';
+        if (!empty($product['unit_variants_json'])) {
+            $vDecoded = is_string($product['unit_variants_json']) ? json_decode($product['unit_variants_json'], true) : $product['unit_variants_json'];
+            if (is_array($vDecoded)) {
+                foreach ($vDecoded as $v) {
+                    if (!empty($v['offer'])) {
+                        $hasVariantOffers = true;
+                        if (empty($variantOfferLabel)) {
+                            $variantOfferLabel = trim($v['offer']);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. Only products with explicit addons, BOGO, or pack size offers configured will have quick modal
         $hasAddons = !empty($addons) && is_array($addons) && count($addons) > 0;
-        $hasCriteria = $hasAddons || $isBogo;
+        $hasCriteria = $hasAddons || $isBogo || $hasVariantOffers;
 
         // Visual labels
         $badgeLabel = '';
@@ -804,11 +821,17 @@ class Product {
                 $badgeLabel = ($locale === 'bn' ? '🔪 কাটিং/ড্রেসিং সুবিধা' : '🔪 Options Available');
                 $buttonLabel = ($locale === 'bn' ? '🔪 অপশন পছন্দ করুন' : '🔪 Choose Options');
             }
+        } elseif ($hasVariantOffers) {
+            $criteriaType = 'variant_offer';
+            $badgeLabel = (strpos($variantOfferLabel, '🎁') === false ? '🎁 ' : '') . $variantOfferLabel;
+            $buttonLabel = ($locale === 'bn' ? '🎁 অফার সহ সাইজ বাছুন' : '🎁 Choose Size & Offer');
         }
 
         return [
             'has_criteria' => $hasCriteria,
             'has_addons' => $hasAddons,
+            'has_variant_offers' => $hasVariantOffers,
+            'variant_offer_label' => $variantOfferLabel,
             'is_bogo' => $isBogo,
             'is_fish' => $isFish,
             'is_meat' => $isMeat,

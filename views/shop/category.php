@@ -16,13 +16,19 @@ function getProductUnits($product) {
             $defaultTitle = '';
             $defaultPrice = $product['sell_price'];
             $defaultQty = 1;
+            $firstOffer = '';
 
             foreach ($decoded as $v) {
+                $offer = trim($v['offer'] ?? '');
+                if (empty($firstOffer) && !empty($offer)) {
+                    $firstOffer = $offer;
+                }
                 $variantsList[] = [
                     'title' => $v['title'],
                     'qty' => $v['qty'] ?? 1,
                     'price' => $v['price'],
-                    'is_default' => !empty($v['is_default'])
+                    'is_default' => !empty($v['is_default']),
+                    'offer' => $offer
                 ];
                 if (!empty($v['is_default']) && empty($defaultTitle)) {
                     $defaultTitle = $v['title'];
@@ -42,7 +48,8 @@ function getProductUnits($product) {
                 'default_title' => $defaultTitle,
                 'default_price' => $defaultPrice,
                 'default_qty' => $defaultQty,
-                'variants' => $variantsList
+                'variants' => $variantsList,
+                'featured_offer' => $firstOffer
             ];
         }
     }
@@ -683,7 +690,7 @@ if (!empty($search)) $activeFilterCount++;
                                 <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between pointer-events-none gap-1">
                                     <div class="flex items-center gap-1 flex-wrap min-w-0">
                                         <?php if (!empty($badgeLabel)): ?>
-                                            <span class="bg-gradient-to-r from-amber-600 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                            <span class="bg-gradient-to-r from-amber-600 to-rose-600 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs whitespace-nowrap <?= ($isBogo || !empty($criteria['has_variant_offers'])) ? 'animate-pulse' : '' ?>">
                                                 <?= htmlspecialchars($badgeLabel) ?>
                                             </span>
                                         <?php endif; ?>
@@ -797,7 +804,7 @@ if (!empty($search)) $activeFilterCount++;
                                         <?php elseif ($hasCriteria): ?>
                                             <button type="button" 
                                                     onclick="openQuickCriteriaModal(<?= $product['id'] ?>, this)" 
-                                                    class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn <?= $isBogo ? 'animate-pulse' : '' ?>">
+                                                    class="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-600 text-amber-950 hover:text-white border border-amber-300 hover:border-amber-600 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shadow-2xs hover:shadow-sm cursor-pointer group/btn <?= ($isBogo || !empty($criteria['has_variant_offers'])) ? 'animate-pulse' : '' ?>">
                                                 <span><?= htmlspecialchars($buttonLabel) ?></span>
                                             </button>
                                         <?php else: ?>
