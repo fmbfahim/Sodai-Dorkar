@@ -163,18 +163,35 @@ fbq('init', '{$pixelId}');
     window.fbpTrack = function(eventName, customData, eventId) {
         if (typeof fbq !== 'function') return;
         customData = customData || {};
-        var options = {};
-        if (eventId) {
-            options.eventID = eventId;
-        }
-        if (window.FB_TEST_CODE) {
-            options.test_event_code = window.FB_TEST_CODE;
-        }
-        if (Object.keys(options).length > 0) {
-            fbq('track', eventName, customData, options);
-        } else {
-            fbq('track', eventName, customData);
-        }
+
+        // Generate shared unique eventId for browser & server deduplication if not provided
+        eventId = eventId || ('ev_' + eventName.toLowerCase() + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7));
+
+        // 1. Browser Pixel tracking (Meta officially accepts { eventID: eventId })
+        fbq('track', eventName, customData, { eventID: eventId });
+
+        // 2. Asynchronous Server CAPI dispatch (delivers to Meta Events Manager with test_event_code)
+        try {
+            var base = (window.APP_BASE !== undefined) ? window.APP_BASE : (window.location.pathname.includes('/sodai-dorkar/public') ? '/sodai-dorkar/public' : '');
+            var payload = {
+                event_name: eventName,
+                custom_data: customData,
+                event_id: eventId,
+                url: window.location.href
+            };
+            var jsonStr = JSON.stringify(payload);
+            if (navigator.sendBeacon) {
+                var blob = new Blob([jsonStr], { type: 'application/json' });
+                navigator.sendBeacon(base + '/api/meta-capi', blob);
+            } else {
+                fetch(base + '/api/meta-capi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: jsonStr,
+                    keepalive: true
+                }).catch(function() {});
+            }
+        } catch (e) {}
     };
 })();
 
@@ -190,9 +207,9 @@ HTML;
     /**
      * Alias for sendCapiEvent
      */
-    public static function sendServerEvent(string $eventName, array $customData = [], array $userData = [], ?string $eventId = null): array
+    public static function sendServerEvent(string $eventName, array $customData = [], array $userData = [], ?string $eventId = null, ?string $customUrl = null): array
     {
-        return self::sendCapiEvent($eventName, $customData, $userData, $eventId);
+        return self::sendCapiEvent($eventName, $customData, $userData, $eventId, $customUrl);
     }
 
     /**
@@ -202,9 +219,10 @@ HTML;
      * @param array $customData e.g. ['value' => 500, 'currency' => 'BDT', 'order_id' => 12]
      * @param array $userData e.g. ['phone' => '017...', 'name' => 'John', 'email' => '...']
      * @param string|null $eventId Optional deduplication ID matching browser pixel eventID
+     * @param string|null $customUrl Optional URL where event occurred
      * @return array Result of cURL execution
      */
-    public static function sendCapiEvent(string $eventName, array $customData = [], array $userData = [], ?string $eventId = null): array
+    public static function sendCapiEvent(string $eventName, array $customData = [], array $userData = [], ?string $eventId = null, ?string $customUrl = null): array
     {
         $pixelId   = self::getPixelId();
         $capiToken = self::getCapiToken();
@@ -264,10 +282,14 @@ HTML;
         }
 
         // Current page URL
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $uri = $_SERVER['REQUEST_URI'] ?? '/';
-        $currentUrl = "{$protocol}://{$host}{$uri}";
+        if (!empty($customUrl)) {
+            $currentUrl = $customUrl;
+        } else {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $uri = $_SERVER['REQUEST_URI'] ?? '/';
+            $currentUrl = "{$protocol}://{$host}{$uri}";
+        }
 
         $eventPayload = [
             'event_name'       => $eventName,
@@ -305,7 +327,7 @@ HTML;
             'Content-Type: application/json',
             'Accept: application/json'
         ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);

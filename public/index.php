@@ -79,6 +79,7 @@ $router->get('/api/search', 'ShopController@apiSearch');
 $router->get('/api/zones', 'ShopController@getZones');
 $router->get('/api/points', 'ShopController@getPoints');
 $router->post('/api/apply-coupon', 'ShopController@applyCoupon');
+$router->post('/api/meta-capi', 'ShopController@apiMetaCapi');
 
 // Customer Auth Routes
 $router->get('/checkout/auth', 'CustomerAuthController@showAuth');

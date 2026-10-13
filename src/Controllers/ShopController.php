@@ -964,26 +964,6 @@ class ShopController {
                         ]);
                     } catch (\Exception $ex) {}
 
-                    // Trigger Meta Conversions API (CAPI) AddToCart Event
-                    try {
-                        if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackAddToCartEnabled()) {
-                            $userPhone = $_SESSION['customer_phone'] ?? '';
-                            $userName = $_SESSION['customer_name'] ?? '';
-                            \Core\FacebookPixelService::sendCapiEvent('AddToCart', [
-                                'content_ids' => [(string)$product['id']],
-                                'content_name' => $displayName,
-                                'content_type' => 'product',
-                                'value' => (float)($price * $quantity),
-                                'currency' => 'BDT'
-                            ], [
-                                'phone' => $userPhone,
-                                'name' => $userName
-                            ]);
-                        }
-                    } catch (\Throwable $fbEx) {
-                        error_log("Meta CAPI AddToCart error: " . $fbEx->getMessage());
-                    }
-
                     // AJAX response
                     if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                         header('Content-Type: application/json');
@@ -2012,6 +1992,59 @@ class ShopController {
             'description' => $coupon['desc'] ?? '',
             'message' => "অভিনন্দন! কুপন '{$code}' সফলভাবে প্রয়োগ করা হয়েছে (-৳{$discount})।"
         ]);
+        exit;
+    }
+
+    /**
+     * Non-blocking Meta Conversions API (CAPI) proxy endpoint
+     */
+    public function apiMetaCapi() {
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || !is_array($input)) {
+            $input = $_POST;
+        }
+
+        $eventName  = trim($input['event_name'] ?? '');
+        $customData = is_array($input['custom_data'] ?? null) ? $input['custom_data'] : [];
+        $eventId    = trim($input['event_id'] ?? '');
+        $eventUrl   = trim($input['url'] ?? '');
+
+        if (empty($eventName) || !class_exists('\Core\FacebookPixelService') || !\Core\FacebookPixelService::isEnabled()) {
+            echo json_encode(['status' => 'skipped', 'message' => 'Pixel disabled']);
+            exit;
+        }
+
+        if ($eventName === 'PageView' && !\Core\FacebookPixelService::isTrackPageViewEnabled()) {
+            echo json_encode(['status' => 'disabled']);
+            exit;
+        }
+        if ($eventName === 'ViewContent' && !\Core\FacebookPixelService::isTrackViewContentEnabled()) {
+            echo json_encode(['status' => 'disabled']);
+            exit;
+        }
+        if ($eventName === 'AddToCart' && !\Core\FacebookPixelService::isTrackAddToCartEnabled()) {
+            echo json_encode(['status' => 'disabled']);
+            exit;
+        }
+        if ($eventName === 'InitiateCheckout' && !\Core\FacebookPixelService::isTrackInitiateCheckoutEnabled()) {
+            echo json_encode(['status' => 'disabled']);
+            exit;
+        }
+        if ($eventName === 'Purchase' && !\Core\FacebookPixelService::isTrackPurchaseEnabled()) {
+            echo json_encode(['status' => 'disabled']);
+            exit;
+        }
+
+        $userData = [
+            'phone' => $_SESSION['customer_phone'] ?? '',
+            'name'  => $_SESSION['customer_name'] ?? '',
+            'email' => $_SESSION['customer_email'] ?? ''
+        ];
+
+        $result = \Core\FacebookPixelService::sendCapiEvent($eventName, $customData, $userData, $eventId ?: null, $eventUrl ?: null);
+        echo json_encode($result);
         exit;
     }
 }
