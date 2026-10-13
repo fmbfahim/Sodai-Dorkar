@@ -964,6 +964,26 @@ class ShopController {
                         ]);
                     } catch (\Exception $ex) {}
 
+                    // Trigger Meta Conversions API (CAPI) AddToCart Event
+                    try {
+                        if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackAddToCartEnabled()) {
+                            $userPhone = $_SESSION['customer_phone'] ?? '';
+                            $userName = $_SESSION['customer_name'] ?? '';
+                            \Core\FacebookPixelService::sendCapiEvent('AddToCart', [
+                                'content_ids' => [(string)$product['id']],
+                                'content_name' => $displayName,
+                                'content_type' => 'product',
+                                'value' => (float)($price * $quantity),
+                                'currency' => 'BDT'
+                            ], [
+                                'phone' => $userPhone,
+                                'name' => $userName
+                            ]);
+                        }
+                    } catch (\Throwable $fbEx) {
+                        error_log("Meta CAPI AddToCart error: " . $fbEx->getMessage());
+                    }
+
                     // AJAX response
                     if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                         header('Content-Type: application/json');
@@ -988,10 +1008,14 @@ class ShopController {
 
                         echo json_encode([
                             'status' => 'success',
+                            'action' => 'add',
                             'cart_count' => $cartCount,
                             'cart_total' => $cartTotal,
                             'cart' => $_SESSION['cart'],
                             'product_name' => $displayName,
+                            'product_id' => $product['id'],
+                            'item_price' => $price,
+                            'item_qty' => $quantity,
                             'spend_more_offers' => $spendMoreOffers,
                             'offer_notice' => $offerNotice,
                             'message' => $toastMsg
@@ -1451,19 +1475,22 @@ class ShopController {
                     ]);
                 } catch (\Exception $ex) {}
 
-                // Send Meta Conversions API (CAPI) Server-Side Purchase Event
+                // Send Meta Conversions API (CAPI) Server-Side Purchase Event with Event Deduplication
+                $eventId = 'order_' . $orderId . '_' . time();
+                $_SESSION['last_order_event_id'] = $eventId;
                 try {
-                    if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()) {
-                        \Core\FacebookPixelService::sendServerEvent('Purchase', [
+                    if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackPurchaseEnabled()) {
+                        \Core\FacebookPixelService::sendCapiEvent('Purchase', [
                             'value' => (float)$totalAmount,
                             'currency' => 'BDT',
                             'order_id' => (string)$orderId,
                             'content_name' => "Order #{$orderId}",
                             'content_type' => 'product'
                         ], [
-                            'phone' => $phone,
-                            'name' => $customerName
-                        ]);
+                            'phone' => $phone ?? '',
+                            'name' => $customerName ?? '',
+                            'email' => $email ?? ''
+                        ], $eventId);
                     }
                 } catch (\Throwable $fbEx) {
                     error_log("Meta CAPI Purchase Event error: " . $fbEx->getMessage());
@@ -1636,6 +1663,27 @@ class ShopController {
                 $pushModel->sendOrderStatusNotification((int)$orderId, 'pending', 'অর্ডার সফলভাবে তৈরি হয়েছে।');
             } catch (\Throwable $ex) {
                 error_log("fastOrder notification error: " . $ex->getMessage());
+            }
+
+            // Send Meta Conversions API (CAPI) Server-Side Purchase Event with Event Deduplication
+            $eventId = 'order_' . $orderId . '_' . time();
+            $_SESSION['last_order_event_id'] = $eventId;
+            try {
+                if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackPurchaseEnabled()) {
+                    \Core\FacebookPixelService::sendCapiEvent('Purchase', [
+                        'value' => (float)$totalAmount,
+                        'currency' => 'BDT',
+                        'order_id' => (string)$orderId,
+                        'content_name' => "Order #{$orderId}",
+                        'content_type' => 'product'
+                    ], [
+                        'phone' => $cleanPhone ?? ($phone ?? ''),
+                        'name' => $name ?? '',
+                        'address' => $address ?? ''
+                    ], $eventId);
+                }
+            } catch (\Throwable $fbEx) {
+                error_log("Meta CAPI fastOrder Purchase error: " . $fbEx->getMessage());
             }
 
             echo json_encode([

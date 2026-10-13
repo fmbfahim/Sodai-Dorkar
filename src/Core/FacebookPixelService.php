@@ -41,7 +41,9 @@ class FacebookPixelService
     public static function isEnabled(): bool
     {
         $cfg = self::getSettings();
-        return (!empty($cfg['facebook_pixel_enabled']) && $cfg['facebook_pixel_enabled'] === '1' && !empty($cfg['facebook_pixel_id']));
+        $enabled = $cfg['facebook_pixel_enabled'] ?? '0';
+        $pixelId = trim($cfg['facebook_pixel_id'] ?? '');
+        return (!empty($pixelId) && in_array((string)$enabled, ['1', 'true', 'on'], true));
     }
 
     public static function getPixelId(): string
@@ -56,7 +58,57 @@ class FacebookPixelService
 
     public static function getTestEventCode(): string
     {
-        return trim(self::getSettings()['facebook_capi_test_code'] ?? '');
+        // 1. Setting configured in database
+        $code = trim(self::getSettings()['facebook_capi_test_code'] ?? '');
+        if (!empty($code)) {
+            return $code;
+        }
+
+        // 2. Query parameter (?test_event_code=...) when opened via Meta Events Manager
+        if (!empty($_GET['test_event_code'])) {
+            $code = trim($_GET['test_event_code']);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['fb_test_code'] = $code;
+            }
+            return $code;
+        }
+
+        // 3. Stored in active PHP session
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['fb_test_code'])) {
+            return trim($_SESSION['fb_test_code']);
+        }
+
+        // 4. Stored in browser cookie
+        if (!empty($_COOKIE['fb_test_code'])) {
+            return trim($_COOKIE['fb_test_code']);
+        }
+
+        return '';
+    }
+
+    public static function isTrackPageViewEnabled(): bool
+    {
+        return (self::getSettings()['facebook_pixel_track_pageview'] ?? '1') == '1';
+    }
+
+    public static function isTrackViewContentEnabled(): bool
+    {
+        return (self::getSettings()['facebook_pixel_track_view_content'] ?? '1') == '1';
+    }
+
+    public static function isTrackAddToCartEnabled(): bool
+    {
+        return (self::getSettings()['facebook_pixel_track_add_to_cart'] ?? '1') == '1';
+    }
+
+    public static function isTrackInitiateCheckoutEnabled(): bool
+    {
+        return (self::getSettings()['facebook_pixel_track_initiate_checkout'] ?? '1') == '1';
+    }
+
+    public static function isTrackPurchaseEnabled(): bool
+    {
+        return (self::getSettings()['facebook_pixel_track_purchase'] ?? '1') == '1';
     }
 
     /**
@@ -69,9 +121,11 @@ class FacebookPixelService
         }
 
         $pixelId = htmlspecialchars(self::getPixelId(), ENT_QUOTES, 'UTF-8');
-        $trackPageView = (self::getSettings()['facebook_pixel_track_pageview'] ?? '1') === '1';
+        $testCode = self::getTestEventCode();
+        $trackPageView = self::isTrackPageViewEnabled();
 
-        $pageViewCode = $trackPageView ? "fbq('track', 'PageView');" : "";
+        $testCodeJs = !empty($testCode) ? json_encode($testCode) : 'null';
+        $pageViewCall = $trackPageView ? "window.fbpTrack('PageView');" : "";
 
         return <<<HTML
 <!-- Meta Pixel Code -->
@@ -85,13 +139,60 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '{$pixelId}');
-{$pageViewCode}
+
+// Persistent Meta Pixel Test Event & Multi-touch Tracker
+(function() {
+    try {
+        var urlParams = new URLSearchParams(window.location.search);
+        var urlTestCode = urlParams.get('test_event_code');
+        if (urlTestCode) {
+            sessionStorage.setItem('fb_test_code', urlTestCode);
+            document.cookie = "fb_test_code=" + encodeURIComponent(urlTestCode) + "; path=/; max-age=86400; SameSite=Lax";
+        }
+    } catch (e) {}
+
+    var activeTestCode = {$testCodeJs} || (function() {
+        try {
+            return sessionStorage.getItem('fb_test_code') || 
+                   (document.cookie.match(/(?:^|; )fb_test_code=([^;]*)/) || [])[1] || null;
+        } catch(e) { return null; }
+    })();
+
+    window.FB_TEST_CODE = activeTestCode;
+
+    window.fbpTrack = function(eventName, customData, eventId) {
+        if (typeof fbq !== 'function') return;
+        customData = customData || {};
+        var options = {};
+        if (eventId) {
+            options.eventID = eventId;
+        }
+        if (window.FB_TEST_CODE) {
+            options.test_event_code = window.FB_TEST_CODE;
+        }
+        if (Object.keys(options).length > 0) {
+            fbq('track', eventName, customData, options);
+        } else {
+            fbq('track', eventName, customData);
+        }
+    };
+})();
+
+{$pageViewCall}
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={$pixelId}&ev=PageView&noscript=1"
 alt="fb-pixel" /></noscript>
 <!-- End Meta Pixel Code -->
 HTML;
+    }
+
+    /**
+     * Alias for sendCapiEvent
+     */
+    public static function sendServerEvent(string $eventName, array $customData = [], array $userData = [], ?string $eventId = null): array
+    {
+        return self::sendCapiEvent($eventName, $customData, $userData, $eventId);
     }
 
     /**
@@ -113,10 +214,30 @@ HTML;
         }
 
         // Prepare user data with SHA-256 hashing as required by Meta
-        $formattedUserData = [
-            'client_ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
-            'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Mozilla/5.0'
-        ];
+        $formattedUserData = [];
+
+        // Client IP: only send if valid public IP, do NOT send loopback/private (127.0.0.1, ::1)
+        $clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($clientIp)) {
+            if (strpos($clientIp, ',') !== false) {
+                $clientIp = trim(explode(',', $clientIp)[0]);
+            }
+            if (filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                $formattedUserData['client_ip_address'] = $clientIp;
+            }
+        }
+
+        if (!empty($_SERVER['HTTP_USER_AGENT'])) {
+            $formattedUserData['client_user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+        }
+
+        // FBP and FBC cookies (Essential for Meta Event Match Quality)
+        if (!empty($_COOKIE['_fbp'])) {
+            $formattedUserData['fbp'] = $_COOKIE['_fbp'];
+        }
+        if (!empty($_COOKIE['_fbc'])) {
+            $formattedUserData['fbc'] = $_COOKIE['_fbc'];
+        }
 
         if (!empty($userData['phone'])) {
             $cleanPhone = preg_replace('/[^0-9]/', '', $userData['phone']);
@@ -133,7 +254,7 @@ HTML;
         }
 
         if (!empty($userData['name'])) {
-            $names = explode(' ', trim($userData['name']));
+            $names = preg_split('/\s+/', trim($userData['name']));
             $firstName = strtolower(trim($names[0]));
             $formattedUserData['fn'] = [hash('sha256', $firstName)];
             if (count($names) > 1) {
@@ -185,7 +306,7 @@ HTML;
             'Accept: application/json'
         ]);
         curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // compatibility for local environments
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -218,12 +339,12 @@ HTML;
     }
 
     /**
-     * Send a live test event to verify Pixel ID and CAPI token
+     * Send a live test event to verify Pixel ID and CAPI token directly into Meta Events Manager
      */
-    public static function testConnection(?string $pixelId = null, ?string $token = null, ?string $testCode = null): array
+    public static function testConnection(?string $pixelId = null, ?string $token = null, ?string $testCode = null, string $eventName = 'Purchase'): array
     {
-        $pixelId = $pixelId ?: self::getPixelId();
-        $token   = $token ?: self::getCapiToken();
+        $pixelId  = $pixelId ?: self::getPixelId();
+        $token    = $token ?: self::getCapiToken();
         $testCode = $testCode ?: self::getTestEventCode();
 
         if (empty($pixelId) || empty($token)) {
@@ -233,26 +354,45 @@ HTML;
             ];
         }
 
+        // Allowed standard events for Meta testing
+        $validStandardEvents = ['PageView', 'Purchase', 'AddToCart', 'ViewContent', 'InitiateCheckout', 'Lead'];
+        if (!in_array($eventName, $validStandardEvents, true)) {
+            $eventName = 'Purchase';
+        }
+
         $url = "https://graph.facebook.com/v19.0/{$pixelId}/events?access_token=" . urlencode($token);
 
+        $sampleCustomData = [
+            'currency'     => 'BDT',
+            'value'        => 120.00,
+            'content_name' => 'Sodai Dorkar Test Item',
+            'content_type' => 'product',
+            'num_items'    => 1
+        ];
+
+        $eventPayload = [
+            'event_name'       => $eventName,
+            'event_time'       => time(),
+            'action_source'    => 'website',
+            'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'sodaidorkar.com') . '/shop',
+            'user_data'        => [
+                'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) TestBrowser',
+                'ph'                => [hash('sha256', '8801712345678')],
+                'em'                => [hash('sha256', 'test@sodaidorkar.com')],
+                'fn'                => [hash('sha256', 'test')],
+                'ln'                => [hash('sha256', 'customer')]
+            ],
+            'custom_data'      => $sampleCustomData
+        ];
+
+        // Attach public IP if available
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($ip) && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            $eventPayload['user_data']['client_ip_address'] = $ip;
+        }
+
         $payload = [
-            'data' => [
-                [
-                    'event_name'       => 'TestEvent',
-                    'event_time'       => time(),
-                    'action_source'    => 'website',
-                    'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'sodai-dorkar.local') . '/admin/settings',
-                    'user_data'        => [
-                        'client_ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
-                        'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Mozilla/5.0 Test Agent',
-                        'ph'                => [hash('sha256', '8801700000000')]
-                    ],
-                    'custom_data'      => [
-                        'currency' => 'BDT',
-                        'value'    => 100.00
-                    ]
-                ]
-            ]
+            'data' => [$eventPayload]
         ];
 
         if (!empty($testCode)) {
@@ -267,7 +407,7 @@ HTML;
             'Content-Type: application/json',
             'Accept: application/json'
         ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);
@@ -284,11 +424,22 @@ HTML;
 
         $decoded = json_decode($response, true) ?? [];
         if ($httpCode >= 200 && $httpCode < 300) {
+            $recCount = $decoded['events_received'] ?? 1;
+            $fbtrace  = $decoded['fbtrace_id'] ?? '';
+            
+            if (!empty($testCode)) {
+                $msg = "🎉 টেস্ট সফল হয়েছে! Meta Events Manager এর 'Test Events' ট্যাবে '{$eventName}' ইভেন্টটি এখনই রিয়েল-টাইম দেখতে পাবেন।";
+            } else {
+                $msg = "✅ মেটা সার্ভার ইভেন্টটি সফলভাবে গ্রহণ করেছে। তবে Test Event Code না দিলে Events Manager-এর 'Test Events' ট্যাবে লাইভ দেখা যায় না (সরাসরি Overview-তে জমা হয়)। রিয়েল-টাইম টেস্ট দেখতে Test Event Code দিয়ে টেস্ট করুন।";
+            }
+
             return [
                 'status'          => 'success',
-                'events_received' => $decoded['events_received'] ?? 1,
-                'fbtrace_id'      => $decoded['fbtrace_id'] ?? '',
-                'message'         => 'Meta Conversions API সফলভাবে সংযুক্ত হয়েছে! টেস্ট ইভেন্ট ফেসবুক সফলভাবে গ্রহণ করেছে।'
+                'event_name'      => $eventName,
+                'events_received' => $recCount,
+                'fbtrace_id'      => $fbtrace,
+                'has_test_code'   => !empty($testCode),
+                'message'         => $msg
             ];
         }
 

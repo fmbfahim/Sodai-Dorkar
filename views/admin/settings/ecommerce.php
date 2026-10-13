@@ -2266,21 +2266,30 @@
 
         <!-- Live Connection Test Tool -->
         <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-md border border-blue-800">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold text-blue-300 bg-blue-500/20 border border-blue-400/30 mb-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                         <span>Direct Meta Graph API Test</span>
                     </div>
-                    <h4 class="text-lg font-black">Meta API কানেকশন টেস্ট করুন</h4>
+                    <h4 class="text-lg font-black">Meta API কানেকশন ও টেস্ট ইভেন্ট যাচাই করুন</h4>
                     <p class="text-xs text-slate-300 max-w-xl">
-                        Pixel ID এবং CAPI Token টি সঠিকভাবে কাজ করছে কিনা তা ফেসবুক সার্ভারে এখনই একটি টেস্ট ইভেন্ট পাঠিয়ে সরাসরি যাচাই করুন।
+                        Pixel ID এবং CAPI Token দিয়ে সরাসরি মেটা সার্ভারে একটি স্ট্যান্ডার্ড ইভেন্ট পাঠান। উপরে <strong>Test Event Code</strong> দেওয়া থাকলে Meta Events Manager এর <strong>Test Events</strong> ট্যাবে লাইভ দেখা যাবে।
                     </p>
                 </div>
-                <button type="button" onclick="testMetaPixelConnection()" id="btn_test_pixel" class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer">
-                    <ion-icon name="paper-plane-outline" class="text-base"></ion-icon>
-                    <span>Send Test Event to Meta</span>
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="fb_test_event_name" class="bg-slate-800 border border-blue-500/50 text-white text-xs rounded-xl px-3 py-2.5 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer">
+                        <option value="Purchase" selected>Purchase (ক্রয়)</option>
+                        <option value="PageView">PageView (পেজ ভিউ)</option>
+                        <option value="AddToCart">AddToCart (কার্ট)</option>
+                        <option value="InitiateCheckout">InitiateCheckout (চেকআউট)</option>
+                        <option value="ViewContent">ViewContent (পণ্য দর্শন)</option>
+                    </select>
+                    <button type="button" onclick="testMetaPixelConnection()" id="btn_test_pixel" class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer">
+                        <ion-icon name="paper-plane-outline" class="text-base"></ion-icon>
+                        <span>Send Test Event to Meta</span>
+                    </button>
+                </div>
             </div>
             <div id="test_pixel_result" class="mt-4 text-xs font-medium" style="display:none;"></div>
         </div>
@@ -2706,6 +2715,7 @@
         const pixelId = document.getElementById('fb_pixel_id_input')?.value.trim();
         const token = document.getElementById('fb_capi_token_input')?.value.trim();
         const testCode = document.getElementById('fb_test_code_input')?.value.trim();
+        const eventName = document.getElementById('fb_test_event_name')?.value || 'Purchase';
         const btn = document.getElementById('btn_test_pixel');
         const resDiv = document.getElementById('test_pixel_result');
 
@@ -2719,13 +2729,14 @@
         btn.innerHTML = '<span>মেটা সার্ভারে পাঠানো হচ্ছে...</span>';
         resDiv.style.display = 'block';
         resDiv.className = 'mt-3 text-xs font-semibold text-slate-300';
-        resDiv.textContent = '⏳ Meta Graph API এর সাথে যোগাযোগ করা হচ্ছে...';
+        resDiv.textContent = `⏳ Meta Graph API এর সাথে যোগাযোগ করা হচ্ছে (${eventName} ইভেন্ট)...`;
 
         try {
             const formData = new FormData();
             formData.append('pixel_id', pixelId);
             formData.append('capi_token', token);
             formData.append('test_code', testCode);
+            formData.append('event_name', eventName);
             const csrfEl = document.querySelector('input[name="csrf_token"]');
             if (csrfEl) formData.append('csrf_token', csrfEl.value);
 
@@ -2741,7 +2752,7 @@
 
             if (data.status === 'success') {
                 resDiv.className = 'mt-3 text-xs font-bold text-emerald-300 bg-emerald-950/80 p-3 rounded-xl border border-emerald-500/50';
-                resDiv.innerHTML = `✅ ${data.message} ${data.fbtrace_id ? '<div class="text-[11px] font-mono mt-1 text-slate-300">FBTrace ID: ' + data.fbtrace_id + '</div>' : ''}`;
+                resDiv.innerHTML = `✅ ${data.message} ${data.fbtrace_id ? '<div class="text-[11px] font-mono mt-1 text-slate-300">FBTrace ID: ' + data.fbtrace_id + ' | Event: ' + (data.event_name || eventName) + '</div>' : ''}`;
             } else {
                 resDiv.className = 'mt-3 text-xs font-bold text-rose-300 bg-rose-950/80 p-3 rounded-xl border border-rose-500/50';
                 resDiv.innerHTML = `❌ ${data.message}`;

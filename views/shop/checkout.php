@@ -705,14 +705,17 @@ document.getElementById('checkout-form').addEventListener('submit', function(e) 
 });
 
 // Meta Pixel InitiateCheckout Event
-<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackInitiateCheckoutEnabled()): ?>
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof fbq === 'function') {
-        fbq('track', 'InitiateCheckout', {
-            value: <?= (float)($subtotal ?? 0) ?>,
-            currency: 'BDT',
-            num_items: <?= isset($cart) && is_array($cart) ? count($cart) : 0 ?>
-        });
+    var payload = {
+        value: <?= (float)($subtotal ?? 0) ?>,
+        currency: 'BDT',
+        num_items: <?= isset($cart) && is_array($cart) ? count($cart) : 0 ?>
+    };
+    if (typeof window.fbpTrack === 'function') {
+        window.fbpTrack('InitiateCheckout', payload);
+    } else if (typeof fbq === 'function') {
+        fbq('track', 'InitiateCheckout', payload);
     }
 });
 <?php endif; ?>

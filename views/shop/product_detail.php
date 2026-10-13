@@ -690,17 +690,20 @@ function submitDetailAddToCart(productId, btn) {
 }
 
 // Meta Pixel ViewContent Event
-<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackViewContentEnabled()): ?>
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof fbq === 'function') {
-        fbq('track', 'ViewContent', {
-            content_name: <?= json_encode($product['name']) ?>,
-            content_category: <?= json_encode($product['category_name'] ?? '') ?>,
-            content_ids: [<?= json_encode((string)$product['id']) ?>],
-            content_type: 'product',
-            value: <?= (float)$sellPrice ?>,
-            currency: 'BDT'
-        });
+    var payload = {
+        content_name: <?= json_encode($product['name']) ?>,
+        content_category: <?= json_encode($product['category_name'] ?? '') ?>,
+        content_ids: [<?= json_encode((string)$product['id']) ?>],
+        content_type: 'product',
+        value: <?= (float)$sellPrice ?>,
+        currency: 'BDT'
+    };
+    if (typeof window.fbpTrack === 'function') {
+        window.fbpTrack('ViewContent', payload);
+    } else if (typeof fbq === 'function') {
+        fbq('track', 'ViewContent', payload);
     }
 });
 <?php endif; ?>

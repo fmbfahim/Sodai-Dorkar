@@ -186,16 +186,25 @@ $locale = Lang::locale();
     </div>
 </div>
 
-<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled()): ?>
+<?php if (class_exists('\Core\FacebookPixelService') && \Core\FacebookPixelService::isEnabled() && \Core\FacebookPixelService::isTrackPurchaseEnabled()): 
+    $lastEventId = $_SESSION['last_order_event_id'] ?? ('order_' . ($order['id'] ?? $orderId ?? '') . '_' . time());
+    unset($_SESSION['last_order_event_id']);
+?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof fbq === 'function') {
-        fbq('track', 'Purchase', {
-            value: <?= (float)($order['payable_amount'] ?? $order['total_amount'] ?? 0) ?>,
-            currency: 'BDT',
-            content_name: 'Order #<?= htmlspecialchars($order['order_number'] ?? $order['id'] ?? '') ?>',
-            content_type: 'product'
-        });
+    var payload = {
+        value: <?= (float)($order['payable_amount'] ?? $order['total_amount'] ?? 0) ?>,
+        currency: 'BDT',
+        content_name: 'Order #<?= htmlspecialchars((string)($order['order_number'] ?? $order['id'] ?? $orderId ?? '')) ?>',
+        content_type: 'product',
+        order_id: '<?= htmlspecialchars((string)($order['id'] ?? $orderId ?? '')) ?>'
+    };
+    var eventId = <?= json_encode((string)$lastEventId) ?>;
+
+    if (typeof window.fbpTrack === 'function') {
+        window.fbpTrack('Purchase', payload, eventId);
+    } else if (typeof fbq === 'function') {
+        fbq('track', 'Purchase', payload, { eventID: eventId });
     }
 });
 </script>

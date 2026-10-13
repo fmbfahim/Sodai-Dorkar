@@ -444,11 +444,15 @@ class SettingsController extends Controller {
     }
 
     public function testFacebookPixel() {
-        $pixelId  = trim($_POST['pixel_id'] ?? '');
-        $token    = trim($_POST['capi_token'] ?? '');
-        $testCode = trim($_POST['test_code'] ?? '');
+        $pixelId   = trim($_POST['pixel_id'] ?? '');
+        $token     = trim($_POST['capi_token'] ?? '');
+        $testCode  = trim($_POST['test_code'] ?? '');
+        $eventName = trim($_POST['event_name'] ?? 'Purchase');
+        if (empty($eventName)) {
+            $eventName = 'Purchase';
+        }
 
-        $result = \Core\FacebookPixelService::testConnection($pixelId, $token, $testCode);
+        $result = \Core\FacebookPixelService::testConnection($pixelId, $token, $testCode, $eventName);
         header('Content-Type: application/json');
         echo json_encode($result);
         exit;

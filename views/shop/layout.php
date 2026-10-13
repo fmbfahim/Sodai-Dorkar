@@ -1496,6 +1496,17 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             if (typeof syncProductCardsWithCart === 'function') {
                 syncProductCardsWithCart();
             }
+
+            // Trigger Meta Pixel AddToCart event
+            if (data && data.action === 'add' && typeof window.fbpTrack === 'function') {
+                window.fbpTrack('AddToCart', {
+                    content_name: data.product_name || '',
+                    content_ids: data.product_id ? [String(data.product_id)] : [],
+                    content_type: 'product',
+                    value: (parseFloat(data.item_price || 0) * parseInt(data.item_qty || 1)),
+                    currency: 'BDT'
+                });
+            }
         }
 
         // Drawer Quantity Update
