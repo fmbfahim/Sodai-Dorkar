@@ -1214,6 +1214,10 @@ function switchCampaignMode(mode) {
     } else if (mode === 'lifestyle') {
         selectLifestylePreset('🍳 প্রতিদিনের রান্নায় থাকুক ঘিয়ের খাঁটি সুবাস', '২৫৳ ছাড়', 'খাঁটি ঘি ও রান্নার তেল', 'amber', 'cooking_ghee');
     } else if (mode === 'product_offer') {
+        const chkCard = document.getElementById('studio_toggle_product_card');
+        const chkHeadline = document.getElementById('studio_toggle_headline');
+        if (chkCard) chkCard.checked = true;
+        if (chkHeadline) chkHeadline.checked = true;
         renderStudioProductChecklist();
         drawBannerCanvas();
     }
@@ -1359,8 +1363,18 @@ function toggleProductSelection(prodId) {
         }
         selectedProductIds.push(prodId);
     }
+
+    // Automatically enable Product Card & Headline toggles when products are selected!
+    const chkCard = document.getElementById('studio_toggle_product_card');
+    const chkHeadline = document.getElementById('studio_toggle_headline');
+    if (selectedProductIds.length > 0) {
+        if (chkCard) chkCard.checked = true;
+        if (chkHeadline) chkHeadline.checked = true;
+    }
+
     renderStudioProductChecklist();
     loadSelectedProductImages();
+    drawBannerCanvas();
 }
 
 function updateSelectedProductsSummary() {
@@ -1388,11 +1402,21 @@ function loadSelectedProductImages() {
     selectedProds.forEach(p => {
         if (p.image_url && !studioProductImgElements[p.id]) {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
             img.onload = () => {
                 studioProductImgElements[p.id] = img;
                 drawBannerCanvas();
             };
+            img.onerror = () => {
+                const retryImg = new Image();
+                retryImg.onload = () => {
+                    studioProductImgElements[p.id] = retryImg;
+                    drawBannerCanvas();
+                };
+                retryImg.src = p.image_url;
+            };
+            if (p.image_url.startsWith('http://') || p.image_url.startsWith('https://')) {
+                img.crossOrigin = 'anonymous';
+            }
             img.src = p.image_url;
         }
     });
@@ -1425,8 +1449,13 @@ function setPosterLayout(layout) {
         if (layout === 'full_ai') {
             btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
             btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
-            if (chkHeadline) chkHeadline.checked = false; // By default no headline on full AI photo
-            if (chkCard) chkCard.checked = false; // By default no product card on full AI photo
+            if (selectedProductIds.length === 0) {
+                if (chkHeadline) chkHeadline.checked = false;
+                if (chkCard) chkCard.checked = false;
+            } else {
+                if (chkCard) chkCard.checked = true;
+                if (chkHeadline) chkHeadline.checked = true;
+            }
         } else {
             btnCombo.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer';
             btnFull.className = 'py-1.5 px-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-secondary-600 hover:text-secondary-900 cursor-pointer';
@@ -1924,7 +1953,7 @@ function renderFullAiPosterStage(ctx, prods, mode, theme, width, height, showPro
                     ctx.restore();
                 });
             } else {
-                // 3 or 4 products: Compact horizontal floating cards
+                // 3 or 4 products: Compact horizontal floating cards with thumbnails
                 const cardW = Math.floor((width - 120 - ((count - 1) * 16)) / count);
                 prods.slice(0, count).forEach((p, idx) => {
                     const cardX = 60 + idx * (cardW + 16);
@@ -1938,21 +1967,59 @@ function renderFullAiPosterStage(ctx, prods, mode, theme, width, height, showPro
                     roundRect(ctx, cardX, cardY, cardW, cardH, 20, true, true);
                     ctx.restore();
 
-                    // Product title
+                    // Product Thumbnail (Left inside card)
+                    const pImg = studioProductImgElements[p.id];
+                    const thumbSize = (count === 3) ? 72 : 58;
+                    const thumbX = cardX + (count === 3 ? 12 : 9);
+                    const thumbY = cardY + Math.floor((cardH - thumbSize) / 2);
+
                     ctx.save();
                     ctx.fillStyle = '#ffffff';
-                    drawWrappedText(ctx, p.name, cardX + cardW / 2, cardY + 16, cardW - 20, 24, 2, 'center', 19);
+                    roundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 14, true, false);
+                    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+                        roundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 14, false, false);
+                        ctx.clip();
+                        const pad = 6;
+                        const ratio = Math.min((thumbSize - pad) / pImg.naturalWidth, (thumbSize - pad) / pImg.naturalHeight);
+                        const nw = pImg.naturalWidth * ratio;
+                        const nh = pImg.naturalHeight * ratio;
+                        ctx.drawImage(pImg, thumbX + (thumbSize - nw) / 2, thumbY + (thumbSize - nh) / 2, nw, nh);
+                    } else {
+                        ctx.fillStyle = '#64748b';
+                        ctx.font = `${Math.floor(thumbSize * 0.45)}px sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('🛍️', thumbX + thumbSize / 2, thumbY + thumbSize / 2);
+                    }
+                    ctx.restore();
 
-                    // Price
-                    ctx.fillStyle = '#fbbf24';
-                    ctx.font = '900 36px "Outfit", sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(`৳${p.sell_price.toFixed(0)}`, cardX + cardW / 2, cardY + 80);
+                    // Product Details (Right of thumbnail)
+                    ctx.save();
+                    const textX = thumbX + thumbSize + (count === 3 ? 12 : 8);
+                    const textW = cardW - (thumbSize + (count === 3 ? 24 : 18));
 
-                    ctx.fillStyle = '#e2e8f0';
-                    ctx.font = 'bold 15px "Hind Siliguri", sans-serif';
-                    ctx.fillText(`প্রতি ${p.unit} ${p.has_discount ? `⚡${p.discount_percent}%` : ''}`, cardX + cardW / 2, cardY + 110);
+                    ctx.fillStyle = '#ffffff';
+                    if (count === 3) {
+                        drawWrappedText(ctx, p.name, textX, cardY + 16, textW, 22, 2, 'left', 18);
+
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.font = '900 32px "Outfit", sans-serif';
+                        ctx.fillText(`৳${p.sell_price.toFixed(0)}`, textX, cardY + 74);
+
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.font = 'bold 14px "Hind Siliguri", sans-serif';
+                        ctx.fillText(`প্রতি ${p.unit} ${p.has_discount ? `(${p.discount_percent}% ছাড়)` : ''}`, textX, cardY + 104);
+                    } else {
+                        drawWrappedText(ctx, p.name, textX, cardY + 14, textW, 19, 2, 'left', 15);
+
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.font = '900 25px "Outfit", sans-serif';
+                        ctx.fillText(`৳${p.sell_price.toFixed(0)}`, textX, cardY + 68);
+
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.font = 'bold 12px "Hind Siliguri", sans-serif';
+                        ctx.fillText(`প্রতি ${p.unit} ${p.has_discount ? `⚡${p.discount_percent}%` : ''}`, textX, cardY + 92);
+                    }
                     ctx.restore();
                 });
             }
