@@ -809,7 +809,7 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                                     </svg>
-                                    <span><?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?></span>
+                                    <span class="card-unit-label"><?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?></span>
                                 </div>
 
                                 <!-- Price Section & Savings Badge -->
@@ -830,6 +830,25 @@ if (!empty($activeSubId) && isset($catLookup[$activeSubId])) {
                                         </span>
                                     <?php endif; ?>
                                 </div>
+
+                                <!-- Unit Variant Badges (Interactive Pills) -->
+                                <?php if ($hasCustom && !empty($uInfo['variants'])): ?>
+                                    <div class="pt-0.5 pb-2 flex flex-wrap items-center gap-1.5 unit-badges-container">
+                                        <?php foreach ($uInfo['variants'] as $v): ?>
+                                            <?php 
+                                                $isActive = ($v['title'] === $initialTitle); 
+                                                $activeClass = $isActive 
+                                                    ? 'border-emerald-600 text-emerald-700 bg-emerald-50/80 font-bold active-variant shadow-2xs' 
+                                                    : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 font-medium';
+                                            ?>
+                                            <button type="button" 
+                                                    onclick="selectProductCardVariant(this, '<?= htmlspecialchars($v['title'], ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>)"
+                                                    class="variant-pill inline-flex items-center px-2 py-0.5 rounded-md text-[11px] border transition-all cursor-pointer <?= $activeClass ?>">
+                                                <?= htmlspecialchars($v['title']) ?>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
 
                                 <!-- Bottom Action: Add to Bag / Interactive Stepper (Solid Punchy Emerald) -->
                                 <div class="mt-auto pt-1 card-action-container" data-product-id="<?= $product['id'] ?>">

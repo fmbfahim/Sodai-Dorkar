@@ -761,7 +761,7 @@ if (!empty($search)) $activeFilterCount++;
 
                                     <!-- Unit Weight Display -->
                                     <div class="text-[11px] text-gray-500 font-medium mb-2">
-                                        <?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?>
+                                        <span class="card-unit-label"><?= htmlspecialchars($hasCustom ? $initialTitle : $uInfo['primary']) ?></span>
                                     </div>
 
                                     <!-- Price Display -->

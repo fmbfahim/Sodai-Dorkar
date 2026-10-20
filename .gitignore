@@ -1,5 +1,6 @@
 /node_modules/
 /scratch/
+/storage/
 test_arr.php
 test_render.php
 prompt.md
@@ -8,3 +9,4 @@ prompt.md
 config/database.local.php
 .DS_Store
 Thumbs.db
+

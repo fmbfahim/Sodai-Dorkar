@@ -32,26 +32,96 @@ class Auth {
     }
 
     /**
+     * Accurately detect if current request is via HTTPS across localhost, reverse proxies, and Cloudflare
+     */
+    public static function isSecureRequest(): bool {
+        return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+            || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on')
+            || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+    }
+
+    /**
+     * Safe cookie domain resolution (treats localhost & IP addresses as host-only)
+     */
+    public static function getCookieDomain(): string {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $host = explode(':', $host)[0];
+        if ($host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP) || strpos($host, '.') === false) {
+            return '';
+        }
+        return '';
+    }
+
+    /**
+     * Explicitly send/refresh the PHPSESSID session cookie with 1-year persistent expiration
+     */
+    public static function sendSessionCookie(): void {
+        if (session_status() === PHP_SESSION_ACTIVE && session_id()) {
+            $lifetime = 365 * 24 * 60 * 60; // 1 year
+            $expires = time() + $lifetime;
+            $isSecure = self::isSecureRequest();
+            setcookie(session_name(), session_id(), [
+                'expires'  => $expires,
+                'path'     => '/',
+                'domain'   => self::getCookieDomain(),
+                'secure'   => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+    }
+
+    /**
+     * Refresh the sd_user_remember cookie to roll forward 1 year from now
+     */
+    public static function refreshUserCookie(string $token): void {
+        $expires = time() + (365 * 86400); // 1 year
+        $isSecure = self::isSecureRequest();
+        setcookie('sd_user_remember', $token, [
+            'expires'  => $expires,
+            'path'     => '/',
+            'domain'   => self::getCookieDomain(),
+            'secure'   => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE['sd_user_remember'] = $token;
+    }
+
+    /**
+     * Refresh the sd_cust_remember cookie to roll forward 1 year from now
+     */
+    public static function refreshCustomerCookie(string $token): void {
+        $expires = time() + (365 * 86400); // 1 year
+        $isSecure = self::isSecureRequest();
+        setcookie('sd_cust_remember', $token, [
+            'expires'  => $expires,
+            'path'     => '/',
+            'domain'   => self::getCookieDomain(),
+            'secure'   => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE['sd_cust_remember'] = $token;
+    }
+
+    /**
      * Persist customer login via secure cookie (1 year duration)
      */
     public static function persistCustomerLogin($customerId): void {
         try {
             $token = bin2hex(random_bytes(32));
             $db = self::getDb();
-            (new \Models\Customer())->ensureSchema();
-            $db->query("UPDATE customers SET remember_token = ? WHERE id = ?", [$token, $customerId]);
+            try {
+                $db->query("UPDATE customers SET remember_token = ? WHERE id = ?", [$token, $customerId]);
+            } catch (\Throwable $e) {
+                (new \Models\Customer())->ensureSchema();
+                $db->query("UPDATE customers SET remember_token = ? WHERE id = ?", [$token, $customerId]);
+            }
 
-            $expires = time() + (365 * 86400); // 1 year
-            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-            setcookie('sd_cust_remember', $token, [
-                'expires'  => $expires,
-                'path'     => '/',
-                'domain'   => '',
-                'secure'   => $isSecure,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
-            $_COOKIE['sd_cust_remember'] = $token;
+            self::refreshCustomerCookie($token);
+            self::sendSessionCookie();
         } catch (\Throwable $e) {
             error_log("persistCustomerLogin error: " . $e->getMessage());
         }
@@ -66,11 +136,11 @@ class Auth {
                 $db = self::getDb();
                 $db->query("UPDATE customers SET remember_token = NULL WHERE id = ?", [$_SESSION['customer_id']]);
             }
-            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            $isSecure = self::isSecureRequest();
             setcookie('sd_cust_remember', '', [
-                'expires'  => time() - 3600,
+                'expires'  => time() - 86400,
                 'path'     => '/',
-                'domain'   => '',
+                'domain'   => self::getCookieDomain(),
                 'secure'   => $isSecure,
                 'httponly' => true,
                 'samesite' => 'Lax',
@@ -88,20 +158,15 @@ class Auth {
         try {
             $token = bin2hex(random_bytes(32));
             $db = self::getDb();
-            (new \Models\User())->ensureSchema();
-            $db->query("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $userId]);
+            try {
+                $db->query("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $userId]);
+            } catch (\Throwable $e) {
+                (new \Models\User())->ensureSchema();
+                $db->query("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $userId]);
+            }
 
-            $expires = time() + (365 * 86400); // 1 year
-            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-            setcookie('sd_user_remember', $token, [
-                'expires'  => $expires,
-                'path'     => '/',
-                'domain'   => '',
-                'secure'   => $isSecure,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
-            $_COOKIE['sd_user_remember'] = $token;
+            self::refreshUserCookie($token);
+            self::sendSessionCookie();
         } catch (\Throwable $e) {
             error_log("persistUserLogin error: " . $e->getMessage());
         }
@@ -116,11 +181,11 @@ class Auth {
                 $db = self::getDb();
                 $db->query("UPDATE users SET remember_token = NULL WHERE id = ?", [$_SESSION['user_id']]);
             }
-            $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            $isSecure = self::isSecureRequest();
             setcookie('sd_user_remember', '', [
-                'expires'  => time() - 3600,
+                'expires'  => time() - 86400,
                 'path'     => '/',
-                'domain'   => '',
+                'domain'   => self::getCookieDomain(),
                 'secure'   => $isSecure,
                 'httponly' => true,
                 'samesite' => 'Lax',
@@ -135,45 +200,66 @@ class Auth {
      * Check cookies and restore active session if session expired or browser was reopened
      */
     public static function restoreSessionFromCookie($db = null): void {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         $db = $db ?: self::getDb();
 
         // 1. Restore Customer Session if missing
         if (empty($_SESSION['customer_id']) && !empty($_COOKIE['sd_cust_remember'])) {
             try {
-                (new \Models\Customer())->ensureSchema();
-                $token = $_COOKIE['sd_cust_remember'];
-                $stmt = $db->query("SELECT id, name, status FROM customers WHERE remember_token = ? LIMIT 1", [$token]);
-                $cust = $stmt->fetch();
-                if ($cust && ($cust['status'] ?? 'active') !== 'inactive') {
-                    $_SESSION['customer_id'] = (int)$cust['id'];
-                    $_SESSION['customer_name'] = $cust['name'];
-                } else {
-                    self::clearCustomerLogin();
+                $token = trim((string)$_COOKIE['sd_cust_remember']);
+                if ($token !== '') {
+                    $stmt = $db->query("SELECT id, name, phone, email, address_details, status FROM customers WHERE remember_token = ? LIMIT 1", [$token]);
+                    $cust = $stmt->fetch();
+                    if ($cust && ($cust['status'] ?? 'active') !== 'inactive') {
+                        $_SESSION['customer_id'] = (int)$cust['id'];
+                        $_SESSION['customer_name'] = $cust['name'];
+                        $_SESSION['customer_phone'] = $cust['phone'] ?? '';
+                        $_SESSION['customer_email'] = $cust['email'] ?? '';
+                        $_SESSION['customer_address'] = $cust['address_details'] ?? '';
+
+                        // Refresh cookie so lifetime rolls forward another 1 year
+                        self::refreshCustomerCookie($token);
+                        self::sendSessionCookie();
+                    } else {
+                        self::clearCustomerLogin();
+                    }
                 }
             } catch (\Throwable $e) {
-                // Ignore DB error
+                try {
+                    (new \Models\Customer())->ensureSchema();
+                } catch (\Throwable $ex) {}
+                error_log("restoreSessionFromCookie customer error: " . $e->getMessage());
             }
         }
 
         // 2. Restore System User (Admin / Agent / Delivery / Staff) Session if missing
         if (empty($_SESSION['user_id']) && !empty($_COOKIE['sd_user_remember'])) {
             try {
-                (new \Models\User())->ensureSchema();
-                $token = $_COOKIE['sd_user_remember'];
-                $stmt = $db->query("SELECT id, name, username, role, status FROM users WHERE remember_token = ? LIMIT 1", [$token]);
-                $u = $stmt->fetch();
-                if ($u && ($u['status'] ?? 'active') !== 'inactive') {
-                    $_SESSION['user_id'] = (int)$u['id'];
-                    $_SESSION['role'] = $u['role'];
-                    $_SESSION['name'] = $u['name'];
-                    $_SESSION['username'] = $u['username'];
-                    $_SESSION['permissions'] = self::userPermissions($u['id']);
-                } else {
-                    self::clearUserLogin();
+                $token = trim((string)$_COOKIE['sd_user_remember']);
+                if ($token !== '') {
+                    $stmt = $db->query("SELECT id, name, username, role, status FROM users WHERE remember_token = ? LIMIT 1", [$token]);
+                    $u = $stmt->fetch();
+                    if ($u && ($u['status'] ?? 'active') !== 'inactive') {
+                        $_SESSION['user_id'] = (int)$u['id'];
+                        $_SESSION['role'] = $u['role'];
+                        $_SESSION['name'] = $u['name'];
+                        $_SESSION['username'] = $u['username'];
+                        $_SESSION['permissions'] = self::userPermissions($u['id']);
+
+                        // Refresh cookie so lifetime rolls forward another 1 year
+                        self::refreshUserCookie($token);
+                        self::sendSessionCookie();
+                    } else {
+                        self::clearUserLogin();
+                    }
                 }
             } catch (\Throwable $e) {
-                // Ignore DB error
+                try {
+                    (new \Models\User())->ensureSchema();
+                } catch (\Throwable $ex) {}
+                error_log("restoreSessionFromCookie user error: " . $e->getMessage());
             }
         }
     }

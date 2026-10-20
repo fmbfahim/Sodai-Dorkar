@@ -239,12 +239,30 @@ if (!empty($search)) $activeFilterCount++;
                                 }
                             }
                         }
+                        $initialVTitle = '';
+                        $initialVPrice = $pSell;
+                        $initialVQty = 1;
+                        if (!empty($prodVariants)) {
+                            foreach ($prodVariants as $pv) {
+                                if (!empty($pv['is_default'])) {
+                                    $initialVTitle = $pv['title'];
+                                    $initialVPrice = $pv['price'];
+                                    $initialVQty = $pv['qty'];
+                                    break;
+                                }
+                            }
+                            if (empty($initialVTitle) && !empty($prodVariants)) {
+                                $initialVTitle = $prodVariants[0]['title'];
+                                $initialVPrice = $prodVariants[0]['price'];
+                                $initialVQty = $prodVariants[0]['qty'];
+                            }
+                        }
                     ?>
                     <div class="product-card bg-white rounded-2xl border border-gray-100 hover:border-emerald-300 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group relative"
                          data-product-id="<?= $prod['id'] ?>"
                          data-product-name="<?= htmlspecialchars($prod['name'], ENT_QUOTES) ?>"
                          data-product-img="<?= htmlspecialchars($pImg, ENT_QUOTES) ?>"
-                         data-product-price="<?= floatval($pSell) ?>"
+                         data-product-price="<?= floatval($initialVPrice) ?>"
                          data-product-reg-price="<?= floatval($pReg) ?>"
                          data-has-addons="<?= $prodHasAddons ? '1' : '0' ?>"
                          data-is-bogo="<?= $prodIsBogo ? '1' : '0' ?>"
@@ -255,6 +273,9 @@ if (!empty($search)) $activeFilterCount++;
                          data-special-badge="<?= htmlspecialchars($prodBadge, ENT_QUOTES) ?>"
                          data-addons='<?= htmlspecialchars(json_encode($prodAddons, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
                          data-variants='<?= htmlspecialchars(json_encode($prodVariants, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>'
+                         data-selected-variant-title="<?= htmlspecialchars($initialVTitle) ?>"
+                         data-selected-variant-price="<?= $initialVPrice ?>"
+                         data-selected-variant-qty="<?= $initialVQty ?>"
                          data-out-of-stock="<?= $isProdOutOfStock ? '1' : '0' ?>">
                         
                         <?php if (!empty($_SESSION['user_id'])): ?>
@@ -313,17 +334,36 @@ if (!empty($search)) $activeFilterCount++;
                             </a>
                             
                             <div class="text-[11px] text-gray-400 font-medium mb-3">
-                                <?= htmlspecialchars($unitDisplay) ?>
+                                <span class="card-unit-label"><?= htmlspecialchars(!empty($initialVTitle) ? $initialVTitle : $unitDisplay) ?></span>
                             </div>
 
                             <!-- Price Row -->
-                            <div class="flex items-baseline gap-1.5 mb-3.5 mt-auto">
+                            <div class="flex items-baseline gap-1.5 mb-2 mt-auto">
                                 <span class="text-xs font-bold text-emerald-700">৳</span>
-                                <span class="text-base sm:text-lg font-black text-gray-900"><?= formatPrice($pSell) ?></span>
+                                <span class="card-price text-base sm:text-lg font-black text-gray-900"><?= formatPrice($initialVPrice) ?></span>
                                 <?php if ($pHasDisc): ?>
                                     <span class="text-[11px] text-gray-400 line-through">৳<?= formatPrice($pReg) ?></span>
                                 <?php endif; ?>
                             </div>
+
+                            <!-- Unit Variant Badges (Interactive Pills) -->
+                            <?php if (!empty($prodVariants)): ?>
+                                <div class="pt-0.5 pb-2 flex flex-wrap items-center gap-1.5 unit-badges-container">
+                                    <?php foreach ($prodVariants as $v): ?>
+                                        <?php 
+                                            $isActive = ($v['title'] === $initialVTitle); 
+                                            $activeClass = $isActive 
+                                                ? 'border-emerald-600 text-emerald-700 bg-emerald-50/80 font-bold active-variant shadow-2xs' 
+                                                : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 font-medium';
+                                        ?>
+                                        <button type="button" 
+                                                onclick="selectProductCardVariant(this, '<?= htmlspecialchars($v['title'], ENT_QUOTES) ?>', <?= floatval($v['price']) ?>, <?= floatval($v['qty'] ?? 1) ?>)"
+                                                class="variant-pill inline-flex items-center px-2 py-0.5 rounded-md text-[11px] border transition-all cursor-pointer <?= $activeClass ?>">
+                                            <?= htmlspecialchars($v['title']) ?>
+                                        </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
 
                             <!-- Add to Bag Button -->
                             <div class="mt-auto card-action-container" data-product-id="<?= $prod['id'] ?>">

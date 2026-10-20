@@ -1,12 +1,30 @@
 <?php
 
-// ── Session settings: Keep user logged in persistently (1 year lifetime so closing browser never logs out) ──
+// Prevent early header dispatch via output buffering
+if (!ob_get_level()) {
+    ob_start();
+}
+
+// ── Persistent Session Settings: Keep user logged in persistently (1 year lifetime) ──
 $sessionLifetime = 365 * 24 * 60 * 60; // 1 year (31,536,000 seconds)
 ini_set('session.gc_maxlifetime', (string)$sessionLifetime);
 ini_set('session.cookie_lifetime', (string)$sessionLifetime);
 
+// Isolated session storage so other scripts/sites on XAMPP do not garbage-collect our sessions
+$sessionSavePath = dirname(__DIR__) . '/storage/sessions';
+if (!is_dir($sessionSavePath)) {
+    @mkdir($sessionSavePath, 0775, true);
+}
+if (is_dir($sessionSavePath) && is_writable($sessionSavePath)) {
+    ini_set('session.save_path', $sessionSavePath);
+}
+
 if (session_status() === PHP_SESSION_NONE) {
-    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    $isSecure = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on')
+        || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
     session_set_cookie_params([
         'lifetime' => $sessionLifetime,
         'path'     => '/',
@@ -17,6 +35,7 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
     session_start();
 }
+
 
 // Autoloader (Manual implementation since we might not have Composer autoloader set up for custom namespace yet, standard PSR-4 is better)
 spl_autoload_register(function ($class) {

@@ -9,6 +9,19 @@ use Core\Auth;
 class AuthController {
     
     public function showLogin() {
+        Auth::restoreSessionFromCookie();
+        if (Auth::check()) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            $role = Auth::role();
+            if ($role === 'delivery_man') {
+                header("Location: {$base}/delivery/dashboard");
+            } elseif ($role === 'agent') {
+                header("Location: {$base}/agent/dashboard");
+            } else {
+                header("Location: {$base}/admin/dashboard");
+            }
+            exit;
+        }
         return View::render('auth.login');
     }
 

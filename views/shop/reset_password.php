@@ -29,11 +29,21 @@ ob_start();
     <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
                 <div class="mb-5">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
-                    <input type="password" name="new_password" required minlength="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="••••••••">
+                    <div class="relative flex items-center">
+                        <input type="password" id="reset-new-password" name="new_password" required minlength="6" class="w-full px-4 py-3 pr-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="••••••••">
+                        <button type="button" onclick="toggleResetPass('reset-new-password', this)" class="absolute right-3 text-gray-400 hover:text-gray-700 p-1 flex items-center justify-center cursor-pointer" title="পাসওয়ার্ড দেখুন/লুকান">
+                            <ion-icon name="eye-outline" class="text-xl"></ion-icon>
+                        </button>
+                    </div>
                 </div>
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
-                    <input type="password" name="confirm_password" required minlength="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="••••••••">
+                    <div class="relative flex items-center">
+                        <input type="password" id="reset-confirm-password" name="confirm_password" required minlength="6" class="w-full px-4 py-3 pr-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="••••••••">
+                        <button type="button" onclick="toggleResetPass('reset-confirm-password', this)" class="absolute right-3 text-gray-400 hover:text-gray-700 p-1 flex items-center justify-center cursor-pointer" title="পাসওয়ার্ড দেখুন/লুকান">
+                            <ion-icon name="eye-outline" class="text-xl"></ion-icon>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-green-600 text-white font-bold py-3.5 px-6 rounded-xl hover:bg-green-700 transition-colors shadow-sm">
                     Save Password & Continue Checkout
@@ -42,6 +52,16 @@ ob_start();
         </div>
     </div>
 </div>
+
+<script>
+function toggleResetPass(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerHTML = isPass ? '<ion-icon name="eye-off-outline" class="text-xl"></ion-icon>' : '<ion-icon name="eye-outline" class="text-xl"></ion-icon>';
+}
+</script>
 
 <?php 
 $content = ob_get_clean();

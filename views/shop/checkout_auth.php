@@ -158,12 +158,55 @@ $hideFooter = true;
 .auth-input:focus { border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.12); }
 .auth-input::placeholder { color: #9ca3af; }
 
-.auth-input-icon-wrap { position: relative; }
-.auth-input-icon-wrap ion-icon {
+.auth-input-icon-wrap { 
+  position: relative; 
+  display: flex;
+  align-items: center;
+}
+.auth-input-icon-wrap > ion-icon {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   color: #9ca3af; font-size: 1.15rem; pointer-events: none;
+  z-index: 2;
 }
-.auth-input-icon-wrap .auth-input { padding-left: 44px; }
+.auth-input-icon-wrap .auth-input { 
+  padding-left: 44px; 
+  padding-right: 48px; 
+}
+.auth-pass-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  color: #9ca3af !important;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 8px;
+  z-index: 5;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-pass-toggle:hover {
+  color: #1f2937 !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+.auth-pass-toggle ion-icon {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  color: inherit !important;
+  font-size: 1.3rem !important;
+  pointer-events: none !important;
+  display: block !important;
+}
 
 .auth-btn-primary {
   width: 100%; padding: 13px 22px;
@@ -500,10 +543,8 @@ $hideFooter = true;
                 <ion-icon name="lock-closed-outline"></ion-icon>
                 <input type="password" name="password" id="loginPass" class="auth-input" style="padding-right:44px;"
                        placeholder="••••••••" required autocomplete="current-password">
-                <button type="button" onclick="togglePassVisibility('loginPass', this)"
-                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;"
-                        title="পাসওয়ার্ড দেখুন/লুকান">
-                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                <button type="button" class="auth-pass-toggle" onclick="togglePassVisibility('loginPass', this)" title="পাসওয়ার্ড দেখুন/লুকান">
+                  <ion-icon name="eye-outline"></ion-icon>
                 </button>
               </div>
 
@@ -710,10 +751,8 @@ $hideFooter = true;
                     <ion-icon name="lock-closed-outline"></ion-icon>
                     <input type="password" id="reg-password" name="password" class="auth-input" style="padding-right:44px;"
                            placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড" minlength="6" required autocomplete="new-password">
-                    <button type="button" onclick="togglePassVisibility('reg-password', this)"
-                            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px;"
-                            title="পাসওয়ার্ড দেখুন/লুকান">
-                      <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                    <button type="button" class="auth-pass-toggle" onclick="togglePassVisibility('reg-password', this)" title="পাসওয়ার্ড দেখুন/লুকান">
+                      <ion-icon name="eye-outline"></ion-icon>
                     </button>
                   </div>
                 </div>
@@ -724,10 +763,8 @@ $hideFooter = true;
                     <ion-icon name="shield-checkmark-outline"></ion-icon>
                     <input type="password" id="reg-password-confirm" class="auth-input" style="padding-right:44px;"
                            placeholder="পাসওয়ার্ডটি পুনরায় লিখুন" minlength="6" required autocomplete="new-password">
-                    <button type="button" onclick="togglePassVisibility('reg-password-confirm', this)"
-                            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px;"
-                            title="পাসওয়ার্ড দেখুন/লুকান">
-                      <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                    <button type="button" class="auth-pass-toggle" onclick="togglePassVisibility('reg-password-confirm', this)" title="পাসওয়ার্ড দেখুন/লুকান">
+                      <ion-icon name="eye-outline"></ion-icon>
                     </button>
                   </div>
                   <div id="password-match-status" style="margin-top:6px;font-size:.8rem;font-weight:700;"></div>
@@ -867,9 +904,8 @@ $hideFooter = true;
                 <ion-icon name="lock-closed-outline"></ion-icon>
                 <input type="password" id="forgot-new-pass" class="auth-input" style="padding-right:44px;"
                        placeholder="••••••••" minlength="6" autocomplete="new-password">
-                <button type="button" onclick="togglePassVisibility('forgot-new-pass', this)"
-                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;">
-                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                <button type="button" class="auth-pass-toggle" onclick="togglePassVisibility('forgot-new-pass', this)" title="পাসওয়ার্ড দেখুন/লুকান">
+                  <ion-icon name="eye-outline"></ion-icon>
                 </button>
               </div>
             </div>
@@ -880,9 +916,8 @@ $hideFooter = true;
                 <ion-icon name="lock-closed-outline"></ion-icon>
                 <input type="password" id="forgot-confirm-pass" class="auth-input" style="padding-right:44px;"
                        placeholder="••••••••" minlength="6" autocomplete="new-password">
-                <button type="button" onclick="togglePassVisibility('forgot-confirm-pass', this)"
-                        style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;display:flex;align-items:center;padding:4px;">
-                  <ion-icon name="eye-outline" style="font-size:1.2rem;"></ion-icon>
+                <button type="button" class="auth-pass-toggle" onclick="togglePassVisibility('forgot-confirm-pass', this)" title="পাসওয়ার্ড দেখুন/লুকান">
+                  <ion-icon name="eye-outline"></ion-icon>
                 </button>
               </div>
             </div>
@@ -1505,10 +1540,10 @@ function togglePassVisibility(inputId, btn) {
   if (!input) return;
   const isPass = input.type === 'password';
   input.type = isPass ? 'text' : 'password';
-  const icon = btn.querySelector('ion-icon');
-  if (icon) {
-    icon.setAttribute('name', isPass ? 'eye-off-outline' : 'eye-outline');
-  }
+  btn.innerHTML = isPass
+    ? '<ion-icon name="eye-off-outline"></ion-icon>'
+    : '<ion-icon name="eye-outline"></ion-icon>';
+  btn.setAttribute('title', isPass ? 'পাসওয়ার্ড লুকান' : 'পাসওয়ার্ড দেখুন');
 }
 
 // ── Toast Notification Helper ─────────────────────────────

@@ -137,6 +137,10 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
         /* ── SLIM MOBILE HEADER ── */
         @media (max-width: 767px) {
+            /* Prevent iOS Safari and Android Chrome from auto-zooming and shifting viewport on input focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
             /* Hide top utility bar on mobile */
             #top-utility-bar { display: none !important; }
             /* Hide secondary nav on mobile */
@@ -1611,6 +1615,11 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 priceEl.textContent = formatPrice(price);
             }
 
+            const unitEl = card.querySelector('.card-unit-label');
+            if (unitEl) {
+                unitEl.textContent = title;
+            }
+
             card.querySelectorAll('.variant-pill').forEach(btn => {
                 btn.className = 'variant-pill inline-flex items-center px-2 py-0.5 rounded-md text-[11px] border transition-all cursor-pointer border-gray-200 text-gray-500 bg-white hover:border-gray-300 font-medium';
             });
@@ -2374,6 +2383,12 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             let ticking = false;
             function onScroll() {
+                // NEVER collapse/expand or shift header while the user is typing/interacting with any form element!
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
+                    return;
+                }
+
                 if (!ticking) {
                     window.requestAnimationFrame(() => {
                         if (window.innerWidth < 768) {
@@ -2391,7 +2406,6 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 }
             }
             window.addEventListener('scroll', onScroll, { passive: true });
-            window.addEventListener('resize', onScroll, { passive: true });
             onScroll();
         })();
 
@@ -2527,8 +2541,11 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             inputs.forEach(input => {
                 input.addEventListener('focus', () => { isPaused = true; });
-                input.addEventListener('blur', () => { if (!input.value) isPaused = false; });
-                input.addEventListener('input', () => { if (input.value) isPaused = true; });
+                input.addEventListener('blur', () => { 
+                    const anyFocusedOrValued = inputs.some(i => i.value || document.activeElement === i);
+                    if (!anyFocusedOrValued) isPaused = false; 
+                });
+                input.addEventListener('input', () => { isPaused = true; });
             });
 
             function typeLoop() {

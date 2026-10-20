@@ -65,8 +65,11 @@ class CustomerAuthController
     public function showAuth()
     {
         $this->startSession();
+        \Core\Auth::restoreSessionFromCookie();
         if (isset($_SESSION['customer_id'])) {
-            $this->redirect($this->base() . '/checkout');
+            $base = $this->base();
+            $redirect = !empty($_SESSION['cart']) ? "$base/checkout" : "$base/account";
+            $this->redirect($redirect);
         }
 
         $stmt    = $this->db->query("SELECT * FROM areas ORDER BY name ASC");
@@ -114,8 +117,11 @@ class CustomerAuthController
             if ($isPasswordValid || $isPinValid) {
                 $this->startSession();
                 session_regenerate_id(true);
-                $_SESSION['customer_id']   = $customer['id'];
-                $_SESSION['customer_name'] = $customer['name'];
+                $_SESSION['customer_id']      = (int)$customer['id'];
+                $_SESSION['customer_name']    = $customer['name'];
+                $_SESSION['customer_phone']   = $customer['phone'] ?? '';
+                $_SESSION['customer_email']   = $customer['email'] ?? '';
+                $_SESSION['customer_address'] = $customer['address_details'] ?? '';
                 \Core\Auth::persistCustomerLogin($customer['id']);
 
                 if ($isPinValid) {
@@ -664,8 +670,11 @@ class CustomerAuthController
 
         // Auto-login customer
         session_regenerate_id(true);
-        $_SESSION['customer_id']   = $customer['id'];
-        $_SESSION['customer_name'] = $customer['name'];
+        $_SESSION['customer_id']      = (int)$customer['id'];
+        $_SESSION['customer_name']    = $customer['name'];
+        $_SESSION['customer_phone']   = $customer['phone'] ?? '';
+        $_SESSION['customer_email']   = $customer['email'] ?? '';
+        $_SESSION['customer_address'] = $customer['address_details'] ?? '';
         \Core\Auth::persistCustomerLogin($customer['id']);
         unset($_SESSION['forgot_password_phone'], $_SESSION['forgot_password_step']);
 
@@ -711,8 +720,11 @@ class CustomerAuthController
         $this->startSession();
         if ($customer) {
             session_regenerate_id(true);
-            $_SESSION['customer_id']   = $customer['id'];
-            $_SESSION['customer_name'] = $customer['name'];
+            $_SESSION['customer_id']      = (int)$customer['id'];
+            $_SESSION['customer_name']    = $customer['name'];
+            $_SESSION['customer_phone']   = $customer['phone'] ?? '';
+            $_SESSION['customer_email']   = $customer['email'] ?? '';
+            $_SESSION['customer_address'] = $customer['address_details'] ?? '';
             \Core\Auth::persistCustomerLogin($customer['id']);
             $this->redirect("$base/checkout");
         }
@@ -728,7 +740,13 @@ class CustomerAuthController
     {
         \Core\Auth::clearCustomerLogin();
         $this->startSession();
-        unset($_SESSION['customer_id'], $_SESSION['customer_name']);
+        unset(
+            $_SESSION['customer_id'],
+            $_SESSION['customer_name'],
+            $_SESSION['customer_phone'],
+            $_SESSION['customer_email'],
+            $_SESSION['customer_address']
+        );
         $this->redirect($this->base() . '/');
     }
 
@@ -812,8 +830,11 @@ class CustomerAuthController
 
         $this->startSession();
         session_regenerate_id(true);
-        $_SESSION['customer_id']   = $customerId;
-        $_SESSION['customer_name'] = $name;
+        $_SESSION['customer_id']      = (int)$customerId;
+        $_SESSION['customer_name']    = $name;
+        $_SESSION['customer_phone']   = $phone;
+        $_SESSION['customer_email']   = $email ?? '';
+        $_SESSION['customer_address'] = $addressDetails;
         \Core\Auth::persistCustomerLogin($customerId);
     }
 }

@@ -1394,11 +1394,20 @@ class ShopController {
                     if (!$pCheck || !in_array($pCheck['availability_status'] ?? '', ['in_stock', 'available'])) {
                         throw new \Exception("পণ্য '{$item['name']}' বর্তমানে স্টকে নেই বা বিক্রির জন্য প্রস্তুত নয়।");
                     }
-                    $unitTitle = $item['variant_title'] ?? null;
+                    $qtyOrdered = intval($item['quantity'] ?? 1);
+                    $baseQty = floatval($item['base_qty'] ?? 1.0);
+                    $price = floatval($item['price'] ?? 0);
+                    $unitTitle = $item['variant_title'] ?? ($item['unit_title'] ?? ($item['selling_unit'] ?? null));
+                    if (!empty($item['addon_title'])) {
+                        $unitTitle = ($unitTitle ? $unitTitle . ' ' : '') . "[🔪 {$item['addon_title']}]";
+                    }
+                    if (!empty($item['is_bogo'])) {
+                        $unitTitle = ($unitTitle ? $unitTitle . ' ' : '') . "[🎁 BOGO 1+1]";
+                    }
                     $qtyMultiplier = !empty($item['is_bogo']) ? 2 : 1;
                     $deductTotal = $baseQty * $qtyOrdered * $qtyMultiplier;
 
-                    $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qtyOrdered, $item['price']]);
+                    $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qtyOrdered, $price]);
                     $stmtStock->execute([$deductTotal, $pid]);
 
                     // Record variant offer usage if item had an offer

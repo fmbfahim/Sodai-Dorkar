@@ -9,6 +9,11 @@ class Middleware {
     public static function auth($allowedRoles = []) {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        // Attempt persistent cookie restore if session was lost
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+            Auth::restoreSessionFromCookie();
+        }
+
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
         // 1. Check if logged in
@@ -43,6 +48,11 @@ class Middleware {
      */
     public static function permission($permissions) {
         if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Attempt persistent cookie restore if session was lost
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+            Auth::restoreSessionFromCookie();
+        }
 
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 

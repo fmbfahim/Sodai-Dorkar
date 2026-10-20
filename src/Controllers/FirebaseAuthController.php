@@ -212,9 +212,13 @@ class FirebaseAuthController
 
         $customerId = $this->db->getConnection()->lastInsertId();
 
+        $this->startSession();
         session_regenerate_id(true);
-        $_SESSION['customer_id']   = $customerId;
-        $_SESSION['customer_name'] = $name;
+        $_SESSION['customer_id']      = (int)$customerId;
+        $_SESSION['customer_name']    = $name;
+        $_SESSION['customer_phone']   = $phone;
+        $_SESSION['customer_email']   = $email;
+        $_SESSION['customer_address'] = $address;
         \Core\Auth::persistCustomerLogin($customerId);
 
         $this->redirect("$base/checkout");
@@ -250,9 +254,13 @@ class FirebaseAuthController
             $this->redirect("$base/checkout/auth?error=create_account_first&tab=signup&phone=" . urlencode($core ?? $firebasePhone));
         }
 
+        $this->startSession();
         session_regenerate_id(true);
-        $_SESSION['customer_id']   = $customer['id'];
-        $_SESSION['customer_name'] = $customer['name'];
+        $_SESSION['customer_id']      = (int)$customer['id'];
+        $_SESSION['customer_name']    = $customer['name'];
+        $_SESSION['customer_phone']   = $customer['phone'] ?? '';
+        $_SESSION['customer_email']   = $customer['email'] ?? '';
+        $_SESSION['customer_address'] = $customer['address_details'] ?? '';
         \Core\Auth::persistCustomerLogin($customer['id']);
 
         $redirect = $_POST['redirect'] ?? "$base/checkout";

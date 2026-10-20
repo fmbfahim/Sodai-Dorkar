@@ -17,7 +17,11 @@ class CustomerDashboardController {
     private function requireCustomerLogin() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         if (empty($_SESSION["customer_id"])) {
-            header("Location: /sodai-dorkar/public/checkout/auth");
+            \Core\Auth::restoreSessionFromCookie();
+        }
+        if (empty($_SESSION["customer_id"])) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            header("Location: {$base}/checkout/auth");
             exit;
         }
     }
