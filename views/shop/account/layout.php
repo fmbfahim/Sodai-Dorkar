@@ -13,8 +13,24 @@ $cartTotal = array_sum(array_map(function($i){ return (float)($i['price'] ?? 0) 
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
 
-$isAgent = \Core\Auth::isAgent();
-$agentData = $isAgent ? \Core\Auth::getCurrentAgentDashboardData() : null;
+if (!isset($isAgent)) {
+    $isAgent = class_exists('\Core\Auth') ? \Core\Auth::isAgent() : false;
+}
+if (!isset($agentData) && $isAgent) {
+    $agentData = class_exists('\Core\Auth') ? \Core\Auth::getCurrentAgentDashboardData() : null;
+}
+
+if (!isset($storeSettings)) {
+    try {
+        $storeSettings = class_exists('\Models\Setting') ? \Models\Setting::getAll() : [];
+    } catch (\Throwable $e) {
+        $storeSettings = [];
+    }
+}
+$siteTitle = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
+$mshParts = explode(' ', $siteTitle, 2);
+$mshPart1 = $mshParts[0] ?? 'Fresh';
+$mshPart2 = $mshParts[1] ?? 'E mart';
 
 $navLinks = [
     ['href' => $base . '/account', 'match' => '/account', 'icon' => 'grid-outline', 'label' => 'Dashboard'],
@@ -28,11 +44,22 @@ $navLinks = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title ?? 'Customer Account') ?> — FreshMart</title>
+    <title><?= htmlspecialchars($title ?? 'Customer Account') ?> — <?= htmlspecialchars($siteTitle) ?></title>
     <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
     <script>window.APP_BASE = '<?= $base ?>';</script>
     <link href="<?= $base ?>/css/output.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["'Hind Siliguri'", "'Outfit'", 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -40,7 +67,7 @@ $navLinks = [
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+        * { font-family: 'Hind Siliguri', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         [x-cloak] { display: none !important; }
         .nav-link.active { background: rgba(5,150,105,0.1); color: #059669; font-weight: 700; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -56,7 +83,7 @@ $navLinks = [
             <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
                 <ion-icon name="storefront" class="text-lg"></ion-icon>
             </div>
-            <span>Fresh<span class="text-emerald-600">Mart</span></span>
+            <span><?= htmlspecialchars($mshPart1) ?> <span class="text-emerald-600"><?= htmlspecialchars($mshPart2) ?></span></span>
         </a>
         <div class="flex items-center gap-3 sm:gap-4">
             <?php if ($isAgent): ?>

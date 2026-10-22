@@ -1,5 +1,7 @@
 <?php
+ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$title = $title ?? ('অর্ডার বিবরণ #' . ($order['id'] ?? ''));
 $status = $order['status'] ?? 'pending';
 $badgeClass = 'bg-gray-100 text-gray-700';
 $statusText = 'পেন্ডিং';
@@ -167,3 +169,8 @@ elseif ($status === 'cancelled') { $badgeClass = 'bg-rose-100 text-rose-800 bord
     <?php endif; ?>
 
 </div>
+
+<?php 
+$content = ob_get_clean(); 
+require __DIR__ . '/layout.php'; 
+?>

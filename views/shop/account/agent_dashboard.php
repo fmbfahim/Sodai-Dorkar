@@ -1,4 +1,5 @@
 <?php
+ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 $assignedAreaNames = !empty($assignedAreas) ? implode(', ', array_column($assignedAreas, 'name')) : 'সকল উন্মুক্ত এরিয়া (Open Area)';
 ?>
@@ -226,3 +227,8 @@ $assignedAreaNames = !empty($assignedAreas) ? implode(', ', array_column($assign
     </div>
 
 </div>
+
+<?php 
+$content = ob_get_clean(); 
+require __DIR__ . '/layout.php'; 
+?>

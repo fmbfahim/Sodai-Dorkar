@@ -1,6 +1,7 @@
 <?php
+ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
-$title = 'ফিল্ড এজেন্ট শপ ও ক্যাটালগ';
+$title = $title ?? 'ফিল্ড এজেন্ট শপ ও ক্যাটালগ';
 $initialCart = array_values($_SESSION['agent_cart'] ?? []);
 ?>
 
@@ -200,3 +201,8 @@ $initialCart = array_values($_SESSION['agent_cart'] ?? []);
     </div>
 
 </div>
+
+<?php 
+$content = ob_get_clean(); 
+require __DIR__ . '/layout.php'; 
+?>

@@ -49,7 +49,17 @@ class CustomerDashboardController {
         if (!isset($agentData) && $isAgent) $agentData = \Core\Auth::getCurrentAgentDashboardData();
         ob_start();
         require __DIR__ . "/../../views/shop/account/" . $view . ".php";
-        return ob_get_clean();
+        $output = ob_get_clean();
+
+        // If the view did not load layout.php, automatically wrap it in the account layout
+        if (strpos($output, '<!DOCTYPE html>') === false && strpos($output, '<html') === false) {
+            $content = $output;
+            ob_start();
+            require __DIR__ . "/../../views/shop/account/layout.php";
+            return ob_get_clean();
+        }
+
+        return $output;
     }
 
     public function dashboard() {

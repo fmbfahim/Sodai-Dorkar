@@ -1,5 +1,7 @@
 <?php
+ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$title = $title ?? 'এলাকার কাস্টমার তালিকা';
 ?>
 
 <div class="space-y-6" x-data="{
@@ -248,3 +250,8 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </div>
 
 </div>
+
+<?php 
+$content = ob_get_clean(); 
+require __DIR__ . '/layout.php'; 
+?>
