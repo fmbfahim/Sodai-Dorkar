@@ -101,6 +101,29 @@ class AgentController extends Controller {
                 $this->allocationModel->syncAgentAreas($userId, (array)$areaIds);
             }
 
+            // Link to customer record and sync credentials
+            try {
+                (new \Models\Customer())->ensureSchema();
+                $targetCustId = $customerId;
+                if ($targetCustId <= 0 && !empty($phone)) {
+                    $custModel = new \Models\Customer();
+                    $matchedCust = $custModel->findByPhone($phone);
+                    if ($matchedCust) {
+                        $targetCustId = (int)$matchedCust['id'];
+                    }
+                }
+
+                if ($targetCustId > 0) {
+                    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
+                    $this->db->query(
+                        "UPDATE customers SET agent_user_id = ?, password = ? WHERE id = ?",
+                        [$userId, $hashedPwd, $targetCustId]
+                    );
+                }
+            } catch (\Throwable $e) {
+                error_log("AgentController::store customer linking error: " . $e->getMessage());
+            }
+
             $_SESSION['success'] = ($customerId > 0) 
                 ? 'কাস্টমার "' . htmlspecialchars($name) . '" সফলভাবে ফিল্ড এজেন্ট হিসেবে তৈরি হয়েছেন!'
                 : 'নতুন এজেন্ট সফলভাবে তৈরি হয়েছে!';
@@ -154,6 +177,20 @@ class AgentController extends Controller {
 
             // Sync assigned areas
             $this->allocationModel->syncAgentAreas($id, (array)$areaIds);
+
+            // Sync password & status to linked customer if applicable
+            try {
+                if (!empty($password) && strlen($password) >= 4) {
+                    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
+                    $this->db->query("UPDATE customers SET password = ? WHERE agent_user_id = ?", [$hashedPwd, $id]);
+                    if (!empty($phone)) {
+                        $core = \Models\Customer::extractCorePhone($phone);
+                        $this->db->query("UPDATE customers SET password = ? WHERE phone = ? OR phone LIKE ?", [
+                            $hashedPwd, $phone, '%' . ($core ?: 'NONE') . '%'
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {}
 
             $_SESSION['success'] = 'এজেন্ট তথ্য সফলভাবে আপডেট হয়েছে!';
         } catch (\Throwable $e) {

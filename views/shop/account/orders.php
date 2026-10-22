@@ -32,8 +32,16 @@ $tabs = [
             <ion-icon name="bag-handle" class="text-emerald-600 text-xl"></ion-icon> 
             <span>My Orders</span>
         </h1>
-        <div class="text-xs text-gray-400">
-            <?= count($orders) ?> order<?= count($orders) === 1 ? '' : 's' ?> listed
+        <div class="flex items-center gap-3">
+            <?php if (\Core\Auth::isAgent()): ?>
+            <a href="<?= $base ?>/agent/orders" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors shadow-2xs">
+                <ion-icon name="receipt-outline" class="text-sm text-emerald-600"></ion-icon>
+                <span>সংগৃহীত এজেন্ট অর্ডারসমূহ ➔</span>
+            </a>
+            <?php endif; ?>
+            <div class="text-xs text-gray-400">
+                <?= count($orders) ?> order<?= count($orders) === 1 ? '' : 's' ?> listed
+            </div>
         </div>
     </div>
 

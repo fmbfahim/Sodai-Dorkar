@@ -84,6 +84,14 @@ $isActive = function($segment) use ($currentPath) {
                     <?php endif; ?>
                 </a>
 
+                <!-- Switch to Customer Shop / Account -->
+                <a href="<?= $base ?>/account" class="p-2 rounded-2xl bg-gray-100 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 transition-colors" title="আমার একাউন্ট (My Account)">
+                    <ion-icon name="person-outline" class="text-xl"></ion-icon>
+                </a>
+                <a href="<?= $base ?>/" class="p-2 rounded-2xl bg-gray-100 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 transition-colors" title="শপে যান (Shop)">
+                    <ion-icon name="storefront-outline" class="text-xl"></ion-icon>
+                </a>
+
                 <!-- Agent Profile Link -->
                 <a href="<?= $base ?>/agent/profile" class="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-2xl bg-gray-100 hover:bg-gray-200/80 text-gray-800 transition-colors">
                     <div class="w-6 h-6 rounded-full bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center">

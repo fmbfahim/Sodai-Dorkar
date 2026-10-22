@@ -555,6 +555,15 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             <!-- Right: User Account & Cart Button -->
             <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                <!-- Field Agent Quick Link Button -->
+                <?php if (\Core\Auth::isAgent()): ?>
+                    <a href="<?= $base ?>/agent/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black shadow-xs transition-transform transform active:scale-95" title="ফিল্ড এজেন্ট হাব">
+                        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                        <span class="hidden md:inline">এজেন্ট হাব</span>
+                        <ion-icon name="briefcase" class="text-sm"></ion-icon>
+                    </a>
+                <?php endif; ?>
+
                 <!-- User Account Widget -->
                 <?php if (isset($_SESSION['customer_id'])): ?>
                     <a href="<?= $base ?>/account" class="flex items-center gap-2 text-gray-700 hover:text-emerald-600 transition-colors">
@@ -816,13 +825,17 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             </a>
 
             <!-- Profile Tab -->
+            <?php $isCurrentUserAgent = \Core\Auth::isAgent(); ?>
             <a href="<?= isset($_SESSION['customer_id']) ? $base . '/account' : $base . '/checkout/auth' ?>" class="flex flex-col items-center justify-center flex-1 py-1 text-center transition-all group <?= $isAccountPage ? 'text-emerald-600 font-bold' : 'text-gray-500 hover:text-emerald-600' ?>">
                 <div class="w-6 h-6 flex items-center justify-center relative mb-0.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 <?= $isAccountPage ? 'stroke-[2.5]' : 'stroke-2' ?> transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
+                    <?php if ($isCurrentUserAgent): ?>
+                        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-white animate-pulse"></span>
+                    <?php endif; ?>
                 </div>
-                <span class="text-[10px] leading-tight tracking-tight"><?= $__('nav_profile') ?></span>
+                <span class="text-[10px] leading-tight tracking-tight"><?= $isCurrentUserAgent ? 'এজেন্ট হাব' : $__('nav_profile') ?></span>
             </a>
 
         </div>

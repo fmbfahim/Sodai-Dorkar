@@ -20,6 +20,9 @@ class CustomerDashboardController {
             \Core\Auth::restoreSessionFromCookie();
         }
         if (empty($_SESSION["customer_id"])) {
+            \Core\Auth::syncAgentAndCustomerSessions();
+        }
+        if (empty($_SESSION["customer_id"])) {
             $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
             header("Location: {$base}/checkout/auth");
             exit;
@@ -42,6 +45,8 @@ class CustomerDashboardController {
     private function renderAccount($view, $data = []) {
         extract($data);
         if (!isset($customer)) $customer = $this->getCustomer();
+        if (!isset($isAgent)) $isAgent = \Core\Auth::isAgent();
+        if (!isset($agentData) && $isAgent) $agentData = \Core\Auth::getCurrentAgentDashboardData();
         ob_start();
         require __DIR__ . "/../../views/shop/account/" . $view . ".php";
         return ob_get_clean();
@@ -60,11 +65,14 @@ class CustomerDashboardController {
             "total_spent" => array_sum(array_map(function($o) { return ($o["status"] !== "cancelled") ? floatval($o["total_amount"]) : 0; }, $orders)),
         ];
         $recentOrders = array_slice($orders, 0, 5);
+        $agentData = \Core\Auth::getCurrentAgentDashboardData();
 
         return $this->renderAccount("dashboard", [
             "customer"     => $customer,
             "stats"        => $stats,
             "recentOrders" => $recentOrders,
+            "isAgent"      => !empty($agentData),
+            "agentData"    => $agentData,
             "title"        => "My Dashboard"
         ]);
     }

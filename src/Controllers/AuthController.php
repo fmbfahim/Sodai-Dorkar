@@ -35,7 +35,17 @@ class AuthController {
 
         $db = new Database(require __DIR__ . '/../../config/database.php');
 
-        $stmt = $db->query("SELECT * FROM users WHERE username = :username", ['username' => $username]);
+        $corePhone = class_exists('\\Models\\Customer') ? \Models\Customer::extractCorePhone($username) : preg_replace('/\\D/', '', $username);
+
+        $sql = "SELECT * FROM users WHERE username = :ident OR email = :ident OR phone = :ident";
+        $params = ['ident' => $username];
+        if (!empty($corePhone)) {
+            $sql .= " OR phone LIKE :phone_like OR username LIKE :user_phone";
+            $params['phone_like'] = '%' . $corePhone . '%';
+            $params['user_phone'] = '%' . $corePhone . '%';
+        }
+
+        $stmt = $db->query($sql, $params);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
@@ -57,6 +67,22 @@ class AuthController {
 
             // Persist login so closing the browser does not log the user out
             Auth::persistUserLogin($user['id']);
+
+            // If user has a matching customer profile, auto-link customer session
+            if (!empty($user['phone'])) {
+                try {
+                    $custModel = new \Models\Customer();
+                    $cust = $custModel->findByPhone($user['phone']);
+                    if ($cust) {
+                        $_SESSION['customer_id'] = (int)$cust['id'];
+                        $_SESSION['customer_name'] = $cust['name'];
+                        $_SESSION['customer_phone'] = $cust['phone'];
+                        $_SESSION['customer_email'] = $cust['email'] ?? '';
+                        $_SESSION['customer_address'] = $cust['address_details'] ?? '';
+                        Auth::persistCustomerLogin($cust['id']);
+                    }
+                } catch (\Throwable $e) {}
+            }
 
             $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 

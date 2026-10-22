@@ -34,6 +34,7 @@ class Customer {
                 'reset_code'       => "ALTER TABLE customers ADD COLUMN reset_code VARCHAR(50) NULL AFTER otp_verified",
                 'status'           => "ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'active' AFTER reset_code",
                 'remember_token'   => "ALTER TABLE customers ADD COLUMN remember_token VARCHAR(255) NULL AFTER status",
+                'agent_user_id'    => "ALTER TABLE customers ADD COLUMN agent_user_id INT NULL AFTER remember_token",
             ];
 
             foreach ($columnsToAdd as $col => $alterSql) {

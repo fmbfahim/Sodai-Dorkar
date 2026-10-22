@@ -136,12 +136,12 @@ $siteName = class_exists('\Models\Setting') ? \Models\Setting::getValue('site_ti
         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
 
         <div class="field-group">
-          <label class="field-label" for="username">Username</label>
+          <label class="field-label" for="username">Username / Phone Number / Email</label>
           <div class="field-wrap">
             <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
             </svg>
-            <input class="field-input" id="username" name="username" type="text" placeholder="Enter username" required autocomplete="username">
+            <input class="field-input" id="username" name="username" type="text" placeholder="ইউজারনেম বা মোবাইল নম্বর লিখুন..." required autocomplete="username">
           </div>
         </div>
 

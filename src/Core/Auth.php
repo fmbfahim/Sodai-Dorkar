@@ -280,6 +280,173 @@ class Auth {
     }
 
     /**
+     * Check if current session belongs to an active Field Sales Agent
+     */
+    public static function isAgent(): bool {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (($_SESSION['role'] ?? '') === 'agent') {
+            return true;
+        }
+        return self::getAgentForCurrentCustomer() !== null;
+    }
+
+    /**
+     * Get the Agent user record matching the active session (or logged-in customer)
+     */
+    public static function getAgentForCurrentCustomer(): ?array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        static $agentCache = null;
+        static $isResolved = false;
+
+        if ($isResolved) {
+            return $agentCache;
+        }
+
+        $db = self::getDb();
+
+        // 1. If already logged in as agent in users table
+        if (!empty($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'agent') {
+            try {
+                $stmt = $db->query("SELECT * FROM users WHERE id = ? AND role = 'agent' AND status = 'active' LIMIT 1", [$_SESSION['user_id']]);
+                $agentCache = $stmt->fetch() ?: null;
+                $isResolved = true;
+                return $agentCache;
+            } catch (\Throwable $e) {}
+        }
+
+        // 2. If logged in as customer, find linked agent user in users table
+        if (!empty($_SESSION['customer_id'])) {
+            try {
+                $stmtC = $db->query("SELECT id, name, phone, email, agent_user_id FROM customers WHERE id = ? LIMIT 1", [$_SESSION['customer_id']]);
+                $c = $stmtC->fetch();
+                if ($c) {
+                    $agentUser = null;
+                    if (!empty($c['agent_user_id'])) {
+                        $stmtU = $db->query("SELECT * FROM users WHERE id = ? AND role = 'agent' AND status = 'active' LIMIT 1", [$c['agent_user_id']]);
+                        $agentUser = $stmtU->fetch();
+                    }
+
+                    if (!$agentUser && !empty($c['phone'])) {
+                        $rawPhone = $c['phone'];
+                        $core = class_exists('\\Models\\Customer') ? \Models\Customer::extractCorePhone($rawPhone) : preg_replace('/\\D/', '', $rawPhone);
+                        
+                        $sql = "SELECT * FROM users WHERE role = 'agent' AND status = 'active' AND (
+                            phone = ? 
+                            OR phone = ? 
+                            OR phone LIKE ?
+                            OR username = ?
+                            OR username = ?
+                        ) LIMIT 1";
+
+                        $cleanCore = $core ?: 'NONE';
+                        $params = [
+                            $rawPhone,
+                            '0' . $cleanCore,
+                            '%' . $cleanCore . '%',
+                            'agent_' . $cleanCore,
+                            $cleanCore
+                        ];
+
+                        $stmtU = $db->query($sql, $params);
+                        $agentUser = $stmtU->fetch();
+                    }
+
+                    if ($agentUser) {
+                        $agentCache = $agentUser;
+                        $isResolved = true;
+
+                        // Auto-sync agent session keys so agent portal routes and APIs work seamlessly
+                        $_SESSION['user_id'] = (int)$agentUser['id'];
+                        $_SESSION['role'] = 'agent';
+                        if (empty($_SESSION['username'])) $_SESSION['username'] = $agentUser['username'];
+                        if (empty($_SESSION['name'])) $_SESSION['name'] = $agentUser['name'];
+                        $_SESSION['permissions'] = self::userPermissions($agentUser['id']);
+                        
+                        return $agentCache;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("Auth::getAgentForCurrentCustomer error: " . $e->getMessage());
+            }
+        }
+
+        $isResolved = true;
+        return null;
+    }
+
+    /**
+     * Bidirectionally synchronize agent and customer sessions
+     */
+    public static function syncAgentAndCustomerSessions(): void {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = self::getDb();
+
+        // If agent is logged in, but customer_id is empty, link customer
+        if (!empty($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'agent' && empty($_SESSION['customer_id'])) {
+            try {
+                $stmt = $db->query("SELECT phone FROM users WHERE id = ? LIMIT 1", [$_SESSION['user_id']]);
+                $u = $stmt->fetch();
+                if ($u && !empty($u['phone'])) {
+                    $custModel = new \Models\Customer();
+                    $cust = $custModel->findByPhone($u['phone']);
+                    if ($cust) {
+                        $_SESSION['customer_id'] = (int)$cust['id'];
+                        $_SESSION['customer_name'] = $cust['name'];
+                        $_SESSION['customer_phone'] = $cust['phone'];
+                        $_SESSION['customer_email'] = $cust['email'] ?? '';
+                        $_SESSION['customer_address'] = $cust['address_details'] ?? '';
+                        self::persistCustomerLogin($cust['id']);
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // If customer is logged in, link agent
+        if (!empty($_SESSION['customer_id']) && (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'agent')) {
+            self::getAgentForCurrentCustomer();
+        }
+    }
+
+    /**
+     * Retrieve aggregated statistics and assigned areas for current agent
+     */
+    public static function getCurrentAgentDashboardData(): ?array {
+        $agent = self::getAgentForCurrentCustomer();
+        if (!$agent) return null;
+
+        $agentId = (int)$agent['id'];
+        $db = self::getDb();
+
+        $areas = [];
+        try {
+            $sql = "SELECT a.id, a.name 
+                    FROM agent_allocations aa 
+                    JOIN areas a ON aa.area_id = a.id 
+                    WHERE aa.user_id = ?
+                    ORDER BY a.name ASC";
+            $stmt = $db->query($sql, [$agentId]);
+            $areas = $stmt ? $stmt->fetchAll() : [];
+        } catch (\Throwable $e) {}
+
+        $stats = ['total_orders' => 0, 'total_sales' => 0, 'delivered_orders' => 0];
+        $recentOrders = [];
+        try {
+            if (class_exists('\\Models\\Order')) {
+                $orderModel = new \Models\Order();
+                $stats = $orderModel->getAgentStats($agentId);
+                $recentOrders = $orderModel->getByAgent($agentId, ['limit' => 5]);
+            }
+        } catch (\Throwable $e) {}
+
+        return [
+            'agent' => $agent,
+            'areas' => $areas,
+            'stats' => $stats,
+            'recentOrders' => $recentOrders,
+        ];
+    }
+
+    /**
      * Check if current user has a specific permission
      * 
      * @param string $permission

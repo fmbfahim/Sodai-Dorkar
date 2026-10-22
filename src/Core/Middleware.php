@@ -14,6 +14,11 @@ class Middleware {
             Auth::restoreSessionFromCookie();
         }
 
+        // If route allows 'agent' and user is logged in as a customer, check if they are an agent
+        if ((!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'agent') && in_array('agent', $allowedRoles) && !empty($_SESSION['customer_id'])) {
+            Auth::getAgentForCurrentCustomer();
+        }
+
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
         // 1. Check if logged in

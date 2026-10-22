@@ -13,6 +13,9 @@ $cartTotal = array_sum(array_map(function($i){ return (float)($i['price'] ?? 0) 
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $cleanPath = $base ? str_replace($base, '', $currentPath) : $currentPath;
 
+$isAgent = \Core\Auth::isAgent();
+$agentData = $isAgent ? \Core\Auth::getCurrentAgentDashboardData() : null;
+
 $navLinks = [
     ['href' => $base . '/account', 'match' => '/account', 'icon' => 'grid-outline', 'label' => 'Dashboard'],
     ['href' => $base . '/account/orders', 'match' => '/account/orders', 'icon' => 'bag-handle-outline', 'label' => 'My Orders'],
@@ -54,6 +57,13 @@ $navLinks = [
             <span>Fresh<span class="text-emerald-600">Mart</span></span>
         </a>
         <div class="flex items-center gap-3 sm:gap-4">
+            <?php if ($isAgent): ?>
+                <a href="<?= $base ?>/agent/dashboard" class="text-xs sm:text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-lg shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                    <span>এজেন্ট হাব</span>
+                    <ion-icon name="briefcase-outline" class="text-sm"></ion-icon>
+                </a>
+            <?php endif; ?>
             <a href="<?= $base ?>/" class="text-xs sm:text-sm font-semibold text-gray-600 hover:text-emerald-600 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-50 border border-gray-200/60">
                 <ion-icon name="arrow-back-outline" class="text-base"></ion-icon>
                 <span>Back to Shop</span>
@@ -80,13 +90,43 @@ $navLinks = [
                     <div class="font-black text-base truncate leading-tight"><?= htmlspecialchars($customer['name'] ?? 'Customer') ?></div>
                     <div class="text-emerald-100 text-xs truncate mt-0.5"><?= htmlspecialchars($customer['phone'] ?? '') ?></div>
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full border border-white/30">
-                    Customer
-                </span>
+                <?php if ($isAgent): ?>
+                    <span class="text-[10px] font-black uppercase tracking-wider bg-amber-400 text-gray-900 px-2.5 py-1 rounded-full border border-amber-300 shadow-xs flex items-center gap-1">
+                        <ion-icon name="shield-checkmark" class="text-xs"></ion-icon>
+                        এজেন্ট
+                    </span>
+                <?php else: ?>
+                    <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full border border-white/30">
+                        Customer
+                    </span>
+                <?php endif; ?>
             </div>
 
             <!-- Horizontal Scrollable Tabs -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 bg-white p-2 rounded-xl border border-gray-200/80 shadow-2xs">
+                <?php if ($isAgent): ?>
+                    <a href="<?= $base ?>/agent/dashboard" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all flex-shrink-0 bg-emerald-600 text-white shadow-xs">
+                        <ion-icon name="speedometer-outline" class="text-sm"></ion-icon>
+                        <span>এজেন্ট হাব</span>
+                    </a>
+                    <a href="<?= $base ?>/agent/shop" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <ion-icon name="storefront-outline" class="text-sm"></ion-icon>
+                        <span>অর্ডার নিন</span>
+                    </a>
+                    <a href="<?= $base ?>/agent/orders" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <ion-icon name="receipt-outline" class="text-sm"></ion-icon>
+                        <span>এজেন্ট অর্ডার</span>
+                    </a>
+                    <a href="<?= $base ?>/agent/customers" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <ion-icon name="people-outline" class="text-sm"></ion-icon>
+                        <span>কাস্টমার</span>
+                    </a>
+                <?php endif; ?>
+
                 <?php foreach ($navLinks as $link): 
                     $isActive = ($cleanPath === $link['match']) || ($link['match'] === '/account/orders' && strpos($cleanPath, '/account/order-detail') === 0);
                 ?>
@@ -114,7 +154,14 @@ $navLinks = [
                     </div>
                     <div class="font-black text-base leading-tight truncate"><?= htmlspecialchars($customer['name'] ?? '') ?></div>
                     <div class="text-emerald-100 text-xs mt-1 truncate"><?= htmlspecialchars($customer['phone'] ?? '') ?></div>
-                    <div class="mt-2 text-[11px] font-bold text-emerald-200">Customer Account</div>
+                    <?php if ($isAgent): ?>
+                        <div class="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400 text-gray-900 text-[11px] font-black shadow-xs">
+                            <ion-icon name="shield-checkmark" class="text-xs"></ion-icon>
+                            <span>ফিল্ড সেলস এজেন্ট (Agent)</span>
+                        </div>
+                    <?php else: ?>
+                        <div class="mt-2 text-[11px] font-bold text-emerald-200">Customer Account</div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Nav links -->
@@ -127,6 +174,45 @@ $navLinks = [
                         <?= $link['label'] ?>
                     </a>
                     <?php endforeach; ?>
+
+                    <?php if ($isAgent): ?>
+                    <div class="pt-3 pb-1 border-t border-emerald-100 my-2">
+                        <div class="px-3.5 pb-2 flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-emerald-800">
+                            <span class="flex items-center gap-1.5">
+                                <ion-icon name="briefcase" class="text-emerald-600 text-sm"></ion-icon>
+                                <span>ফিল্ড এজেন্ট অপশন</span>
+                            </span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        </div>
+                        <div class="space-y-1">
+                            <a href="<?= $base ?>/agent/dashboard" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-all border border-emerald-200/60 shadow-2xs">
+                                <ion-icon name="speedometer-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>এজেন্ট ড্যাশবোর্ড ও রিপোর্ট</span>
+                            </a>
+                            <a href="<?= $base ?>/agent/shop" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
+                                <ion-icon name="storefront-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>পণ্য ক্যাটালগ ও অর্ডার নিন</span>
+                            </a>
+                            <a href="<?= $base ?>/agent/checkout" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
+                                <ion-icon name="cart-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>কাস্টমার চেকআউট</span>
+                            </a>
+                            <a href="<?= $base ?>/agent/orders" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
+                                <ion-icon name="receipt-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>সংগৃহীত অর্ডারসমূহ</span>
+                            </a>
+                            <a href="<?= $base ?>/agent/customers" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
+                                <ion-icon name="people-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>এলাকার কাস্টমার তালিকা</span>
+                            </a>
+                            <a href="<?= $base ?>/agent/profile" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
+                                <ion-icon name="id-card-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                                <span>এজেন্ট প্রোফাইল</span>
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="border-t border-gray-100 mt-2 pt-2">
                         <a href="<?= $base ?>/customer/logout" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-50 transition-all">
                             <ion-icon name="log-out-outline" class="text-base flex-shrink-0"></ion-icon>

@@ -16,6 +16,129 @@ $statusColors = [
 ];
 ?>
 
+<?php if (!empty($isAgent) && !empty($agentData)): 
+    $agentInfo = $agentData['agent'] ?? [];
+    $assignedAreas = $agentData['areas'] ?? [];
+    $agentStats = $agentData['stats'] ?? [];
+    $areaNames = !empty($assignedAreas) ? implode(', ', array_column($assignedAreas, 'name')) : 'সকল উন্মুক্ত এরিয়া (Open Area)';
+?>
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  FIELD AGENT OPERATIONS & ACTION HUB                       -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="bg-gradient-to-br from-emerald-800 via-teal-800 to-slate-900 rounded-3xl p-5 sm:p-7 text-white mb-6 shadow-xl relative overflow-hidden border border-emerald-500/30">
+    <div class="absolute -right-8 -top-8 w-44 h-44 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute right-12 -bottom-10 w-36 h-36 bg-teal-400/10 rounded-full blur-xl pointer-events-none"></div>
+
+    <!-- Header / Status Banner -->
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+        <div>
+            <div class="flex items-center gap-2 mb-1.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-black uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>সক্রিয় ফিল্ড সেলস এজেন্ট</span>
+                </span>
+                <span class="text-xs text-emerald-200/80 font-mono hidden sm:inline">ID: @<?= htmlspecialchars($agentInfo['username'] ?? 'agent') ?></span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>ফিল্ড এজেন্ট হাব ও অপশন</span>
+                <ion-icon name="briefcase" class="text-amber-400 text-xl"></ion-icon>
+            </h2>
+            <div class="text-xs text-emerald-100/90 mt-1 flex items-center gap-1.5 flex-wrap">
+                <ion-icon name="location" class="text-amber-300"></ion-icon>
+                <span class="font-bold text-amber-200">নির্ধারিত এরিয়া:</span>
+                <span class="bg-white/10 px-2 py-0.5 rounded-md font-semibold text-white"><?= htmlspecialchars($areaNames) ?></span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="<?= $base ?>/agent/dashboard" class="px-4 py-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 transform active:scale-95">
+                <ion-icon name="speedometer-outline" class="text-base text-emerald-700"></ion-icon>
+                <span>এজেন্ট পোর্টাল খুলুন</span>
+                <span>➔</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Performance Counters -->
+    <div class="relative z-10 grid grid-cols-2 sm:grid-cols-3 gap-3 my-5">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
+            <div class="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">মোট সংগৃহীত অর্ডার</div>
+            <div class="text-xl sm:text-2xl font-black text-white mt-0.5"><?= (int)($agentStats['total_orders'] ?? 0) ?> টি</div>
+            <div class="text-[10px] text-emerald-300 font-medium">কাস্টমারদের কাছ থেকে</div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
+            <div class="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">মোট সেলস ভ্যালু</div>
+            <div class="text-xl sm:text-2xl font-black text-amber-300 mt-0.5">৳<?= number_format((float)($agentStats['total_sales'] ?? 0), 2) ?></div>
+            <div class="text-[10px] text-emerald-300 font-medium">জেনারেটেড সেলস</div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 col-span-2 sm:col-span-1">
+            <div class="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">ডেলিভারড অর্ডার</div>
+            <div class="text-xl sm:text-2xl font-black text-emerald-300 mt-0.5"><?= (int)($agentStats['delivered_orders'] ?? 0) ?> টি</div>
+            <div class="text-[10px] text-emerald-300 font-medium">সফল ডেলিভারি</div>
+        </div>
+    </div>
+
+    <!-- Primary Agent Action Tiles -->
+    <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <!-- Tile 1: Take Order / Catalog -->
+        <a href="<?= $base ?>/agent/shop" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-amber-400 text-gray-900 flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
+                    <ion-icon name="storefront"></ion-icon>
+                </div>
+                <div>
+                    <div class="text-sm font-black text-white group-hover:text-amber-300 transition-colors">পণ্য ক্যাটালগ ও অর্ডার নিন</div>
+                    <div class="text-[11px] text-emerald-100/80 mt-0.5">কাস্টমারের জন্য পণ্য নির্বাচন করে কার্টে যোগ করুন</div>
+                </div>
+            </div>
+            <span class="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all text-lg">➔</span>
+        </a>
+
+        <!-- Tile 2: Customer Checkout -->
+        <a href="<?= $base ?>/agent/checkout" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
+                    <ion-icon name="cart"></ion-icon>
+                </div>
+                <div>
+                    <div class="text-sm font-black text-white group-hover:text-emerald-300 transition-colors">কাস্টমার চেকআউট ও অর্ডার কনফার্ম</div>
+                    <div class="text-[11px] text-emerald-100/80 mt-0.5">কাস্টমার সার্চ বা নতুন এন্ট্রি দিয়ে অর্ডার সম্পন্ন করুন</div>
+                </div>
+            </div>
+            <span class="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all text-lg">➔</span>
+        </a>
+
+        <!-- Tile 3: My Agent Orders -->
+        <a href="<?= $base ?>/agent/orders" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-blue-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
+                    <ion-icon name="receipt"></ion-icon>
+                </div>
+                <div>
+                    <div class="text-sm font-black text-white group-hover:text-blue-300 transition-colors">আমার সংগৃহীত অর্ডারসমূহ</div>
+                    <div class="text-[11px] text-emerald-100/80 mt-0.5">আপনার সকল অর্ডারের লাইভ ডেলিভারি স্ট্যাটাস দেখুন</div>
+                </div>
+            </div>
+            <span class="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all text-lg">➔</span>
+        </a>
+
+        <!-- Tile 4: Area Customers -->
+        <a href="<?= $base ?>/agent/customers" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-purple-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
+                    <ion-icon name="people"></ion-icon>
+                </div>
+                <div>
+                    <div class="text-sm font-black text-white group-hover:text-purple-300 transition-colors">এলাকার কাস্টমার তালিকা ও নতুন নিবন্ধন</div>
+                    <div class="text-[11px] text-emerald-100/80 mt-0.5">আপনার এরিয়ার কাস্টমার ডিরেক্টরি ও নতুন যুক্ত করুন</div>
+                </div>
+            </div>
+            <span class="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all text-lg">➔</span>
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Welcome Banner -->
 <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-5 sm:p-6 text-white mb-6 shadow-sm relative overflow-hidden">
     <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full pointer-events-none"></div>

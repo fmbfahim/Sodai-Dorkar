@@ -114,6 +114,27 @@ class CustomerAuthController
             $isPasswordValid = password_verify($password, $customer['password']);
             $isPinValid      = (!empty($customer['reset_code']) && $password === $customer['reset_code']);
 
+            // If customer password failed, check if user was made an agent with this password
+            if (!$isPasswordValid && !$isPinValid) {
+                $core = \Models\Customer::extractCorePhone($phone);
+                $stmtU = $this->db->query(
+                    "SELECT * FROM users WHERE role = 'agent' AND status = 'active' AND (phone = ? OR phone LIKE ? OR username = ?) LIMIT 1",
+                    [$phone, '%' . ($core ?: 'NONE') . '%', ($core ? 'agent_' . $core : 'NONE')]
+                );
+                $agentUser = $stmtU->fetch();
+                if ($agentUser && password_verify($password, $agentUser['password'])) {
+                    $isPasswordValid = true;
+                    // Sync password back to customer record
+                    try {
+                        $this->db->query("UPDATE customers SET password = ?, agent_user_id = ? WHERE id = ?", [
+                            password_hash($password, PASSWORD_DEFAULT),
+                            $agentUser['id'],
+                            $customer['id']
+                        ]);
+                    } catch (\Throwable $e) {}
+                }
+            }
+
             if ($isPasswordValid || $isPinValid) {
                 $this->startSession();
                 session_regenerate_id(true);
@@ -124,12 +145,63 @@ class CustomerAuthController
                 $_SESSION['customer_address'] = $customer['address_details'] ?? '';
                 \Core\Auth::persistCustomerLogin($customer['id']);
 
+                // Auto-link and initialize Agent session if this customer has agent access
+                $agentUser = \Core\Auth::getAgentForCurrentCustomer();
+                if ($agentUser) {
+                    \Core\Auth::persistUserLogin($agentUser['id']);
+                }
+
                 if ($isPinValid) {
                     $this->redirect("$base/checkout/reset-password");
                 }
 
-                $redirect = $_POST['redirect'] ?? $_GET['redirect'] ?? "$base/checkout";
+                $redirect = $_POST['redirect'] ?? $_GET['redirect'] ?? null;
+                if (!$redirect) {
+                    // If user is an agent and has no specific redirect, go to account or agent dashboard
+                    $redirect = !empty($_SESSION['cart']) ? "$base/checkout" : "$base/account";
+                }
                 $this->redirect($redirect);
+            }
+        } else {
+            // If not found in customers table, check if registered directly as an agent in users table
+            $core = \Models\Customer::extractCorePhone($phone);
+            $stmtU = $this->db->query(
+                "SELECT * FROM users WHERE role = 'agent' AND status = 'active' AND (phone = ? OR phone LIKE ? OR username = ?) LIMIT 1",
+                [$phone, '%' . ($core ?: 'NONE') . '%', ($core ? 'agent_' . $core : 'NONE')]
+            );
+            $agentUser = $stmtU->fetch();
+
+            if ($agentUser && password_verify($password, $agentUser['password'])) {
+                $uniqueCode = 'CUST' . time() . rand(10, 99);
+                try {
+                    $this->db->query(
+                        "INSERT INTO customers (unique_code, name, phone, password, status, otp_verified, agent_user_id) VALUES (?, ?, ?, ?, 'active', 1, ?)",
+                        [$uniqueCode, $agentUser['name'], $agentUser['phone'] ?: $phone, $agentUser['password'], $agentUser['id']]
+                    );
+                    $newCustId = $this->db->getConnection()->lastInsertId();
+                    $customer = $customerModel->find($newCustId);
+                } catch (\Throwable $e) {}
+
+                $this->startSession();
+                session_regenerate_id(true);
+
+                if (!empty($customer)) {
+                    $_SESSION['customer_id']      = (int)$customer['id'];
+                    $_SESSION['customer_name']    = $customer['name'];
+                    $_SESSION['customer_phone']   = $customer['phone'] ?? '';
+                    $_SESSION['customer_email']   = $customer['email'] ?? '';
+                    $_SESSION['customer_address'] = $customer['address_details'] ?? '';
+                    \Core\Auth::persistCustomerLogin($customer['id']);
+                }
+
+                $_SESSION['user_id'] = (int)$agentUser['id'];
+                $_SESSION['role'] = 'agent';
+                $_SESSION['name'] = $agentUser['name'];
+                $_SESSION['username'] = $agentUser['username'];
+                $_SESSION['permissions'] = \Core\Auth::userPermissions($agentUser['id']);
+                \Core\Auth::persistUserLogin($agentUser['id']);
+
+                $this->redirect("$base/agent/dashboard");
             }
         }
 
