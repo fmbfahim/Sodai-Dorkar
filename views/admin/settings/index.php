@@ -147,7 +147,7 @@
     </div>
     <?php endif; ?>
 
-    <form action="<?= $base ?>/admin/settings/update" method="POST">
+    <form action="<?= $base ?>/admin/settings/update" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         
         <!-- Delivery Logic Section -->
@@ -415,17 +415,67 @@
                            value="<?php echo htmlspecialchars($settings['site_title'] ?? 'Fresh E mart'); ?>" 
                            placeholder="Fresh E mart"
                            class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-semibold">
-                    <p class="text-xs text-secondary-400 mt-1">ফ্রন্টএন্ডের হেডার, ফুটার এবং ইনভয়েসে এই নামটি প্রদর্শিত হবে।</p>
+                    <p class="text-xs text-secondary-400 mt-1">ব্রাউজার ট্যাব, হেডার, সোশ্যাল মিডিয়া শেয়ার ও ইনভয়েসে প্রধান নাম হিসেবে প্রদর্শিত হবে।</p>
                 </div>
 
                 <!-- Site Tagline -->
                 <div>
-                    <label class="block text-sm font-bold text-secondary-700 mb-2">স্লোগান / ট্যাগলাইন (Slogan / Tagline)</label>
+                    <label class="block text-sm font-bold text-secondary-700 mb-2">ওয়েবসাইটের ট্যাগলাইন / স্লোগান (Tagline & Tab Title)</label>
                     <input type="text" name="site_tagline" 
-                           value="<?php echo htmlspecialchars($settings['site_tagline'] ?? 'Fresh. Quality. Everyday.'); ?>" 
-                           placeholder="Fresh. Quality. Everyday."
+                           value="<?php echo htmlspecialchars($settings['site_tagline'] ?? 'ফ্রেশ গ্রোসারি ডেলিভারি'); ?>" 
+                           placeholder="ফ্রেশ গ্রোসারি ডেলিভারি"
                            class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
-                    <p class="text-xs text-secondary-400 mt-1">ওয়েবসাইটের লোগোর নিচে এই স্লোগানটি দেখাবে।</p>
+                    <p class="text-xs text-secondary-400 mt-1">ব্রাউজার ট্যাবে এবং ফেসবুক/হোয়াটসঅ্যাপে লিংক শেয়ারে সাইটের নামের পাশে এই ট্যাগলাইন দেখাবে (যেমন: Fresh E mart - ফ্রেশ গ্রোসারি ডেলিভারি)।</p>
+                </div>
+
+                <!-- Site Meta Description for SEO and Social Share -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-secondary-700 mb-2">ওয়েবসাইটের বিবরণ / মেটা ডেসক্রিপশন (SEO & Social Share Description)</label>
+                    <textarea name="site_description" rows="2" 
+                              placeholder="অনলাইনে নিত্যপ্রয়োজনীয় গ্রোসারি ও সেরা মানের ফ্রেশ বাজার। হোম ডেলিভারি দ্রুত ও বিশ্বস্ত সেবায়।"
+                              class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm leading-relaxed"><?php echo htmlspecialchars($settings['site_description'] ?? 'অনলাইনে নিত্যপ্রয়োজনীয় গ্রোসারি ও সেরা মানের ফ্রেশ বাজার। হোম ডেলিভারি দ্রুত ও বিশ্বস্ত সেবায়।'); ?></textarea>
+                    <p class="text-xs text-secondary-400 mt-1">ওয়েবসাইটের হোমপেজ বা মূল লিংক সোশ্যাল মিডিয়ায় (Facebook, WhatsApp, Messenger) শেয়ার করলে প্রিভিউ কার্ডে এই বিবরণটি দেখাবে।</p>
+                </div>
+
+                <!-- Social Share Image (Open Graph Image) -->
+                <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
+                    <div class="flex items-center gap-2 mb-1">
+                        <ion-icon name="image-outline" class="text-emerald-600 text-lg"></ion-icon>
+                        <label class="block text-sm font-bold text-secondary-800">সোশ্যাল মিডিয়া শেয়ার ইমেজ / প্রিভিউ ব্যানার (Open Graph Preview Image)</label>
+                    </div>
+                    <p class="text-xs text-secondary-500 mb-4">ফেসবুক, হোয়াটসঅ্যাপ, মেসেঞ্জার ইত্যাদিতে ওয়েবসাইটের প্রধান লিংক শেয়ার করলে এই ছবিটি বড় প্রিভিউ কার্ড হিসেবে দেখাবে। (প্রস্তাবিত সাইজ: 1200×630 পিক্সেল, ফরম্যাট: JPG বা PNG)</p>
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <?php 
+                            $currentShareImg = !empty($settings['site_share_image']) ? $settings['site_share_image'] : '';
+                            $previewUrl = !empty($currentShareImg) ? ($base . $currentShareImg) : ($base . '/images/grocery_cart_hero.jpg');
+                        ?>
+                        <div class="relative w-40 h-24 rounded-xl overflow-hidden border-2 border-emerald-500/50 shadow-sm bg-white shrink-0 group">
+                            <img id="share-img-preview" src="<?= htmlspecialchars($previewUrl) ?>" alt="Share Preview" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
+                                প্রিভিউ থাম্বনেইল
+                            </div>
+                        </div>
+
+                        <div class="flex-1 w-full space-y-2.5">
+                            <input type="file" name="site_share_image" id="site_share_image_input" accept="image/jpeg,image/png,image/webp,image/jpg"
+                                   onchange="previewShareImage(this)"
+                                   class="block w-full text-xs text-secondary-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 file:cursor-pointer cursor-pointer border border-secondary-300 rounded-lg p-1.5 bg-white">
+                            
+                            <?php if (!empty($currentShareImg)): ?>
+                            <div class="flex items-center gap-2">
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer font-semibold hover:text-red-700">
+                                    <input type="checkbox" name="remove_site_share_image" value="1" class="rounded border-secondary-300 text-red-600 focus:ring-red-500">
+                                    <span>কাস্টম ইমেজ মুছে ডিফল্ট স্টোর ব্যানারে ফিরিয়ে নিন</span>
+                                </label>
+                            </div>
+                            <?php endif; ?>
+                            <div class="text-[11px] text-secondary-500 bg-amber-50 border border-amber-200/60 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                                <span>💡</span>
+                                <span><strong>টিপস:</strong> কোনো প্রোডাক্ট পেজের লিংক শেয়ার করলে স্বয়ংক্রিয়ভাবে সেই প্রোডাক্টের আসল ছবি, নাম ও মূল্য প্রিভিউতে আসবে।</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Contact Phone -->
@@ -498,5 +548,16 @@
             });
         });
     });
+
+    function previewShareImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = document.getElementById('share-img-preview');
+                if (preview) preview.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
     </script>
 </div>

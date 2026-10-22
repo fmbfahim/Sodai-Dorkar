@@ -5,6 +5,7 @@ Lang::init();
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $locale = Lang::locale();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$pageTitle = ($locale === 'bn') ? 'সকল ক্যাটাগরি ও বাজার তালিকা' : 'All Categories';
 
 // Visual helper for category
 if (!function_exists('getCategoryVisual')) {

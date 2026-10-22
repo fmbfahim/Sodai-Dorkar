@@ -4,6 +4,7 @@ use Core\Lang;
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 $locale = Lang::locale();
+$pageTitle = 'অর্ডার সফল হয়েছে';
 ?>
 
 <div class="bg-gray-50/60 flex-grow py-8 sm:py-12">

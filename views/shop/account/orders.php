@@ -1,6 +1,7 @@
 <?php 
 ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$pageTitle = 'আমার সকল অর্ডার';
 
 $statusColors = [
     'processing'       => 'bg-amber-100 text-amber-800 border-amber-200',

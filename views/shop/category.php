@@ -6,6 +6,20 @@ $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $locale = Lang::locale();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
 
+// Meta / Open Graph setup for Category Link Sharing
+if (!empty($activeSubCategory['name']) && !empty($currentCategory['name']) && ($activeSubCategory['id'] ?? 0) != ($currentCategory['id'] ?? 0)) {
+    $pageTitle = $activeSubCategory['name'] . ' - ' . $currentCategory['name'];
+} elseif (!empty($currentCategory['name'])) {
+    $pageTitle = $currentCategory['name'];
+}
+$pageDescription = !empty($currentCategory['description']) 
+    ? mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($currentCategory['description']))), 0, 180) 
+    : (($pageTitle ?? 'ক্যাটাগরি') . ' - সেরা মানের ফ্রেশ পণ্য সাশ্রয়ী মূল্যে সরাসরি হোম ডেলিভারি পান।');
+
+if (!empty($currentCategory['image_path'])) {
+    $ogImage = \Models\Category::getImageUrl($currentCategory['image_path'], $base);
+}
+
 // Unit helper if not already defined
 if (!function_exists('getProductUnits')) {
 function getProductUnits($product) {

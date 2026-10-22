@@ -26,9 +26,41 @@ class SettingsController extends Controller {
 
     public function update() {
         $settingModel = new Setting();
+
+        // Handle image deletion if requested
+        if (!empty($_POST['remove_site_share_image'])) {
+            $currentImg = $settingModel->get('site_share_image');
+            if (!empty($currentImg)) {
+                $filePath = dirname(__DIR__, 2) . '/public' . $currentImg;
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+            $settingModel->update('site_share_image', '');
+        }
+
+        // Handle uploaded file for site_share_image
+        if (!empty($_FILES['site_share_image']['name']) && $_FILES['site_share_image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/settings/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $_FILES['site_share_image'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            if (in_array($ext, $allowed)) {
+                $filename = 'site_share_image_' . time() . '.' . $ext;
+                $dest = $uploadDir . $filename;
+                if (move_uploaded_file($file['tmp_name'], $dest)) {
+                    $settingModel->update('site_share_image', '/uploads/settings/' . $filename);
+                }
+            }
+        }
         
         foreach ($_POST as $key => $value) {
-            $settingModel->update($key, $value);
+            if ($key === 'csrf_token' || $key === 'remove_site_share_image') continue;
+            $settingModel->update($key, is_string($value) ? trim($value) : $value);
         }
 
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';

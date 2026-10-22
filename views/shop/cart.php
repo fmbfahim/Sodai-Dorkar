@@ -2,6 +2,7 @@
 ob_start(); 
 use Core\Lang;
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
+$pageTitle = $__('cart_title') ?: 'শপিং ব্যাগ / কার্ট';
 ?>
 
 <div class="bg-gray-50 py-10">

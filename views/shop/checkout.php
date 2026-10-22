@@ -3,6 +3,7 @@ ob_start();
 use Core\Lang;
 $__ = function($key, $r = []) { return Lang::get($key, $r); };
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$pageTitle = 'অর্ডার কনফার্মেশন ও চেকআউট';
 
 $minOrder = floatval($ecommerceSettings['min_order_amount'] ?? 0);
 $maxOrder = floatval($ecommerceSettings['max_order_amount'] ?? 0);

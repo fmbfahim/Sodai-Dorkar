@@ -20,6 +20,14 @@ $maxOrderQty = ($stockQty > 0) ? $stockQty : 99;
 $productImg = \Models\Product::getImageUrl($product['image_path'] ?? '', $base);
 $fallbackImg = !empty($base) ? rtrim($base, '/') . '/images/default-product.svg' : '/images/default-product.svg';
 
+// Meta / Open Graph setup for Social Media Link Sharing (Facebook, WhatsApp, Messenger)
+$pageTitle = $product['name'] ?? '';
+$pageDescription = !empty($product['description']) 
+    ? mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($product['description']))), 0, 180) 
+    : (($product['name'] ?? 'পণ্য') . ' - মাত্র ৳' . number_format($sellPrice) . ' টাকায় কিনুন। হোম ডেলিভারি দ্রুত ও নিরাপদ।');
+$ogImage = $productImg;
+$ogType = 'product';
+
 // Check variants
 $hasVariants = !empty($variants) && is_array($variants);
 $defaultVariantIndex = 0;
@@ -205,6 +213,22 @@ $initialTotalPrice = $initialPrice + $initialAddonPrice;
                                     SKU: <?= htmlspecialchars($product['sku']) ?>
                                 </span>
                             <?php endif; ?>
+                            
+                            <!-- Quick Share Toolbar -->
+                            <div class="ml-auto flex items-center gap-1.5">
+                                <button type="button" onclick="shareProductLink()" class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-all border border-emerald-200 cursor-pointer shadow-2xs" title="পণ্য লিংক শেয়ার করুন">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                    <span><?= $locale === 'bn' ? 'শেয়ার' : 'Share' ?></span>
+                                </button>
+                                <a href="https://api.whatsapp.com/send?text=<?= rawurlencode($product['name'] . ' ' . ($currentUrl ?? '')) ?>" target="_blank" rel="noopener noreferrer" class="w-7 h-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all shadow-xs" title="WhatsApp-এ শেয়ার করুন">
+                                    <ion-icon name="logo-whatsapp" class="text-sm"></ion-icon>
+                                </a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($currentUrl ?? '') ?>" target="_blank" rel="noopener noreferrer" class="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-xs" title="Facebook-এ শেয়ার করুন">
+                                    <ion-icon name="logo-facebook" class="text-sm"></ion-icon>
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Product Title -->
@@ -707,6 +731,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 <?php endif; ?>
+
+function shareProductLink() {
+    const url = window.location.href;
+    const title = <?= json_encode($product['name'] ?? 'পণ্য') ?>;
+    if (navigator.share) {
+        navigator.share({ title: title, text: title, url: url }).catch(function() {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() {
+            if (typeof showToast === 'function') {
+                showToast('লিংক কপি করা হয়েছে! এখন যেকোনো সোশ্যাল মিডিয়ায় শেয়ার করতে পারেন।', 'success');
+            } else {
+                alert('লিংক কপি করা হয়েছে!');
+            }
+        });
+    } else {
+        prompt('এই লিংকটি কপি করে শেয়ার করুন:', url);
+    }
+}
 </script>
 
 <?php 

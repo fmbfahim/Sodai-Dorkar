@@ -1,6 +1,7 @@
 <?php
 ob_start();
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$pageTitle = 'আমার অ্যাকাউন্ট ও প্রোফাইল';
 
 $statusColors = [
     'processing'       => 'bg-amber-100 text-amber-800 border-amber-200',

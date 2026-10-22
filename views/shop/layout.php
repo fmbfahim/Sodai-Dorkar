@@ -13,6 +13,22 @@ try {
     $storeSettings = [];
 }
 
+// 1. Store Identity & Meta Information (configurable from Admin Settings)
+$siteTitle = !empty($storeSettings['site_title']) ? trim($storeSettings['site_title']) : ($__('site_name') ?: 'Fresh E mart');
+$siteTagline = !empty($storeSettings['site_tagline']) ? trim($storeSettings['site_tagline']) : ($__('site_tagline') ?: 'ফ্রেশ গ্রোসারি ডেলিভারি');
+$siteDescription = !empty($storeSettings['site_description']) ? trim($storeSettings['site_description']) : ($__('hero_subtitle') ?: 'অনলাইনে নিত্যপ্রয়োজনীয় গ্রোসারি ও সেরা মানের ফ্রেশ বাজার। হোম ডেলিভারি দ্রুত ও বিশ্বস্ত সেবায়।');
+
+// 2. Dynamic Page Title Resolution
+$resolvedPageTitle = !empty($pageTitle) ? trim($pageTitle) : (!empty($title) ? trim($title) : '');
+if (!empty($resolvedPageTitle) && strcasecmp($resolvedPageTitle, $siteTitle) !== 0) {
+    $metaTitle = $resolvedPageTitle . ' | ' . $siteTitle;
+} else {
+    $metaTitle = $siteTitle . (!empty($siteTagline) ? ' - ' . $siteTagline : '');
+}
+
+// 3. Meta Description Resolution
+$metaDescription = !empty($pageDescription) ? trim($pageDescription) : $siteDescription;
+
 // Cart statistics
 $cart = $_SESSION['cart'] ?? [];
 $cartCount = 0;
@@ -23,17 +39,76 @@ foreach ($cart as $item) {
 }
 $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, $locale);
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+// 4. Absolute URL helper for Social Media Crawlers (Facebook, WhatsApp, Messenger, etc.)
+$proto = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']))
+    ? $_SERVER['HTTP_X_FORWARDED_PROTO'] . '://'
+    : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443 ? 'https://' : 'http://');
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$currentUrl = $proto . $host . ($_SERVER['REQUEST_URI'] ?? '');
+
+$toAbsoluteUrl = function($path) use ($proto, $host, $base) {
+    if (empty($path)) return '';
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+    $cleanPath = '/' . ltrim($path, '/');
+    if (!empty($base) && strpos($cleanPath, $base) !== 0) {
+        $cleanPath = rtrim($base, '/') . $cleanPath;
+    }
+    return $proto . $host . $cleanPath;
+};
+
+// 5. Open Graph Image Resolution
+$finalOgImage = '';
+if (!empty($ogImage)) {
+    $ext = strtolower(pathinfo(parse_url($ogImage, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+    if ($ext !== 'svg') {
+        $finalOgImage = $toAbsoluteUrl($ogImage);
+    }
+}
+if (empty($finalOgImage) && !empty($storeSettings['site_share_image'])) {
+    $finalOgImage = $toAbsoluteUrl($storeSettings['site_share_image']);
+}
+if (empty($finalOgImage)) {
+    $finalOgImage = $toAbsoluteUrl('/images/grocery_cart_hero.jpg');
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $locale ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $__('site_name') ?> - <?= $__('site_tagline') ?></title>
-    <meta name="description" content="<?= $__('hero_subtitle') ?>">
+    <title><?= htmlspecialchars($metaTitle) ?></title>
+    <meta name="description" content="<?= htmlspecialchars($metaDescription) ?>">
     <?php if (isset($storeSettings['seo_index_allow']) && $storeSettings['seo_index_allow'] === '0'): ?>
     <meta name="robots" content="noindex, nofollow">
+    <?php else: ?>
+    <meta name="robots" content="index, follow">
     <?php endif; ?>
+    <link rel="canonical" href="<?= htmlspecialchars($currentUrl) ?>">
+
+    <!-- Open Graph (Facebook, WhatsApp, Messenger, Telegram, Viber, LinkedIn) -->
+    <meta property="og:type" content="<?= htmlspecialchars($ogType ?? 'website') ?>">
+    <meta property="og:site_name" content="<?= htmlspecialchars($siteTitle) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($metaDescription) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($currentUrl) ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($finalOgImage) ?>">
+    <meta property="og:image:secure_url" content="<?= htmlspecialchars($finalOgImage) ?>">
+    <meta property="og:image:alt" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta property="og:locale" content="<?= $locale === 'bn' ? 'bn_BD' : 'en_US' ?>">
+    <?php if (!empty($ogType) && $ogType === 'product' && !empty($sellPrice)): ?>
+    <meta property="product:price:amount" content="<?= htmlspecialchars((string)$sellPrice) ?>">
+    <meta property="product:price:currency" content="BDT">
+    <meta property="product:availability" content="<?= (!empty($isInStock) && $isInStock) ? 'in stock' : 'out of stock' ?>">
+    <?php endif; ?>
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($metaDescription) ?>">
+    <meta name="twitter:image" content="<?= htmlspecialchars($finalOgImage) ?>">
     <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
     <link rel="manifest" href="<?= $base ?>/manifest.json">
     <meta name="theme-color" content="#16a34a">
@@ -496,7 +571,7 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                         <?= htmlspecialchars($part1) ?> <span class="text-emerald-600"><?= htmlspecialchars($part2) ?></span>
                     </div>
                     <div class="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1 hidden sm:block">
-                        <?= htmlspecialchars($storeSettings['site_tagline'] ?? 'Fresh. Quality. Everyday.') ?>
+                        <?= htmlspecialchars($siteTagline) ?>
                     </div>
                 </div>
             </a>

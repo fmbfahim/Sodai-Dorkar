@@ -1,5 +1,6 @@
 <?php
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$title = 'ফিল্ড এজেন্ট শপ ও ক্যাটালগ';
 $initialCart = array_values($_SESSION['agent_cart'] ?? []);
 ?>
 
