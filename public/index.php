@@ -137,6 +137,14 @@ $router->post('/account/profile/update', 'CustomerDashboardController@updateProf
 $router->get('/account/change-password', 'CustomerDashboardController@changePassword');
 $router->post('/account/change-password', 'CustomerDashboardController@updatePassword');
 
+// Customer Account - Embedded Field Agent Routes
+$router->get('/account/agent/dashboard', 'CustomerDashboardController@agentDashboard');
+$router->get('/account/agent/shop', 'CustomerDashboardController@agentShop');
+$router->get('/account/agent/checkout', 'CustomerDashboardController@agentCheckout');
+$router->get('/account/agent/orders', 'CustomerDashboardController@agentOrders');
+$router->get('/account/agent/order-detail', 'CustomerDashboardController@agentOrderDetail');
+$router->get('/account/agent/customers', 'CustomerDashboardController@agentCustomers');
+
 $router->get('/login', 'AuthController@showLogin');
 $router->post('/login', 'AuthController@login');
 $router->get('/logout', 'AuthController@logout');
@@ -262,6 +270,7 @@ $router->post('/admin/customers/update', 'CustomerController@update');
 $router->post('/admin/customers/delete', 'CustomerController@destroy');
 $router->get('/admin/customers/history', 'CustomerController@history');
 $router->post('/admin/customers/generate-pin', 'CustomerController@generatePin');
+$router->post('/admin/customers/toggle-agent', 'CustomerController@toggleAgent');
 
 // Order Routes
 $router->get('/admin/orders', 'OrderController@index');

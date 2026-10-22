@@ -145,11 +145,19 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                 <div class="text-xs text-secondary-400 mt-0.5 truncate max-w-xs" title="<?php echo htmlspecialchars($c['address_details']); ?>">
                                     <?php echo htmlspecialchars($c['address_details']); ?>
                                 </div>
-                                <?php if(!empty($c['reset_code'])): ?>
-                                <div class="mt-2 inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded border border-yellow-200">
-                                    Auth PIN: <?php echo htmlspecialchars($c['reset_code']); ?>
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                    <?php if(!empty($c['is_agent'])): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                                            <ion-icon name="briefcase" class="text-xs"></ion-icon>
+                                            ফিল্ড এজেন্ট
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if(!empty($c['reset_code'])): ?>
+                                        <span class="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded border border-yellow-200">
+                                            PIN: <?php echo htmlspecialchars($c['reset_code']); ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
-                                <?php endif; ?>
                             </td>
                             <td class="px-6 py-4">
                                 <?php if($c['area_name']): ?>
@@ -180,10 +188,14 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <!-- Make Agent Action -->
-                                <a href="<?= $base ?>/admin/agents?customer_id=<?php echo $c['id']; ?>" class="text-teal-600 hover:text-teal-800 p-1 mr-2 inline-block" title="ফিল্ড এজেন্ট বানান (Make Agent)">
-                                    <ion-icon name="briefcase-outline" class="text-lg"></ion-icon>
-                                </a>
+                                <!-- 1-Click Instant Make/Remove Field Agent -->
+                                <form action="<?= $base ?>/admin/customers/toggle-agent" method="POST" class="inline" onsubmit="return confirm('<?= !empty($c['is_agent']) ? 'এই গ্রাহকের ফিল্ড এজেন্ট এক্সেস নিষ্ক্রিয় করতে চান?' : 'এই গ্রাহককে ফিল্ড সেলস এজেন্ট বানাতে চান?' ?>');">
+                                    <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+                                    <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
+                                    <button type="submit" class="p-1 mr-2 inline-block transition-transform active:scale-90 <?= !empty($c['is_agent']) ? 'text-emerald-600 hover:text-emerald-800' : 'text-gray-300 hover:text-emerald-600' ?>" title="<?= !empty($c['is_agent']) ? 'ফিল্ড এজেন্ট সক্রিয় (ক্লিক করে নিষ্ক্রিয় করুন)' : 'কাস্টমারকে ফিল্ড এজেন্ট বানান (1-Click Make Agent)' ?>">
+                                        <ion-icon name="<?= !empty($c['is_agent']) ? 'briefcase' : 'briefcase-outline' ?>" class="text-lg"></ion-icon>
+                                    </button>
+                                </form>
                                 <a href="<?= $base ?>/admin/orders/create?customer_id=<?php echo $c['id']; ?>" class="text-green-600 hover:text-green-800 p-1 mr-2 inline-block" title="Create Order">
                                     <ion-icon name="bag-add-outline" class="text-lg"></ion-icon>
                                 </a>

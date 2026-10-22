@@ -236,6 +236,26 @@
                 </div>
             </div>
 
+            <!-- Field Sales Agent Settings -->
+            <div class="mb-8 border-b border-secondary-100 pb-6">
+                <div class="flex items-start justify-between bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-5">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow-xs">
+                            <ion-icon name="briefcase"></ion-icon>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-900">ফিল্ড সেলস এজেন্ট সেটিংস (Field Sales Agent Access)</h3>
+                            <p class="text-xs text-gray-600 mt-0.5">এই গ্রাহককে ফিল্ড এজেন্ট বানালে তিনি তার একাউন্টে লগইন করার সাথে সাথে সম্পূর্ণ এজেন্ট ড্যাশবোর্ড, পণ্য ক্যাটালগ থেকে কাস্টমারদের জন্য অর্ডার নেওয়া এবং এরিয়ার কাস্টমার তালিকা দেখতে ও ব্যবহার করতে পারবেন।</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-4">
+                        <input type="hidden" name="is_agent" value="0">
+                        <input type="checkbox" name="is_agent" value="1" class="sr-only peer" <?= !empty($customer['is_agent']) ? 'checked' : '' ?>>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+            </div>
+
             <div class="flex items-center justify-end space-x-4">
                 <a href="/sodai-dorkar/public/admin/customers" class="px-6 py-2.5 rounded-lg border border-secondary-300 text-secondary-600 hover:bg-secondary-50 font-medium transition-colors">
                     Cancel

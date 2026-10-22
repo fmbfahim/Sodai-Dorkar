@@ -427,17 +427,20 @@ class AgentPortalController extends Controller {
     public function placeOrder() {
         $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
         $cart = $_SESSION['agent_cart'] ?? [];
+        $fromAccount = !empty($_POST['from_account']);
+        $shopUrl = $fromAccount ? "{$base}/account/agent/shop" : "{$base}/agent/shop";
+        $checkoutUrl = $fromAccount ? "{$base}/account/agent/checkout" : "{$base}/agent/checkout";
 
         if (empty($cart)) {
             $_SESSION['error'] = 'কার্ট খালি রয়েছে। অনুগ্রহ করে পণ্য যুক্ত করুন।';
-            header("Location: {$base}/agent/shop");
+            header("Location: {$shopUrl}");
             exit;
         }
 
         $customerId = (int)($_POST['customer_id'] ?? 0);
         if (!$customerId) {
             $_SESSION['error'] = 'অনুগ্রহ করে একজন কাস্টমার নির্বাচন করুন অথবা নতুন কাস্টমার যোগ করুন।';
-            header("Location: {$base}/agent/checkout");
+            header("Location: {$checkoutUrl}");
             exit;
         }
 
@@ -446,7 +449,7 @@ class AgentPortalController extends Controller {
 
         if (!$customer) {
             $_SESSION['error'] = 'নির্বাচিত কাস্টমার পাওয়া যায়নি।';
-            header("Location: {$base}/agent/checkout");
+            header("Location: {$checkoutUrl}");
             exit;
         }
 
@@ -454,7 +457,7 @@ class AgentPortalController extends Controller {
         $assignedAreaIds = $this->allocationModel->getAreaIdsByAgent($this->agentId);
         if (!empty($assignedAreaIds) && !empty($customer['area_id']) && !in_array((int)$customer['area_id'], $assignedAreaIds)) {
             $_SESSION['error'] = 'এই কাস্টমার আপনার নির্ধারিত এরিয়ার অন্তর্ভুক্ত নয়।';
-            header("Location: {$base}/agent/checkout");
+            header("Location: {$checkoutUrl}");
             exit;
         }
 
@@ -562,7 +565,11 @@ class AgentPortalController extends Controller {
             unset($_SESSION['agent_cart']);
 
             $_SESSION['success'] = "অর্ডার সফলভাবে তৈরি হয়েছে! অর্ডার নং #{$orderId}";
-            header("Location: {$base}/agent/orders/success?id={$orderId}");
+            if ($fromAccount) {
+                header("Location: {$base}/account/agent/order-detail?id={$orderId}&success=1");
+            } else {
+                header("Location: {$base}/agent/orders/success?id={$orderId}");
+            }
             exit;
 
         } catch (\Throwable $e) {
@@ -570,7 +577,7 @@ class AgentPortalController extends Controller {
                 $pdo->rollBack();
             }
             $_SESSION['error'] = "অর্ডার তৈরিতে সমস্যা হয়েছে: " . $e->getMessage();
-            header("Location: {$base}/agent/checkout");
+            header("Location: {$checkoutUrl}");
             exit;
         }
     }

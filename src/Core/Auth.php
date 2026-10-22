@@ -317,7 +317,7 @@ class Auth {
         // 2. If logged in as customer, find linked agent user in users table
         if (!empty($_SESSION['customer_id'])) {
             try {
-                $stmtC = $db->query("SELECT id, name, phone, email, agent_user_id FROM customers WHERE id = ? LIMIT 1", [$_SESSION['customer_id']]);
+                $stmtC = $db->query("SELECT id, name, phone, email, agent_user_id, is_agent, area_id, password FROM customers WHERE id = ? LIMIT 1", [$_SESSION['customer_id']]);
                 $c = $stmtC->fetch();
                 if ($c) {
                     $agentUser = null;
@@ -349,6 +349,12 @@ class Auth {
 
                         $stmtU = $db->query($sql, $params);
                         $agentUser = $stmtU->fetch();
+                    }
+
+                    // If customer was marked as is_agent = 1, but no active agent user was found yet, auto-provision it now!
+                    if (!$agentUser && !empty($c['is_agent'])) {
+                        $custModel = new \Models\Customer();
+                        $agentUser = $custModel->makeAgent($c['id'], !empty($c['area_id']) ? [$c['area_id']] : []);
                     }
 
                     if ($agentUser) {

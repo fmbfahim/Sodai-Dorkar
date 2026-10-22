@@ -38,8 +38,10 @@ $navLinks = [
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         body, button, input, select, textarea { font-family: 'Hind Siliguri', 'Outfit', sans-serif; }
+        [x-cloak] { display: none !important; }
         .nav-link.active { background: rgba(5,150,105,0.1); color: #059669; font-weight: 700; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -105,23 +107,28 @@ $navLinks = [
             <!-- Horizontal Scrollable Tabs -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 bg-white p-2 rounded-xl border border-gray-200/80 shadow-2xs">
                 <?php if ($isAgent): ?>
-                    <a href="<?= $base ?>/agent/dashboard" 
-                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all flex-shrink-0 bg-emerald-600 text-white shadow-xs">
+                    <a href="<?= $base ?>/account/agent/dashboard" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all flex-shrink-0 <?= $cleanPath === '/account/agent/dashboard' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
                         <ion-icon name="speedometer-outline" class="text-sm"></ion-icon>
                         <span>এজেন্ট হাব</span>
                     </a>
-                    <a href="<?= $base ?>/agent/shop" 
-                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <a href="<?= $base ?>/account/agent/shop" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 <?= $cleanPath === '/account/agent/shop' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
                         <ion-icon name="storefront-outline" class="text-sm"></ion-icon>
                         <span>অর্ডার নিন</span>
                     </a>
-                    <a href="<?= $base ?>/agent/orders" 
-                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <a href="<?= $base ?>/account/agent/checkout" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 <?= $cleanPath === '/account/agent/checkout' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
+                        <ion-icon name="cart-outline" class="text-sm"></ion-icon>
+                        <span>চেকআউট</span>
+                    </a>
+                    <a href="<?= $base ?>/account/agent/orders" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 <?= strpos($cleanPath, '/account/agent/order') === 0 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
                         <ion-icon name="receipt-outline" class="text-sm"></ion-icon>
                         <span>এজেন্ট অর্ডার</span>
                     </a>
-                    <a href="<?= $base ?>/agent/customers" 
-                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <a href="<?= $base ?>/account/agent/customers" 
+                       class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 <?= $cleanPath === '/account/agent/customers' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
                         <ion-icon name="people-outline" class="text-sm"></ion-icon>
                         <span>কাস্টমার</span>
                     </a>
@@ -185,29 +192,32 @@ $navLinks = [
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         </div>
                         <div class="space-y-1">
-                            <a href="<?= $base ?>/agent/dashboard" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-all border border-emerald-200/60 shadow-2xs">
-                                <ion-icon name="speedometer-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                            <a href="<?= $base ?>/account/agent/dashboard" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $cleanPath === '/account/agent/dashboard' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 shadow-2xs' ?>">
+                                <ion-icon name="speedometer-outline" class="text-base shrink-0 <?= $cleanPath === '/account/agent/dashboard' ? 'text-white' : 'text-emerald-600' ?>"></ion-icon>
                                 <span>এজেন্ট ড্যাশবোর্ড ও রিপোর্ট</span>
                             </a>
-                            <a href="<?= $base ?>/agent/shop" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
-                                <ion-icon name="storefront-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                            <a href="<?= $base ?>/account/agent/shop" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $cleanPath === '/account/agent/shop' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-700 hover:text-emerald-700 hover:bg-gray-50' ?>">
+                                <ion-icon name="storefront-outline" class="text-base shrink-0 <?= $cleanPath === '/account/agent/shop' ? 'text-white' : 'text-emerald-600' ?>"></ion-icon>
                                 <span>পণ্য ক্যাটালগ ও অর্ডার নিন</span>
                             </a>
-                            <a href="<?= $base ?>/agent/checkout" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
-                                <ion-icon name="cart-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                            <a href="<?= $base ?>/account/agent/checkout" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $cleanPath === '/account/agent/checkout' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-700 hover:text-emerald-700 hover:bg-gray-50' ?>">
+                                <ion-icon name="cart-outline" class="text-base shrink-0 <?= $cleanPath === '/account/agent/checkout' ? 'text-white' : 'text-emerald-600' ?>"></ion-icon>
                                 <span>কাস্টমার চেকআউট</span>
                             </a>
-                            <a href="<?= $base ?>/agent/orders" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
-                                <ion-icon name="receipt-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                            <a href="<?= $base ?>/account/agent/orders" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= strpos($cleanPath, '/account/agent/order') === 0 ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-700 hover:text-emerald-700 hover:bg-gray-50' ?>">
+                                <ion-icon name="receipt-outline" class="text-base shrink-0 <?= strpos($cleanPath, '/account/agent/order') === 0 ? 'text-white' : 'text-emerald-600' ?>"></ion-icon>
                                 <span>সংগৃহীত অর্ডারসমূহ</span>
                             </a>
-                            <a href="<?= $base ?>/agent/customers" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
-                                <ion-icon name="people-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
+                            <a href="<?= $base ?>/account/agent/customers" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $cleanPath === '/account/agent/customers' ? 'bg-emerald-600 text-white shadow-xs' : 'text-gray-700 hover:text-emerald-700 hover:bg-gray-50' ?>">
+                                <ion-icon name="people-outline" class="text-base shrink-0 <?= $cleanPath === '/account/agent/customers' ? 'text-white' : 'text-emerald-600' ?>"></ion-icon>
                                 <span>এলাকার কাস্টমার তালিকা</span>
                             </a>
-                            <a href="<?= $base ?>/agent/profile" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-all">
-                                <ion-icon name="id-card-outline" class="text-base text-emerald-600 shrink-0"></ion-icon>
-                                <span>এজেন্ট প্রোফাইল</span>
+                            <a href="<?= $base ?>/agent/dashboard" target="_blank" class="flex items-center justify-between px-3.5 py-2 rounded-xl text-[11px] font-semibold text-gray-500 hover:text-emerald-700 hover:bg-gray-50 transition-all border-t border-gray-100 mt-1 pt-1.5">
+                                <span class="flex items-center gap-1.5">
+                                    <ion-icon name="phone-portrait-outline" class="text-sm"></ion-icon>
+                                    <span>পূর্ণাঙ্গ মোবাইল অ্যাপ ভিউ</span>
+                                </span>
+                                <ion-icon name="open-outline" class="text-xs"></ion-icon>
                             </a>
                         </div>
                     </div>
@@ -266,6 +276,26 @@ $navLinks = [
 
     </div>
 </nav>
+
+<!-- Global Toast Notification Container for Agent Operations -->
+<div id="agentToastContainer" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none"></div>
+
+<script>
+    window.showAgentToast = function(msg, type = 'success') {
+        const container = document.getElementById('agentToastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const bg = type === 'success' ? 'bg-emerald-700 text-white' : 'bg-rose-700 text-white';
+        toast.className = `${bg} px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center justify-between pointer-events-auto transform transition-all duration-300 opacity-0 translate-y-2 mb-2`;
+        toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="ml-2 text-white/80 hover:text-white">&times;</button>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
+        setTimeout(() => {
+            toast.classList.add('opacity-0', '-translate-y-2');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    };
+</script>
 
 </body>
 </html>

@@ -35,6 +35,7 @@ class Customer {
                 'status'           => "ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'active' AFTER reset_code",
                 'remember_token'   => "ALTER TABLE customers ADD COLUMN remember_token VARCHAR(255) NULL AFTER status",
                 'agent_user_id'    => "ALTER TABLE customers ADD COLUMN agent_user_id INT NULL AFTER remember_token",
+                'is_agent'         => "ALTER TABLE customers ADD COLUMN is_agent TINYINT(1) DEFAULT 0 AFTER agent_user_id",
             ];
 
             foreach ($columnsToAdd as $col => $alterSql) {
@@ -284,5 +285,130 @@ class Customer {
 
     public function updateResetCode($id, $code) {
         $this->db->query("UPDATE customers SET reset_code = :code WHERE id = :id", ['code' => $code, 'id' => $id]);
+    }
+
+    /**
+     * Check if a customer is flagged as an agent
+     */
+    public function isCustomerAgent($customerId): bool {
+        $stmt = $this->db->query("SELECT is_agent, agent_user_id FROM customers WHERE id = ? LIMIT 1", [(int)$customerId]);
+        $row = $stmt->fetch();
+        if (!$row) return false;
+        if (!empty($row['is_agent'])) return true;
+        if (!empty($row['agent_user_id'])) {
+            $stmtU = $this->db->query("SELECT id FROM users WHERE id = ? AND role = 'agent' AND status = 'active' LIMIT 1", [$row['agent_user_id']]);
+            return (bool)$stmtU->fetch();
+        }
+        return false;
+    }
+
+    /**
+     * Convert or designate a customer as a Field Sales Agent
+     * Auto-creates or activates user record with role 'agent' and syncs area allocations
+     */
+    public function makeAgent($customerId, array $areaIds = []): ?array {
+        $customerId = (int)$customerId;
+        $customer = $this->find($customerId);
+        if (!$customer) return null;
+
+        $this->ensureSchema();
+        if (class_exists('\\Models\\User')) {
+            (new \Models\User())->ensureSchema();
+        }
+
+        $corePhone = self::extractCorePhone($customer['phone']) ?? preg_replace('/\D/', '', $customer['phone'] ?? '');
+        $username = 'agent_' . ($corePhone ?: $customerId);
+        $agentUser = null;
+
+        // 1. Check if linked user already exists
+        if (!empty($customer['agent_user_id'])) {
+            $stmt = $this->db->query("SELECT * FROM users WHERE id = ? LIMIT 1", [$customer['agent_user_id']]);
+            $agentUser = $stmt->fetch();
+        }
+
+        // 2. Check by phone or username
+        if (!$agentUser && !empty($customer['phone'])) {
+            $stmt = $this->db->query(
+                "SELECT * FROM users WHERE phone = ? OR phone LIKE ? OR username = ? LIMIT 1",
+                [$customer['phone'], '%' . ($corePhone ?: 'NONE') . '%', $username]
+            );
+            $agentUser = $stmt->fetch();
+        }
+
+        $agentPermissions = json_encode(['dashboard', 'orders', 'customers']);
+
+        if ($agentUser) {
+            $userId = (int)$agentUser['id'];
+            $this->db->query(
+                "UPDATE users SET role = 'agent', status = 'active', permissions = ? WHERE id = ?",
+                [$agentPermissions, $userId]
+            );
+            $agentUser['role'] = 'agent';
+            $agentUser['status'] = 'active';
+        } else {
+            // Create brand new agent user
+            $password = !empty($customer['password']) ? $customer['password'] : password_hash('123456', PASSWORD_DEFAULT);
+            $this->db->query(
+                "INSERT INTO users (name, phone, username, password, role, status, permissions) VALUES (?, ?, ?, ?, 'agent', 'active', ?)",
+                [$customer['name'], $customer['phone'], $username, $password, $agentPermissions]
+            );
+            $userId = (int)$this->db->getConnection()->lastInsertId();
+            $agentUser = [
+                'id' => $userId,
+                'name' => $customer['name'],
+                'phone' => $customer['phone'],
+                'username' => $username,
+                'role' => 'agent',
+                'status' => 'active',
+                'permissions' => $agentPermissions
+            ];
+        }
+
+        // 3. Mark customer as agent and link user id
+        $this->db->query(
+            "UPDATE customers SET is_agent = 1, agent_user_id = ? WHERE id = ?",
+            [$userId, $customerId]
+        );
+
+        // 4. Area allocation
+        if (empty($areaIds) && !empty($customer['area_id'])) {
+            $areaIds = [(int)$customer['area_id']];
+        }
+
+        if (!empty($areaIds)) {
+            try {
+                if (class_exists('\\Models\\AgentAllocation')) {
+                    (new \Models\AgentAllocation())->syncAgentAreas($userId, $areaIds);
+                } else {
+                    foreach ($areaIds as $aId) {
+                        $this->db->query("INSERT IGNORE INTO agent_allocations (user_id, area_id) VALUES (?, ?)", [$userId, (int)$aId]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("makeAgent allocation error: " . $e->getMessage());
+            }
+        }
+
+        return $agentUser;
+    }
+
+    /**
+     * Remove or deactivate agent access for a customer
+     */
+    public function removeAgent($customerId): bool {
+        $customerId = (int)$customerId;
+        $customer = $this->find($customerId);
+        if (!$customer) return false;
+
+        $this->ensureSchema();
+        $this->db->query("UPDATE customers SET is_agent = 0 WHERE id = ?", [$customerId]);
+
+        if (!empty($customer['agent_user_id'])) {
+            try {
+                $this->db->query("UPDATE users SET status = 'inactive' WHERE id = ? AND role = 'agent'", [$customer['agent_user_id']]);
+            } catch (\Throwable $e) {}
+        }
+
+        return true;
     }
 }

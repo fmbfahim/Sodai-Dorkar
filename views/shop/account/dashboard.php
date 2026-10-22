@@ -51,10 +51,13 @@ $statusColors = [
         </div>
 
         <div class="flex items-center gap-2">
-            <a href="<?= $base ?>/agent/dashboard" class="px-4 py-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 transform active:scale-95">
+            <a href="<?= $base ?>/account/agent/dashboard" class="px-4 py-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 transform active:scale-95">
                 <ion-icon name="speedometer-outline" class="text-base text-emerald-700"></ion-icon>
-                <span>এজেন্ট পোর্টাল খুলুন</span>
+                <span>সম্পূর্ণ এজেন্ট হাব</span>
                 <span>➔</span>
+            </a>
+            <a href="<?= $base ?>/agent/dashboard" target="_blank" class="px-3.5 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs transition-all border border-white/20 flex items-center gap-1 shrink-0" title="মোবাইল অ্যাপ মোড">
+                <ion-icon name="phone-portrait-outline" class="text-base"></ion-icon>
             </a>
         </div>
     </div>
@@ -81,7 +84,7 @@ $statusColors = [
     <!-- Primary Agent Action Tiles -->
     <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         <!-- Tile 1: Take Order / Catalog -->
-        <a href="<?= $base ?>/agent/shop" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+        <a href="<?= $base ?>/account/agent/shop" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-2xl bg-amber-400 text-gray-900 flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
                     <ion-icon name="storefront"></ion-icon>
@@ -95,7 +98,7 @@ $statusColors = [
         </a>
 
         <!-- Tile 2: Customer Checkout -->
-        <a href="<?= $base ?>/agent/checkout" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+        <a href="<?= $base ?>/account/agent/checkout" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
                     <ion-icon name="cart"></ion-icon>
@@ -109,7 +112,7 @@ $statusColors = [
         </a>
 
         <!-- Tile 3: My Agent Orders -->
-        <a href="<?= $base ?>/agent/orders" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+        <a href="<?= $base ?>/account/agent/orders" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-2xl bg-blue-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
                     <ion-icon name="receipt"></ion-icon>
@@ -123,7 +126,7 @@ $statusColors = [
         </a>
 
         <!-- Tile 4: Area Customers -->
-        <a href="<?= $base ?>/agent/customers" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
+        <a href="<?= $base ?>/account/agent/customers" class="group bg-white/10 hover:bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/15 transition-all flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-2xl bg-purple-500 text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0 group-hover:scale-110 transition-transform">
                     <ion-icon name="people"></ion-icon>

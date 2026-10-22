@@ -240,4 +240,228 @@ class CustomerDashboardController {
         header("Location: /sodai-dorkar/public/account/change-password?success=1");
         exit;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // EMBEDDED FIELD AGENT OPERATIONS & VIEWS
+    // ─────────────────────────────────────────────────────────────
+
+    private function requireAgentAccess(): array {
+        $this->requireCustomerLogin();
+        \Core\Auth::syncAgentAndCustomerSessions();
+        if (!\Core\Auth::isAgent()) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            header("Location: {$base}/account");
+            exit;
+        }
+        $agent = \Core\Auth::getAgentForCurrentCustomer();
+        if (!$agent) {
+            $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+            header("Location: {$base}/account");
+            exit;
+        }
+        return $agent;
+    }
+
+    public function agentDashboard() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+
+        $orderModel = new Order();
+        $allocationModel = new \Models\AgentAllocation();
+
+        $assignedAreas = $allocationModel->getByAgent($agentId);
+        $stats = $orderModel->getAgentStats($agentId);
+        $recentOrders = $orderModel->getByAgent($agentId, ['limit' => 10]);
+
+        return $this->renderAccount("agent_dashboard", [
+            "customer"      => $customer,
+            "agent"         => $agent,
+            "assignedAreas" => $assignedAreas,
+            "stats"         => $stats,
+            "recentOrders"  => $recentOrders,
+            "isAgent"       => true,
+            "inAccount"     => true,
+            "title"         => "ফিল্ড এজেন্ট ড্যাশবোর্ড"
+        ]);
+    }
+
+    public function agentShop() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+
+        $categoryModel = new \Models\Category();
+        $productModel = new \Models\Product();
+        $allocationModel = new \Models\AgentAllocation();
+
+        $search = trim($_GET['search'] ?? '');
+        $catId = !empty($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+
+        $categories = $categoryModel->all();
+        $filters = ['availability_status' => ['in_stock', 'available']];
+        if ($search) $filters['search'] = $search;
+        if ($catId) $filters['category_id'] = $catId;
+
+        $products = $productModel->all($filters);
+
+        $cart = $_SESSION['agent_cart'] ?? [];
+        $cartCount = 0;
+        $cartTotal = 0;
+        foreach ($cart as $item) {
+            $cartCount += (int)($item['quantity'] ?? 1);
+            $cartTotal += (float)($item['price'] ?? 0) * (int)($item['quantity'] ?? 1);
+        }
+
+        $assignedAreas = $allocationModel->getByAgent($agentId);
+
+        return $this->renderAccount("agent_shop", [
+            "customer"      => $customer,
+            "agent"         => $agent,
+            "categories"    => $categories,
+            "products"      => $products,
+            "activeCatId"   => $catId,
+            "search"        => $search,
+            "cartCount"     => $cartCount,
+            "cartTotal"     => $cartTotal,
+            "assignedAreas" => $assignedAreas,
+            "isAgent"       => true,
+            "inAccount"     => true,
+            "title"         => "পণ্য ক্যাটালগ ও অর্ডার নিন"
+        ]);
+    }
+
+    public function agentCheckout() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+        $cart = $_SESSION['agent_cart'] ?? [];
+        if (empty($cart)) {
+            header("Location: {$base}/account/agent/shop");
+            exit;
+        }
+
+        $allocationModel = new \Models\AgentAllocation();
+        $areaModel = new \Models\Area();
+
+        $assignedAreas = $allocationModel->getByAgent($agentId);
+        $availableAreas = !empty($assignedAreas) ? $assignedAreas : $areaModel->all();
+
+        $subtotal = 0;
+        foreach ($cart as $item) {
+            $subtotal += (float)$item['price'] * (int)$item['quantity'];
+        }
+
+        return $this->renderAccount("agent_checkout", [
+            "customer"       => $customer,
+            "agent"          => $agent,
+            "cart"           => $cart,
+            "subtotal"       => $subtotal,
+            "assignedAreas"  => $assignedAreas,
+            "availableAreas" => $availableAreas,
+            "agentId"        => $agentId,
+            "isAgent"        => true,
+            "inAccount"      => true,
+            "title"          => "কাস্টমার নির্বাচন ও চেকআউট"
+        ]);
+    }
+
+    public function agentOrders() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+
+        $status = $_GET['status'] ?? 'all';
+        $search = trim($_GET['search'] ?? '');
+        $date = trim($_GET['date'] ?? '');
+
+        $orderModel = new Order();
+        $orders = $orderModel->getByAgent($agentId, [
+            'status' => $status,
+            'search' => $search,
+            'date'   => $date
+        ]);
+
+        $stats = $orderModel->getAgentStats($agentId);
+
+        return $this->renderAccount("agent_orders", [
+            "customer"     => $customer,
+            "agent"        => $agent,
+            "orders"       => $orders,
+            "activeStatus" => $status,
+            "search"       => $search,
+            "date"         => $date,
+            "stats"        => $stats,
+            "isAgent"      => true,
+            "inAccount"    => true,
+            "title"        => "সংগৃহীত এজেন্ট অর্ডারসমূহ"
+        ]);
+    }
+
+    public function agentOrderDetail() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+        $orderId = (int)($_GET['id'] ?? 0);
+        if (!$orderId) {
+            header("Location: {$base}/account/agent/orders");
+            exit;
+        }
+
+        $orderModel = new Order();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || ($order['agent_id'] != $agentId && ($_SESSION['role'] ?? '') !== 'admin')) {
+            header("Location: {$base}/account/agent/orders");
+            exit;
+        }
+
+        $trackingHistory = $orderModel->getTrackingHistory($orderId);
+
+        return $this->renderAccount("agent_order_detail", [
+            "customer"        => $customer,
+            "agent"           => $agent,
+            "order"           => $order,
+            "trackingHistory" => $trackingHistory,
+            "isAgent"         => true,
+            "inAccount"       => true,
+            "title"           => "অর্ডার বিবরণ #" . $orderId
+        ]);
+    }
+
+    public function agentCustomers() {
+        $agent = $this->requireAgentAccess();
+        $agentId = (int)$agent['id'];
+        $customer = $this->getCustomer();
+
+        $customerModel = new \Models\Customer();
+        $allocationModel = new \Models\AgentAllocation();
+
+        $assignedAreaIds = $allocationModel->getAreaIdsByAgent($agentId);
+        $search = trim($_GET['search'] ?? '');
+
+        $filters = [];
+        if ($search) $filters['search'] = $search;
+        if (!empty($assignedAreaIds)) {
+            $filters['area_ids'] = $assignedAreaIds;
+        }
+
+        $customers = $customerModel->all($filters);
+        $assignedAreas = $allocationModel->getByAgent($agentId);
+
+        return $this->renderAccount("agent_customers", [
+            "customer"      => $customer,
+            "agent"         => $agent,
+            "customers"     => $customers,
+            "assignedAreas" => $assignedAreas,
+            "search"        => $search,
+            "isAgent"       => true,
+            "inAccount"     => true,
+            "title"         => "এলাকার কাস্টমার তালিকা"
+        ]);
+    }
 }

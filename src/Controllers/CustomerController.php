@@ -216,6 +216,18 @@ class CustomerController extends Controller {
                 'latitude' => $latitude,
                 'longitude' => $longitude
             ]);
+
+            // Sync Agent Status if submitted
+            if (isset($_POST['is_agent'])) {
+                $isAgent = (int)$_POST['is_agent'];
+                if ($isAgent === 1) {
+                    $agentAreas = !empty($_POST['agent_areas']) ? (array)$_POST['agent_areas'] : [$area_id];
+                    $customerModel->makeAgent($id, $agentAreas);
+                } else {
+                    $customerModel->removeAgent($id);
+                }
+            }
+
             $_SESSION['success'] = "গ্রাহকের তথ্য সফলভাবে আপডেট করা হয়েছে।";
         }
         
@@ -326,6 +338,42 @@ class CustomerController extends Controller {
             $customerModel->updateResetCode($id, $pin);
         }
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/sodai-dorkar/public/admin/customers'));
+        exit;
+    }
+
+    /**
+     * Instant 1-click toggle of Field Sales Agent status for a customer
+     */
+    public function toggleAgent() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $id = (int)($_POST['id'] ?? 0);
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/sodai-dorkar/public/admin/customers';
+
+        if (!$id) {
+            header('Location: ' . $referer);
+            exit;
+        }
+
+        $customerModel = new Customer();
+        $customer = $customerModel->find($id);
+
+        if (!$customer) {
+            $_SESSION['error'] = 'গ্রাহক পাওয়া যায়নি';
+            header('Location: ' . $referer);
+            exit;
+        }
+
+        $isCurrentlyAgent = $customerModel->isCustomerAgent($id);
+
+        if ($isCurrentlyAgent) {
+            $customerModel->removeAgent($id);
+            $_SESSION['success'] = 'গ্রাহক "' . htmlspecialchars($customer['name']) . '" এর ফিল্ড এজেন্ট এক্সেস নিষ্ক্রিয় করা হয়েছে।';
+        } else {
+            $customerModel->makeAgent($id);
+            $_SESSION['success'] = 'গ্রাহক "' . htmlspecialchars($customer['name']) . '" কে সফলভাবে ফিল্ড সেলস এজেন্ট বানানো হয়েছে! এখন তিনি তার একাউন্টে সব এজেন্ট ফিচার দেখতে পাবেন।';
+        }
+
+        header('Location: ' . $referer);
         exit;
     }
 }

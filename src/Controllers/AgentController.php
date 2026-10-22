@@ -116,7 +116,7 @@ class AgentController extends Controller {
                 if ($targetCustId > 0) {
                     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
                     $this->db->query(
-                        "UPDATE customers SET agent_user_id = ?, password = ? WHERE id = ?",
+                        "UPDATE customers SET agent_user_id = ?, is_agent = 1, password = ? WHERE id = ?",
                         [$userId, $hashedPwd, $targetCustId]
                     );
                 }
