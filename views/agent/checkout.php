@@ -108,10 +108,15 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
 
         this.submittingCustomer = true;
         try {
+            const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch('<?= $base ?>/agent/api/customers/store', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.newCustomer)
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ ...this.newCustomer, csrf_token: token })
             });
             const data = await res.json();
 
@@ -296,6 +301,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     <!-- SECTION 3: ORDER FORM SUBMISSION                -->
     <!-- ─────────────────────────────────────────────── -->
     <form action="<?= $base ?>/agent/place-order" method="POST" @submit="submittingOrder = true" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         <!-- Hidden selected customer ID -->
         <input type="hidden" name="customer_id" :value="selectedCustomer ? selectedCustomer.id : ''" required>
 

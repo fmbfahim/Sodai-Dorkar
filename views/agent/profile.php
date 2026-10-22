@@ -101,6 +101,7 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
         </h2>
 
         <form action="<?= $base ?>/agent/change-password" method="POST" class="space-y-3 text-xs">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
             <div>
                 <label class="block font-bold text-gray-700 mb-1">বর্তমান পাসওয়ার্ড *</label>
                 <input type="password" name="current_password" required placeholder="বর্তমান পাসওয়ার্ড লিখুন" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">

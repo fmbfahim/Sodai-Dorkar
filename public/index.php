@@ -66,6 +66,9 @@ $db = new Database($config);
 // Restore persistent login from secure cookies if session was cleared or browser reopened
 Auth::restoreSessionFromCookie($db);
 
+// Ensure CSRF token is available in active session
+\Core\CSRF::token();
+
 // Initialize Language
 Lang::init();
 

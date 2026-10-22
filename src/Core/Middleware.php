@@ -159,7 +159,21 @@ class Middleware {
             $token = $_POST['csrf_token'] 
                 ?? $_SERVER['HTTP_X_CSRF_TOKEN'] 
                 ?? $_SERVER['HTTP_X_XSRF_TOKEN'] 
+                ?? $_SERVER['HTTP_CSRF_TOKEN']
                 ?? '';
+
+            if (!$token && function_exists('getallheaders')) {
+                $headers = getallheaders();
+                if (is_array($headers)) {
+                    foreach ($headers as $key => $val) {
+                        $k = strtolower($key);
+                        if ($k === 'x-csrf-token' || $k === 'x-xsrf-token' || $k === 'csrf-token') {
+                            $token = $val;
+                            break;
+                        }
+                    }
+                }
+            }
 
             if (!$token) {
                 $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
@@ -183,7 +197,8 @@ class Middleware {
                     echo json_encode([
                         'success' => false,
                         'status' => 'error',
-                        'message' => 'CSRF Security Token Expired. অনুগ্রহ করে পেজটি রিলোড করে আবার চেষ্টা করুন।'
+                        'message' => 'CSRF Security Token Expired. অনুগ্রহ করে পেজটি রিলোড করে আবার চেষ্টা করুন।',
+                        'csrf_token' => \Core\CSRF::token()
                     ]);
                     exit;
                 }

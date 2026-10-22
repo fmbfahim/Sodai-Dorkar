@@ -27,10 +27,15 @@ $initialCart = array_values($_SESSION['agent_cart'] ?? []);
     async addToCart(productId) {
         this.loading = true;
         try {
+            const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch('<?= $base ?>/agent/cart/add', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, quantity: 1 })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ product_id: productId, quantity: 1, csrf_token: token })
             });
             const data = await res.json();
             if (data.success) {
@@ -48,10 +53,15 @@ $initialCart = array_values($_SESSION['agent_cart'] ?? []);
 
     async updateQty(productId, action) {
         try {
+            const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch('<?= $base ?>/agent/cart/update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, action: action })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ product_id: productId, action: action, csrf_token: token })
             });
             const data = await res.json();
             if (data.success) {

@@ -21,6 +21,98 @@ $isActive = function($segment) use ($currentPath) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= htmlspecialchars($title ?? 'ফিল্ড এজেন্ট পোর্টাল') ?> - <?= htmlspecialchars($agentSiteTitle) ?></title>
+    <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
+    <script>
+        window.APP_BASE = '<?= $base ?>';
+        window.CSRF_TOKEN = '<?= \Core\CSRF::token() ?>';
+
+        // Global fetch interceptor to guarantee CSRF token & AJAX headers are attached
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = async function(resource, init = {}) {
+                init = init || {};
+                const method = (init.method || 'GET').toUpperCase();
+                if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+                    init.headers = init.headers || {};
+                    const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    if (token) {
+                        if (init.headers instanceof Headers) {
+                            if (!init.headers.has('X-CSRF-TOKEN')) init.headers.set('X-CSRF-TOKEN', token);
+                            if (!init.headers.has('X-Requested-With')) init.headers.set('X-Requested-With', 'XMLHttpRequest');
+                        } else if (Array.isArray(init.headers)) {
+                            init.headers.push(['X-CSRF-TOKEN', token]);
+                            init.headers.push(['X-Requested-With', 'XMLHttpRequest']);
+                        } else {
+                            if (!init.headers['X-CSRF-TOKEN']) init.headers['X-CSRF-TOKEN'] = token;
+                            if (!init.headers['X-Requested-With']) init.headers['X-Requested-With'] = 'XMLHttpRequest';
+                        }
+
+                        if (typeof init.body === 'string') {
+                            try {
+                                const parsed = JSON.parse(init.body);
+                                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && !parsed.csrf_token) {
+                                    parsed.csrf_token = token;
+                                    init.body = JSON.stringify(parsed);
+                                }
+                            } catch (e) {}
+                        } else if (init.body instanceof FormData) {
+                            if (!init.body.has('csrf_token')) {
+                                init.body.append('csrf_token', token);
+                            }
+                        }
+                    }
+                }
+
+                const response = await originalFetch(resource, init);
+
+                // Auto-refresh token and retry once if 419 Page Expired occurred
+                if (response.status === 419 && !init._retried) {
+                    try {
+                        const cloned = response.clone();
+                        const data = await cloned.json();
+                        if (data && data.csrf_token) {
+                            window.CSRF_TOKEN = data.csrf_token;
+                            const meta = document.querySelector('meta[name="csrf-token"]');
+                            if (meta) meta.setAttribute('content', data.csrf_token);
+
+                            init._retried = true;
+                            if (init.headers instanceof Headers) {
+                                init.headers.set('X-CSRF-TOKEN', data.csrf_token);
+                            } else if (!Array.isArray(init.headers)) {
+                                init.headers['X-CSRF-TOKEN'] = data.csrf_token;
+                            }
+                            if (typeof init.body === 'string') {
+                                try {
+                                    const parsed = JSON.parse(init.body);
+                                    if (parsed && typeof parsed === 'object') {
+                                        parsed.csrf_token = data.csrf_token;
+                                        init.body = JSON.stringify(parsed);
+                                    }
+                                } catch (e) {}
+                            }
+                            return originalFetch(resource, init);
+                        }
+                    } catch (e) {}
+                }
+
+                return response;
+            };
+
+            // Automatically inject CSRF token into all POST forms
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (form && form.tagName === 'FORM' && (form.method || '').toUpperCase() === 'POST') {
+                    if (!form.querySelector('input[name="csrf_token"]')) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'csrf_token';
+                        input.value = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        form.prepend(input);
+                    }
+                }
+            }, true);
+        })();
+    </script>
     
     <!-- Tailwind CSS -->
     <link href="<?= $base ?>/css/output.css" rel="stylesheet">

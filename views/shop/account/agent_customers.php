@@ -52,10 +52,15 @@ $title = $title ?? 'এলাকার কাস্টমার তালিক�
 
         this.submittingCustomer = true;
         try {
+            const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch('<?= $base ?>/agent/api/customers/store', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.newCustomer)
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ ...this.newCustomer, csrf_token: token })
             });
             const data = await res.json();
             if (data.success) {

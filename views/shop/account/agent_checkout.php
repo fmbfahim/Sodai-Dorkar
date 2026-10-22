@@ -110,10 +110,15 @@ $title = $title ?? 'কাস্টমার নির্বাচন ও চে
 
         this.submittingCustomer = true;
         try {
+            const token = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch('<?= $base ?>/agent/api/customers/store', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.newCustomer)
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ ...this.newCustomer, csrf_token: token })
             });
             const data = await res.json();
 
@@ -278,6 +283,7 @@ $title = $title ?? 'কাস্টমার নির্বাচন ও চে
     <!-- SECTION 3: ORDER FORM SUBMISSION                -->
     <!-- ─────────────────────────────────────────────── -->
     <form action="<?= $base ?>/agent/place-order" method="POST" @submit="submittingOrder = true" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
         <input type="hidden" name="from_account" value="1">
         <input type="hidden" name="customer_id" :value="selectedCustomer ? selectedCustomer.id : ''" required>
 
