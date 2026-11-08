@@ -307,9 +307,12 @@ if (empty($finalOgImage)) {
 
         /* ── SLIM MOBILE HEADER ── */
         @media (max-width: 767px) {
-            /* Prevent iOS Safari and Android Chrome from auto-zooming and shifting viewport on input focus */
-            input, select, textarea {
+            /* Prevent iOS Safari and Android Chrome from auto-zooming on checkout/form inputs while keeping header search crisp */
+            input:not(#mobile-slim-search-input), select, textarea {
                 font-size: 16px !important;
+            }
+            #mobile-slim-search-input {
+                font-size: 13px !important;
             }
             /* Hide top utility bar on mobile */
             #top-utility-bar { display: none !important; }
@@ -323,14 +326,13 @@ if (empty($finalOgImage)) {
             /* Show the new compact mobile header */
             #mobile-slim-header { display: flex !important; }
 
-            /* Scroll collapse: hide logo section, keep only search + cart */
-            #site-main-header.is-scrolled-mobile #msh-brand {
+            /* Scroll collapse: hide top brand row on scroll, keep full-width search bar pinned */
+            #site-main-header.is-scrolled-mobile #msh-top-bar {
                 display: none !important;
             }
             #site-main-header.is-scrolled-mobile #mobile-slim-header {
                 padding-top: 0.4rem;
                 padding-bottom: 0.4rem;
-                gap: 0.5rem;
             }
         }
         @media (min-width: 768px) {
@@ -579,77 +581,93 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
     <!-- 2. MAIN HEADER (Logo + Wide Search Bar + Account & Cart) -->
     <header class="bg-white sticky top-0 z-40 border-b border-gray-100 shadow-xs transition-all duration-200" id="site-main-header">
 
-        <!-- ═══ NEW SLIM MOBILE HEADER (Single compact row: Logo + Search + Cart) ═══ -->
-        <div id="mobile-slim-header" class="hidden items-center gap-2 px-2.5 py-2 bg-white transition-all duration-200">
-            <!-- Mini Brand -->
-            <a href="<?= $base ?>/" class="flex items-center gap-1.5 flex-shrink-0 group" id="msh-brand">
-                <?php if (!empty($siteLogo)): ?>
-                    <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($siteTitle) ?>" class="h-8 w-auto max-w-[100px] object-contain rounded-lg">
-                <?php else: ?>
-                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+        <!-- ═══ NEW SUPERSTORE MOBILE APP HEADER (2-Row App Header: Brand/Actions + Full-Width Search) ═══ -->
+        <div id="mobile-slim-header" class="hidden flex-col gap-2 px-3 py-2 bg-white transition-all duration-200">
+            <!-- Row 1: Brand Identity + Quick Actions (Collapses smoothly on scroll) -->
+            <div id="msh-top-bar" class="flex items-center justify-between gap-2 w-full">
+                <a href="<?= $base ?>/" class="flex items-center gap-2 min-w-0 group" id="msh-brand">
+                    <?php if (!empty($siteLogo)): ?>
+                        <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($siteTitle) ?>" class="h-8 w-auto max-w-[110px] object-contain rounded-lg shrink-0">
+                    <?php else: ?>
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shadow-xs shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    <?php endif; ?>
+                    <?php
+                        $mshBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Sohoz Sodai';
+                        $mshParts = explode(' ', $mshBrand, 2);
+                    ?>
+                    <div class="min-w-0">
+                        <div class="text-sm font-black text-gray-900 leading-none tracking-tight truncate">
+                            <?= htmlspecialchars($mshParts[0] ?? '') ?><?php if (!empty($mshParts[1])): ?> <span class="text-emerald-600"><?= htmlspecialchars($mshParts[1]) ?></span><?php endif; ?>
+                        </div>
+                        <div class="text-[10px] font-bold text-emerald-700 flex items-center gap-1 mt-0.5 leading-none">
+                            <span>⚡</span>
+                            <span class="truncate"><?= htmlspecialchars($siteTagline) ?></span>
+                        </div>
                     </div>
-                <?php endif; ?>
-                <?php
-                    $mshBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
-                    $mshParts = explode(' ', $mshBrand, 2);
-                ?>
-                <span class="text-[13px] font-black text-gray-900 leading-none tracking-tight whitespace-nowrap">
-                    <?= htmlspecialchars($mshParts[0] ?? '') ?><?php if (!empty($mshParts[1])): ?> <span class="text-emerald-600"><?= htmlspecialchars($mshParts[1]) ?></span><?php endif; ?>
-                </span>
-            </a>
+                </a>
 
-            <!-- Inline Search -->
-            <form action="<?= $base ?>/" method="GET" class="flex-1 min-w-0 relative" id="mobile-slim-search-form">
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <!-- Flash Deals Quick Pill -->
+                    <a href="<?= $base ?>/?deals=1" class="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-900 text-[11px] font-black transition-all">
+                        <span>🔥</span>
+                        <span><?= $locale === 'bn' ? 'অফার' : 'Deals' ?></span>
+                    </a>
+
+                    <!-- Mobile Notification Bell -->
+                    <button type="button" onclick="openPromoNotificationsDrawer()" class="relative flex-shrink-0 w-8 h-8 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200/80 flex items-center justify-center transition-all text-gray-700 hover:text-emerald-600 cursor-pointer" id="msh-notif-btn" title="অফার ও নোটিফিকেশন">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span id="msh-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none">
+                            0
+                        </span>
+                    </button>
+
+                    <!-- Cart Icon -->
+                    <button type="button" onclick="openCartDrawer()" class="relative flex-shrink-0 w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 flex items-center justify-center transition-all text-emerald-800" id="msh-cart-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span id="msh-cart-badge" class="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none <?= $cartCount > 0 ? '' : 'hidden' ?>">
+                            <?= $cartCount ?>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Row 2: 100% Full-Width Search Bar (Always spacious and readable!) -->
+            <form action="<?= $base ?>/" method="GET" class="w-full relative" id="mobile-slim-search-form">
                 <?php if (!empty($isDeals)): ?>
                     <input type="hidden" name="deals" value="1">
                 <?php endif; ?>
-                <div class="flex items-center h-9 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white transition-all">
-                    <div class="pl-2.5 text-gray-400 pointer-events-none flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex items-center h-9 bg-gray-100/90 border border-gray-200/90 rounded-xl overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white transition-all shadow-2xs">
+                    <div class="pl-3 text-emerald-600 pointer-events-none flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input type="text" name="search" id="mobile-slim-search-input" value="<?= htmlspecialchars($search ?? '') ?>" 
-                           placeholder="<?= $__('header_search_placeholder') ?>" 
+                           placeholder="<?= $locale === 'bn' ? 'চাল, তেল, সবজি বা পছন্দের পণ্য খুঁজুন...' : $__('header_search_placeholder') ?>" 
                            autocomplete="off"
-                           class="flex-1 min-w-0 px-2 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
-                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-1.5 h-full flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           class="flex-1 min-w-0 px-2.5 py-1.5 text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
+                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-2 h-full flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                     </button>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 h-full flex items-center justify-center transition-colors flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 h-full flex items-center justify-center gap-1 text-[11px] font-black transition-colors flex-shrink-0">
+                        <span><?= $locale === 'bn' ? 'খুঁজুন' : 'Search' ?></span>
                     </button>
                 </div>
                 <!-- Mobile Slim Live Search Dropdown -->
                 <div id="mobile-slim-live-search-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 hidden max-h-80 overflow-y-auto"></div>
             </form>
-
-            <!-- Mobile Notification Bell -->
-            <button type="button" onclick="openPromoNotificationsDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all text-gray-700 hover:text-emerald-600 cursor-pointer" id="msh-notif-btn" title="অফার ও নোটিফিকেশন">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span id="msh-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none">
-                    0
-                </span>
-            </button>
-
-            <!-- Cart Icon -->
-            <button type="button" onclick="openCartDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all" id="msh-cart-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px] text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span id="msh-cart-badge" class="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none <?= $cartCount > 0 ? '' : 'hidden' ?>">
-                    <?= $cartCount ?>
-                </span>
-            </button>
         </div>
-        <!-- ═══ END SLIM MOBILE HEADER ═══ -->
+        <!-- ═══ END SUPERSTORE MOBILE APP HEADER ═══ -->
         <div class="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6 transition-all duration-200" id="header-top-row">
             
             <!-- Brand Logo -->

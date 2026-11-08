@@ -962,7 +962,7 @@ $isAdminViewer = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '
                            class="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] sm:text-xs transition-all flex items-center gap-1.5 whitespace-nowrap <?= $isScActive ? 'bg-emerald-700 text-white font-black shadow-sm' : 'bg-white hover:bg-emerald-50 text-gray-700 border border-gray-200 font-semibold' ?>">
                             <span><?= htmlspecialchars($sc['name']) ?></span>
                             <?php if (!empty($sc['total_product_count'])): ?>
-                                <span class="text-[9px] px-1.5 py-0.2 rounded-full <?= $isScActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500' ?>"><?= $sc['total_product_count'] ?></span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded-full <?= $isScActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500' ?>"><?= $sc['total_product_count'] ?></span>
                             <?php endif; ?>
                         </a>
                     <?php endforeach; ?>
@@ -992,8 +992,8 @@ $isAdminViewer = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '
 
 <?php else: ?>
 <!-- =========================================================================
-     VARIANT 3: SUPERSTORE MAGAZINE & FLASH SHOWCASE (Shwapno / MeenaClick Style)
-     Bento Hero + Visual Category Grid + Flash Deals Spotlight + Full Catalog
+     VARIANT 3: SUPERSTORE MAGAZINE & FLASH SHOWCASE (Shwapno / MeenaClick Pro)
+     Mobile-First Compact Hero + 4-Col App Category Grid + Swipeable Flash Deals + Sticky Filter Catalog
      ========================================================================= -->
 <?php
     $dealProducts = array_values(array_filter($products, function($p) {
@@ -1001,89 +1001,105 @@ $isAdminViewer = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '
     }));
     $spotlightDeals = array_slice(!empty($dealProducts) ? $dealProducts : $products, 0, 6);
 ?>
-<main class="w-full max-w-[1640px] mx-auto px-3 sm:px-5 py-3.5 sm:py-6 space-y-5 sm:space-y-7">
+<main class="w-full max-w-[1640px] mx-auto px-2.5 sm:px-5 py-2.5 sm:py-5 space-y-3.5 sm:space-y-6">
 
-    <!-- 1. BENTO SUPERSTORE HERO SECTION -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-5">
-        <!-- Main Left Banner (8 cols on desktop) -->
-        <div class="lg:col-span-8 bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-900 rounded-3xl p-5 sm:p-7 lg:p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between border border-emerald-700/40">
-            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-                <div class="space-y-2.5 max-w-xl">
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black shadow-xs">
-                        <span>🌟 সুপারস্টোর স্পেশাল</span>
+    <!-- 1. COMPACT MOBILE-FIRST BENTO HERO & PROMO STRIP -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4">
+        
+        <!-- Main Hero Banner (Side-by-side on mobile & desktop — no wasted vertical empty space!) -->
+        <div class="lg:col-span-8 bg-gradient-to-br from-emerald-950 via-emerald-800 to-teal-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 lg:p-7 text-white shadow-lg relative overflow-hidden flex items-center border border-emerald-700/40">
+            <div class="absolute -right-8 -bottom-8 w-44 h-44 sm:w-64 sm:h-64 bg-amber-400/15 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute left-1/3 -top-10 w-36 h-36 bg-teal-400/10 rounded-full blur-xl pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-row items-center justify-between gap-3 sm:gap-6 w-full">
+                <!-- Left Text & CTA -->
+                <div class="flex-1 min-w-0 space-y-1.5 sm:space-y-2.5">
+                    <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] sm:text-[11px] font-black shadow-2xs">
+                        <span>🌟</span>
+                        <span><?= $locale === 'bn' ? 'সুপারস্টোর স্পেশাল' : 'Superstore Special' ?></span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight text-white">
+
+                    <h1 class="text-base sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-snug sm:leading-tight text-white">
                         <?= htmlspecialchars($bannerTitle) ?>
                     </h1>
-                    <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+
+                    <p class="text-[11px] sm:text-sm text-emerald-100/90 leading-snug line-clamp-2 max-w-xl">
                         <?= htmlspecialchars($bannerSubtitle) ?>
                     </p>
-                    <div class="pt-1 flex items-center gap-2.5 flex-wrap">
-                        <a href="#products" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition-all">
-                            <span>🛒 এখনই বাজার করুন</span>
+
+                    <div class="pt-1 flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+                        <a href="#products" class="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-sm transition-all active:scale-95">
+                            <span>🛒 <?= $locale === 'bn' ? 'এখনই বাজার করুন' : 'Shop Now' ?></span>
                         </a>
-                        <button type="button" onclick="navigator.clipboard.writeText('SODAI50'); showToast('কুপন SODAI50 কপি করা হয়েছে!', 'success')" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-white/20 cursor-pointer">
-                            <span>🎁 কুপন: SODAI50</span>
+                        <button type="button" onclick="navigator.clipboard.writeText('SODAI50'); showToast('কুপন SODAI50 কপি করা হয়েছে!', 'success')" class="inline-flex items-center gap-1 bg-white/15 hover:bg-white/25 text-white font-bold text-[10px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-white/20 cursor-pointer active:scale-95">
+                            <span>🎁 SODAI50</span>
                         </button>
                     </div>
                 </div>
-                <div class="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 flex-shrink-0 bg-white/10 rounded-3xl p-2 border border-white/15 shadow-inner self-center">
-                    <img src="<?= $base ?>/images/grocery_cart_hero.jpg" alt="Superstore Basket" class="w-full h-full object-contain rounded-2xl">
+
+                <!-- Right Compact 3D Grocery Illustration -->
+                <div class="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 flex-shrink-0 bg-white/10 backdrop-blur-xs rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 border border-white/20 shadow-inner relative">
+                    <span class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">🔥 সেরা ডিল</span>
+                    <img src="<?= $base ?>/images/grocery_cart_hero.jpg" alt="Superstore Basket" class="w-full h-full object-contain rounded-xl sm:rounded-2xl">
                 </div>
             </div>
         </div>
 
-        <!-- Right Side Bento Promo Stack (4 cols on desktop) -->
-        <div class="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
+        <!-- Right Side Compact Dual Promo Cards (Sleek horizontal pills on mobile, stacked Bento on desktop) -->
+        <div class="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3.5">
             <!-- Promo Card 1: Flash Deals -->
-            <a href="<?= $base ?>/?deals=1<?= $variantQuerySuffix ?>" class="bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 rounded-3xl p-4 sm:p-5 text-white shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
-                <div class="relative z-10">
-                    <span class="inline-block bg-white/20 backdrop-blur-xs text-white text-[10px] font-black px-2.5 py-0.5 rounded-full mb-1.5">⚡ সীমিত সময়ের অফার</span>
-                    <h3 class="text-sm sm:text-lg font-black leading-snug">মেগা ফ্ল্যাশ ডিলস ও ছাড়</h3>
-                    <p class="text-[11px] text-white/90 mt-0.5 hidden sm:block">সেরা দামে নিত্যপ্রয়োজনীয় বাজার</p>
+            <a href="<?= $base ?>/?deals=1<?= $variantQuerySuffix ?>" class="bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 text-white shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-2 group relative overflow-hidden">
+                <div class="min-w-0 relative z-10">
+                    <span class="inline-block bg-white/25 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full mb-1">⚡ সীমিত অফার</span>
+                    <h3 class="text-xs sm:text-base font-black leading-tight truncate">মেগা ফ্ল্যাশ ডিলস</h3>
+                    <span class="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-extrabold text-amber-100 mt-1 group-hover:translate-x-0.5 transition-transform">
+                        <span>ডিল দেখুন</span>
+                        <span>→</span>
+                    </span>
                 </div>
-                <div class="mt-3 flex items-center justify-between relative z-10">
-                    <span class="text-[11px] sm:text-xs font-black bg-white text-rose-600 px-3 py-1 rounded-xl group-hover:scale-105 transition-transform">ডিল দেখুন →</span>
-                    <span class="text-2xl sm:text-3xl">🔥</span>
+                <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg sm:text-2xl shrink-0 shadow-inner">
+                    🔥
                 </div>
             </a>
 
             <!-- Promo Card 2: Express Delivery & Fresh Guarantee -->
-            <div class="bg-gradient-to-br from-teal-900 to-slate-900 rounded-3xl p-4 sm:p-5 text-white shadow-md flex flex-col justify-between border border-teal-700/40">
-                <div>
-                    <span class="inline-block bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full mb-1.5">🚚 হোম ডেলিভারি</span>
-                    <h3 class="text-sm sm:text-lg font-black leading-snug">
-                        <?= $expressDeliveryEnabled ? "{$expressDeliveryDisplay} এক্সপ্রেস ডেলিভারি" : "১০০% খাঁটি ও তাজা বাজার" ?>
+            <div class="bg-gradient-to-br from-teal-900 via-emerald-950 to-slate-900 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 text-white shadow-sm flex items-center justify-between gap-2 border border-teal-700/40">
+                <div class="min-w-0">
+                    <span class="inline-block bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full mb-1">🚚 হোম ডেলিভারি</span>
+                    <h3 class="text-xs sm:text-base font-black leading-tight truncate">
+                        <?= $expressDeliveryEnabled ? "{$expressDeliveryDisplay} ডেলিভারি" : "১০০% তাজা বাজার" ?>
                     </h3>
-                    <p class="text-[11px] text-teal-200/80 mt-0.5 hidden sm:block">পণ্য হাতে পেয়ে মূল্য পরিশোধের সুবিধা</p>
+                    <span class="block text-[10px] sm:text-xs font-bold text-emerald-300 mt-1 truncate">✓ ক্যাশ অন ডেলিভারি</span>
                 </div>
-                <div class="mt-3 flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-emerald-300">✓ ক্যাশ অন ডেলিভারি</span>
-                    <span class="text-2xl sm:text-3xl">🥦</span>
+                <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-lg sm:text-2xl shrink-0">
+                    🥦
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 2. SHOP BY CATEGORY BENTO GRID ("ক্যাটাগরি অনুযায়ী বাজার করুন") -->
-    <section id="categories" class="bg-white rounded-3xl border border-gray-100 shadow-xs p-4 sm:p-6">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                    <span><?= $locale === 'bn' ? 'ক্যাটাগরি অনুযায়ী বাজার করুন' : 'Shop by Category' ?></span>
+    <!-- 2. COMPACT 4-COLUMN APP CATEGORY GRID ("ক্যাটাগরি অনুযায়ী বাজার করুন") -->
+    <section id="categories" class="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-xs p-3 sm:p-5">
+        <div class="flex items-center justify-between mb-2.5 sm:mb-4">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-4 rounded-full bg-emerald-600"></span>
+                <h2 class="text-sm sm:text-lg font-black text-gray-900 leading-none">
+                    <?= $locale === 'bn' ? 'ক্যাটাগরি অনুযায়ী বাজার করুন' : 'Shop by Category' ?>
                 </h2>
-                <p class="text-xs text-gray-400 mt-0.5"><?= $locale === 'bn' ? 'আপনার প্রয়োজনীয় বিভাগ বেছে নিন' : 'Choose your department' ?></p>
             </div>
             <?php if ($isFiltered): ?>
-                <a href="<?= $base ?>/<?= $variantQueryFirst ?>" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition-colors">
-                    <?= $locale === 'bn' ? 'সকল ক্যাটাগরি দেখুন' : 'Reset Filter' ?>
+                <a href="<?= $base ?>/<?= $variantQueryFirst ?>" class="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-colors">
+                    <?= $locale === 'bn' ? 'সব দেখুন' : 'Reset' ?>
+                </a>
+            <?php else: ?>
+                <a href="<?= $base ?>/category" class="text-[11px] font-bold text-emerald-700 hover:underline">
+                    <?= $locale === 'bn' ? 'সব ক্যাটাগরি →' : 'View All →' ?>
                 </a>
             <?php endif; ?>
         </div>
 
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-11 gap-2.5 sm:gap-3.5">
+        <!-- 4 Columns on Mobile (Clean App Squircle Grid), 6-11 Columns on Desktop -->
+        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-11 gap-2 sm:gap-3">
             <?php foreach ($railCategories as $rc): ?>
                 <?php
                     $isRcActive = !empty($activeCat) && ((int)$activeCat['id'] === (int)$rc['id'] || (!empty($parentCategory) && (int)$parentCategory['id'] === (int)$rc['id']));
@@ -1091,93 +1107,117 @@ $isAdminViewer = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '
                     $catBadge = getCategoryPromoBadge($rc['name'] ?? '');
                 ?>
                 <a href="<?= $base ?>/?category=<?= $rc['id'] ?><?= $variantQuerySuffix ?>" 
-                   class="group rounded-2xl p-2.5 flex flex-col items-center text-center transition-all duration-200 border <?= $isRcActive ? 'bg-emerald-50/70 border-emerald-600 shadow-sm ring-2 ring-emerald-500/20' : 'bg-gray-50/60 hover:bg-emerald-50/40 border-gray-100 hover:border-emerald-300' ?>">
-                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center p-1.5 relative overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
+                   class="group flex flex-col items-center text-center transition-transform active:scale-95">
+                    <div class="w-full aspect-square max-w-[68px] sm:max-w-[74px] rounded-2xl flex items-center justify-center p-1.5 relative overflow-hidden transition-all duration-200 <?= $isRcActive ? 'bg-emerald-50 border-2 border-emerald-600 shadow-sm ring-2 ring-emerald-500/20' : 'bg-gradient-to-b from-gray-50 to-white border border-gray-200/80 group-hover:border-emerald-400 group-hover:shadow-xs' ?>">
                         <?php if ($catBadge): ?>
-                            <span class="absolute top-0.5 right-0.5 <?= $catBadge['cls'] ?> font-black text-[7px] px-1 py-0.5 rounded-full leading-none z-10">
+                            <span class="absolute top-0.5 right-0.5 <?= $catBadge['cls'] ?> font-black text-[6.5px] sm:text-[7px] px-1 py-0.5 rounded-full leading-none z-10 shadow-2xs">
                                 <?= $catBadge['text'] ?>
                             </span>
                         <?php endif; ?>
                         <?php if ($vis['type'] === 'image'): ?>
-                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($rc['name']) ?>" class="w-full h-full object-contain" loading="lazy" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
+                            <img src="<?= htmlspecialchars($vis['val']) ?>" alt="<?= htmlspecialchars($rc['name']) ?>" class="w-full h-full object-contain group-hover:scale-105 transition-transform" loading="lazy" onerror="this.onerror=null; this.src='<?= $base ?>/images/default-category.svg';">
                         <?php else: ?>
                             <span class="text-2xl"><?= $vis['val'] ?></span>
                         <?php endif; ?>
                     </div>
-                    <span class="text-[11px] font-extrabold mt-2 leading-tight line-clamp-2 <?= $isRcActive ? 'text-emerald-900 font-black' : 'text-gray-800 group-hover:text-emerald-800' ?>">
+                    <span class="text-[10px] sm:text-[11px] font-bold mt-1 leading-tight line-clamp-1 w-full px-0.5 <?= $isRcActive ? 'text-emerald-800 font-black' : 'text-gray-700 group-hover:text-emerald-700' ?>">
                         <?= htmlspecialchars($rc['name']) ?>
                     </span>
-                    <?php if (!empty($rc['total_product_count'])): ?>
-                        <span class="text-[9px] text-gray-400 font-semibold mt-0.5"><?= $rc['total_product_count'] ?> পণ্য</span>
-                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
+
+            <!-- 12th Symmetrical Tile on Mobile when 11 categories exist: Flash Deals Tile -->
+            <?php if (count($railCategories) % 4 === 3): ?>
+                <a href="<?= $base ?>/?deals=1<?= $variantQuerySuffix ?>" class="sm:hidden group flex flex-col items-center text-center transition-transform active:scale-95">
+                    <div class="w-full aspect-square max-w-[68px] rounded-2xl flex items-center justify-center p-1.5 relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border border-amber-300/80 shadow-2xs">
+                        <span class="absolute top-0.5 right-0.5 bg-rose-600 text-white font-black text-[6.5px] px-1 py-0.5 rounded-full leading-none">HOT</span>
+                        <span class="text-2xl">⚡</span>
+                    </div>
+                    <span class="text-[10px] font-black mt-1 leading-tight line-clamp-1 text-rose-700">
+                        <?= $locale === 'bn' ? 'মেগা অফার' : 'Mega Deals' ?>
+                    </span>
+                </a>
+            <?php endif; ?>
         </div>
     </section>
 
-    <!-- 3. FLASH DEALS & BEST SELLERS SPOTLIGHT (Shown on Home when unfiltered) -->
+    <!-- 3. HORIZONTAL SWIPEABLE FLASH DEALS & SPOTLIGHT (Single compact row on mobile!) -->
     <?php if (!$isFiltered && count($spotlightDeals) >= 3): ?>
-    <section class="bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-emerald-50/70 rounded-3xl border border-amber-200/70 p-4 sm:p-6 shadow-xs">
-        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center text-lg shadow-xs">🔥</div>
+    <section class="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-emerald-50/60 rounded-2xl sm:rounded-3xl border border-amber-200/80 p-3 sm:p-5 shadow-xs">
+        <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 text-white flex items-center justify-center text-sm sm:text-base shadow-xs shrink-0">🔥</div>
                 <div>
-                    <h2 class="text-base sm:text-lg font-black text-gray-900 leading-tight">
-                        <?= $locale === 'bn' ? 'সেরা অফার ও হাইলাইট পণ্য' : 'Flash Deals & Spotlight' ?>
-                    </h2>
-                    <p class="text-xs text-gray-500"><?= $locale === 'bn' ? 'কাস্টমারদের সবচেয়ে পছন্দের অফারসমূহ' : 'Most loved deals of the day' ?></p>
+                    <div class="flex items-center gap-1.5">
+                        <h2 class="text-sm sm:text-lg font-black text-gray-900 leading-none">
+                            <?= $locale === 'bn' ? 'ফ্ল্যাশ ডিলস ও সেরা অফার' : 'Flash Deals & Spotlight' ?>
+                        </h2>
+                        <span class="hidden sm:inline-block bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                    </div>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5"><?= $locale === 'bn' ? 'সোয়াইপ করে দেখুন আজকের সেরা ছাড়সমূহ' : 'Swipe to explore top deals' ?></p>
                 </div>
             </div>
-            <a href="<?= $base ?>/?deals=1<?= $variantQuerySuffix ?>" class="inline-flex items-center gap-1 text-xs font-black text-rose-600 bg-white hover:bg-rose-50 border border-rose-200 px-3.5 py-1.5 rounded-xl shadow-2xs transition-colors">
-                <span>সব ডিল দেখুন →</span>
+            <a href="<?= $base ?>/?deals=1<?= $variantQuerySuffix ?>" class="inline-flex items-center gap-1 text-[11px] sm:text-xs font-black text-rose-600 bg-white hover:bg-rose-50 border border-rose-200 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-2xs transition-colors shrink-0">
+                <span>সব ডিল →</span>
             </a>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <!-- Horizontal Snap Carousel on Mobile, 6-Col Grid on Desktop -->
+        <div class="flex lg:grid lg:grid-cols-6 gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1">
             <?php foreach ($spotlightDeals as $sIdx => $sProd): ?>
-                <?php renderStorefrontProductCard($sProd, $sIdx + 100, true, $base, $locale, $__, false); ?>
+                <div class="w-[158px] sm:w-[190px] lg:w-auto flex-shrink-0 snap-start">
+                    <?php renderStorefrontProductCard($sProd, $sIdx + 100, true, $base, $locale, $__, true); ?>
+                </div>
             <?php endforeach; ?>
         </div>
     </section>
     <?php endif; ?>
 
-    <!-- 4. ALL PRODUCTS CATALOG WITH FILTER BAR -->
+    <!-- 4. STICKY FILTER BAR & ALL PRODUCTS CATALOG -->
     <section id="products">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-                <h2 class="text-base sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                    <span><?= htmlspecialchars($isFiltered ? ($activeCat['name'] ?? $bannerTitle) : ($locale === 'bn' ? 'সকল নিত্যপ্রয়োজনীয় পণ্যসমূহ' : 'All Daily Essentials')) ?></span>
-                    <span class="text-xs font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        <?= count($products) ?>
-                    </span>
-                </h2>
-            </div>
+        <!-- Sticky Category Filter Pills Header -->
+        <div class="sticky top-[48px] md:top-[68px] z-30 bg-gray-50/95 backdrop-blur-md py-2 -mx-2.5 px-2.5 sm:mx-0 sm:px-0 mb-3 border-b border-gray-200/60 sm:border-none">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm sm:text-xl font-black text-gray-900 flex items-center gap-1.5">
+                        <span class="w-2 h-4 rounded-full bg-emerald-600"></span>
+                        <span><?= htmlspecialchars($isFiltered ? ($activeCat['name'] ?? $bannerTitle) : ($locale === 'bn' ? 'সকল নিত্যপ্রয়োজনীয় পণ্যসমূহ' : 'All Daily Essentials')) ?></span>
+                        <span class="text-[10px] sm:text-xs font-bold bg-emerald-100/80 text-emerald-800 px-2 py-0.5 rounded-full">
+                            <?= count($products) ?>
+                        </span>
+                    </h2>
+                    <?php if ($isFiltered): ?>
+                        <a href="<?= $base ?>/<?= $variantQueryFirst ?>" class="sm:hidden text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                            ✕ মুছুন
+                        </a>
+                    <?php endif; ?>
+                </div>
 
-            <!-- Quick Filter Pills -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                <?php 
-                    $isAllActive = empty($activeSubId) && (!$isFiltered || empty($activeCat));
-                    $allPillUrl = !empty($activeCat) ? ($base . '/?category=' . $activeCat['id'] . $variantQuerySuffix) : ($base . '/' . $variantQueryFirst);
-                ?>
-                <a href="<?= $allPillUrl ?>" class="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all <?= $isAllActive ? 'bg-emerald-700 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200' ?>">
-                    🛒 <?= $locale === 'bn' ? 'সবগুলো' : 'All' ?>
-                </a>
-                <?php foreach ($subs as $sc): ?>
+                <!-- Scrollable Quick Filter Pills -->
+                <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
                     <?php 
-                        $hasChildCats = !empty($childrenMap[$sc['id']]);
-                        if (!$isFiltered) {
-                            $isScActive = false;
-                            $scUrl = $base . '/?category=' . $sc['id'] . $variantQuerySuffix;
-                        } else {
-                            $isScActive = ($activeSubId && (int)$activeSubId === (int)$sc['id']);
-                            $scUrl = $hasChildCats ? ($base . '/?category=' . $sc['id'] . $variantQuerySuffix) : ($base . '/?category=' . ($activeCat['id'] ?? '') . '&sub=' . $sc['id'] . $variantQuerySuffix);
-                        }
+                        $isAllActive = empty($activeSubId) && (!$isFiltered || empty($activeCat));
+                        $allPillUrl = !empty($activeCat) ? ($base . '/?category=' . $activeCat['id'] . $variantQuerySuffix) : ($base . '/' . $variantQueryFirst);
                     ?>
-                    <a href="<?= $scUrl ?>" class="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap <?= $isScActive ? 'bg-emerald-700 text-white font-black shadow-sm' : 'bg-white hover:bg-emerald-50 text-gray-700 border border-gray-200' ?>">
-                        <?= htmlspecialchars($sc['name']) ?>
+                    <a href="<?= $allPillUrl ?>" class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all <?= $isAllActive ? 'bg-emerald-700 text-white shadow-xs' : 'bg-white text-gray-700 border border-gray-200/90' ?>">
+                        🛒 <?= $locale === 'bn' ? 'সবগুলো' : 'All' ?>
                     </a>
-                <?php endforeach; ?>
+                    <?php foreach ($subs as $sc): ?>
+                        <?php 
+                            $hasChildCats = !empty($childrenMap[$sc['id']]);
+                            if (!$isFiltered) {
+                                $isScActive = false;
+                                $scUrl = $base . '/?category=' . $sc['id'] . $variantQuerySuffix;
+                            } else {
+                                $isScActive = ($activeSubId && (int)$activeSubId === (int)$sc['id']);
+                                $scUrl = $hasChildCats ? ($base . '/?category=' . $sc['id'] . $variantQuerySuffix) : ($base . '/?category=' . ($activeCat['id'] ?? '') . '&sub=' . $sc['id'] . $variantQuerySuffix);
+                            }
+                        ?>
+                        <a href="<?= $scUrl ?>" class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap <?= $isScActive ? 'bg-emerald-700 text-white font-black shadow-xs' : 'bg-white hover:bg-emerald-50 text-gray-700 border border-gray-200/90' ?>">
+                            <?= htmlspecialchars($sc['name']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
@@ -1190,7 +1230,7 @@ $isAdminViewer = !empty($_SESSION['user_id']) && in_array($_SESSION['role'] ?? '
                 </a>
             </div>
         <?php else: ?>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4" id="products-catalog-grid">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4" id="products-catalog-grid">
                 <?php foreach ($products as $pIdx => $product): ?>
                     <?php renderStorefrontProductCard($product, $pIdx, $isFiltered, $base, $locale, $__, false); ?>
                 <?php endforeach; ?>
