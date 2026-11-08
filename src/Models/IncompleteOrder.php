@@ -84,7 +84,7 @@ class IncompleteOrder {
             $totalAmount = 0.00;
             if (!empty($cart) && is_array($cart)) {
                 foreach ($cart as $item) {
-                    $qty = intval($item['quantity'] ?? 1);
+                    $qty = floatval($item['quantity'] ?? 1);
                     $price = floatval($item['price'] ?? 0);
                     $itemsCount += $qty;
                     $totalAmount += ($qty * $price);
@@ -372,7 +372,7 @@ class IncompleteOrder {
                 if ($pid) {
                     $unitTitle = $item['variant_title'] ?? null;
                     $baseQty = floatval($item['base_qty'] ?? 1.0);
-                    $qty = intval($item['quantity'] ?? 1);
+                    $qty = floatval($item['quantity'] ?? 1);
                     $price = floatval($item['price'] ?? 0);
                     $stmtItem->execute([$orderId, $pid, $unitTitle, $baseQty, $qty, $price]);
                 }

@@ -177,7 +177,7 @@ class Tracker {
             $cartCount = 0;
             $cartTotal = 0.00;
             foreach ($cart as $item) {
-                $qty = intval($item['quantity'] ?? 1);
+                $qty = floatval($item['quantity'] ?? 1);
                 $cartCount += $qty;
                 $cartTotal += ($qty * floatval($item['price'] ?? 0));
             }
@@ -298,7 +298,7 @@ class Tracker {
             $cartCount = 0;
             $cartTotal = 0.00;
             foreach ($cart as $item) {
-                $qty = intval($item['quantity'] ?? 1);
+                $qty = floatval($item['quantity'] ?? 1);
                 $cartCount += $qty;
                 $cartTotal += ($qty * floatval($item['price'] ?? 0));
             }

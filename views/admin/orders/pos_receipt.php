@@ -187,8 +187,10 @@
                 $items = $order['items'] ?? [];
                 $subtotal = 0;
                 foreach ($items as $item): 
-                    $lineTotal = $item['price'] * $item['quantity'];
+                    $fQty = floatval($item['quantity']);
+                    $lineTotal = $item['price'] * $fQty;
                     $subtotal += $lineTotal;
+                    $qStr = ($fQty == intval($fQty)) ? intval($fQty) : rtrim(rtrim(number_format($fQty, 3), '0'), '.');
                 ?>
                 <tr>
                     <td class="text-left">
@@ -196,10 +198,13 @@
                         <?php if (!empty($item['unit_title'])): ?>
                             <span class="variant-pill"><?= htmlspecialchars($item['unit_title']) ?></span>
                         <?php endif; ?>
+                        <?php if (!empty($item['actual_weight_note'])): ?>
+                            <div style="font-size: 9px; color: #444; font-style: italic;">* <?= htmlspecialchars($item['actual_weight_note']) ?></div>
+                        <?php endif; ?>
                     </td>
-                    <td class="text-center font-bold"><?= $item['quantity'] ?></td>
-                    <td class="text-right"><?= number_format($item['price'], 0) ?></td>
-                    <td class="text-right font-bold"><?= number_format($lineTotal, 0) ?></td>
+                    <td class="text-center font-bold"><?= $qStr ?></td>
+                    <td class="text-right"><?= number_format($item['price'], 2) ?></td>
+                    <td class="text-right font-bold"><?= number_format($lineTotal, 2) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

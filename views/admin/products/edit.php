@@ -641,6 +641,28 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                         </div>
                     </div>
 
+                    <!-- 1-Click Fast Size Pack Presets Bar -->
+                    <div class="mb-4 p-3 bg-gradient-to-r from-emerald-50/70 via-amber-50/50 to-blue-50/50 border border-secondary-200/90 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">⚡</span>
+                            <div>
+                                <span class="font-bold text-secondary-900">১-ক্লিকে সাইজ প্রিসেট যোগ করুন:</span>
+                                <span class="text-[11px] text-secondary-500 ml-1">কাঁচা সবজি, ফল, মাছ-মাংসের স্ট্যান্ডার্ড প্যাক</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onclick="applyQuickVariantPreset('veg_fruit')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-[11px] transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                                <span>🥬 সবজি/ফল (২৫০g, ৫০০g, ১kg)</span>
+                            </button>
+                            <button type="button" onclick="applyQuickVariantPreset('fish_meat')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-50 border border-amber-300 text-amber-900 font-bold text-[11px] transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                                <span>🐟 মাছ/মাংস (৫০০g, ১kg, ১.৫kg, ২kg)</span>
+                            </button>
+                            <button type="button" onclick="applyQuickVariantPreset('grocery_bulk')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-blue-50 border border-blue-300 text-blue-900 font-bold text-[11px] transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                                <span>📦 গ্রোসারি বাল্ক (১kg, ২kg, ৫kg বস্তা)</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="overflow-hidden border border-secondary-200 rounded-2xl bg-white shadow-2xs">
                         <!-- Preset Suggestions Datalist for Fast 1-Click Offer Suggestions -->
                         <datalist id="variant-offer-presets">
@@ -753,6 +775,20 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
                             পণ্যের মূল বিক্রয় মূল্য (Selling Price) পরিবর্তন করলে সকল সাইজের মূল্য স্বয়ংক্রিয়ভাবে আপডেট হবে।
                         </span>
                         <span class="text-secondary-400 text-[10px]">ডিফল্ট সাইজের মূল্য পরিবর্তন করলে মূল বিক্রয় মূল্যও সিঙ্ক হবে</span>
+                    </div>
+
+                    <!-- Catch-Weight Variable Weight Products Notice -->
+                    <div class="mt-3.5 p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200 text-purple-950 text-xs flex items-start gap-2.5">
+                        <ion-icon name="information-circle" class="text-xl text-purple-600 shrink-0 mt-0.5"></ion-icon>
+                        <div class="leading-relaxed">
+                            <strong class="font-bold text-purple-950">কাঁচা পণ্য (মাছ, মাংস, শাকসবজি, ফল) বিক্রয় ও বিলিং সংক্রান্ত প্রফেশনাল গাইড:</strong>
+                            <p class="text-[11px] text-purple-900/90 mt-1 space-y-1">
+                                যেসব পণ্য কেজিতে কেনা হয় কিন্তু বিক্রির সময় বিভিন্ন সাইজে মাপা হয় (যেমন: ২০০ গ্রাম, ১ কেজি ১২০ গ্রাম বা ১.১ কেজি):<br>
+                                <strong>১. অনলাইন স্টোরফ্রন্ট:</strong> এখানে আনুমানিক সাইজগুলো (যেমন ২৫০ গ্রাম, ৫০০ গ্রাম, ১ কেজি) বানিয়ে রাখুন যাতে কাস্টমার তার প্রয়োজন অনুযায়ী সহজে সিলেক্ট করে অর্ডার করতে পারেন।<br>
+                                <strong>২. অনলাইন অর্ডার প্যাকেজিং:</strong> কাস্টমার ১ কেজি মাছ অর্ডার করার পর ওজন করে যদি ১ কেজি ১০০ গ্রাম (১.১০০ কেজি) পান, তবে <strong>Order Details</strong> পেজে আইটেমের পাশে <strong>"আসল ওজন সমন্বয়"</strong> বাটনে ক্লিক করে ১.১ কেজি ইনপুট দিলেই সিস্টেম স্বয়ংক্রিয়ভাবে সঠিক বিল সমন্বয় (+৳৩০) করবে এবং স্টক ঠিক রাখবে।<br>
+                                <strong>৩. POS বিক্রয় কাউন্টার:</strong> কাউন্টারে বিক্রির সময় POS কার্টের <strong>"⚖️ ওজন"</strong> বাটনে ক্লিক করে অথবা সরাসরি বক্সে <strong>১.১</strong> বা <strong>০.২</strong> টাইপ করলেই সেকেন্ডের মধ্যে সঠিক দাম অনুযায়ী রসিদ প্রিন্ট হবে।
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -1464,8 +1500,9 @@ function onPurchaseUnitSelectChange(selectEl) {
             }
         }
     }
+}
 
-   // Add Variant Row
+// Add Variant Row
 function addVariantRow(title = '', qty = 1, price = '', isDefault = false, offer = '', offerLimit = 'unlimited') {
     const tbody = document.getElementById('variants-tbody');
     const emptyState = document.getElementById('variants-empty-state');
@@ -1703,16 +1740,76 @@ function onVariantDefaultChange(checkbox) {
     }
 }
 
+// 1-Click Fast Size Pack Preset Generator
+function applyQuickVariantPreset(preset) {
+    const tbody = document.getElementById('variants-tbody');
+    const existingRows = tbody ? tbody.querySelectorAll('tr.variant-row') : [];
+    
+    // If variants already exist, ask if user wants to replace or append
+    if (existingRows.length > 0) {
+        if (!confirm('বর্তমান ভ্যারিয়েন্টগুলো প্রতিস্থাপন করে প্রিসেট ভ্যারিয়েন্ট যোগ করতে চান? (OK চাপলে প্রতিস্থাপন হবে)')) {
+            return;
+        }
+        tbody.innerHTML = '';
+        variantCount = 0;
+    }
+
+    const currentSell = parseFloat(document.getElementById('sell_price').value) || 0;
+    let presetsToApply = [];
+    let presetTitle = '';
+
+    if (preset === 'veg_fruit') {
+        presetTitle = 'সবজি ও ফল';
+        presetsToApply = [
+            { title: '২৫০ গ্রাম', qty: 0.25, isDefault: false },
+            { title: '৫০০ গ্রাম', qty: 0.5, isDefault: false },
+            { title: '১ কেজি', qty: 1, isDefault: true }
+        ];
+    } else if (preset === 'fish_meat') {
+        presetTitle = 'মাছ ও মাংস';
+        presetsToApply = [
+            { title: '৫০০ গ্রাম', qty: 0.5, isDefault: false },
+            { title: '১ কেজি', qty: 1, isDefault: true },
+            { title: '১.৫ কেজি', qty: 1.5, isDefault: false },
+            { title: '২ কেজি', qty: 2, isDefault: false }
+        ];
+    } else if (preset === 'grocery_bulk') {
+        presetTitle = 'গ্রোসারি বাল্ক';
+        presetsToApply = [
+            { title: '১ কেজি', qty: 1, isDefault: true },
+            { title: '২ কেজি', qty: 2, isDefault: false },
+            { title: '৫ কেজি', qty: 5, isDefault: false }
+        ];
+    }
+
+    presetsToApply.forEach(item => {
+        const itemPrice = currentSell > 0 ? (Math.round(currentSell * item.qty * 100) / 100) : '';
+        addVariantRow(item.title, item.qty, itemPrice, item.isDefault);
+    });
+
+    showToastNotification(`⚡ "${presetTitle}" প্রিসেটের ${presetsToApply.length}টি ভ্যারিয়েন্ট সফলভাবে যোগ করা হয়েছে!`);
+}
+
 // Synchronize all variant prices with current sell_price based on each variant's quantity ratio
 function syncVariantsWithSellPrice(targetPrice = null, skipInput = null, showNotification = false) {
     const sellPrice = (targetPrice !== null && targetPrice !== undefined)
         ? parseFloat(targetPrice)
         : (parseFloat(document.getElementById('sell_price').value) || 0);
 
-    if (sellPrice <= 0) return;
+    if (sellPrice <= 0) {
+        if (showNotification) {
+            showToastNotification('অনুগ্রহ করে পণ্যের সঠিক বিক্রয় মূল্য (Selling Price) দিন!', 'error');
+        }
+        return;
+    }
 
     const rows = document.querySelectorAll('#variants-tbody tr.variant-row');
-    if (!rows || rows.length === 0) return;
+    if (!rows || rows.length === 0) {
+        if (showNotification) {
+            showToastNotification('কোনো ভ্যারিয়েন্ট নেই। প্রথমে "Add Size Variant" বা কুইক প্রিসেট যোগ করুন!', 'info');
+        }
+        return;
+    }
 
     let updatedCount = 0;
     rows.forEach(row => {
@@ -1740,21 +1837,23 @@ function syncVariantsWithSellPrice(targetPrice = null, skipInput = null, showNot
     }
 }
 
-function showToastNotification(msg) {
+function showToastNotification(msg, type = 'success') {
     let toast = document.getElementById('variant-sync-toast');
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'variant-sync-toast';
-        toast.className = 'fixed bottom-6 right-6 z-50 bg-emerald-800 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2';
         document.body.appendChild(toast);
     }
-    toast.innerHTML = `<ion-icon name="checkmark-circle" class="text-base text-emerald-300"></ion-icon> <span>${msg}</span>`;
+    const bgClass = type === 'error' ? 'bg-red-800' : (type === 'info' ? 'bg-amber-800' : 'bg-emerald-800');
+    const iconName = type === 'error' ? 'alert-circle' : (type === 'info' ? 'information-circle' : 'checkmark-circle');
+    toast.className = `fixed bottom-6 right-6 z-50 ${bgClass} text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2`;
+    toast.innerHTML = `<ion-icon name="${iconName}" class="text-base"></ion-icon> <span>${msg}</span>`;
     toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
     toast.classList.add('opacity-100', 'translate-y-0');
     setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
-    }, 3000);
+    }, 3200);
 }
 
 // Update UI Labels when Base Unit changes

@@ -11,6 +11,38 @@ class Order {
     public function __construct() {
         $config = require __DIR__ . '/../../config/database.php';
         $this->db = new Database($config);
+        $this->ensureSchema();
+    }
+
+    /**
+     * Ensure required columns exist for decimal catch weights and item adjustment notes
+     */
+    public function ensureSchema() {
+        static $ensured = false;
+        if ($ensured) return;
+        $ensured = true;
+
+        try {
+            $stmt = $this->db->query("SHOW COLUMNS FROM order_items");
+            $existingCols = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+            if (!in_array('actual_weight_note', $existingCols)) {
+                try {
+                    $this->db->query("ALTER TABLE order_items ADD COLUMN actual_weight_note VARCHAR(255) NULL AFTER price");
+                } catch (\Throwable $e) {}
+            }
+
+            // Ensure quantity and base_qty are decimals to handle fractional weights (e.g. 1.100 kg, 0.200 kg)
+            try {
+                $this->db->query("ALTER TABLE order_items MODIFY COLUMN quantity DECIMAL(10,3) NOT NULL DEFAULT 1.000");
+            } catch (\Throwable $e) {}
+
+            try {
+                $this->db->query("ALTER TABLE order_items MODIFY COLUMN base_qty DECIMAL(10,3) NOT NULL DEFAULT 1.000");
+            } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            // Silently continue if database is not reachable at construct
+        }
     }
 
     public function all() {
@@ -290,6 +322,89 @@ class Order {
         return true;
     }
 
+    /**
+     * Professional ERP Catch-Weight Adjustment for Weighed Products (মাছ, মাংস, সবজি ইত্যাদি)
+     * Adjusts the exact measured weight of an item, recalculates line total and order total,
+     * updates inventory stock accordingly, and creates an audit tracking log.
+     */
+    public function adjustItemWeight($orderId, $itemId, $newQuantity, $reason = '', $changedBy = 'admin') {
+        $order = $this->find($orderId);
+        if (!$order) return ['success' => false, 'error' => 'Order not found'];
+
+        $stmt = $this->db->query("SELECT oi.*, p.name as product_name, p.base_unit FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.id = :id AND oi.order_id = :order_id", [
+            'id' => $itemId,
+            'order_id' => $orderId
+        ]);
+        $item = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$item) return ['success' => false, 'error' => 'Order item not found'];
+
+        $oldQty = floatval($item['quantity']);
+        $newQty = floatval($newQuantity);
+        if ($newQty <= 0) return ['success' => false, 'error' => 'Invalid quantity/weight'];
+
+        $unitPrice = floatval($item['price']);
+        $baseQty = floatval($item['base_qty'] ?? 1.000);
+        if ($baseQty <= 0) $baseQty = 1.000;
+
+        $oldLineTotal = round($oldQty * $unitPrice, 2);
+        $newLineTotal = round($newQty * $unitPrice, 2);
+        $diff = round($newLineTotal - $oldLineTotal, 2);
+
+        $oldOrderTotal = floatval($order['total_amount']);
+        $newOrderTotal = max(0, round($oldOrderTotal + $diff, 2));
+
+        $defaultNote = "ওজন সমন্বয়: {$oldQty} এর বদলে আসল ওজন {$newQty} " . ($item['base_unit'] ?? 'kg');
+        $note = !empty($reason) ? $reason : $defaultNote;
+
+        $pdo = $this->db->getPDO();
+        try {
+            $pdo->beginTransaction();
+
+            // 1. Update order_items
+            $stmtUpdateItem = $pdo->prepare("UPDATE order_items SET quantity = :qty, actual_weight_note = :note WHERE id = :id");
+            $stmtUpdateItem->execute([
+                'qty' => $newQty,
+                'note' => $note,
+                'id' => $itemId
+            ]);
+
+            // 2. Update orders total_amount
+            $stmtUpdateOrder = $pdo->prepare("UPDATE orders SET total_amount = :total, amount_changed_by = :changed_by, amount_change_reason = :reason, updated_at = NOW() WHERE id = :id");
+            $stmtUpdateOrder->execute([
+                'total' => $newOrderTotal,
+                'changed_by' => $changedBy,
+                'reason' => $note,
+                'id' => $orderId
+            ]);
+
+            // 3. Update stock difference: (newQty - oldQty) * baseQty
+            $stockDiff = round(($newQty - $oldQty) * $baseQty, 3);
+            if (abs($stockDiff) > 0.0001) {
+                $stmtStock = $pdo->prepare("UPDATE products SET stock_qty = stock_qty - :diff WHERE id = :pid");
+                $stmtStock->execute([
+                    'diff' => $stockDiff,
+                    'pid' => $item['product_id']
+                ]);
+            }
+
+            // 4. Add audit tracking log
+            $diffText = ($diff >= 0) ? ("+৳" . number_format($diff, 2)) : ("-৳" . number_format(abs($diff), 2));
+            $unitStr = $item['base_unit'] ?? 'kg';
+            $logMessage = "আইটেম ওজন সমন্বয়: [{$item['product_name']}] {$oldQty} {$unitStr} এর স্থলে প্রকৃত ওজন {$newQty} {$unitStr} মাপা হয়েছে (বিল সমন্বয়: {$diffText})। নোট: {$note}";
+            $this->addTrackingLog($orderId, $order['status'] ?? 'processing', $logMessage);
+
+            $pdo->commit();
+            return [
+                'success' => true,
+                'new_total' => $newOrderTotal,
+                'message' => "আইটেম ওজন ও বিল সফলভাবে সমন্বয় করা হয়েছে! নতুন মোট বিল: ৳" . number_format($newOrderTotal, 2)
+            ];
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
     public function updateNotes($orderId, $adminNote = null, $riderNote = null) {
         $updates = [];
         $params = ['id' => $orderId];
@@ -383,7 +498,7 @@ class Order {
 
             foreach ($items as $item) {
                 $baseQty = floatval($item['base_qty'] ?? 1.000);
-                $qtyOrdered = intval($item['quantity']);
+                $qtyOrdered = floatval($item['quantity']);
                 $deductStock = $baseQty * $qtyOrdered;
                 $unitTitle = !empty($item['unit_title']) ? $item['unit_title'] : null;
 
@@ -472,7 +587,7 @@ class Order {
 
             foreach ($items as $item) {
                 $baseQty = floatval($item['base_qty'] ?? 1.000);
-                $qtyOrdered = intval($item['quantity']);
+                $qtyOrdered = floatval($item['quantity']);
                 $deductStock = $baseQty * $qtyOrdered;
                 $unitTitle = !empty($item['unit_title']) ? $item['unit_title'] : null;
 
@@ -555,7 +670,7 @@ class Order {
 
             foreach ($items as $item) {
                 $baseQty = floatval($item['base_qty'] ?? 1.000);
-                $qtyOrdered = intval($item['quantity']);
+                $qtyOrdered = floatval($item['quantity']);
                 $deductStock = $baseQty * $qtyOrdered;
                 $unitTitle = !empty($item['unit_title']) ? $item['unit_title'] : null;
 

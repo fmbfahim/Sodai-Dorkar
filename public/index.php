@@ -295,6 +295,7 @@ $router->get('/admin/orders/invoice', 'OrderController@invoice');
 $router->get('/admin/orders/pos-receipt', 'OrderController@posReceipt');
 $router->get('/admin/orders/label', 'OrderController@label');
 $router->post('/admin/orders/adjust-amount', 'OrderController@adjustAmount');
+$router->post('/admin/orders/adjust-item-weight', 'OrderController@adjustItemWeight');
 $router->post('/admin/orders/update-notes', 'OrderController@updateNotes');
 $router->get('/admin/orders/returns', 'OrderController@returns');
 $router->post('/admin/orders/process-return', 'OrderController@processReturn');

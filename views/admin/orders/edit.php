@@ -176,21 +176,22 @@ $existingDelivery = floatval($order['delivery_charge'] ?? 0);
         if (!aggregatedItems[pid]) {
             aggregatedItems[pid] = { ...si, quantity: 0 };
         }
-        aggregatedItems[pid].quantity += parseInt(si.quantity);
+        aggregatedItems[pid].quantity += parseFloat(si.quantity) || 0;
         // Keep latest price or valid price
         aggregatedItems[pid].price = parseFloat(si.price); 
     });
 
     let cart = Object.values(aggregatedItems).map(si => {
         const prod = products.find(p => p.id == si.product_id);
-        const maxStock = prod ? parseInt(prod.stock_qty) : 0;
+        const maxStock = prod ? parseFloat(prod.stock_qty) : 0;
         // Important: When editing, "Available Max" = "Current Order Qty (Summed)" + "Current DB Stock".
-        const realMax = maxStock + parseInt(si.quantity);
+        const curQty = parseFloat(si.quantity) || 0;
+        const realMax = maxStock + curQty;
         
         return {
             id: parseInt(si.product_id),
             name: si.product_name,
-            qty: parseInt(si.quantity),
+            qty: curQty,
             price: parseFloat(si.price),
             max: realMax 
         };
@@ -329,9 +330,9 @@ $existingDelivery = floatval($order['delivery_charge'] ?? 0);
             <tr class="group hover:bg-secondary-50">
                 <td class="px-3 py-2 align-middle text-xs font-medium text-secondary-800 line-clamp-2">${item.name}</td>
                 <td class="px-1 py-1 align-middle">
-                    <div class="flex items-center justify-center border border-secondary-200 rounded-md overflow-hidden h-7 w-20">
+                    <div class="flex items-center justify-center border border-secondary-200 rounded-md overflow-hidden h-7 w-24">
                         <button onclick="changeQty(${item.id}, -1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600"><ion-icon name="remove" class="text-xs"></ion-icon></button>
-                        <input type="number" min="1" value="${item.qty}" onchange="manualQty(${item.id}, this.value)" class="w-8 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-800 font-bold bg-white">
+                        <input type="number" step="any" min="0.001" value="${item.qty}" onchange="manualQty(${item.id}, this.value)" class="w-12 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-800 font-bold bg-white" title="সরাসরি ওজন বা পরিমাণ লিখুন">
                         <button onclick="changeQty(${item.id}, 1)" class="w-6 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-600"><ion-icon name="add" class="text-xs"></ion-icon></button>
                     </div>
                 </td>
@@ -346,9 +347,11 @@ $existingDelivery = floatval($order['delivery_charge'] ?? 0);
     function manualQty(id, val) {
         const item = cart.find(i => i.id === id);
         if (item) {
-            const parsed = parseInt(val) || 1;
-            item.qty = Math.max(1, parsed);
-            renderCart();
+            const parsed = parseFloat(val);
+            if (!isNaN(parsed) && parsed > 0) {
+                item.qty = Math.round(parsed * 1000) / 1000;
+                renderCart();
+            }
         }
     }
 

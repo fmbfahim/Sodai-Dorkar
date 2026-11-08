@@ -139,7 +139,7 @@ class OrderController extends Controller {
                             'image' => $item['image_path'] ?? ''
                         ];
                     }
-                    $pickList[$key]['qty'] += intval($item['quantity']);
+                    $pickList[$key]['qty'] += floatval($item['quantity']);
                 }
             }
         }
@@ -492,6 +492,36 @@ class OrderController extends Controller {
         }
 
         $redirect = $_POST['redirect'] ?? ('/sodai-dorkar/public/admin/orders/show?id=' . $orderId);
+        $this->redirect($redirect);
+        exit;
+    }
+
+    /**
+     * Catch-Weight Item Adjustment endpoint
+     * Updates item actual weighed weight, recalculates totals and stock
+     */
+    public function adjustItemWeight() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+
+        $orderId = intval($_POST['order_id'] ?? 0);
+        $itemId = intval($_POST['item_id'] ?? 0);
+        $newQuantity = floatval($_POST['actual_quantity'] ?? 0);
+        $reason = trim($_POST['weight_reason'] ?? '');
+
+        if ($orderId > 0 && $itemId > 0 && $newQuantity > 0) {
+            $orderModel = new Order();
+            $res = $orderModel->adjustItemWeight($orderId, $itemId, $newQuantity, $reason, 'admin');
+            if (!empty($res['success'])) {
+                $_SESSION['success'] = $res['message'];
+            } else {
+                $_SESSION['error'] = $res['error'] ?? 'ওজন সমন্বয় করতে সমস্যা হয়েছে।';
+            }
+        } else {
+            $_SESSION['error'] = 'সঠিক অর্ডার, আইটেম ও ওজন ইনপুট দিন।';
+        }
+
+        $redirect = $_POST['redirect'] ?? ($base . '/admin/orders/show?id=' . $orderId);
         $this->redirect($redirect);
         exit;
     }

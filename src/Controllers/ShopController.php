@@ -1173,8 +1173,8 @@ class ShopController {
         $subtotal = 0;
         $totalWeightKg = 0;
         foreach ($cart as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
-            $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+            $subtotal += floatval($item['price']) * floatval($item['quantity'] ?? 1);
+            $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * floatval($item['quantity'] ?? 1);
         }
 
         // Calculate delivery charge
@@ -1257,8 +1257,8 @@ class ShopController {
                 $subtotal = 0;
                 $totalWeightKg = 0;
                 foreach ($cart as $item) {
-                    $subtotal += $item['price'] * $item['quantity'];
-                    $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+                    $subtotal += floatval($item['price']) * floatval($item['quantity'] ?? 1);
+                    $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * floatval($item['quantity'] ?? 1);
                 }
 
                 $ecommerceSettings = \Models\Setting::getMultiple([
@@ -1394,7 +1394,7 @@ class ShopController {
                     if (!$pCheck || !in_array($pCheck['availability_status'] ?? '', ['in_stock', 'available'])) {
                         throw new \Exception("পণ্য '{$item['name']}' বর্তমানে স্টকে নেই বা বিক্রির জন্য প্রস্তুত নয়।");
                     }
-                    $qtyOrdered = intval($item['quantity'] ?? 1);
+                    $qtyOrdered = floatval($item['quantity'] ?? 1);
                     $baseQty = floatval($item['base_qty'] ?? 1.0);
                     $price = floatval($item['price'] ?? 0);
                     $unitTitle = $item['variant_title'] ?? ($item['unit_title'] ?? ($item['selling_unit'] ?? null));
@@ -1570,8 +1570,8 @@ class ShopController {
             $subtotal = 0;
             $totalWeightKg = 0;
             foreach ($cart as $item) {
-                $subtotal += floatval($item['price']) * intval($item['quantity']);
-                $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * intval($item['quantity'] ?? 1);
+                $subtotal += floatval($item['price']) * floatval($item['quantity'] ?? 1);
+                $totalWeightKg += floatval($item['base_qty'] ?? 1.0) * floatval($item['quantity'] ?? 1);
             }
 
             $areaId = $customer['area_id'] ?? null;
@@ -1610,7 +1610,7 @@ class ShopController {
 
             foreach ($cart as $key => $item) {
                 $pid = $item['product_id'] ?? $key;
-                $qty = intval($item['quantity'] ?? 1);
+                $qty = floatval($item['quantity'] ?? 1);
                 $price = floatval($item['price'] ?? 0);
                 $unitTitle = $item['variant_title'] ?? ($item['unit_title'] ?? ($item['selling_unit'] ?? ''));
                 $baseQty = floatval($item['base_qty'] ?? 1.0);

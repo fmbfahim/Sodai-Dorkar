@@ -60,15 +60,25 @@
                 $items = $order['items'] ?? [];
                 $subtotal = 0;
                 foreach($items as $index => $item): 
-                    $lineTotal = $item['price'] * $item['quantity'];
+                    $fQty = floatval($item['quantity']);
+                    $lineTotal = $item['price'] * $fQty;
                     $subtotal += $lineTotal;
+                    $qtyStr = ($fQty == intval($fQty)) ? intval($fQty) : rtrim(rtrim(number_format($fQty, 3), '0'), '.');
                 ?>
                 <tr class="border-b border-gray-100">
                     <td class="py-2 text-gray-500"><?php echo $index + 1; ?></td>
-                    <td class="py-2 text-gray-800"><?php echo htmlspecialchars($item['product_name']); ?></td>
-                    <td class="py-2 text-center text-gray-600"><?php echo $item['quantity']; ?></td>
+                    <td class="py-2 text-gray-800">
+                        <div class="font-medium"><?php echo htmlspecialchars($item['product_name']); ?></div>
+                        <?php if (!empty($item['unit_title'])): ?>
+                            <span class="text-[10px] bg-gray-100 text-gray-700 font-bold px-1.5 py-0.5 rounded"><?php echo htmlspecialchars($item['unit_title']); ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($item['actual_weight_note'])): ?>
+                            <div class="text-[10px] text-amber-700 italic">* <?php echo htmlspecialchars($item['actual_weight_note']); ?></div>
+                        <?php endif; ?>
+                    </td>
+                    <td class="py-2 text-center text-gray-700 font-bold"><?php echo $qtyStr; ?></td>
                     <td class="py-2 text-right text-gray-600"><?php echo formatPrice($item['price']); ?></td>
-                    <td class="py-2 text-right text-gray-800 font-medium"><?php echo formatPrice($lineTotal); ?></td>
+                    <td class="py-2 text-right text-gray-800 font-bold"><?php echo formatPrice($lineTotal); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

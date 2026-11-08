@@ -193,14 +193,14 @@ class DeliveryController extends Controller {
                     $stmt = $db->query("SELECT quantity, price FROM order_items WHERE id = ? AND order_id = ?", [$itemId, $orderId]);
                     $orderItem = $stmt->fetch();
                     if ($orderItem) {
-                        $originalQty = intval($orderItem['quantity']);
+                        $originalQty = floatval($orderItem['quantity']);
 
-                        $returnQty = isset($item['return_qty']) ? max(0, intval($item['return_qty'])) : 0;
-                        $damageQty = isset($item['damage_qty']) ? max(0, intval($item['damage_qty'])) : 0;
+                        $returnQty = isset($item['return_qty']) ? max(0, floatval($item['return_qty'])) : 0;
+                        $damageQty = isset($item['damage_qty']) ? max(0, floatval($item['damage_qty'])) : 0;
 
                         // If deliver_qty is explicitly supplied and return_qty was omitted
                         if (isset($item['deliver_qty']) && !isset($item['return_qty'])) {
-                            $deliverQty = min($originalQty, max(0, intval($item['deliver_qty'])));
+                            $deliverQty = min($originalQty, max(0, floatval($item['deliver_qty'])));
                             $damageQty = min($damageQty, $originalQty - $deliverQty);
                             $returnQty = max(0, $originalQty - $deliverQty - $damageQty);
                         } else {
@@ -227,7 +227,7 @@ class DeliveryController extends Controller {
                 $itemsAfterMod = $db->query("SELECT quantity, return_qty, damage_qty, price FROM order_items WHERE order_id = ?", [$orderId])->fetchAll();
                 $itemsTotal = 0;
                 foreach ($itemsAfterMod as $it) {
-                    $effectiveQty = max(0, intval($it['quantity']) - intval($it['return_qty'] ?? 0) - intval($it['damage_qty'] ?? 0));
+                    $effectiveQty = max(0, floatval($it['quantity']) - floatval($it['return_qty'] ?? 0) - floatval($it['damage_qty'] ?? 0));
                     $itemsTotal += ($effectiveQty * floatval($it['price']));
                 }
 

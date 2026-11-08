@@ -233,14 +233,36 @@ function getPosProductVariants($product) {
                             <?php endforeach; ?>
                         </div>
 
-                        <!-- Add Button -->
-                        <button type="button" 
-                                onclick="addCardProductToCart(this)" 
-                                class="w-full py-1.5 px-1.5 sm:px-2 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300 hover:border-amber-600' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600' ?> font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95 mt-auto"
-                                title="<?= $isOutOfStock ? 'স্টক আউট পণ্য (অর্ডার নেওয়া যাবে)' : 'কার্টে যোগ করুন' ?>">
-                            <ion-icon name="cart-outline" class="text-xs sm:text-sm"></ion-icon>
-                            <span><?= $isOutOfStock ? '+ Add (স্টক আউট)' : '+ Add' ?></span>
-                        </button>
+                        <!-- Add / Weight Actions -->
+                        <?php 
+                            $isWeightProduct = ($baseUnit === 'kg' || $baseUnit === 'gm' || ($p['unit_type'] ?? '') === 'weight');
+                        ?>
+                        <?php if ($isWeightProduct): ?>
+                            <div class="flex items-center gap-1 mt-auto">
+                                <button type="button" 
+                                        onclick="addCardProductToCart(this)" 
+                                        class="flex-1 py-1.5 px-1 sm:px-1.5 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200' ?> font-bold text-[10px] sm:text-xs flex items-center justify-center gap-0.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                                        title="<?= $isOutOfStock ? 'স্টক আউট পণ্য' : 'কার্টে যোগ করুন' ?>">
+                                    <ion-icon name="cart-outline" class="text-xs"></ion-icon>
+                                    <span>+ Add</span>
+                                </button>
+                                <button type="button" 
+                                        onclick="openPosCardWeightModal(this)" 
+                                        class="py-1.5 px-2 rounded-lg bg-amber-50 hover:bg-amber-500 text-amber-900 hover:text-white border border-amber-300 font-bold text-[10px] sm:text-xs flex items-center justify-center gap-0.5 transition-all shadow-2xs cursor-pointer active:scale-95 shrink-0" 
+                                        title="কাঁচা সবজি, ফল, মাছ বা মাংস সরাসরি মেপে কার্টে যোগ করুন">
+                                    <ion-icon name="scale-outline" class="text-xs text-amber-600"></ion-icon>
+                                    <span>⚖️ মেপে</span>
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <button type="button" 
+                                    onclick="addCardProductToCart(this)" 
+                                    class="w-full py-1.5 px-1.5 sm:px-2 rounded-lg <?= $isOutOfStock ? 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300 hover:border-amber-600' : 'bg-primary-50 hover:bg-primary-600 text-primary-700 hover:text-white border border-primary-200 hover:border-primary-600' ?> font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95 mt-auto"
+                                    title="<?= $isOutOfStock ? 'স্টক আউট পণ্য (অর্ডার নেওয়া যাবে)' : 'কার্টে যোগ করুন' ?>">
+                                <ion-icon name="cart-outline" class="text-xs sm:text-sm"></ion-icon>
+                                <span><?= $isOutOfStock ? '+ Add (স্টক আউট)' : '+ Add' ?></span>
+                            </button>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; endif; ?>
 
@@ -514,6 +536,77 @@ function getPosProductVariants($product) {
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- POS Weighing Scale Modal (কাঁচা পণ্য ওজন ও পরিমাপক) -->
+<div id="posWeightModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl relative border border-secondary-100">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-secondary-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                    <ion-icon name="scale" class="text-lg"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="font-black text-sm text-secondary-900">ওজন স্কেল (Weighing Scale)</h3>
+                    <p class="text-[10px] text-secondary-400">কাঁচা পণ্যের সঠিক ওজন মেপে দিন</p>
+                </div>
+            </div>
+            <button type="button" onclick="closePosWeightModal()" class="text-secondary-400 hover:text-secondary-600 cursor-pointer p-1">
+                <ion-icon name="close-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <div class="space-y-3.5">
+            <!-- Product Card -->
+            <div class="p-2.5 bg-secondary-50/80 rounded-xl border border-secondary-200/80">
+                <div class="font-bold text-secondary-900 text-xs" id="posWeightItemTitle"></div>
+                <div class="text-[11px] text-secondary-500 mt-0.5">দর: ৳ <strong id="posWeightItemPrice" class="text-emerald-700 font-mono">0.00</strong> / ইউনিট</div>
+            </div>
+
+            <!-- Mode Switcher (Kg vs Gm) -->
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="text-[11px] font-bold text-secondary-700 uppercase tracking-wider">ওজন বা মাপ:</label>
+                    <div class="inline-flex rounded-lg border border-secondary-200 bg-secondary-100 p-0.5 text-[10px] font-bold">
+                        <button type="button" id="posWeightKgBtn" onclick="switchPosWeightMode('kg')" class="px-2 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs font-bold">কেজি (kg)</button>
+                        <button type="button" id="posWeightGmBtn" onclick="switchPosWeightMode('gm')" class="px-2 py-0.5 rounded-md text-secondary-500 hover:text-secondary-900 font-bold">গ্রাম (gm)</button>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <input type="number" step="any" min="0.001" id="posWeightInput" oninput="onPosWeightInputChange()" class="w-full pl-3 pr-20 py-2 border-2 border-amber-300 rounded-xl text-base font-black bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono text-secondary-900" placeholder="1.1">
+                    <span id="posWeightUnitSuffix" class="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-secondary-500 pointer-events-none">কেজি (kg)</span>
+                </div>
+
+                <!-- Presets -->
+                <div class="flex flex-wrap gap-1 mt-2 text-[10px]">
+                    <span class="text-secondary-400 font-bold self-center text-[9px]">কুইক:</span>
+                    <button type="button" onclick="setQuickPosWeight(0.100)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">১০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(0.200)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">২০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(0.250)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">২৫০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(0.500)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">৫০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(1.000)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">১ কেজি</button>
+                    <button type="button" onclick="setQuickPosWeight(1.100)" class="px-1.5 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded">১ কেজি ১০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(1.200)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">১ কেজি ২০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickPosWeight(1.500)" class="px-1.5 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded">১.৫ কেজি</button>
+                </div>
+            </div>
+
+            <!-- Live Calculation -->
+            <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-xs">
+                <span class="font-bold text-amber-900">মোট লাইন বিল:</span>
+                <span class="font-black text-sm font-mono text-emerald-700">৳ <span id="posWeightCalculatedPrice">0.00</span></span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button type="button" onclick="closePosWeightModal()" class="w-full py-2 rounded-xl border border-secondary-200 text-secondary-600 font-bold text-xs hover:bg-secondary-50 cursor-pointer">বাতিল</button>
+                <button type="button" onclick="applyPosWeightToItem()" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer flex items-center justify-center gap-1">
+                    <ion-icon name="checkmark-circle" class="text-sm"></ion-icon>
+                    <span>ওজন প্রয়োগ করুন</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1107,15 +1200,15 @@ function getPosProductVariants($product) {
         renderCart();
     }
 
-    // Manual input for quantity
+    // Manual input for quantity (supports decimal weights like 1.100, 0.200)
     function manualQty(cartKey, val) {
         const item = cart.find(i => i.cartKey === cartKey);
         if (!item) return;
 
-        let v = parseInt(val);
-        if (isNaN(v) || v < 1) v = 1;
+        let v = parseFloat(val);
+        if (isNaN(v) || v <= 0) v = 1;
 
-        item.qty = v;
+        item.qty = Math.round(v * 1000) / 1000;
         renderCart();
     }
 
@@ -1197,15 +1290,22 @@ function getPosProductVariants($product) {
                             </button>
                         </div>
                         
-                        <!-- Stepper & Price Row -->
-                        <div class="flex items-center justify-between mt-2 pt-1 border-t border-dashed border-secondary-100">
-                            <div class="inline-flex items-center border border-secondary-200 rounded-lg overflow-hidden h-7 bg-white shadow-2xs">
-                                <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">−</button>
-                                <input type="number" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-8 sm:w-9 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold bg-white">
-                                <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">+</button>
+                        <!-- Stepper, Scale Helper & Price Row -->
+                        <div class="flex items-center justify-between mt-2 pt-1 border-t border-dashed border-secondary-100 gap-1.5">
+                            <div class="flex items-center gap-1">
+                                <div class="inline-flex items-center border border-secondary-200 rounded-lg overflow-hidden h-7 bg-white shadow-2xs">
+                                    <button type="button" onclick="changeQty('${item.cartKey}', -1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">−</button>
+                                    <input type="number" step="any" min="0.001" value="${item.qty}" onchange="manualQty('${item.cartKey}', this.value)" class="w-12 sm:w-14 h-full text-center text-xs border-none focus:ring-0 p-0 text-secondary-900 font-bold bg-white" title="সরাসরি ওজন বা পরিমাণ লিখুন">
+                                    <button type="button" onclick="changeQty('${item.cartKey}', 1)" class="w-6 sm:w-7 h-full bg-secondary-50 hover:bg-secondary-100 flex items-center justify-center text-secondary-700 font-black text-xs cursor-pointer active:bg-secondary-200 transition-colors">+</button>
+                                </div>
+                                <button type="button" onclick="openPosWeightModal('${item.cartKey}')" class="px-1.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-0.5 cursor-pointer transition-colors shadow-2xs" title="কাঁচা মাছ, মাংস বা সবজির আসল ওজন ইনপুট দিন">
+                                    <ion-icon name="scale-outline" class="text-xs text-amber-600"></ion-icon>
+                                    <span>⚖️ ওজন</span>
+                                </button>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs sm:text-sm font-black text-primary-700">৳ ${Number(item.price * item.qty).toLocaleString()}</span>
+                                <span class="text-xs sm:text-sm font-black text-primary-700">৳ ${Number(Math.round(item.price * item.qty * 100) / 100).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
+                                ${(item.qty !== 1) ? `<div class="text-[9px] text-secondary-400 font-bold leading-none mt-0.5">${item.qty} ${item.baseUnit || ''}</div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1632,4 +1732,165 @@ function getPosProductVariants($product) {
         });
         <?php endif; ?>
     <?php endif; ?>
+
+    // --- POS WEIGHING SCALE / CATCH WEIGHT JS ---
+    let activePosWeightTarget = null; // Can be a cartKey string OR a card element
+    let posWeightMode = 'kg'; // 'kg' or 'gm'
+
+    function openPosWeightModal(cartKey) {
+        const item = cart.find(i => i.cartKey === cartKey);
+        if (!item) return;
+
+        activePosWeightTarget = { type: 'cart_item', item: item };
+        posWeightMode = 'kg';
+
+        document.getElementById('posWeightItemTitle').textContent = item.name + (item.variant_title ? ` (${item.variant_title})` : '');
+        document.getElementById('posWeightItemPrice').textContent = Number(item.price).toFixed(2);
+
+        const input = document.getElementById('posWeightInput');
+        input.value = item.qty;
+
+        switchPosWeightMode('kg');
+        onPosWeightInputChange();
+
+        document.getElementById('posWeightModal').classList.remove('hidden');
+        input.focus();
+        input.select();
+    }
+
+    function openPosCardWeightModal(btn) {
+        const card = btn.closest('.pos-product-card');
+        if (!card) return;
+
+        const productId = parseInt(card.dataset.productId);
+        const name = card.querySelector('h4').innerText.trim();
+        const variantTitle = card.dataset.activeVariantTitle || '';
+        const price = parseFloat(card.dataset.activeVariantPrice || 0);
+        const baseQty = parseFloat(card.dataset.activeVariantQty || 1.000);
+        const maxStock = parseFloat(card.dataset.stock || 0);
+        const isOutOfStock = (card.dataset.isOutOfStock === '1' || maxStock <= 0);
+        const baseUnit = card.dataset.baseUnit || 'kg';
+        const imgEl = card.querySelector('img');
+        const image = card.dataset.image || (imgEl ? imgEl.src : baseUrl + '/images/default-product.svg');
+
+        activePosWeightTarget = {
+            type: 'card',
+            cardData: {
+                productId, name, variantTitle, price, baseQty, maxStock, isOutOfStock, baseUnit, image
+            }
+        };
+        posWeightMode = 'kg';
+
+        document.getElementById('posWeightItemTitle').textContent = name + (variantTitle ? ` (${variantTitle})` : '');
+        document.getElementById('posWeightItemPrice').textContent = price.toFixed(2);
+
+        const input = document.getElementById('posWeightInput');
+        input.value = 1;
+
+        switchPosWeightMode('kg');
+        onPosWeightInputChange();
+
+        document.getElementById('posWeightModal').classList.remove('hidden');
+        input.focus();
+        input.select();
+    }
+
+    function closePosWeightModal() {
+        document.getElementById('posWeightModal').classList.add('hidden');
+        activePosWeightTarget = null;
+    }
+
+    function switchPosWeightMode(mode) {
+        posWeightMode = mode;
+        const btnKg = document.getElementById('posWeightKgBtn');
+        const btnGm = document.getElementById('posWeightGmBtn');
+        const suffix = document.getElementById('posWeightUnitSuffix');
+        const input = document.getElementById('posWeightInput');
+
+        const curKg = parseFloat(input.dataset.kgValue || input.value) || 1;
+
+        if (mode === 'gm') {
+            btnGm.className = 'px-2 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs font-bold';
+            btnKg.className = 'px-2 py-0.5 rounded-md text-secondary-500 hover:text-secondary-900 font-bold';
+            suffix.textContent = 'গ্রাম (gm)';
+            input.value = Math.round(curKg * 1000);
+            input.step = '1';
+        } else {
+            btnKg.className = 'px-2 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs font-bold';
+            btnGm.className = 'px-2 py-0.5 rounded-md text-secondary-500 hover:text-secondary-900 font-bold';
+            suffix.textContent = 'কেজি (kg)';
+            input.value = curKg;
+            input.step = '0.001';
+        }
+        onPosWeightInputChange();
+    }
+
+    function setQuickPosWeight(kgVal) {
+        const input = document.getElementById('posWeightInput');
+        if (posWeightMode === 'gm') {
+            input.value = Math.round(kgVal * 1000);
+        } else {
+            input.value = kgVal;
+        }
+        onPosWeightInputChange();
+    }
+
+    function onPosWeightInputChange() {
+        if (!activePosWeightTarget) return;
+        const input = document.getElementById('posWeightInput');
+        const rawVal = parseFloat(input.value) || 0;
+        const actualKg = (posWeightMode === 'gm') ? (rawVal / 1000) : rawVal;
+        input.dataset.kgValue = actualKg;
+
+        let price = 0;
+        if (activePosWeightTarget.type === 'cart_item') {
+            price = activePosWeightTarget.item.price;
+        } else if (activePosWeightTarget.type === 'card') {
+            price = activePosWeightTarget.cardData.price;
+        }
+
+        const calculated = Math.round(price * actualKg * 100) / 100;
+        document.getElementById('posWeightCalculatedPrice').textContent = calculated.toFixed(2);
+    }
+
+    function applyPosWeightToItem() {
+        if (!activePosWeightTarget) return;
+        const input = document.getElementById('posWeightInput');
+        const rawVal = parseFloat(input.value) || 0;
+        const actualKg = (posWeightMode === 'gm') ? (rawVal / 1000) : rawVal;
+        const finalWeight = Math.round(actualKg * 1000) / 1000;
+
+        if (finalWeight <= 0) {
+            alert('সঠিক ওজন ইনপুট দিন');
+            return;
+        }
+
+        if (activePosWeightTarget.type === 'cart_item') {
+            activePosWeightTarget.item.qty = finalWeight;
+        } else if (activePosWeightTarget.type === 'card') {
+            const cd = activePosWeightTarget.cardData;
+            const cartKey = cd.productId + '_' + cd.variantTitle;
+            const existing = cart.find(i => i.cartKey === cartKey);
+            if (existing) {
+                existing.qty = finalWeight;
+            } else {
+                cart.push({
+                    cartKey: cartKey,
+                    id: cd.productId,
+                    name: cd.name,
+                    image: cd.image,
+                    variant_title: cd.variantTitle,
+                    price: cd.price,
+                    baseQty: cd.baseQty,
+                    qty: finalWeight,
+                    maxStock: cd.maxStock,
+                    isOutOfStock: cd.isOutOfStock,
+                    baseUnit: cd.baseUnit
+                });
+            }
+        }
+
+        closePosWeightModal();
+        renderCart();
+    }
 </script>

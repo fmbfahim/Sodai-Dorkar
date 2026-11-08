@@ -130,28 +130,56 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
             <thead class="bg-secondary-50 text-secondary-500 border-b border-secondary-200">
                 <tr>
                     <th class="py-3 font-medium">Item</th>
-                    <th class="py-3 font-medium text-center">Qty</th>
+                    <th class="py-3 font-medium text-center">Qty / Weight</th>
                     <th class="py-3 font-medium text-right">Price</th>
                     <th class="py-3 font-medium text-right">Total</th>
+                    <?php if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled'): ?>
+                        <th class="py-3 font-medium text-center print:hidden w-36">Action</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody class="divide-y divide-secondary-100">
-                <?php foreach ($order['items'] as $item): ?>
+                <?php foreach ($order['items'] as $item): 
+                    $fQty = floatval($item['quantity']);
+                    $qtyDisplay = ($fQty == intval($fQty)) ? intval($fQty) : rtrim(rtrim(number_format($fQty, 3), '0'), '.');
+                ?>
                 <tr>
                     <td class="py-4">
                         <div class="font-medium text-secondary-900 flex items-center gap-2 flex-wrap">
-                            <span><?php echo htmlspecialchars($item['product_name']); ?></span>
+                            <span class="font-bold"><?php echo htmlspecialchars($item['product_name']); ?></span>
                             <?php if (!empty($item['unit_title'])): ?>
                                 <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                                     <?php echo htmlspecialchars($item['unit_title']); ?>
                                 </span>
                             <?php endif; ?>
                         </div>
-                        <div class="text-xs text-secondary-400 font-mono"><?php echo htmlspecialchars($item['sku'] ?? ''); ?></div>
+                        <div class="text-xs text-secondary-400 font-mono mt-0.5"><?php echo htmlspecialchars($item['sku'] ?? ''); ?></div>
+                        <?php if (!empty($item['actual_weight_note'])): ?>
+                            <div class="mt-1 inline-flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md text-[11px] font-bold text-amber-900 shadow-2xs">
+                                <ion-icon name="scale" class="text-xs text-amber-600"></ion-icon>
+                                <span><?php echo htmlspecialchars($item['actual_weight_note']); ?></span>
+                            </div>
+                        <?php endif; ?>
                     </td>
-                    <td class="py-4 text-center"><?php echo $item['quantity']; ?></td>
+                    <td class="py-4 text-center font-bold text-secondary-800">
+                        <span><?php echo $qtyDisplay; ?></span>
+                        <span class="text-[11px] text-secondary-400 font-medium block">
+                            <?php echo htmlspecialchars($item['base_unit'] ?? ''); ?>
+                        </span>
+                    </td>
                     <td class="py-4 text-right">৳ <?php echo formatPrice($item['price']); ?></td>
-                    <td class="py-4 text-right font-medium text-secondary-900">৳ <?php echo formatPrice($item['price'] * $item['quantity']); ?></td>
+                    <td class="py-4 text-right font-black text-secondary-900">৳ <?php echo formatPrice($item['price'] * $fQty); ?></td>
+                    <?php if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled'): ?>
+                        <td class="py-4 text-center print:hidden">
+                            <button type="button" 
+                                    onclick='openCatchWeightModal(<?php echo json_encode($item, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)' 
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                                    title="কাঁচা সবজি, ফল, মাছ বা মাংসের আসল মাপা ওজন অনুযায়ী বিল ও স্টক সমন্বয় করুন">
+                                <ion-icon name="scale-outline" class="text-sm text-amber-600"></ion-icon>
+                                <span>আসল ওজন সমন্বয়</span>
+                            </button>
+                        </td>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -424,6 +452,113 @@ $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false
     </div>
 </div>
 
+<!-- Admin Catch-Weight Item Adjustment Modal (মাছ, মাংস, সবজির আসল ওজন ও বিল সমন্বয়) -->
+<div id="catchWeightModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+        <div class="flex justify-between items-center mb-4 pb-2 border-b border-secondary-100">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shadow-2xs">
+                    <ion-icon name="scale" class="text-xl"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="font-black text-base text-secondary-900">আসল ওজন ও বিল সমন্বয়</h3>
+                    <p class="text-xs text-secondary-400">Actual Catch-Weight Adjustment</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCatchWeightModal()" class="text-secondary-400 hover:text-secondary-600 cursor-pointer">
+                <ion-icon name="close" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form action="<?= $base ?>/admin/orders/adjust-item-weight" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= \Core\CSRF::token() ?>">
+            <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+            <input type="hidden" name="item_id" id="cwItemId" value="">
+
+            <!-- Product Info Card -->
+            <div class="p-3 bg-secondary-50/80 rounded-2xl border border-secondary-200/80">
+                <div class="font-bold text-secondary-900 text-sm" id="cwProductName"></div>
+                <div class="flex items-center gap-2 mt-1 text-xs text-secondary-600">
+                    <span>প্রতি ইউনিট/কেজি দর: ৳ <strong id="cwUnitPrice" class="text-emerald-700 font-mono"></strong></span>
+                    <span>•</span>
+                    <span>বর্তমান রেকর্ড: <strong id="cwOldQty" class="text-secondary-800 font-mono"></strong></span>
+                </div>
+            </div>
+
+            <!-- Weight Input Mode (Kg / Gm) -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-secondary-700 uppercase tracking-wider">আসল মাপা ওজন (Actual Weight) *</label>
+                    <div class="inline-flex rounded-lg border border-secondary-200 bg-secondary-50 p-0.5 text-[11px] font-bold">
+                        <button type="button" id="cwUnitKgBtn" onclick="switchCwUnitMode('kg')" class="px-2.5 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs">কেজি (kg)</button>
+                        <button type="button" id="cwUnitGmBtn" onclick="switchCwUnitMode('gm')" class="px-2.5 py-0.5 rounded-md text-secondary-500 hover:text-secondary-800">গ্রাম (gm)</button>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <input type="number" step="any" min="0.001" id="cwWeightInput" required 
+                           oninput="onCwWeightInputChange()"
+                           placeholder="যেমন: ১.১ বা ১.১২" 
+                           class="w-full pl-3 pr-20 py-2.5 border-2 border-amber-300 rounded-xl text-base font-black bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono text-secondary-900">
+                    <span id="cwUnitSuffix" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-xs font-bold text-secondary-500 pointer-events-none">কেজি (kg)</span>
+                </div>
+                <input type="hidden" name="actual_quantity" id="cwFinalQuantityInput" value="">
+                
+                <!-- Quick Helper Buttons -->
+                <div class="flex flex-wrap gap-1.5 mt-2 text-[11px]">
+                    <span class="text-secondary-400 font-bold self-center text-[10px]">কুইক প্রিসেট:</span>
+                    <button type="button" onclick="setQuickCwWeight(0.200)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">২০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickCwWeight(0.250)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">২৫০ গ্রাম</button>
+                    <button type="button" onclick="setQuickCwWeight(0.500)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">৫০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickCwWeight(1.000)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">১ কেজি</button>
+                    <button type="button" onclick="setQuickCwWeight(1.100)" class="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-md">১ কেজি ১০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickCwWeight(1.200)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">১ কেজি ২০০ গ্রাম</button>
+                    <button type="button" onclick="setQuickCwWeight(1.500)" class="px-2 py-0.5 bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-bold rounded-md">১.৫ কেজি</button>
+                </div>
+            </div>
+
+            <!-- Live Calculation Summary Card -->
+            <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2 text-xs">
+                <div class="flex justify-between items-center text-secondary-600">
+                    <span>পূর্ববর্তী আইটেম বিল:</span>
+                    <span class="font-bold font-mono">৳ <span id="cwOldTotal">0.00</span></span>
+                </div>
+                <div class="flex justify-between items-center text-amber-900 font-bold">
+                    <span>সংশোধিত নতুন আইটেম বিল:</span>
+                    <span class="font-black text-sm font-mono text-emerald-700">৳ <span id="cwNewTotal">0.00</span></span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-amber-200/80 font-bold">
+                    <span>অর্ডারের মোট বিল পরিবর্তন:</span>
+                    <span id="cwDiffBadge" class="font-black font-mono text-xs px-2 py-0.5 rounded-full bg-white border border-amber-200"></span>
+                </div>
+                <div class="flex justify-between items-center pt-1 text-secondary-700 text-xs font-bold">
+                    <span>সংশোধিত মোট অর্ডার বিল:</span>
+                    <span class="font-black text-sm text-primary-700 font-mono">৳ <span id="cwNewOrderTotal">0.00</span></span>
+                </div>
+            </div>
+
+            <!-- Reason / Audit Note -->
+            <div>
+                <label class="block text-xs font-bold text-secondary-700 mb-1 uppercase tracking-wider">সমন্বয়ের কারণ / কাস্টমার নোট</label>
+                <input type="text" name="weight_reason" id="cwReasonInput" 
+                       placeholder="যেমন: ১ কেজি মাছের প্রকৃত ওজন ১ কেজি ১০০ গ্রাম পাওয়া গেছে" 
+                       class="w-full px-3 py-2 border border-secondary-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary-500 focus:outline-none">
+            </div>
+
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="closeCatchWeightModal()" class="w-full py-2.5 rounded-xl border border-secondary-200 text-secondary-600 font-bold text-xs hover:bg-secondary-50 transition-colors cursor-pointer">
+                    বাতিল
+                </button>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                    <ion-icon name="checkmark-circle" class="text-base"></ion-icon>
+                    <span>ওজন ও বিল সেভ করুন</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="max-w-4xl mx-auto mt-6 flex justify-end gap-3 print:hidden">
     <a href="<?= $base ?>/admin/orders" class="px-4 py-2 text-secondary-600 bg-white border border-secondary-200 rounded-lg font-medium hover:bg-secondary-50">Back to List</a>
     <a href="<?= $base ?>/admin/orders/edit?id=<?php echo $order['id']; ?>" class="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700 flex items-center">
@@ -519,4 +654,120 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
+// --- CATCH WEIGHT ADJUSTMENT MODAL JS ---
+let currentCwItem = null;
+let currentCwUnitMode = 'kg'; // 'kg' or 'gm'
+const orderCurrentTotal = <?= floatval($order['total_amount']) ?>;
+
+function openCatchWeightModal(item) {
+    currentCwItem = item;
+    currentCwUnitMode = 'kg';
+    
+    document.getElementById('cwItemId').value = item.id;
+    document.getElementById('cwProductName').textContent = item.product_name + (item.unit_title ? ` (${item.unit_title})` : '');
+    document.getElementById('cwUnitPrice').textContent = Number(item.price).toFixed(2);
+    
+    const qty = parseFloat(item.quantity) || 1;
+    const unit = item.base_unit || 'kg';
+    document.getElementById('cwOldQty').textContent = `${qty} ${unit}`;
+    
+    const oldLineTotal = Math.round(qty * parseFloat(item.price) * 100) / 100;
+    document.getElementById('cwOldTotal').textContent = oldLineTotal.toFixed(2);
+    
+    // Set initial input value
+    const input = document.getElementById('cwWeightInput');
+    input.value = qty;
+    
+    switchCwUnitMode('kg');
+    onCwWeightInputChange();
+    
+    document.getElementById('catchWeightModal').classList.remove('hidden');
+    input.focus();
+    input.select();
+}
+
+function closeCatchWeightModal() {
+    document.getElementById('catchWeightModal').classList.add('hidden');
+    currentCwItem = null;
+}
+
+function switchCwUnitMode(mode) {
+    currentCwUnitMode = mode;
+    const btnKg = document.getElementById('cwUnitKgBtn');
+    const btnGm = document.getElementById('cwUnitGmBtn');
+    const suffix = document.getElementById('cwUnitSuffix');
+    const input = document.getElementById('cwWeightInput');
+
+    const curKg = parseFloat(document.getElementById('cwFinalQuantityInput').value) || (parseFloat(input.value) || 1);
+
+    if (mode === 'gm') {
+        btnGm.className = 'px-2.5 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs font-bold';
+        btnKg.className = 'px-2.5 py-0.5 rounded-md text-secondary-500 hover:text-secondary-800 font-bold';
+        suffix.textContent = 'গ্রাম (gm)';
+        input.value = Math.round(curKg * 1000);
+        input.step = '1';
+    } else {
+        btnKg.className = 'px-2.5 py-0.5 rounded-md bg-white text-secondary-900 shadow-2xs font-bold';
+        btnGm.className = 'px-2.5 py-0.5 rounded-md text-secondary-500 hover:text-secondary-800 font-bold';
+        suffix.textContent = 'কেজি (kg)';
+        input.value = curKg;
+        input.step = '0.001';
+    }
+    onCwWeightInputChange();
+}
+
+function setQuickCwWeight(kgVal) {
+    const input = document.getElementById('cwWeightInput');
+    if (currentCwUnitMode === 'gm') {
+        input.value = Math.round(kgVal * 1000);
+    } else {
+        input.value = kgVal;
+    }
+    onCwWeightInputChange();
+}
+
+function onCwWeightInputChange() {
+    if (!currentCwItem) return;
+    const input = document.getElementById('cwWeightInput');
+    const rawVal = parseFloat(input.value) || 0;
+    
+    // Convert to Kg if typed in grams
+    const actualKg = (currentCwUnitMode === 'gm') ? (rawVal / 1000) : rawVal;
+    document.getElementById('cwFinalQuantityInput').value = actualKg;
+
+    const unitPrice = parseFloat(currentCwItem.price) || 0;
+    const oldQty = parseFloat(currentCwItem.quantity) || 1;
+    const oldTotal = Math.round(oldQty * unitPrice * 100) / 100;
+    const newTotal = Math.round(actualKg * unitPrice * 100) / 100;
+    const diff = Math.round((newTotal - oldTotal) * 100) / 100;
+
+    document.getElementById('cwNewTotal').textContent = newTotal.toFixed(2);
+    
+    const diffBadge = document.getElementById('cwDiffBadge');
+    if (diff > 0) {
+        diffBadge.textContent = `+ ৳${diff.toFixed(2)} (বিল বৃদ্ধি)`;
+        diffBadge.className = 'font-black font-mono text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+    } else if (diff < 0) {
+        diffBadge.textContent = `- ৳${Math.abs(diff).toFixed(2)} (বিল হ্রাস)`;
+        diffBadge.className = 'font-black font-mono text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300';
+    } else {
+        diffBadge.textContent = '৳0.00 (অপরিবর্তিত)';
+        diffBadge.className = 'font-black font-mono text-xs px-2 py-0.5 rounded-full bg-secondary-100 text-secondary-700 border border-secondary-200';
+    }
+
+    const newOrderTotal = Math.max(0, Math.round((orderCurrentTotal + diff) * 100) / 100);
+    document.getElementById('cwNewOrderTotal').textContent = newOrderTotal.toFixed(2);
+
+    // Auto suggest helpful reason
+    const reasonInput = document.getElementById('cwReasonInput');
+    if (reasonInput && (!reasonInput.value || reasonInput.value.startsWith('ওজন অনুযায়ী সমন্বয়'))) {
+        reasonInput.value = `ওজন অনুযায়ী সমন্বয়: ${oldQty} কেজির বদলে প্রকৃত ওজন ${actualKg} কেজি পাওয়া গেছে (${diff >= 0 ? '+' : '-'}৳${Math.abs(diff).toFixed(2)})`;
+    }
+}
+
+// Close on escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCatchWeightModal();
+    }
+});
