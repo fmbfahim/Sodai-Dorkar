@@ -622,13 +622,14 @@ class Order {
             $pdo->beginTransaction();
 
             // 1. Get current items to restore stock
-            $stmtOld = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = :order_id");
+            $stmtOld = $pdo->prepare("SELECT product_id, quantity, base_qty FROM order_items WHERE order_id = :order_id");
             $stmtOld->execute(['order_id' => $orderId]);
             $oldItems = $stmtOld->fetchAll(PDO::FETCH_ASSOC);
 
             $stmtRestore = $pdo->prepare("UPDATE products SET stock_qty = stock_qty + :qty WHERE id = :id");
             foreach ($oldItems as $item) {
-                $stmtRestore->execute(['qty' => $item['quantity'], 'id' => $item['product_id']]);
+                $restoreStock = floatval($item['base_qty'] ?? 1.000) * floatval($item['quantity']);
+                $stmtRestore->execute(['qty' => $restoreStock, 'id' => $item['product_id']]);
             }
 
             // 2. Delete old items
