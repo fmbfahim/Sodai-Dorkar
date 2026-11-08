@@ -2,6 +2,7 @@
 // views/admin/orders/create.php
 
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$posAllowCustomPrice = (\Models\Setting::getValue('pos_allow_custom_price', '0') === '1');
 
 // Helper function to decode product variants for POS
 function getPosProductVariants($product) {
@@ -561,7 +562,19 @@ function getPosProductVariants($product) {
             <!-- Product Card -->
             <div class="p-2.5 bg-secondary-50/80 rounded-xl border border-secondary-200/80">
                 <div class="font-bold text-secondary-900 text-xs" id="posWeightItemTitle"></div>
-                <div class="text-[11px] text-secondary-500 mt-0.5">দর: ৳ <strong id="posWeightItemPrice" class="text-emerald-700 font-mono">0.00</strong> / ইউনিট</div>
+                <?php if ($posAllowCustomPrice): ?>
+                    <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-secondary-200/70">
+                        <span class="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                            <span>✏️ ইউনিট বিক্রয় দর (৳):</span>
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs font-bold text-secondary-500">৳</span>
+                            <input type="number" step="any" min="0" id="posWeightCustomRateInput" oninput="onPosWeightCustomRateChange()" class="w-24 px-2 py-1 text-xs font-black text-emerald-700 bg-white border border-amber-300 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs" placeholder="0.00">
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="text-[11px] text-secondary-500 mt-0.5">দর: ৳ <strong id="posWeightItemPrice" class="text-emerald-700 font-mono">0.00</strong> / ইউনিট</div>
+                <?php endif; ?>
             </div>
 
             <!-- Mode Switcher (Kg vs Gm) -->
@@ -1212,6 +1225,27 @@ function getPosProductVariants($product) {
         renderCart();
     }
 
+    // Manual input for item selling price (when POS custom price edit is enabled)
+    function manualPrice(cartKey, val, isBlur = false) {
+        const item = cart.find(i => i.cartKey === cartKey);
+        if (!item) return;
+        const parsed = parseFloat(val);
+        if (!isNaN(parsed) && parsed >= 0) {
+            item.price = Math.round(parsed * 100) / 100;
+            const lineTotalEl = document.getElementById(`cart-line-total-${cartKey}`);
+            if (lineTotalEl) {
+                lineTotalEl.innerText = '৳ ' + Number(Math.round(item.price * item.qty * 100) / 100).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+            }
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const subEl = document.getElementById('cartSubtotal');
+            if (subEl) subEl.innerText = '৳ ' + subtotal.toFixed(2);
+            calculateTotal();
+        }
+        if (isBlur) {
+            renderCart();
+        }
+    }
+
     // Remove Item from Cart
     function removeItem(cartKey) {
         cart = cart.filter(i => i.cartKey !== cartKey);
@@ -1280,7 +1314,19 @@ function getPosProductVariants($product) {
                                             স্টক আউট
                                         </span>
                                     ` : ''}
-                                    <span class="text-[10px] sm:text-[11px] text-secondary-400 font-medium">৳ ${Number(item.price).toLocaleString()} / ইউনিট</span>
+                                    <?php if ($posAllowCustomPrice): ?>
+                                        <div class="inline-flex items-center gap-1 bg-amber-50/90 border border-amber-300 rounded-lg px-1.5 py-0.5 shadow-2xs mt-0.5" title="কাউন্টারে বিক্রয় দর পরিবর্তন করুন">
+                                            <span class="text-[9px] font-black text-amber-800">৳ দর:</span>
+                                            <input type="number" step="any" min="0" value="${item.price}" 
+                                                   oninput="manualPrice('${item.cartKey}', this.value)" 
+                                                   onblur="manualPrice('${item.cartKey}', this.value, true)"
+                                                   class="w-14 sm:w-16 text-center text-[11px] sm:text-xs font-black text-emerald-700 bg-white border border-amber-300 rounded px-1 py-0.2 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs" 
+                                                   placeholder="0.00">
+                                            <span class="text-[9px] font-bold text-amber-700">/${item.baseUnit || 'ইউনিট'}</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-[10px] sm:text-[11px] text-secondary-400 font-medium">৳ ${Number(item.price).toLocaleString()} / ইউনিট</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             
@@ -1304,7 +1350,7 @@ function getPosProductVariants($product) {
                                 </button>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs sm:text-sm font-black text-primary-700">৳ ${Number(Math.round(item.price * item.qty * 100) / 100).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
+                                <span id="cart-line-total-${item.cartKey}" class="text-xs sm:text-sm font-black text-primary-700">৳ ${Number(Math.round(item.price * item.qty * 100) / 100).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
                                 ${(item.qty !== 1) ? `<div class="text-[9px] text-secondary-400 font-bold leading-none mt-0.5">${item.qty} ${item.baseUnit || ''}</div>` : ''}
                             </div>
                         </div>
@@ -1745,7 +1791,10 @@ function getPosProductVariants($product) {
         posWeightMode = 'kg';
 
         document.getElementById('posWeightItemTitle').textContent = item.name + (item.variant_title ? ` (${item.variant_title})` : '');
-        document.getElementById('posWeightItemPrice').textContent = Number(item.price).toFixed(2);
+        const priceDisplay = document.getElementById('posWeightItemPrice');
+        if (priceDisplay) priceDisplay.textContent = Number(item.price).toFixed(2);
+        const customRateInput = document.getElementById('posWeightCustomRateInput');
+        if (customRateInput) customRateInput.value = item.price;
 
         const input = document.getElementById('posWeightInput');
         input.value = item.qty;
@@ -1782,7 +1831,10 @@ function getPosProductVariants($product) {
         posWeightMode = 'kg';
 
         document.getElementById('posWeightItemTitle').textContent = name + (variantTitle ? ` (${variantTitle})` : '');
-        document.getElementById('posWeightItemPrice').textContent = price.toFixed(2);
+        const priceCardDisplay = document.getElementById('posWeightItemPrice');
+        if (priceCardDisplay) priceCardDisplay.textContent = price.toFixed(2);
+        const customRateInput = document.getElementById('posWeightCustomRateInput');
+        if (customRateInput) customRateInput.value = price;
 
         const input = document.getElementById('posWeightInput');
         input.value = 1;
@@ -1833,6 +1885,22 @@ function getPosProductVariants($product) {
             input.value = kgVal;
         }
         onPosWeightInputChange();
+    }
+
+    function onPosWeightCustomRateChange() {
+        if (!activePosWeightTarget) return;
+        const rateInput = document.getElementById('posWeightCustomRateInput');
+        if (!rateInput) return;
+        const newRate = parseFloat(rateInput.value);
+        if (!isNaN(newRate) && newRate >= 0) {
+            const rounded = Math.round(newRate * 100) / 100;
+            if (activePosWeightTarget.type === 'cart_item') {
+                activePosWeightTarget.item.price = rounded;
+            } else if (activePosWeightTarget.type === 'card') {
+                activePosWeightTarget.cardData.price = rounded;
+            }
+            onPosWeightInputChange();
+        }
     }
 
     function onPosWeightInputChange() {

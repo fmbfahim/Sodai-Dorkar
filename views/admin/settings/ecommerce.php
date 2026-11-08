@@ -487,6 +487,29 @@
                         </span>
                     </label>
                 </div>
+
+                <!-- Point of Sale (POS) Allow Custom Price -->
+                <div class="flex items-start justify-between gap-4 pt-5">
+                    <div class="space-y-1">
+                        <label class="font-bold text-xs sm:text-sm text-secondary-800 cursor-pointer flex items-center gap-2" for="pos_allow_custom_price_ecom">
+                            <span>POS এ প্রডাক্ট এর সেল প্রাইস এডিট করার অনুমতি (Allow Custom Price in POS)</span>
+                            <?php $isCustomPriceOn = (($settings['pos_allow_custom_price'] ?? '0') === '1'); ?>
+                            <span class="text-[10px] font-bold px-2 py-0.2 rounded-full <?= $isCustomPriceOn ? 'bg-emerald-100 text-emerald-800' : 'bg-secondary-200 text-secondary-600' ?>">
+                                <?= $isCustomPriceOn ? 'অন' : 'অফ' ?>
+                            </span>
+                        </label>
+                        <p class="text-xs text-secondary-500 leading-relaxed">
+                            অন থাকলে POS কাউন্টারে বা অর্ডার এডিট করার সময় যেকোনো পণ্যের ইউনিট বিক্রয় মূল্য (Selling Price) সরাসরি পরিবর্তন করে কাস্টম রেটে বিল করা যাবে।
+                        </p>
+                    </div>
+                    <label class="custom-toggle">
+                        <input type="checkbox" id="pos_allow_custom_price_ecom" name="pos_allow_custom_price" value="1" 
+                               <?= ($settings['pos_allow_custom_price'] ?? '0') == '1' ? 'checked' : '' ?>>
+                        <span class="toggle-track <?= ($settings['pos_allow_custom_price'] ?? '0') == '1' ? 'is-checked' : '' ?>">
+                            <span class="toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
             </div>
         </div>
 

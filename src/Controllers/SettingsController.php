@@ -27,6 +27,37 @@ class SettingsController extends Controller {
     public function update() {
         $settingModel = new Setting();
 
+        // Handle site logo deletion if requested
+        if (!empty($_POST['remove_site_logo'])) {
+            $currentLogo = $settingModel->get('site_logo');
+            if (!empty($currentLogo)) {
+                $filePath = dirname(__DIR__, 2) . '/public' . $currentLogo;
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+            $settingModel->update('site_logo', '');
+        }
+
+        // Handle uploaded file for site_logo
+        if (!empty($_FILES['site_logo']['name']) && $_FILES['site_logo']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/settings/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $_FILES['site_logo'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+            if (in_array($ext, $allowed)) {
+                $filename = 'site_logo_' . time() . '.' . $ext;
+                $dest = $uploadDir . $filename;
+                if (move_uploaded_file($file['tmp_name'], $dest)) {
+                    $settingModel->update('site_logo', '/uploads/settings/' . $filename);
+                }
+            }
+        }
+
         // Handle image deletion if requested
         if (!empty($_POST['remove_site_share_image'])) {
             $currentImg = $settingModel->get('site_share_image');
@@ -59,7 +90,7 @@ class SettingsController extends Controller {
         }
         
         foreach ($_POST as $key => $value) {
-            if ($key === 'csrf_token' || $key === 'remove_site_share_image') continue;
+            if ($key === 'csrf_token' || $key === 'remove_site_share_image' || $key === 'remove_site_logo') continue;
             $settingModel->update($key, is_string($value) ? trim($value) : $value);
         }
 
@@ -113,7 +144,8 @@ class SettingsController extends Controller {
                 'show_discount_badge',
                 'prices_include_tax',
                 'enable_product_reviews',
-                'reviews_verified_buyers_only'
+                'reviews_verified_buyers_only',
+                'pos_allow_custom_price'
             ],
             'shipping' => [
                 'spend_more_offers_enabled',

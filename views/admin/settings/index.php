@@ -291,6 +291,46 @@
             </div>
         </div>
 
+        <!-- Point of Sale (POS) Settings Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-emerald-100 text-emerald-700 p-2 rounded-lg">
+                        <ion-icon name="calculator-outline" class="text-xl"></ion-icon>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-secondary-800">পয়েন্ট অব সেল (POS) ও কাউন্টার সেটিংস</h3>
+                        <p class="text-xs text-secondary-500">POS কাউন্টার সেল ও অর্ডার এডিটের সময় প্রাইসিং কনফিগারেশন।</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">POS Terminal</span>
+            </div>
+            
+            <div class="p-6">
+                <?php $isCustomPriceEnabled = (($settings['pos_allow_custom_price'] ?? '0') === '1'); ?>
+                <div class="flex items-start justify-between gap-4 p-4 rounded-xl border <?= $isCustomPriceEnabled ? 'border-emerald-300 bg-emerald-50/40' : 'border-secondary-200 bg-secondary-50/40' ?> transition-all">
+                    <div class="space-y-1">
+                        <label class="font-bold text-sm text-secondary-900 cursor-pointer flex items-center gap-2" for="pos_allow_custom_price">
+                            <span>POS এ প্রডাক্ট এর সেল প্রাইস আপডেট বা ইডিট করার অনুমতি</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full <?= $isCustomPriceEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-secondary-200 text-secondary-600' ?>">
+                                <?= $isCustomPriceEnabled ? 'অন (Active)' : 'অফ (Disabled)' ?>
+                            </span>
+                        </label>
+                        <p class="text-xs text-secondary-500 leading-relaxed max-w-2xl">
+                            চালু থাকলে POS কাউন্টারে বা অর্ডার এডিটের সময় যেকোনো পণ্যের ইউনিট বিক্রয় মূল্য সরাসরি পরিবর্তন/কাস্টমাইজ করা যাবে (যেমন: দরদাম, বিশেষ কাউন্টার ছাড় বা ফ্ল্যাট রেট)। বন্ধ থাকলে পণ্যটি শুধুমাত্র সিস্টেমে নির্ধারিত বিক্রয় মূল্যেই যুক্ত হবে।
+                        </p>
+                    </div>
+                    <div class="flex items-center shrink-0">
+                        <input type="hidden" name="pos_allow_custom_price" value="0">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pos_allow_custom_price" name="pos_allow_custom_price" value="1" <?= $isCustomPriceEnabled ? 'checked' : '' ?> class="sr-only peer">
+                            <div class="w-11 h-6 bg-secondary-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-secondary-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Authentication Settings -->
         <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden mb-6">
              <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50 flex items-center gap-2">
@@ -395,6 +435,188 @@
             </div>
         </div>
 
+        <!-- Storefront Homepage Variant Selector (3 Variants) -->
+        <?php $currentHomeVariant = $settings['homepage_variant'] ?? 'variant_1'; ?>
+        <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-secondary-100 bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-white flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex items-center gap-2.5">
+                    <div class="bg-emerald-100 text-emerald-700 p-2 rounded-lg">
+                        <ion-icon name="color-wand-outline" class="text-xl"></ion-icon>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-secondary-800">হোম পেজ ডিজাইন ভ্যারিয়েন্ট (Storefront Homepage Layout Variants)</h3>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">A/B Testing Ready</span>
+                        </div>
+                        <p class="text-xs text-secondary-500">কাস্টমারদের পছন্দের উপর ভিত্তি করে ৩টি আধুনিক হোম পেজ ডিজাইন থেকে যেকোনো একটি চালু করুন বা লাইভ প্রিভিউ দেখুন।</p>
+                    </div>
+                </div>
+                <a href="<?= $base ?>/" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg shadow-2xs transition-colors">
+                    <ion-icon name="open-outline" class="text-sm"></ion-icon>
+                    <span>বর্তমান হোম পেজ দেখুন</span>
+                </a>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" data-radio-group="homepage_variant">
+                    <!-- Variant 1: Modern Full-Width App Grid -->
+                    <label class="block">
+                        <input type="radio" name="homepage_variant" value="variant_1" data-theme="emerald" class="sr-only" <?= $currentHomeVariant === 'variant_1' ? 'checked' : '' ?>>
+                        <div class="radio-select-card p-4 h-full flex flex-col justify-between <?= $currentHomeVariant === 'variant_1' ? 'is-selected-emerald' : '' ?>">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                            <ion-icon name="phone-portrait-outline" class="text-lg"></ion-icon>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 block">ভ্যারিয়েন্ট ১ (প্রস্তাবিত)</span>
+                                            <h4 class="font-black text-secondary-900 text-sm leading-tight">মডার্ন ফুল-উইডথ অ্যাপ স্টাইল</h4>
+                                        </div>
+                                    </div>
+                                    <div class="radio-indicator">
+                                        <div class="radio-indicator-dot"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Mini Visual Wireframe Preview -->
+                                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 mb-3 space-y-1.5">
+                                    <div class="h-6 rounded-lg bg-gradient-to-r from-emerald-700 to-teal-600 flex items-center px-2 justify-between">
+                                        <span class="w-12 h-1.5 bg-white/80 rounded-full"></span>
+                                        <span class="w-5 h-3 bg-amber-400 rounded text-[7px] font-black text-slate-900 flex items-center justify-center">ডিল</span>
+                                    </div>
+                                    <div class="flex gap-1 overflow-hidden">
+                                        <span class="h-4 flex-1 rounded bg-white border border-emerald-200"></span>
+                                        <span class="h-4 flex-1 rounded bg-white border border-slate-200"></span>
+                                        <span class="h-4 flex-1 rounded bg-white border border-slate-200"></span>
+                                        <span class="h-4 flex-1 rounded bg-white border border-slate-200"></span>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+                                        <div class="h-8 rounded bg-white border border-slate-200 p-1 flex flex-col justify-between"><span class="w-full h-3 bg-emerald-50 rounded"></span><span class="w-full h-1.5 bg-emerald-600 rounded"></span></div>
+                                        <div class="h-8 rounded bg-white border border-slate-200 p-1 flex flex-col justify-between"><span class="w-full h-3 bg-emerald-50 rounded"></span><span class="w-full h-1.5 bg-emerald-600 rounded"></span></div>
+                                        <div class="h-8 rounded bg-white border border-slate-200 p-1 flex flex-col justify-between"><span class="w-full h-3 bg-emerald-50 rounded"></span><span class="w-full h-1.5 bg-emerald-600 rounded"></span></div>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-secondary-500 leading-relaxed">
+                                    মোবাইলে প্রশস্ত ফুল-উইডথ প্রোডাক্ট গ্রিড, হরিজন্টাল ভিজ্যুয়াল ক্যাটাগরি স্লাইডার ও ডেস্কটপে মডার্ন সাইডবার। (Chaldal / Zepto স্টাইল)
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-emerald-700">📱 মোবাইলের জন্য সেরা</span>
+                                <a href="<?= $base ?>/?home_variant=variant_1" target="_blank" onclick="event.stopPropagation();" class="text-[11px] font-black text-primary-600 hover:underline flex items-center gap-0.5">
+                                    <span>প্রিভিউ দেখুন ↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Variant 2: Smart Split Sidebar App Rail -->
+                    <label class="block">
+                        <input type="radio" name="homepage_variant" value="variant_2" data-theme="blue" class="sr-only" <?= $currentHomeVariant === 'variant_2' ? 'checked' : '' ?>>
+                        <div class="radio-select-card p-4 h-full flex flex-col justify-between <?= $currentHomeVariant === 'variant_2' ? 'is-selected-blue' : '' ?>">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                                            <ion-icon name="grid-outline" class="text-lg"></ion-icon>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-blue-600 block">ভ্যারিয়েন্ট ২</span>
+                                            <h4 class="font-black text-secondary-900 text-sm leading-tight">স্মার্ট স্প্লিট অ্যাপ রেল</h4>
+                                        </div>
+                                    </div>
+                                    <div class="radio-indicator">
+                                        <div class="radio-indicator-dot"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Mini Visual Wireframe Preview -->
+                                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 mb-3 flex gap-1.5 h-[82px]">
+                                    <div class="w-7 bg-white border border-blue-200 rounded-lg p-1 flex flex-col gap-1 items-center">
+                                        <span class="w-4 h-4 rounded bg-blue-100 border border-blue-400"></span>
+                                        <span class="w-4 h-4 rounded bg-slate-100"></span>
+                                        <span class="w-4 h-4 rounded bg-slate-100"></span>
+                                    </div>
+                                    <div class="flex-1 flex flex-col gap-1.5">
+                                        <div class="h-5 rounded-md bg-gradient-to-r from-emerald-800 to-teal-700 px-2 flex items-center">
+                                            <span class="w-10 h-1.5 bg-white/80 rounded-full"></span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-1.5 flex-1">
+                                            <div class="rounded bg-white border border-slate-200 p-1 flex flex-col justify-between"><span class="w-full h-3 bg-blue-50 rounded"></span><span class="w-full h-1.5 bg-emerald-600 rounded"></span></div>
+                                            <div class="rounded bg-white border border-slate-200 p-1 flex flex-col justify-between"><span class="w-full h-3 bg-blue-50 rounded"></span><span class="w-full h-1.5 bg-emerald-600 rounded"></span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-secondary-500 leading-relaxed">
+                                    বাম পাশে স্লিম ও নিখুঁত ক্যাটাগরি আইকন রেল এবং ডান পাশে কমপ্যাক্ট ব্যানার ও অপ্টিমাইজড প্রোডাক্ট কার্ড। (Blinkit / Instamart স্টাইল)
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-blue-700">⚡ দ্রুত ক্যাটাগরি সুইচিং</span>
+                                <a href="<?= $base ?>/?home_variant=variant_2" target="_blank" onclick="event.stopPropagation();" class="text-[11px] font-black text-blue-600 hover:underline flex items-center gap-0.5">
+                                    <span>প্রিভিউ দেখুন ↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Variant 3: Superstore Magazine & Flash Showcase -->
+                    <label class="block">
+                        <input type="radio" name="homepage_variant" value="variant_3" data-theme="rose" class="sr-only" <?= $currentHomeVariant === 'variant_3' ? 'checked' : '' ?>>
+                        <div class="radio-select-card p-4 h-full flex flex-col justify-between <?= $currentHomeVariant === 'variant_3' ? 'is-selected-rose' : '' ?>">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                                            <ion-icon name="storefront-outline" class="text-lg"></ion-icon>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-rose-600 block">ভ্যারিয়েন্ট ৩</span>
+                                            <h4 class="font-black text-secondary-900 text-sm leading-tight">সুপারস্টোর ও ফ্ল্যাশ শোকেস</h4>
+                                        </div>
+                                    </div>
+                                    <div class="radio-indicator">
+                                        <div class="radio-indicator-dot"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Mini Visual Wireframe Preview -->
+                                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 mb-3 space-y-1.5">
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <div class="col-span-2 h-6 rounded-md bg-gradient-to-r from-emerald-800 to-emerald-600"></div>
+                                        <div class="h-6 rounded-md bg-gradient-to-r from-amber-500 to-rose-500"></div>
+                                    </div>
+                                    <div class="grid grid-cols-4 gap-1">
+                                        <span class="h-4 rounded bg-rose-50 border border-rose-200"></span>
+                                        <span class="h-4 rounded bg-amber-50 border border-amber-200"></span>
+                                        <span class="h-4 rounded bg-emerald-50 border border-emerald-200"></span>
+                                        <span class="h-4 rounded bg-sky-50 border border-sky-200"></span>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1.5">
+                                        <div class="h-7 rounded bg-white border border-slate-200 p-1"><span class="block w-full h-full bg-rose-50 rounded"></span></div>
+                                        <div class="h-7 rounded bg-white border border-slate-200 p-1"><span class="block w-full h-full bg-rose-50 rounded"></span></div>
+                                        <div class="h-7 rounded bg-white border border-slate-200 p-1"><span class="block w-full h-full bg-rose-50 rounded"></span></div>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-secondary-500 leading-relaxed">
+                                    বেন্টো হিরো ব্যানার, ভিজ্যুয়াল ক্যাটাগরি বক্স গ্রিড, ফ্ল্যাশ ডিলস হাইলাইট সেকশন ও ট্যাবড ক্যাটালগ। (Shwapno / MeenaClick স্টাইল)
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-rose-700">🔥 অফার ও ব্র্যান্ড ফোকাসড</span>
+                                <a href="<?= $base ?>/?home_variant=variant_3" target="_blank" onclick="event.stopPropagation();" class="text-[11px] font-black text-rose-600 hover:underline flex items-center gap-0.5">
+                                    <span>প্রিভিউ দেখুন ↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <!-- General Settings -->
         <div class="bg-white rounded-xl shadow-sm border border-secondary-100 overflow-hidden mb-6">
              <div class="px-6 py-4 border-b border-secondary-100 bg-secondary-50 flex items-center gap-2">
@@ -402,12 +624,56 @@
                      <ion-icon name="globe-outline" class="text-xl"></ion-icon>
                  </div>
                  <div>
-                     <h3 class="font-bold text-secondary-700">General Information (স্টোরের ব্র্যান্ডিং ও যোগাযোগের তথ্য)</h3>
-                     <p class="text-xs text-secondary-500">ওয়েবসাইটের নাম, স্লোগান, যোগাযোগের ফোন, ইমেইল, হোয়াটসঅ্যাপ এবং ঠিকানা আপডেট করুন।</p>
+                     <h3 class="font-bold text-secondary-700">General Information (স্টোরের ব্র্যান্ডিং, লোগো ও যোগাযোগের তথ্য)</h3>
+                     <p class="text-xs text-secondary-500">ওয়েবসাইটের লোগো, নাম, স্লোগান, যোগাযোগের ফোন, ইমেইল, হোয়াটসঅ্যাপ এবং ঠিকানা আপডেট করুন।</p>
                  </div>
             </div>
             
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Site Logo Upload -->
+                <div class="md:col-span-2 bg-emerald-50/40 border border-emerald-200/80 rounded-xl p-4 sm:p-5">
+                    <div class="flex items-center gap-2 mb-1">
+                        <ion-icon name="ribbon-outline" class="text-emerald-600 text-lg"></ion-icon>
+                        <label class="block text-sm font-bold text-secondary-800">ওয়েবসাইটের অফিসিয়াল লোগো (Site Logo Upload)</label>
+                    </div>
+                    <p class="text-xs text-secondary-500 mb-4">স্টোরফ্রন্টের হেডার, মোবাইল বার এবং ফুটারে প্রদর্শনের জন্য আপনার ব্র্যান্ডের লোগো আপলোড করুন। (প্রস্তাবিত ফরম্যাট: PNG, SVG বা WEBP, ট্রান্সপারেন্ট ব্যাকগ্রাউন্ড হলে সবচেয়ে সুন্দর দেখাবে)</p>
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <?php 
+                            $currentSiteLogo = !empty($settings['site_logo']) ? $settings['site_logo'] : '';
+                            $logoPreviewUrl = !empty($currentSiteLogo) ? ($base . $currentSiteLogo) : '';
+                        ?>
+                        <div class="relative w-40 h-20 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-xs bg-white shrink-0 flex items-center justify-center p-2 group">
+                            <img id="site-logo-preview" src="<?= htmlspecialchars($logoPreviewUrl) ?>" alt="Site Logo" class="max-w-full max-h-full object-contain <?= empty($logoPreviewUrl) ? 'hidden' : '' ?>">
+                            <div id="site-logo-fallback" class="flex items-center gap-1.5 <?= !empty($logoPreviewUrl) ? 'hidden' : '' ?>">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                                    <ion-icon name="cart-outline" class="text-lg"></ion-icon>
+                                </div>
+                                <span class="text-xs font-black text-slate-800"><?= htmlspecialchars($settings['site_title'] ?? 'Sohoz Sodai') ?></span>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 w-full space-y-2.5">
+                            <input type="file" name="site_logo" id="site_logo_input" accept="image/png,image/webp,image/svg+xml,image/jpeg,image/gif"
+                                   onchange="previewSiteLogo(this)"
+                                   class="block w-full text-xs text-secondary-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 file:cursor-pointer cursor-pointer border border-secondary-300 rounded-lg p-1.5 bg-white">
+                            
+                            <?php if (!empty($currentSiteLogo)): ?>
+                            <div class="flex items-center gap-2">
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer font-semibold hover:text-red-700">
+                                    <input type="checkbox" name="remove_site_logo" value="1" class="rounded border-secondary-300 text-red-600 focus:ring-red-500">
+                                    <span>বর্তমান লোগো মুছে ডিফল্ট আইকন লোগোতে ফিরিয়ে নিন</span>
+                                </label>
+                            </div>
+                            <?php endif; ?>
+                            <div class="text-[11px] text-secondary-500 bg-white border border-emerald-200/60 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                                <span>✨</span>
+                                <span>লোগো আপলোড করলে হেডার, ফুটার এবং ব্রাউজার ট্যাবে (Favicon) স্বয়ংক্রিয়ভাবে যুক্ত হবে।</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Site Title -->
                 <div>
                     <label class="block text-sm font-bold text-secondary-700 mb-2">ওয়েবসাইটের নাম (Website / Brand Name)</label>
@@ -548,6 +814,24 @@
             });
         });
     });
+
+    function previewSiteLogo(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = document.getElementById('site-logo-preview');
+                var fallback = document.getElementById('site-logo-fallback');
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                }
+                if (fallback) {
+                    fallback.classList.add('hidden');
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 
     function previewShareImage(input) {
         if (input.files && input.files[0]) {

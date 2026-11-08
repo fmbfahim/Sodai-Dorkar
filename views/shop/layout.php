@@ -39,6 +39,7 @@ foreach ($cart as $item) {
 }
 $spendMoreOffers = \Models\Setting::getSpendMoreOffersData($cartTotal, $locale);
 $base = (strpos($_SERVER['REQUEST_URI'] ?? '', '/sodai-dorkar/public') !== false) ? '/sodai-dorkar/public' : '';
+$siteLogo = !empty($storeSettings['site_logo']) ? ($base . $storeSettings['site_logo']) : '';
 
 // 4. Absolute URL helper for Social Media Crawlers (Facebook, WhatsApp, Messenger, etc.)
 $proto = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']))
@@ -110,6 +111,10 @@ if (empty($finalOgImage)) {
     <meta name="twitter:description" content="<?= htmlspecialchars($metaDescription) ?>">
     <meta name="twitter:image" content="<?= htmlspecialchars($finalOgImage) ?>">
     <meta name="csrf-token" content="<?= \Core\CSRF::token() ?>">
+    <?php if (!empty($siteLogo)): ?>
+    <link rel="icon" href="<?= htmlspecialchars($siteLogo) ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($siteLogo) ?>">
+    <?php endif; ?>
     <link rel="manifest" href="<?= $base ?>/manifest.json">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
@@ -575,20 +580,24 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
     <header class="bg-white sticky top-0 z-40 border-b border-gray-100 shadow-xs transition-all duration-200" id="site-main-header">
 
         <!-- ═══ NEW SLIM MOBILE HEADER (Single compact row: Logo + Search + Cart) ═══ -->
-        <div id="mobile-slim-header" class="hidden items-center gap-2 px-3 py-2 bg-white transition-all duration-200">
+        <div id="mobile-slim-header" class="hidden items-center gap-2 px-2.5 py-2 bg-white transition-all duration-200">
             <!-- Mini Brand -->
             <a href="<?= $base ?>/" class="flex items-center gap-1.5 flex-shrink-0 group" id="msh-brand">
-                <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
+                <?php if (!empty($siteLogo)): ?>
+                    <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($siteTitle) ?>" class="h-8 w-auto max-w-[100px] object-contain rounded-lg">
+                <?php else: ?>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                <?php endif; ?>
                 <?php
                     $mshBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
                     $mshParts = explode(' ', $mshBrand, 2);
                 ?>
-                <span class="text-sm font-black text-gray-900 leading-none tracking-tight">
-                    <?= htmlspecialchars($mshParts[0] ?? '') ?> <span class="text-emerald-600"><?= htmlspecialchars($mshParts[1] ?? '') ?></span>
+                <span class="text-[13px] font-black text-gray-900 leading-none tracking-tight whitespace-nowrap">
+                    <?= htmlspecialchars($mshParts[0] ?? '') ?><?php if (!empty($mshParts[1])): ?> <span class="text-emerald-600"><?= htmlspecialchars($mshParts[1]) ?></span><?php endif; ?>
                 </span>
             </a>
 
@@ -597,23 +606,23 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 <?php if (!empty($isDeals)): ?>
                     <input type="hidden" name="deals" value="1">
                 <?php endif; ?>
-                <div class="flex items-center bg-gray-100 border border-gray-200 rounded-xl overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white transition-all">
+                <div class="flex items-center h-9 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white transition-all">
                     <div class="pl-2.5 text-gray-400 pointer-events-none flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input type="text" name="search" id="mobile-slim-search-input" value="<?= htmlspecialchars($search ?? '') ?>" 
                            placeholder="<?= $__('header_search_placeholder') ?>" 
                            autocomplete="off"
-                           class="flex-1 min-w-0 px-2 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
-                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-2 py-2 transition-colors flex-shrink-0 cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           class="flex-1 min-w-0 px-2 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent">
+                    <button type="button" class="voice-search-btn text-gray-400 hover:text-emerald-600 px-1.5 h-full flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer" title="<?= $locale === 'bn' ? 'মুখে বলে খুঁজুন' : 'Voice Search' ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                     </button>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 transition-colors flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 h-full flex items-center justify-center transition-colors flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </button>
                 </div>
                 <!-- Mobile Slim Live Search Dropdown -->
@@ -622,20 +631,20 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
             <!-- Mobile Notification Bell -->
             <button type="button" onclick="openPromoNotificationsDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all text-gray-700 hover:text-emerald-600 cursor-pointer" id="msh-notif-btn" title="অফার ও নোটিফিকেশন">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span id="msh-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full ring-1.5 ring-white flex items-center justify-center shadow-xs leading-none">
+                <span id="msh-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none">
                     0
                 </span>
             </button>
 
             <!-- Cart Icon -->
             <button type="button" onclick="openCartDrawer()" class="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gray-100 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 flex items-center justify-center transition-all" id="msh-cart-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="w-[18px] h-[18px] text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span id="msh-cart-badge" class="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-600 text-white text-[9px] font-black rounded-full ring-1.5 ring-white flex items-center justify-center shadow-xs leading-none <?= $cartCount > 0 ? '' : 'hidden' ?>">
+                <span id="msh-cart-badge" class="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-600 text-white text-[9px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs leading-none <?= $cartCount > 0 ? '' : 'hidden' ?>">
                     <?= $cartCount ?>
                 </span>
             </button>
@@ -645,11 +654,15 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             
             <!-- Brand Logo -->
             <a href="<?= $base ?>/" class="flex items-center gap-2.5 group flex-shrink-0">
-                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
+                <?php if (!empty($siteLogo)): ?>
+                    <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($siteTitle) ?>" class="h-10 sm:h-11 w-auto max-w-[160px] object-contain rounded-xl group-hover:scale-105 transition-transform">
+                <?php else: ?>
+                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <?php
                         $rawBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Fresh E mart';
@@ -758,10 +771,10 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
 
                 <!-- Promo Push Notification Bell Widget (Desktop) -->
                 <button type="button" onclick="openPromoNotificationsDrawer()" class="relative p-2.5 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-gray-700 hover:text-emerald-700 transition-all flex items-center justify-center cursor-pointer group shadow-2xs" id="desktop-notif-bell" title="অফার ও নোটিফিকেশন">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 group-hover:text-emerald-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 text-gray-600 group-hover:text-emerald-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    <span id="desktop-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-4.5 px-1 bg-rose-600 text-white text-[10px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs animate-pulse">
+                    <span id="desktop-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[10px] font-black rounded-full ring-2 ring-white flex items-center justify-center shadow-xs animate-pulse">
                         0
                     </span>
                 </button>
@@ -966,13 +979,13 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
             <div class="flex-shrink-0 relative -top-4 px-1.5">
                 <button type="button" 
                         onclick="openCartDrawer()" 
-                        class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-xl shadow-emerald-950/30 border-[3.5px] border-white flex flex-col items-center justify-center transform active:scale-95 transition-all cursor-pointer group"
+                        class="w-[52px] h-[52px] sm:w-14 sm:h-14 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-xl shadow-emerald-950/30 border-[3.5px] border-white flex flex-col items-center justify-center transform active:scale-95 transition-all cursor-pointer group"
                         title="ব্যাগ দেখুন (View Cart)">
                     <div class="relative flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="h-6 w-6 transform group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
-                        <span id="mobile-center-cart-badge" class="absolute -top-2 -right-2 bg-amber-400 text-gray-900 font-black text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-xs <?= $cartCount > 0 ? '' : 'hidden' ?>">
+                        <span id="mobile-center-cart-badge" class="absolute -top-2 -right-2 bg-amber-400 text-gray-900 font-black text-[10px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-white shadow-xs <?= $cartCount > 0 ? '' : 'hidden' ?>">
                             <?= $cartCount ?>
                         </span>
                     </div>
@@ -1260,12 +1273,20 @@ $currentProductId = isset($product['id']) ? (int)$product['id'] : (isset($_GET['
                 <!-- Col 1: Brand Info -->
                 <div class="lg:col-span-2 space-y-4">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <span class="text-2xl font-black tracking-tight text-white">Fresh<span class="text-emerald-400">Mart</span></span>
+                        <?php if (!empty($siteLogo)): ?>
+                            <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($siteTitle) ?>" class="h-10 w-auto max-w-[160px] object-contain rounded-xl bg-white/95 p-1 shadow-md">
+                        <?php else: ?>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        <?php endif; ?>
+                        <?php
+                            $fBrand = !empty($storeSettings['site_title']) ? $storeSettings['site_title'] : 'Sohoz Sodai';
+                            $fParts = explode(' ', $fBrand, 2);
+                        ?>
+                        <span class="text-2xl font-black tracking-tight text-white"><?= htmlspecialchars($fParts[0] ?? '') ?><?php if (!empty($fParts[1])): ?> <span class="text-emerald-400"><?= htmlspecialchars($fParts[1]) ?></span><?php endif; ?></span>
                     </div>
                     <p class="text-emerald-100/70 text-xs sm:text-sm leading-relaxed max-w-sm">
                         <?= $__('footer_desc') ?>
